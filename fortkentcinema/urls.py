@@ -20,8 +20,10 @@ from django.urls import path
 from django.urls.conf import include
 
 import blog.urls as blog_urls
+import cinema.urls as cinema_urls
 
 urlpatterns = [
     path("blog/", include(blog_urls)),
+    path("cinema/", include(cinema_urls)),
     path("admin/", admin.site.urls),
 ]

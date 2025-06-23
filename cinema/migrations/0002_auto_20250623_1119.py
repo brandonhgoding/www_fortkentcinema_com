@@ -11,12 +11,18 @@ def load_films(apps, schema_editor):
         films = json.load(file)
 
     for film_data in films:
-        Film.objects.create(
+        film = Film.objects.create(
             title=film_data["title"],
             youtube_id=film_data["youtube_id"],
             imdb_id=film_data["imdb_id"],
             slug=slugify(film_data["title"]),
         )
+        for booking in film_data["bookings"]:
+            film.bookings.create(
+                booking_start_date=booking["booking_start_date"],
+                booking_end_date=booking["booking_end_date"],
+                confirmed=booking["confirmed"],
+            )
 
 
 class Migration(migrations.Migration):

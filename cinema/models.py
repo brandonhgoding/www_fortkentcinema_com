@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime, time
 
 from django.db import models
@@ -7,6 +8,7 @@ from core.mixins import SlugModelMixin
 
 
 class Film(SlugModelMixin):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=100)
     imdb_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
     youtube_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
@@ -14,6 +16,9 @@ class Film(SlugModelMixin):
 
     def __str__(self) -> str:
         return self.title
+
+    class Meta:
+        ordering = ["title"]
 
 
 class Booking(models.Model):
