@@ -1,4 +1,46 @@
 [
-  {"title": "The Naked Gun", "booking_start_date": "2025-08-01", "booking_end_date": "2025-08-14", "confirmed": false},
-  {"title": "The Fantastic Four: First Steps", "booking_start_date": "2025-07-01", "booking_end_date": "2025-08-14", "confirmed": true}
+  {
+    "title": "The Naked Gun",
+    "booking_start_date": "2025-08-01",
+    "booking_end_date": "2025-08-14",
+    "confirmed": false
+  },
+  {
+    "title": "The Fantastic Four: First Steps",
+    "booking_start_date": "2025-07-01",
+    "booking_end_date": "2025-08-14",
+    "confirmed": true
+  },
+  {
+    "title": "How To Train Your Dragon",
+    "booking_start_date": "2025-06-13",
+    "booking_end_date": "2025-07-03",
+    "confirmed": true,
+    "play_dates": [
+      {
+        "date": "2025-06-20",
+        "time": "18:00:00"
+      },
+      {
+        "date": "2025-06-21",
+        "time": "13:00:00"
+      },
+      {
+        "date": "2025-06-21",
+        "time": "18:00:00"
+      }
+    ]
+  },
+  {
+    "title": "Elio",
+    "booking_start_date": "2025-06-20",
+    "booking_end_date": "2025-07-01",
+    "confirmed": true
+  },
+  {
+    "title": "Jurassic World: Dominion",
+    "booking_start_date": "2025-07-01",
+    "booking_end_date": "2025-07-24",
+    "confirmed": true
+  }
 ]

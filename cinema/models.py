@@ -41,12 +41,12 @@ class Booking(models.Model):
 
 
 class PlayDate(models.Model):
-    film = models.ForeignKey(Film, on_delete=models.CASCADE, related_name="play_dates")
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name="play_dates")
     date = models.DateField()
     time = models.TimeField()
 
     def __str__(self) -> str:
-        return f"{self.film.title} on {self.date} at {self.time}"
+        return f"{self.booking.film.title} on {self.date} at {self.time}"
 
     @property
     def is_matinee(self) -> bool:
@@ -57,5 +57,5 @@ class PlayDate(models.Model):
         return show_time < time(16, 0)
 
     class Meta:
-        unique_together = ("film", "date", "time")
+        unique_together = ("booking", "date", "time")
         ordering = ["date", "time"]

@@ -68,7 +68,12 @@ class BookingModelTest(TestCase):
 class PlayDateModelTest(TestCase):
     def setUp(self) -> None:
         self.film = Film.objects.create(title="A Good Film", imdb_id="1234", youtube_id="5678")
-        self.play_date = self.film.play_dates.create(date="2023-01-01", time="15:00:00")
+        self.booking = self.film.bookings.create(
+            booking_start_date="2023-01-01",
+            booking_end_date="2023-01-10",
+            confirmed=True,
+        )
+        self.play_date = self.booking.play_dates.create(date="2023-01-01", time="15:00:00")
 
     def test_play_date_str(self) -> None:
         expected_str = f"{self.film.title} on {self.play_date.date} at {self.play_date.time}"
@@ -83,4 +88,4 @@ class PlayDateModelTest(TestCase):
 
     def test_unique_together(self) -> None:
         with self.assertRaises(IntegrityError):
-            PlayDate.objects.create(film=self.film, date="2023-01-01", time="15:00:00")
+            PlayDate.objects.create(booking=self.booking, date="2023-01-01", time="15:00:00")
