@@ -45,8 +45,8 @@ class Booking(models.Model):
         ordering = ["-booking_start_date"]
 
 
-class PlayDate(models.Model):
-    booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name="play_dates")
+class ScreeningTime(models.Model):
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name="screening_times")
     date = models.DateField()
     time = models.TimeField()
 

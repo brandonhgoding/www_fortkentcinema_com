@@ -16,7 +16,7 @@ class BlogPostListAPIView(APIView):
     authentication_classes: list[str] = []
     permission_classes: list[str] = []
 
-    def get(self, request: Request, format: str | None = None) -> Response:
+    def get(self, request: Request) -> Response:
         """
         Handle GET requests to retrieve a list of blog posts.
         """
@@ -33,7 +33,7 @@ class BlogPostDetailAPIView(APIView):
     authentication_classes: list[str] = []
     permission_classes: list[str] = []
 
-    def get(self, request: Request, slug: str, format: str | None = None) -> Response:
+    def get(self, request: Request, slug: str) -> Response:
         try:
             blog_post = BlogPost.objects.get(slug=slug)
         except BlogPost.DoesNotExist:
