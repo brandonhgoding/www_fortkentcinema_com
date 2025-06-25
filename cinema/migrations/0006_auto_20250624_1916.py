@@ -17,7 +17,7 @@ def populate_omdb_info(apps, schema_editor):
         print("Processing movie:", movie.title)
         try:
             omdb_data = service.get_movie_details(imdb_id=movie.imdb_id)
-            movie.omdb_json = omdb_data
+            movie.omdb_json = omdb_data.to_json()
             movie.save(update_fields=["omdb_json"])
             time.sleep(1)
         except Exception as e:
