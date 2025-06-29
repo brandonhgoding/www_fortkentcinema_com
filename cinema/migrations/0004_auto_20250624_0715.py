@@ -18,7 +18,6 @@ def populate_screeningtimes(apps, schema_editor):
     }
 
     for booking in Booking.objects.all():
-        print("Populating screening times for booking:", booking.id)
         current_date = booking.booking_start_date
         while current_date <= booking.booking_end_date:
             weekday = current_date.weekday()

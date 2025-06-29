@@ -1,3 +1,4 @@
+from rest_framework.generics import get_object_or_404
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -17,4 +18,18 @@ class FilmsApiView(APIView):
     def get(self, request: Request) -> Response:
         blog_posts = Film.objects.all()
         serializer = FilmSerializer(blog_posts, many=True)
+        return Response(serializer.data, status=200)
+
+
+class FilmDetailApiView(APIView):
+    """
+    API view for retrieving a single film by slug.
+    """
+
+    permission_classes: list = []
+    authentication_classes: list = []
+
+    def get(self, request: Request, slug: str) -> Response:
+        film = get_object_or_404(Film, slug=slug)
+        serializer = FilmSerializer(film)
         return Response(serializer.data, status=200)

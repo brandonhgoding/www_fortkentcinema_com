@@ -16,6 +16,7 @@ class OMDBResponse:
     writer: str = field(metadata={"json_key": "Writer"})
     actors: str = field(metadata={"json_key": "Actors"})
     plot: str = field(metadata={"json_key": "Plot"})
+    poster: str = field(metadata={"json_key": "Poster"})
 
     @classmethod
     def from_json(cls, data: dict) -> "OMDBResponse":

@@ -67,12 +67,25 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "fortkentcinema.wsgi.application"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+if config("USE_POSTGRES", default=False, cast=bool):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': config("DB_DB"),
+            'USER': config("DB_USER"),
+            'PASSWORD': config("DB_PASSWORD"),
+            'HOST': 'localhost',
+            'PORT': '',
+        }
     }
-}
+else:
+    # Use SQLite by default if not using Postgres
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {
