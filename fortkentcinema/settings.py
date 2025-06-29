@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "cinema.apps.CinemaConfig",
     "core.apps.CoreConfig",
     "rest_framework",
+    "corsheaders",
 ]
 
 if ENABLE_CDN:
@@ -39,6 +40,7 @@ if ENABLE_CDN:
     ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -69,13 +71,13 @@ WSGI_APPLICATION = "fortkentcinema.wsgi.application"
 
 if config("USE_POSTGRES", default=False, cast=bool):
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': config("DB_DB"),
-            'USER': config("DB_USER"),
-            'PASSWORD': config("DB_PASSWORD"),
-            'HOST': 'localhost',
-            'PORT': '',
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": config("DB_DB"),
+            "USER": config("DB_USER"),
+            "PASSWORD": config("DB_PASSWORD"),
+            "HOST": "localhost",
+            "PORT": "",
         }
     }
 else:
@@ -155,3 +157,6 @@ STATIC_ROOT = BASE_DIR / "static_collected"  # local tmp dir for collectstatic
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 OMDB_API_KEY = config("OMDB_API_KEY", default=None)
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # or your React dev server port
+]
