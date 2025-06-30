@@ -158,5 +158,6 @@ STATIC_ROOT = BASE_DIR / "static_collected"  # local tmp dir for collectstatic
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 OMDB_API_KEY = config("OMDB_API_KEY", default=None)
 CORS_ALLOWED_ORIGINS = [
-    "https://www.fortkentcinema.com",  # or your React dev server port
+    "https://www.fortkentcinema.com",
+    "https://fortkentcinema.com",
 ]
