@@ -17,8 +17,8 @@ class FilmsApiView(APIView):
     authentication_classes: list = []
 
     def get(self, request: Request) -> Response:
-        blog_posts = Film.objects.all()
-        serializer = FilmSerializer(blog_posts, many=True)
+        films = Film.objects.all()
+        serializer = FilmSerializer(films, many=True)
         return Response(serializer.data, status=200)
 
 
@@ -63,8 +63,8 @@ class ComingSoonApiView(APIView):
 
     def get(self, request: Request) -> Response:
         now = timezone.now()
-        films = Film.objects.filter(bookings__booking_start_date__gt=now).order_by(
-            "bookings__booking_start_date"
-        )[:3]
+        films = Film.objects.filter(
+            bookings__booking_start_date__gt=now, bookings__confirmed=True
+        ).order_by("bookings__booking_start_date")[:3]
         serializer = FilmSerializer(films, many=True)
         return Response(serializer.data, status=200)
