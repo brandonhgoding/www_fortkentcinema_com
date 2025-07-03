@@ -39,6 +39,7 @@ class BlogPost(SlugModelMixin):
     category = models.ForeignKey(BlogCategory, on_delete=models.CASCADE)
     post_date = models.DateField()
     content = models.TextField()
+    summary = models.TextField(blank=True, null=True)
     header_image = models.ImageField(upload_to="blog/images/", null=True, blank=True)
 
     slug_field = "subtitle"
