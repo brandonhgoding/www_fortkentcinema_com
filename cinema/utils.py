@@ -8,6 +8,8 @@ from cinema.services import OpenMovieDatabaseService
 
 
 def update_omdb(film: Film) -> None:
+    if not film.imdb_id:
+        return
     service = OpenMovieDatabaseService()
     response = service.get_movie_details(imdb_id=film.imdb_id)
     if response:
