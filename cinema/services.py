@@ -34,7 +34,9 @@ class OMDBResponse:
 
     def to_json(self) -> dict:
         return {
-            f.metadata["json_key"]: getattr(self, f.name)
+            f.metadata["json_key"]: (
+                getattr(self, f.name).isoformat() if isinstance(getattr(self, f.name), datetime) else getattr(self, f.name)
+            )
             for f in self.__dataclass_fields__.values()
         }
 
