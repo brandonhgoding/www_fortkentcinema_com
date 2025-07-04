@@ -57,4 +57,5 @@ class OpenMovieDatabaseService:
         if response.status_code != 200:
             raise Exception(f"Error fetching data from OMDB API: {response.status_code}")
         omdb_response = OMDBResponse.from_json(response.json())
+        omdb_response.timestamp = datetime.now()
         return omdb_response
