@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import datetime
 
 import requests
 from django.conf import settings
@@ -17,6 +18,12 @@ class OMDBResponse:
     actors: str = field(metadata={"json_key": "Actors"})
     plot: str = field(metadata={"json_key": "Plot"})
     poster: str = field(metadata={"json_key": "Poster"})
+    ratings: list[dict[str, str]] = field(default_factory=list, metadata={"json_key": "Ratings"})
+    meta_score: str = field(default="", metadata={"json_key": "Metascore"})
+    imdb_rating: str = field(default="", metadata={"json_key": "imdbRating"})
+    imdb_votes: str = field(default="", metadata={"json_key": "imdbVotes"})
+    gross: str = field(default="", metadata={"json_key": "BoxOffice"})
+    timestamp: datetime = field(default_factory=lambda: datetime.now(), metadata={"json_key": "Timestamp"})
 
     @classmethod
     def from_json(cls, data: dict) -> "OMDBResponse":
