@@ -1,4 +1,5 @@
 from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -7,7 +8,6 @@ from .models import BlogPost
 from .serializers import BlogPostSerializer
 
 
-# Create your views here.
 class BlogPostListAPIView(APIView):
     """
     API view to retrieve a list of blog posts.
@@ -20,9 +20,12 @@ class BlogPostListAPIView(APIView):
         """
         Handle GET requests to retrieve a list of blog posts.
         """
-        blog_posts = BlogPost.objects.all()
-        serializer = BlogPostSerializer(blog_posts, many=True)
-        return Response(serializer.data, status=200)
+        blog_posts = BlogPost.objects.all().order_by("-post_date")
+        paginator = PageNumberPagination()
+        paginator.page_size = 6
+        result_page = paginator.paginate_queryset(blog_posts, request)
+        serializer = BlogPostSerializer(result_page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
 class BlogPostDetailAPIView(APIView):
