@@ -160,4 +160,5 @@ OMDB_API_KEY = config("OMDB_API_KEY", default=None)
 CORS_ALLOWED_ORIGINS = [
     "https://www.fortkentcinema.com",
     "https://fortkentcinema.com",
+    "http://localhost:3000",
 ]

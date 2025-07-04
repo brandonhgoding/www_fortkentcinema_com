@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 
 from cinema.models import Film
 from cinema.serializers import FilmSerializer
+from cinema.utils import ensure_film_omdb_up_to_date
 
 
 class FilmsApiView(APIView):
@@ -32,6 +33,7 @@ class FilmDetailApiView(APIView):
 
     def get(self, request: Request, slug: str) -> Response:
         film = get_object_or_404(Film, slug=slug)
+        ensure_film_omdb_up_to_date(film)
         serializer = FilmSerializer(film)
         return Response(serializer.data, status=200)
 
