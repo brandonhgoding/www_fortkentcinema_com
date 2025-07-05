@@ -30,6 +30,10 @@ class FilmArchiveApiView(APIView):
             except ValueError:
                 film.omdb_json["Released"] = None
 
+        # Filter films to only include those with a Released date in the past
+        films = [film for film in films if
+                 film.omdb_json.get("Released") and film.omdb_json["Released"] <= datetime.now().date()]
+
         # Sort the films by the parsed date
         films = sorted(films, key=lambda x: x.omdb_json.get("Released") or datetime.max.date(), reverse=True)
 
