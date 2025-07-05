@@ -29,3 +29,10 @@ class FilmSerializer(serializers.ModelSerializer):
     class Meta:
         model = Film
         fields = ["id", "slug", "title", "imdb_id", "youtube_id", "omdb_json", "bookings"]
+
+
+class FilmArchiveSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Film
+        fields = ["id", "slug", "title", "omdb_json"]

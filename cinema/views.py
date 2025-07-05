@@ -1,15 +1,17 @@
+from datetime import datetime
 from django.utils import timezone
 from rest_framework.generics import get_object_or_404
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from cinema.models import Film
-from cinema.serializers import FilmSerializer
+from cinema.serializers import FilmSerializer, FilmArchiveSerializer
 from cinema.utils import ensure_film_omdb_up_to_date
 
 
-class FilmsApiView(APIView):
+class FilmArchiveApiView(APIView):
     """
     API view for handling film-related requests.
     """
@@ -18,9 +20,24 @@ class FilmsApiView(APIView):
     authentication_classes: list = []
 
     def get(self, request: Request) -> Response:
-        films = Film.objects.all()
-        serializer = FilmSerializer(films, many=True)
-        return Response(serializer.data, status=200)
+        films = Film.objects.filter(omdb_json__isnull=False)
+
+        # Parse the date string into a proper format
+        for film in films:
+            released_str = film.omdb_json.get("Released", "")
+            try:
+                film.omdb_json["Released"] = datetime.strptime(released_str, "%d %b %Y").date()
+            except ValueError:
+                film.omdb_json["Released"] = None
+
+        # Sort the films by the parsed date
+        films = sorted(films, key=lambda x: x.omdb_json.get("Released") or datetime.max.date(), reverse=True)
+
+        paginator = PageNumberPagination()
+        paginator.page_size = 6
+        result_page = paginator.paginate_queryset(films, request)
+        serializer = FilmArchiveSerializer(result_page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
 class FilmDetailApiView(APIView):
