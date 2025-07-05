@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from cinema.models import Film
-from cinema.serializers import FilmSerializer, FilmArchiveSerializer
+from cinema.serializers import FilmSerializer, FilmArchiveSerializer, FilmCalendarSerializer
 from cinema.utils import ensure_film_omdb_up_to_date
 
 
@@ -90,4 +90,18 @@ class ComingSoonApiView(APIView):
             bookings__booking_start_date__gt=now, bookings__confirmed=True
         ).order_by("bookings__booking_start_date")[:3]
         serializer = FilmSerializer(films, many=True)
+        return Response(serializer.data, status=200)
+
+
+class ComingSoonCalendarApiView(APIView):
+    """
+    API view for retrieving 'coming soon' films with a calendar format.
+    """
+
+    permission_classes: list = []
+    authentication_classes: list = []
+
+    def get(self, request: Request) -> Response:
+        films = Film.objects.all()
+        serializer = FilmCalendarSerializer(films, many=True)
         return Response(serializer.data, status=200)

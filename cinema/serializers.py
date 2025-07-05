@@ -10,7 +10,6 @@ class ScreeningTimeSerializer(serializers.ModelSerializer):
 
 
 class BookingSerializer(serializers.ModelSerializer):
-    screening_times = ScreeningTimeSerializer(many=True, read_only=True)
 
     class Meta:
         model = Booking
@@ -19,7 +18,6 @@ class BookingSerializer(serializers.ModelSerializer):
             "booking_end_date",
             "is_active",
             "is_confirmed",
-            "screening_times",
         ]
 
 
@@ -31,8 +29,18 @@ class FilmSerializer(serializers.ModelSerializer):
         fields = ["id", "slug", "title", "imdb_id", "youtube_id", "omdb_json", "bookings"]
 
 
+class FilmCalendarSerializer(serializers.ModelSerializer):
+    bookings = BookingSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Film
+        fields = ["id", "title", "bookings"]
+
+
 class FilmArchiveSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Film
         fields = ["id", "slug", "title", "omdb_json"]
+
+
