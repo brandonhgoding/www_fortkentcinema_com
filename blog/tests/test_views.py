@@ -14,4 +14,4 @@ class BlogPostListAPIViewTest(TestCase):
         url = reverse("blog-post-list")  # Replace with your actual URL name
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), len(self.fixtures))  # type: ignore[attr-defined]
+        self.assertEqual(response.data["count"], len(self.fixtures))  # type: ignore[attr-defined]

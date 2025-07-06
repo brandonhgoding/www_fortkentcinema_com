@@ -1,4 +1,7 @@
-from datetime import datetime
+from collections.abc import Iterable
+from datetime import date, datetime
+
+from django.db.models import QuerySet
 from django.utils import timezone
 from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
@@ -7,7 +10,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from cinema.models import Film
-from cinema.serializers import FilmSerializer, FilmArchiveSerializer, FilmCalendarSerializer
+from cinema.serializers import (FilmArchiveSerializer, FilmCalendarSerializer,
+                                FilmSerializer)
 from cinema.utils import ensure_film_omdb_up_to_date
 
 
@@ -20,9 +24,16 @@ class FilmArchiveApiView(APIView):
     authentication_classes: list = []
 
     def get(self, request: Request) -> Response:
-        films = Film.objects.filter(omdb_json__isnull=False)
+        films_qs = Film.objects.filter(omdb_json__isnull=False)
+        self._parse_released_dates(films_qs)
+        films = self._filter_and_sort_films(films_qs)
+        paginator = PageNumberPagination()
+        paginator.page_size = 6
+        result_page = paginator.paginate_queryset(films, request)
+        serializer = FilmArchiveSerializer(result_page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
-        # Parse the date string into a proper format
+    def _parse_released_dates(self, films: QuerySet) -> None:
         for film in films:
             released_str = film.omdb_json.get("Released", "")
             try:
@@ -30,21 +41,26 @@ class FilmArchiveApiView(APIView):
             except ValueError:
                 film.omdb_json["Released"] = None
 
-        # Filter films to only include those with a Released date in the past
-        films = [film for film in films if
-                 film.omdb_json.get("Released") and film.omdb_json["Released"] <= datetime.now().date()]
+    def _filter_and_sort_films(self, films: Iterable[Film]) -> list[Film]:
+        filtered = [
+            film
+            for film in films
+            if isinstance(film.omdb_json, dict)
+            and isinstance(film.omdb_json.get("Released"), date)
+            and film.omdb_json["Released"] <= datetime.now().date()
+        ]
+        return sorted(
+            filtered,
+            key=lambda x: (
+                x.omdb_json["Released"]
+                if isinstance(x.omdb_json, dict) and isinstance(x.omdb_json.get("Released"), date)
+                else datetime.max.date()
+            ),
+            reverse=True,
+        )
 
-        # Sort the films by the parsed date
-        films = sorted(films, key=lambda x: x.omdb_json.get("Released") or datetime.max.date(), reverse=True)
 
-        paginator = PageNumberPagination()
-        paginator.page_size = 6
-        result_page = paginator.paginate_queryset(films, request)
-        serializer = FilmArchiveSerializer(result_page, many=True)
-        return paginator.get_paginated_response(serializer.data)
-
-
-class FilmDetailApiView(APIView):
+class FilmArchiveDetailApiView(APIView):
     """
     API view for retrieving a single film by slug.
     """
