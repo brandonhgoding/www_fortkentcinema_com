@@ -161,6 +161,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://www.fortkentcinema.com",
     "https://fortkentcinema.com",
     "http://localhost:3000",
+    "http://192.168.2.112:3000",
 ]
 
 REST_FRAMEWORK = {
