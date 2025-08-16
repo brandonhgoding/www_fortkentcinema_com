@@ -30,9 +30,15 @@ INSTALLED_APPS = [
     "blog.apps.BlogConfig",
     "cinema.apps.CinemaConfig",
     "core.apps.CoreConfig",
+    "website.apps.WebsiteConfig",
+    "tailwind",
+    "theme",
     "rest_framework",
     "corsheaders",
 ]
+
+if DEBUG:
+    INSTALLED_APPS += ['django_browser_reload']
 
 if ENABLE_CDN:
     INSTALLED_APPS += [
@@ -49,6 +55,12 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+if DEBUG:
+    # Add django_browser_reload middleware only in DEBUG mode
+    MIDDLEWARE += [
+        "django_browser_reload.middleware.BrowserReloadMiddleware",
+    ]
 
 ROOT_URLCONF = "fortkentcinema.urls"
 
@@ -168,3 +180,5 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
     "PAGE_SIZE": 6,
 }
+
+TAILWIND_APP_NAME = 'theme'

@@ -18,10 +18,18 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from django.urls.conf import include
-
+from django.conf import settings
 from fortkentcinema import api_v1_urls
+from website import urls as website_urls
 
 urlpatterns = [
+    path("", include(website_urls)),
     path("api/v1/", include(api_v1_urls)),
     path("admin/", admin.site.urls),
 ]
+
+if settings.DEBUG:
+    # Include django_browser_reload URLs only in DEBUG mode
+    urlpatterns += [
+        path("__reload__/", include("django_browser_reload.urls")),
+    ]
