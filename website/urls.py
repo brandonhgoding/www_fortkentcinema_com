@@ -1,6 +1,7 @@
 from django.urls import include, path
 from django.views.generic import TemplateView
+from website import views as website_views
 
 urlpatterns = [
-    path("", TemplateView.as_view(template_name="website/index.html"), name="index"),
+    path("", website_views.HomePageTemplateView.as_view(), name="index"),
 ]

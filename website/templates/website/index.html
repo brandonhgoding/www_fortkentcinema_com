@@ -1,11 +1,13 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
 
     <header class="bg-white">
         <nav aria-label="Global" class="mx-auto flex max-w-7xl items-center justify-between gap-x-6 p-6 lg:px-8">
             <div class="flex lg:flex-1"><a href="/" class="-m-1.5 p-1.5"><span
                     class="sr-only">Fort Kent Cinema</span><img alt="Fort Kent Cinema Logo" class="h-8 w-auto"
-                                                                src="/assets/FKC_logo_black_FIN-C3hLfvAp.png"></a></div>
+                                                                src="{% static 'website/img/FKC_logo_black.png' %}"></a>
+            </div>
             <div class="hidden lg:flex lg:gap-x-12"><a href="/archive" class="text-sm/6 font-semibold text-gray-900">Archive</a><a
                     href="/fort-kent-cinema-blog" class="text-sm/6 font-semibold text-gray-900">Blog</a><a
                     href="/coming-soon" class="text-sm/6 font-semibold text-gray-900">Coming Soon</a></div>
@@ -61,7 +63,7 @@
             </div>
             <div class="bg-gray-50 lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2"><img alt="Old fashion film projector"
                                                                                       class="aspect-3/2 object-cover lg:aspect-auto lg:size-full"
-                                                                                      src="/assets/projector-background-DbKMIo5k.jpg">
+                                                                                      src="{% static 'website/img/projector-background.jpg' %}">
             </div>
         </div>
     </div>
@@ -80,96 +82,167 @@
                         friendly, welcoming environment for our community to relax, snack, and escape into the world of
                         film.</p></div>
                 <dl class="mt-16 grid grid-cols-1 gap-0.5 overflow-hidden rounded-2xl text-center sm:grid-cols-2 lg:grid-cols-2">
-                    <div class="flex flex-col bg-white/5 p-8">
-                        <dt class="text-sm/6 font-semibold text-gray-300"><img alt="Sketch Poster"
-                                                                               class="mx-auto mb-4 rounded-lg max-h-75"
-                                                                               src="https://m.media-amazon.com/images/M/MV5BMTk4OTkzNGEtYWU1Yy00ZGM5LWE0ZDMtYzY3NjU1NjIwOGY2XkEyXkFqcGc@._V1_SX300.jpg">
-                            <p>Rating: PG</p>
-                            <p>Running Time: 93 min</p>
-                            <p>Genre: Adventure, Comedy, Family</p>
-                            <div class="flex justify-center items-center space-x-4 mt-4"><a
-                                    href="https://www.youtube.com/watch?v=mj0moG3P2pw" target="_blank"
-                                    rel="noopener noreferrer" aria-label="Watch trailer on YouTube">
-                                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 576 512"
-                                     color="#FF0000" height="28" width="28" xmlns="http://www.w3.org/2000/svg"
-                                     style="color: rgb(255, 0, 0);">
-                                    <path d="M549.655 124.083c-6.281-23.65-24.787-42.276-48.284-48.597C458.781 64 288 64 288 64S117.22 64 74.629 75.486c-23.497 6.322-42.003 24.947-48.284 48.597-11.412 42.867-11.412 132.305-11.412 132.305s0 89.438 11.412 132.305c6.281 23.65 24.787 41.5 48.284 47.821C117.22 448 288 448 288 448s170.78 0 213.371-11.486c23.497-6.321 42.003-24.171 48.284-47.821 11.412-42.867 11.412-132.305 11.412-132.305s0-89.438-11.412-132.305zm-317.51 213.508V175.185l142.739 81.205-142.739 81.201z"></path>
-                                </svg>
-                            </a><a href="https://www.imdb.com/title/tt26238710/" target="_blank"
-                                   rel="noopener noreferrer" aria-label="View on IMDb">
-                                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 448 512"
-                                     color="#FFD700" height="28" width="28" xmlns="http://www.w3.org/2000/svg"
-                                     style="color: rgb(255, 215, 0);">
-                                    <path d="M400 32H48C21.5 32 0 53.5 0 80v352c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48V80c0-26.5-21.5-48-48-48zM21.3 229.2H21c.1-.1.2-.3.3-.4zM97 319.8H64V192h33zm113.2 0h-28.7v-86.4l-11.6 86.4h-20.6l-12.2-84.5v84.5h-29V192h42.8c3.3 19.8 6 39.9 8.7 59.9l7.6-59.9h43zm11.4 0V192h24.6c17.6 0 44.7-1.6 49 20.9 1.7 7.6 1.4 16.3 1.4 24.4 0 88.5 11.1 82.6-75 82.5zm160.9-29.2c0 15.7-2.4 30.9-22.2 30.9-9 0-15.2-3-20.9-9.8l-1.9 8.1h-29.8V192h31.7v41.7c6-6.5 12-9.2 20.9-9.2 21.4 0 22.2 12.8 22.2 30.1zM265 229.9c0-9.7 1.6-16-10.3-16v83.7c12.2.3 10.3-8.7 10.3-18.4zm85.5 26.1c0-5.4 1.1-12.7-6.2-12.7-6 0-4.9 8.9-4.9 12.7 0 .6-1.1 39.6 1.1 44.7.8 1.6 2.2 2.4 3.8 2.4 7.8 0 6.2-9 6.2-14.4z"></path>
-                                </svg>
-                            </a></div>
-                        </dt>
-                        <dd class="order-first text-3xl font-semibold tracking-tight text-white mb-5">Sketch<br><small>8/14
-                            -8/27</small></dd>
-                    </div>
-                    <div class="flex flex-col bg-white/5 p-8">
-                        <dt class="text-sm/6 font-semibold text-gray-300"><img alt="Weapons Poster"
-                                                                               class="mx-auto mb-4 rounded-lg max-h-75"
-                                                                               src="https://m.media-amazon.com/images/M/MV5BNTBhNWJjZWItYzY3NS00M2NkLThmOWYtYTlmNzBmN2UxZWFjXkEyXkFqcGc@._V1_SX300.jpg">
-                            <p>Rating: R</p>
-                            <p>Running Time: 128 min</p>
-                            <p>Genre: Horror, Mystery</p>
-                            <div class="flex justify-center items-center space-x-4 mt-4"><a
-                                    href="https://www.youtube.com/watch?v=OpThntO9ixc" target="_blank"
-                                    rel="noopener noreferrer" aria-label="Watch trailer on YouTube">
-                                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 576 512"
-                                     color="#FF0000" height="28" width="28" xmlns="http://www.w3.org/2000/svg"
-                                     style="color: rgb(255, 0, 0);">
-                                    <path d="M549.655 124.083c-6.281-23.65-24.787-42.276-48.284-48.597C458.781 64 288 64 288 64S117.22 64 74.629 75.486c-23.497 6.322-42.003 24.947-48.284 48.597-11.412 42.867-11.412 132.305-11.412 132.305s0 89.438 11.412 132.305c6.281 23.65 24.787 41.5 48.284 47.821C117.22 448 288 448 288 448s170.78 0 213.371-11.486c23.497-6.321 42.003-24.171 48.284-47.821 11.412-42.867 11.412-132.305 11.412-132.305s0-89.438-11.412-132.305zm-317.51 213.508V175.185l142.739 81.205-142.739 81.201z"></path>
-                                </svg>
-                            </a><a href="https://www.imdb.com/title/tt26581740/" target="_blank"
-                                   rel="noopener noreferrer" aria-label="View on IMDb">
-                                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 448 512"
-                                     color="#FFD700" height="28" width="28" xmlns="http://www.w3.org/2000/svg"
-                                     style="color: rgb(255, 215, 0);">
-                                    <path d="M400 32H48C21.5 32 0 53.5 0 80v352c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48V80c0-26.5-21.5-48-48-48zM21.3 229.2H21c.1-.1.2-.3.3-.4zM97 319.8H64V192h33zm113.2 0h-28.7v-86.4l-11.6 86.4h-20.6l-12.2-84.5v84.5h-29V192h42.8c3.3 19.8 6 39.9 8.7 59.9l7.6-59.9h43zm11.4 0V192h24.6c17.6 0 44.7-1.6 49 20.9 1.7 7.6 1.4 16.3 1.4 24.4 0 88.5 11.1 82.6-75 82.5zm160.9-29.2c0 15.7-2.4 30.9-22.2 30.9-9 0-15.2-3-20.9-9.8l-1.9 8.1h-29.8V192h31.7v41.7c6-6.5 12-9.2 20.9-9.2 21.4 0 22.2 12.8 22.2 30.1zM265 229.9c0-9.7 1.6-16-10.3-16v83.7c12.2.3 10.3-8.7 10.3-18.4zm85.5 26.1c0-5.4 1.1-12.7-6.2-12.7-6 0-4.9 8.9-4.9 12.7 0 .6-1.1 39.6 1.1 44.7.8 1.6 2.2 2.4 3.8 2.4 7.8 0 6.2-9 6.2-14.4z"></path>
-                                </svg>
-                            </a></div>
-                        </dt>
-                        <dd class="order-first text-3xl font-semibold tracking-tight text-white mb-5">Weapons<br><small>8/14
-                            -8/27</small></dd>
-                    </div>
+                    {% for movie in now_playing %}
+                        <div class="flex flex-col bg-white/5 p-8">
+                            <dt class="text-sm/6 font-semibold text-gray-300">
+                                <img alt="{{ movie.title }} Poster" class="mx-auto mb-4 rounded-lg max-h-75"
+                                     src="{{ movie.omdb_json.Poster }}">
+                                {% if movie.omdb_json.Rated %}
+                                    <p>Rating: {{ movie.omdb_json.Rated }}</p>
+                                {% endif %}
+                                {% if movie.omdb_json.Runtime %}
+                                    <p>Running Time: {{ movie.omdb_json.Runtime }}</p>
+                                {% endif %}
+                                {% if movie.omdb_json.Genre %}
+                                    <p>Genre: {{ movie.omdb_json.Genre }}</p>
+                                {% endif %}
+                                <div class="flex justify-center items-center space-x-4 mt-4">
+                                    {% if movie.youtube_id %}
+                                    <a
+                                            href="https://www.youtube.com/watch?v={{ movie.youtube_id }}" target="_blank"
+                                            rel="noopener noreferrer" aria-label="Watch trailer on YouTube">
+                                        <svg stroke="currentColor" fill="currentColor" stroke-width="0"
+                                             viewBox="0 0 576 512"
+                                             color="#FF0000" height="28" width="28" xmlns="http://www.w3.org/2000/svg"
+                                             style="color: rgb(255, 0, 0);">
+                                            <path d="M549.655 124.083c-6.281-23.65-24.787-42.276-48.284-48.597C458.781 64 288 64 288 64S117.22 64 74.629 75.486c-23.497 6.322-42.003 24.947-48.284 48.597-11.412 42.867-11.412 132.305-11.412 132.305s0 89.438 11.412 132.305c6.281 23.65 24.787 41.5 48.284 47.821C117.22 448 288 448 288 448s170.78 0 213.371-11.486c23.497-6.321 42.003-24.171 48.284-47.821 11.412-42.867 11.412-132.305 11.412-132.305s0-89.438-11.412-132.305zm-317.51 213.508V175.185l142.739 81.205-142.739 81.201z"></path>
+                                        </svg>
+                                    </a>
+                                    {% endif %}
+                                    {% if movie.imdb_id %}
+                                    <a href="https://www.imdb.com/title/{{ movie.imdb_id }}/" target="_blank"
+                                           rel="noopener noreferrer" aria-label="View on IMDb">
+                                    <svg stroke="currentColor" fill="currentColor" stroke-width="0"
+                                         viewBox="0 0 448 512"
+                                         color="#FFD700" height="28" width="28" xmlns="http://www.w3.org/2000/svg"
+                                         style="color: rgb(255, 215, 0);">
+                                        <path d="M400 32H48C21.5 32 0 53.5 0 80v352c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48V80c0-26.5-21.5-48-48-48zM21.3 229.2H21c.1-.1.2-.3.3-.4zM97 319.8H64V192h33zm113.2 0h-28.7v-86.4l-11.6 86.4h-20.6l-12.2-84.5v84.5h-29V192h42.8c3.3 19.8 6 39.9 8.7 59.9l7.6-59.9h43zm11.4 0V192h24.6c17.6 0 44.7-1.6 49 20.9 1.7 7.6 1.4 16.3 1.4 24.4 0 88.5 11.1 82.6-75 82.5zm160.9-29.2c0 15.7-2.4 30.9-22.2 30.9-9 0-15.2-3-20.9-9.8l-1.9 8.1h-29.8V192h31.7v41.7c6-6.5 12-9.2 20.9-9.2 21.4 0 22.2 12.8 22.2 30.1zM265 229.9c0-9.7 1.6-16-10.3-16v83.7c12.2.3 10.3-8.7 10.3-18.4zm85.5 26.1c0-5.4 1.1-12.7-6.2-12.7-6 0-4.9 8.9-4.9 12.7 0 .6-1.1 39.6 1.1 44.7.8 1.6 2.2 2.4 3.8 2.4 7.8 0 6.2-9 6.2-14.4z"></path>
+                                    </svg>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </dt>
+                            <dd class="order-first text-3xl font-semibold tracking-tight text-white mb-5">{{ movie.title }}<br/>
+                                <small>{{ movie.bookings.last.booking_start_date|date:"F j" }} - {{ movie.bookings.last.booking_end_date|date:"F j" }}</small>
+                            </dd>
+                        </div>
+                    {% endfor %}
                 </dl>
+                {% if not now_playing %}
+                    <div class="flex flex-col bg-white/5 p-8 m-auto text-center">
+                        <dt class="text-sm/6 font-semibold text-gray-300">No movies are currently playing.</dt>
+                        <dd class="order-first text-3xl font-semibold tracking-tight text-white mb-5">Check back soon!
+                        </dd>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
 
     <section class="py-8 flex justify-center flex-col items-center">
-        <div class="">
+        <div class="flex flex-col">
             <div class="text-center text-sm text-gray-500 mb-2">Select a day to view showtimes.</div>
             <div class="flex space-x-2 mb-4 justify-center">
-                <button class="px-4 py-2 rounded transition-colors duration-200 text-white">
+                <button class="px-4 py-2 rounded transition-colors duration-200 bg-blue-600 hover:bg-blue-700 text-white">
                     <span class="hidden sm:inline">Wednesday</span><span class="sm:hidden">Wed</span>
                 </button>
-                <button class="px-4 py-2 rounded transition-colors duration-200 text-white">
+                <button class="px-4 py-2 rounded transition-colors duration-200 bg-blue-600 hover:bg-blue-700 text-white">
                     <span class="hidden sm:inline">Thursday</span><span class="sm:hidden">Thu</span>
                 </button>
-                <button class="px-4 py-2 rounded transition-colors duration-200 text-white">
+                <button class="px-4 py-2 rounded transition-colors duration-200 bg-blue-600 hover:bg-blue-700 text-white">
                     <span class="hidden sm:inline">Friday</span><span class="sm:hidden">Fri</span>
                 </button>
-                <button class="px-4 py-2 rounded transition-colors duration-200 text-white">
+                <button class="px-4 py-2 rounded transition-colors duration-200 bg-blue-600 hover:bg-blue-700 text-white">
                     <span class="hidden sm:inline">Saturday</span><span class="sm:hidden">Sat</span>
                 </button>
-                <button class="px-4 py-2 rounded transition-colors duration-200 text-white">
+                <button class="px-4 py-2 rounded transition-colors duration-200 bg-blue-600 hover:bg-blue-700 text-white">
                     <span class="hidden sm:inline">Sunday</span><span class="sm:hidden">Sun</span>
                 </button>
             </div>
-            <div>
-                <ul class="space-y-2 flex flex-col items-center">
-                    <li class="text-2xl font-extrabold">Showtimes for Saturdays</li>
-                    <li class="text-lg text-blue-600 font-semibold">3:00 PM <span class="text-sm text-gray-500">( matinee )</span>
+
+            <div class="flex flex-col justify-center items-center">
+                <ul id="wed-times" class="space-y-2 flex flex-col items-center justify-center">
+                    <li class="text-2xl font-extrabold text-center">Showtimes for Wednesday</li>
+                    <li class="text-lg text-center">7:30 PM</li>
+                </ul>
+                <ul id="thurs-times" class="space-y-2 flex flex-col items-center justify-center">
+                    <li class="text-2xl font-extrabold text-center">Showtimes for Thursday</li>
+                    <li class="text-lg text-center">7:30 PM</li>
+                </ul>
+                <ul id="fri-times" class="space-y-2 flex flex-col items-center justify-center">
+                    <li class="text-2xl font-extrabold text-center">Showtimes for Friday</li>
+                    <li class="text-lg text-center">7:30 PM</li>
+                </ul>
+                <ul id="sat-times" class="space-y-2 flex flex-col items-center justify-center">
+                    <li class="text-2xl font-extrabold text-center">Showtimes for Saturdays</li>
+                    <li class="text-lg text-blue-600 font-semibold text-center">3:00 PM <span
+                            class="text-sm text-gray-500">( matinee )</span>
                     </li>
-                    <li class="text-lg ">6:00 PM</li>
+                    <li class="text-lg text-center">6:00 PM</li>
+                </ul>
+                <ul id="sun-times" class="space-y-2 flex flex-col items-center justify-center">
+                    <li class="text-2xl font-extrabold text-center">Showtimes for Sunday</li>
+                    <li class="text-lg text-center">5:00 PM</li>
                 </ul>
             </div>
             <div class="mt-4 text-center text-xs text-gray-400">Closed Monday &amp; Tuesday</div>
         </div>
     </section>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Map days to IDs
+            const dayMap = {
+                0: "sun-times", // Sunday
+                3: "wed-times",
+                4: "thurs-times",
+                5: "fri-times",
+                6: "sat-times",
+            };
+
+            const lists = document.querySelectorAll("ul[id$='-times']");
+            const buttons = document.querySelectorAll("button");
+
+            // Helper to hide all lists
+            function hideAll() {
+                lists.forEach((list) => (list.style.display = "none"));
+                buttons.forEach((btn) => btn.classList.remove("ring", "ring-yellow-400"));
+            }
+
+            // Show one list by id
+            function showList(id, button) {
+                hideAll();
+                const list = document.getElementById(id);
+                if (list) list.style.display = "block";
+                if (button) button.classList.add("ring", "ring-yellow-400");
+            }
+
+            // Initialize: show today's list if available
+            const today = new Date().getDay(); // 0 = Sunday, 1 = Monday, ...
+            if (dayMap[today]) {
+                const id = dayMap[today];
+                const button = Array.from(buttons).find((btn) =>
+                    btn.textContent.toLowerCase().includes(id.split("-")[0])
+                );
+                showList(id, button);
+            } else {
+                hideAll(); // closed Mon/Tues
+            }
+
+            // Add click events
+            buttons.forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const label = btn.textContent.toLowerCase();
+                    if (label.includes("wed")) showList("wed-times", btn);
+                    if (label.includes("thu")) showList("thurs-times", btn);
+                    if (label.includes("fri")) showList("fri-times", btn);
+                    if (label.includes("sat")) showList("sat-times", btn);
+                    if (label.includes("sun")) showList("sun-times", btn);
+                });
+            });
+        });
+    </script>
+
 
 
     <section class="py-8">
@@ -210,9 +283,6 @@
     </section>
 
     <footer class="bg-white">
-        <div class="mx-auto pt-6 max-w-7xl px-6 text-center text-sm text-gray-600">As an Amazon Associate, we earn from
-            qualifying purchases. Using our links helps support Fort Kent Cinema — thank you!
-        </div>
         <div class="mx-auto max-w-7xl px-6 py-12 md:flex md:items-center md:justify-between lg:px-8">
             <div class="flex justify-center gap-x-6 md:order-2"><a href="https://www.facebook.com/FortKentCinema/"
                                                                    class="text-gray-600 hover:text-gray-800"><span
