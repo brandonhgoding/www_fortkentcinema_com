@@ -1,7 +1,12 @@
-from django.urls import include, path
-from django.views.generic import TemplateView
+from django.urls import path
 from website import views as website_views
+
+app_name = "website"
 
 urlpatterns = [
     path("", website_views.HomePageTemplateView.as_view(), name="index"),
+    path("archive/", website_views.ArchiveListView.as_view(), name="archive"),
+    path("archive/<slug:slug>/", website_views.FilmDetailView.as_view(), name="film_detail"),
+    path("fort-kent-cinema-blog/", website_views.BlogListView.as_view(), name="blog_list"),
+    path("fort-kent-cinema-blog/<slug:slug>/", website_views.BlogDetailView.as_view(), name="blog_detail"),
 ]
