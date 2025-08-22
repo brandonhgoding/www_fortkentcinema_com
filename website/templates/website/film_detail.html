@@ -1,5 +1,9 @@
 {% extends 'base.html' %}
 {% load static %}
+{% block title %}Fort Kent Cinema | {{ object.title }}{% endblock %}
+{% block description %}Discover {{ film.title }}{% if object.omdb_json.Released %} {{ object.omdb_json.Released }}{% endif %}, shown at Fort Kent Cinema. See details, trailers, and when it played on our big screen in Fort Kent, Maine.{% endblock %}">
+{% block og_title %}Fort Kent Cinema | {{ object.title }}{% endblock %}">
+
 {% block content %}
     <div class="relative isolate z-10">
         <svg aria-hidden="true"

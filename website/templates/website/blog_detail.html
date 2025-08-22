@@ -1,5 +1,10 @@
 {% extends 'base.html' %}
 {% load static %}
+{% block title %}Fort Kent Cinema | {{ object.title }}{% endblock %}
+{% block description %}{% if object.summary %}{{ object.summary }}{{ object.title }} — {{ object.subtitle }}. Written by {{ object.author.full_name }}, published on the Fort Kent Cinema Blog.{% endif %}{% endblock %}">
+{% block og_title %}Fort Kent Cinema | {{ object.title }}{% endblock %}">
+
+
 {% block content %}
 
     <div class="max-w-4xl mx-auto px-6 py-12">
@@ -10,7 +15,7 @@
             </p>
                 <p><span class="font-semibold">Written On:</span> {{ object.post_date }}</p></div>
             <div class="prose prose-lg max-w-none text-gray-800  ml-2">
-                {{ object.content }}
+                {{ object.content|linebreaksbr }}
             </div>
         </div>
     </div>

@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 from cinema.models import Film, Booking
 from blog.models import BlogPost
 
+
 class HomePageTemplateView(TemplateView):
     template_name = "website/index.html"
 

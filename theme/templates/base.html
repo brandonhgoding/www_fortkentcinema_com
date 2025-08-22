@@ -2,10 +2,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Django Tailwind</title>
+    <title>{% block title %}Fort Kent Cinema{% endblock %}</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="description" content="{% block description %}Fort Kent Cinema is a cozy, two-screen theater nestled in the heart of downtown Fort Kent. Each auditorium offers comfortable seating for up to 100 guests.{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}Fort Kent Cinema{% endblock %}">
+
+    <script type="application/ld+json">
+      {
+        "@context": "http://schema.org",
+        "@type": "MovieTheater",
+        "url": "https://www.fortkentcinema.com/",
+        "name": "Fort Kent Cinema",
+        "telephone": "+1-207-231-5287",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "13 Hall Street",
+          "addressLocality": "Fort Kent",
+          "addressRegion": "ME",
+          "postalCode": "04743",
+          "addressCountry": "USA"
+        }
+      }
+    </script>
+
+
     {% tailwind_css %}
     {% block extra_css %}
     {% endblock %}
