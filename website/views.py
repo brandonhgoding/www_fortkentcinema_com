@@ -55,7 +55,6 @@ class ComingSoonTemplateView(TemplateView):
         context['next_films'] = Film.objects.filter(
             bookings__booking_start_date__gt=now, bookings__confirmed=True
         ).order_by("bookings__booking_start_date")[:3]
-        context['next_films'] = Film.objects.all()[:3]
         return context
 
 
