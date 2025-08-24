@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime, time
 
 from django.db import models
+from django.urls import reverse
 from django.utils import timezone
 
 from cinema.services import OpenMovieDatabaseService
@@ -28,6 +29,9 @@ class Film(SlugModelMixin):
                 self.save(update_fields=["omdb_json"])
                 return True
         return False
+
+    def get_absolute_url(self):
+        return reverse("website:film_detail", kwargs={"slug": self.slug})
 
     class Meta:
         ordering = ["title"]

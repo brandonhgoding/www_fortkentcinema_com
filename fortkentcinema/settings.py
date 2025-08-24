@@ -31,11 +31,15 @@ INSTALLED_APPS = [
     "cinema.apps.CinemaConfig",
     "core.apps.CoreConfig",
     "website.apps.WebsiteConfig",
+    'django.contrib.sitemaps',
+    'django.contrib.sites',
     "tailwind",
     "theme",
     "rest_framework",
     "corsheaders",
 ]
+
+SITE_ID = 1
 
 if DEBUG:
     INSTALLED_APPS += ['django_browser_reload']

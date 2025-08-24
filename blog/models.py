@@ -1,6 +1,7 @@
 import uuid
 
 from django.db import models
+from django.urls import reverse
 
 from core.mixins import SlugModelMixin
 
@@ -49,3 +50,6 @@ class BlogPost(SlugModelMixin):
 
     def __str__(self) -> str:
         return self.subtitle
+
+    def get_absolute_url(self):
+        return reverse("website:blog_detail", kwargs={"slug": self.slug})
