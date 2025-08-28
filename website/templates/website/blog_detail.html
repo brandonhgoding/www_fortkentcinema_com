@@ -3,7 +3,7 @@
 {% block title %}Fort Kent Cinema | {{ object.title }}{% endblock %}
 {% block description %}{% if object.summary %}{{ object.summary }}{{ object.title }} — {{ object.subtitle }}. Written by {{ object.author.full_name }}, published on the Fort Kent Cinema Blog.{% endif %}{% endblock %}">
 {% block og_title %}Fort Kent Cinema | {{ object.title }}{% endblock %}">
-
+{% block og_image %}{{ object.header_image }}{% endblock %}
 
 {% block content %}
 
