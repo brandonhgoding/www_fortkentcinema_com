@@ -4,6 +4,9 @@
 {% block description %}Discover {{ film.title }}{% if object.omdb_json.Released %} {{ object.omdb_json.Released }}{% endif %}, shown at Fort Kent Cinema. See details, trailers, and when it played on our big screen in Fort Kent, Maine.{% endblock %}">
 {% block og_title %}Fort Kent Cinema | {{ object.title }}{% endblock %}">
 {% block og_image %}{{ object.omdb_json.Poster }}{% endblock %}
+{% block og_type %}video.movie{% endblock %}
+{% block og_description %}{% if object.omdb_json.Plot %}{{ object.omdb_json.Plot }}{% else %}{{ object.title }}{% endif %}{% endblock %}
+
 
 {% block content %}
     <div class="relative isolate z-10">
