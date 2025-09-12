@@ -7,65 +7,106 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    replaces = [('cinema', '0001_initial'), ('cinema', '0002_auto_20250623_1119'), ('cinema', '0003_rename_playdate_screeningtime_alter_film_options'), ('cinema', '0004_auto_20250624_0715'), ('cinema', '0005_alter_screeningtime_booking')]
+    replaces = [
+        ("cinema", "0001_initial"),
+        ("cinema", "0002_auto_20250623_1119"),
+        ("cinema", "0003_rename_playdate_screeningtime_alter_film_options"),
+        ("cinema", "0004_auto_20250624_0715"),
+        ("cinema", "0005_alter_screeningtime_booking"),
+    ]
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Film',
+            name="Film",
             fields=[
-                ('slug', models.SlugField(blank=True, max_length=100, null=True, unique=True)),
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('title', models.CharField(max_length=100)),
-                ('imdb_id', models.CharField(blank=True, max_length=100, null=True, unique=True)),
-                ('youtube_id', models.CharField(blank=True, max_length=100, null=True, unique=True)),
-                ('omdb_json', models.JSONField(blank=True, null=True)),
+                ("slug", models.SlugField(blank=True, max_length=100, null=True, unique=True)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                    ),
+                ),
+                ("title", models.CharField(max_length=100)),
+                ("imdb_id", models.CharField(blank=True, max_length=100, null=True, unique=True)),
+                (
+                    "youtube_id",
+                    models.CharField(blank=True, max_length=100, null=True, unique=True),
+                ),
+                ("omdb_json", models.JSONField(blank=True, null=True)),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='Booking',
+            name="Booking",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('booking_start_date', models.DateField()),
-                ('booking_end_date', models.DateField()),
-                ('confirmed', models.BooleanField(default=False)),
-                ('film', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='bookings', to='cinema.film')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("booking_start_date", models.DateField()),
+                ("booking_end_date", models.DateField()),
+                ("confirmed", models.BooleanField(default=False)),
+                (
+                    "film",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="bookings",
+                        to="cinema.film",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-booking_start_date'],
+                "ordering": ["-booking_start_date"],
             },
         ),
         migrations.CreateModel(
-            name='PlayDate',
+            name="PlayDate",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date', models.DateField()),
-                ('time', models.TimeField()),
-                ('booking', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='play_dates', to='cinema.booking')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("date", models.DateField()),
+                ("time", models.TimeField()),
+                (
+                    "booking",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="play_dates",
+                        to="cinema.booking",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['date', 'time'],
-                'unique_together': {('booking', 'date', 'time')},
+                "ordering": ["date", "time"],
+                "unique_together": {("booking", "date", "time")},
             },
         ),
         migrations.RenameModel(
-            old_name='PlayDate',
-            new_name='ScreeningTime',
+            old_name="PlayDate",
+            new_name="ScreeningTime",
         ),
         migrations.AlterModelOptions(
-            name='film',
-            options={'ordering': ['title']},
+            name="film",
+            options={"ordering": ["title"]},
         ),
         migrations.AlterField(
-            model_name='screeningtime',
-            name='booking',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='screening_times', to='cinema.booking'),
+            model_name="screeningtime",
+            name="booking",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="screening_times",
+                to="cinema.booking",
+            ),
         ),
     ]

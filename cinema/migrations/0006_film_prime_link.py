@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('cinema', '0001_squashed_0005_alter_screeningtime_booking'),
+        ("cinema", "0001_squashed_0005_alter_screeningtime_booking"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='film',
-            name='prime_link',
+            model_name="film",
+            name="prime_link",
             field=models.URLField(blank=True, null=True),
         ),
     ]

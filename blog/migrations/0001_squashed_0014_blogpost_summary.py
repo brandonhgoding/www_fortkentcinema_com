@@ -8,69 +8,108 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    replaces = [('blog', '0001_initial'), ('blog', '0002_auto_20250619_0123'), ('blog', '0003_blogcategory'), ('blog', '0004_auto_20250619_0130'), ('blog', '0005_blogpost'), ('blog', '0006_auto_20250619_0140'), ('blog', '0007_blogauthor_slug_blogpost_slug'), ('blog', '0008_auto_20250619_0205'), ('blog', '0009_auto_20250619_0209'), ('blog', '0010_auto_20250619_0209'), ('blog', '0011_alter_blogpost_options_blogpost_header_image'), ('blog', '0012_auto_20250620_1126'), ('blog', '0013_alter_blogcategory_slug'), ('blog', '0014_blogpost_summary')]
+    replaces = [
+        ("blog", "0001_initial"),
+        ("blog", "0002_auto_20250619_0123"),
+        ("blog", "0003_blogcategory"),
+        ("blog", "0004_auto_20250619_0130"),
+        ("blog", "0005_blogpost"),
+        ("blog", "0006_auto_20250619_0140"),
+        ("blog", "0007_blogauthor_slug_blogpost_slug"),
+        ("blog", "0008_auto_20250619_0205"),
+        ("blog", "0009_auto_20250619_0209"),
+        ("blog", "0010_auto_20250619_0209"),
+        ("blog", "0011_alter_blogpost_options_blogpost_header_image"),
+        ("blog", "0012_auto_20250620_1126"),
+        ("blog", "0013_alter_blogcategory_slug"),
+        ("blog", "0014_blogpost_summary"),
+    ]
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='BlogAuthor',
+            name="BlogAuthor",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('first_name', models.CharField(max_length=100)),
-                ('last_name', models.CharField(max_length=100)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                    ),
+                ),
+                ("first_name", models.CharField(max_length=100)),
+                ("last_name", models.CharField(max_length=100)),
             ],
         ),
         migrations.CreateModel(
-            name='BlogCategory',
+            name="BlogCategory",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('name', models.CharField(max_length=100)),
-                ('slug', models.SlugField(max_length=100, unique=True)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                    ),
+                ),
+                ("name", models.CharField(max_length=100)),
+                ("slug", models.SlugField(max_length=100, unique=True)),
             ],
         ),
         migrations.CreateModel(
-            name='BlogPost',
+            name="BlogPost",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('title', models.CharField(max_length=200)),
-                ('subtitle', models.CharField(max_length=200)),
-                ('post_date', models.DateField()),
-                ('content', models.TextField()),
-                ('author', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='blog.blogauthor')),
-                ('category', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='blog.blogcategory')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                    ),
+                ),
+                ("title", models.CharField(max_length=200)),
+                ("subtitle", models.CharField(max_length=200)),
+                ("post_date", models.DateField()),
+                ("content", models.TextField()),
+                (
+                    "author",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="blog.blogauthor"
+                    ),
+                ),
+                (
+                    "category",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="blog.blogcategory"
+                    ),
+                ),
             ],
         ),
         migrations.AddField(
-            model_name='blogauthor',
-            name='slug',
+            model_name="blogauthor",
+            name="slug",
             field=models.SlugField(blank=True, max_length=100, null=True, unique=True),
         ),
         migrations.AddField(
-            model_name='blogpost',
-            name='slug',
+            model_name="blogpost",
+            name="slug",
             field=models.SlugField(blank=True, max_length=100, null=True, unique=True),
         ),
         migrations.AlterModelOptions(
-            name='blogpost',
-            options={'ordering': ['-post_date']},
+            name="blogpost",
+            options={"ordering": ["-post_date"]},
         ),
         migrations.AddField(
-            model_name='blogpost',
-            name='header_image',
-            field=models.ImageField(blank=True, null=True, upload_to='blog/images/'),
+            model_name="blogpost",
+            name="header_image",
+            field=models.ImageField(blank=True, null=True, upload_to="blog/images/"),
         ),
         migrations.AlterField(
-            model_name='blogcategory',
-            name='slug',
+            model_name="blogcategory",
+            name="slug",
             field=models.SlugField(blank=True, max_length=100, null=True, unique=True),
         ),
         migrations.AddField(
-            model_name='blogpost',
-            name='summary',
+            model_name="blogpost",
+            name="summary",
             field=models.TextField(blank=True, null=True),
         ),
     ]

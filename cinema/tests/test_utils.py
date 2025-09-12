@@ -5,8 +5,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from cinema.models import Film  # adjust this import!
-from cinema.utils import (ensure_film_omdb_up_to_date,  # adjust this import!
-                          update_omdb)
+from cinema.utils import ensure_film_omdb_up_to_date, update_omdb  # adjust this import!
 
 
 class UpdateOmdbTests(TestCase):

@@ -23,7 +23,9 @@ class OMDBResponse:
     imdb_rating: str = field(default="", metadata={"json_key": "imdbRating"})
     imdb_votes: str = field(default="", metadata={"json_key": "imdbVotes"})
     gross: str = field(default="", metadata={"json_key": "BoxOffice"})
-    timestamp: datetime = field(default_factory=lambda: datetime.now(), metadata={"json_key": "Timestamp"})
+    timestamp: datetime = field(
+        default_factory=lambda: datetime.now(), metadata={"json_key": "Timestamp"}
+    )
 
     @classmethod
     def from_json(cls, data: dict) -> "OMDBResponse":
@@ -35,7 +37,9 @@ class OMDBResponse:
     def to_json(self) -> dict:
         return {
             f.metadata["json_key"]: (
-                getattr(self, f.name).isoformat() if isinstance(getattr(self, f.name), datetime) else getattr(self, f.name)
+                getattr(self, f.name).isoformat()
+                if isinstance(getattr(self, f.name), datetime)
+                else getattr(self, f.name)
             )
             for f in self.__dataclass_fields__.values()
         }

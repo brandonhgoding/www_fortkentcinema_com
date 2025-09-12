@@ -17,7 +17,7 @@ class HomePageTemplateView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         now = timezone.now()
-        context['now_playing'] = Film.objects.filter(
+        context["now_playing"] = Film.objects.filter(
             bookings__booking_start_date__lte=now, bookings__booking_end_date__gte=now
         ).order_by("bookings__booking_start_date")[:2]
         return context
@@ -29,9 +29,11 @@ class ArchiveListView(ListView):
 
     def get_queryset(self):
         now = timezone.now()
-        return Film.objects.filter(
-            bookings__booking_end_date__lt=now
-        ).order_by("-bookings__booking_end_date").distinct()
+        return (
+            Film.objects.filter(bookings__booking_end_date__lt=now)
+            .order_by("-bookings__booking_end_date")
+            .distinct()
+        )
 
 
 class BlogListView(ListView):
@@ -53,7 +55,7 @@ class ComingSoonTemplateView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         now = timezone.now()
-        context['next_films'] = Film.objects.filter(
+        context["next_films"] = Film.objects.filter(
             bookings__booking_start_date__gt=now, bookings__confirmed=True
         ).order_by("bookings__booking_start_date")[:3]
         return context
@@ -67,8 +69,7 @@ class FilmDetailView(DetailView):
 class CalendarEventsAPIView(APIView):
     def get(self, request, *args, **kwargs):
         qs = (
-            Booking.objects
-            .select_related("film")
+            Booking.objects.select_related("film")
             # .filter(starts_at__gte=now() - timedelta(days=14),
             #         starts_at__lte=now() + timedelta(days=90))
             .order_by("booking_start_date")
@@ -78,16 +79,18 @@ class CalendarEventsAPIView(APIView):
         for s in qs:
             end_date = s.booking_end_date + timedelta(days=1)
 
-            events.append({
-                "title": s.film.title,  # or f"{s.film.title} — {s.screen.name}"
-                "start": s.booking_start_date.isoformat(),  # FullCalendar handles ISO 8601
-                "end": end_date.isoformat(),
-                "allDay": True,
-                "extendedProps": {
-                    "filmId": s.film_id,
-                    "active": s.is_active,
-                    "confirmed": s.is_confirmed,
-                },
-                # "url": reverse("showtime-detail", args=[s.id]),
-            })
+            events.append(
+                {
+                    "title": s.film.title,  # or f"{s.film.title} — {s.screen.name}"
+                    "start": s.booking_start_date.isoformat(),  # FullCalendar handles ISO 8601
+                    "end": end_date.isoformat(),
+                    "allDay": True,
+                    "extendedProps": {
+                        "filmId": s.film_id,
+                        "active": s.is_active,
+                        "confirmed": s.is_confirmed,
+                    },
+                    # "url": reverse("showtime-detail", args=[s.id]),
+                }
+            )
         return Response(events)

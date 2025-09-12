@@ -31,8 +31,8 @@ INSTALLED_APPS = [
     "cinema.apps.CinemaConfig",
     "core.apps.CoreConfig",
     "website.apps.WebsiteConfig",
-    'django.contrib.sitemaps',
-    'django.contrib.sites',
+    "django.contrib.sitemaps",
+    "django.contrib.sites",
     "tailwind",
     "theme",
     "rest_framework",
@@ -42,7 +42,7 @@ INSTALLED_APPS = [
 SITE_ID = 1
 
 if DEBUG:
-    INSTALLED_APPS += ['django_browser_reload']
+    INSTALLED_APPS += ["django_browser_reload"]
 
 if ENABLE_CDN:
     INSTALLED_APPS += [
@@ -186,6 +186,6 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 6,
 }
 
-TAILWIND_APP_NAME = 'theme'
+TAILWIND_APP_NAME = "theme"
 GA_MEASUREMENT_ID = config("GA_MEASUREMENT_ID", default=None)
 GA_ENABLED = bool(GA_MEASUREMENT_ID) and not DEBUG
