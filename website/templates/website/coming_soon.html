@@ -60,6 +60,25 @@
             alert(`${info.event.title}\n${info.event.start?.toLocaleString()}${info.event.end ? " - " + info.event.end.toLocaleString() : ""}`);
           }
         },
+          eventDidMount(info) {
+            if (info.event.extendedProps.confirmed === false){
+                // Gray out unconfirmed events
+                info.el.style.backgroundColor = "#999999";
+                info.el.style.borderColor = "#999999";
+
+                // Append "(PENDING)" to the event title
+                const titleElement = info.el.querySelector(".fc-event-title");
+                if (titleElement) {
+                  titleElement.textContent += " (PENDING)";
+                }
+            } else if(info.event.extendedProps.confirmed === true && info.event.extendedProps.active === true){
+                // Append "(NOW PLAYING)" to the event title
+                const titleElement = info.el.querySelector(".fc-event-title");
+                if (titleElement) {
+                  titleElement.textContent += " (NOW PLAYING)";
+                }
+            }
+          }
       });
 
       calendar.render();
