@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Contact Fort Kent Cinema{% endblock %}
+{% block description %}Book a private screening, birthday party, school field trip, or fundraiser at Fort Kent Cinema. Get in touch—let’s plan something fun!{% endblock %}
+{% block og_title %}Contact Fort Kent Cinema{% endblock %}
+
+{% block content %}
+<section class="bg-white">
+
+  <!-- Hero -->
+  <div class="bg-[url('https://cdn.fortkentcinema.com/static/website/img/projector-background.jpg')] bg-no-repeat bg-cover bg-center bg-gray-700 bg-blend-multiply">
+    <div class="px-4 lg:pt-24 pt-8 pb-72 lg:pb-80 mx-auto max-w-screen-sm text-center lg:px-6 ">
+      <h2 class="mb-4 text-4xl tracking-tight font-extrabold text-white">Contact Fort Kent Cinema</h2>
+      <p class="mb-16 font-light text-gray-200 sm:text-xl">
+        Private screenings, birthday parties, school trips, and community fundraisers—we do it all.
+        Tell us your date, group size, and concessions plan, and we’ll take it from there.
+      </p>
+    </div>
+  </div>
+
+  <!-- Form + Info -->
+  <div class="py-16 px-4 mx-auto -mt-96 max-w-screen-xl sm:py-24 lg:px-6 ">
+
+    {% if messages %}
+      <div class="mx-auto mb-8 max-w-screen-md">
+        {% for message in messages %}
+          <div class="rounded-lg border px-4 py-3 text-sm
+            {% if message.tags == 'success' %}border-emerald-200 text-emerald-700 bg-emerald-50
+            {% else %}border-amber-200 text-amber-700 bg-amber-50{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="post" class="grid grid-cols-1 gap-8 p-6 mx-auto mb-16 max-w-screen-md bg-white rounded-lg border border-gray-200 shadow-sm lg:mb-28 sm:grid-cols-2">
+      {% csrf_token %}
+      {{ form.hp }} {# honeypot #}
+
+      <div class="sm:col-span-2">
+        <label for="{{ form.name.id_for_label }}" class="block mb-2 text-sm font-medium text-gray-900">Name</label>
+        <input type="text" id="{{ form.name.id_for_label }}" name="{{ form.name.html_name }}"
+               value="{{ form.name.value|default:'' }}"
+               class="block p-3 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500"
+               placeholder="Your full name" required>
+        {% if form.name.errors %}<p class="mt-2 text-sm text-rose-500">{{ form.name.errors|striptags }}</p>{% endif %}
+      </div>
+
+      <div>
+        <label for="{{ form.email.id_for_label }}" class="block mb-2 text-sm font-medium text-gray-900">Your email</label>
+        <input type="email" id="{{ form.email.id_for_label }}" name="{{ form.email.html_name }}"
+               value="{{ form.email.value|default:'' }}"
+               class="block p-3 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500"
+               placeholder="you@example.com" required>
+        {% if form.email.errors %}<p class="mt-2 text-sm text-rose-500">{{ form.email.errors|striptags }}</p>{% endif %}
+      </div>
+
+      {% if form.phone %}
+      <div>
+        <label for="{{ form.phone.id_for_label }}" class="block mb-2 text-sm font-medium text-gray-900">Phone</label>
+        <input type="tel" id="{{ form.phone.id_for_label }}" name="{{ form.phone.html_name }}"
+               value="{{ form.phone.value|default:'' }}"
+               class="block p-3 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500"
+               placeholder="(207) 555-0123">
+        {% if form.phone.errors %}<p class="mt-2 text-sm text-rose-500">{{ form.phone.errors|striptags }}</p>{% endif %}
+      </div>
+      {% endif %}
+
+      <div class="sm:col-span-2">
+        <label for="{{ form.subject.id_for_label }}" class="block mb-2 text-sm font-medium text-gray-900">Subject</label>
+        <input type="text" id="{{ form.subject.id_for_label }}" name="{{ form.subject.html_name }}"
+               value="{{ form.subject.value|default:'' }}"
+               class="block p-3 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500"
+               placeholder="Private screening on Oct 12" required>
+        {% if form.subject.errors %}<p class="mt-2 text-sm text-rose-500">{{ form.subject.errors|striptags }}</p>{% endif %}
+      </div>
+
+      <div class="sm:col-span-2">
+        <label for="{{ form.message.id_for_label }}" class="block mb-2 text-sm font-medium text-gray-900">Your message</label>
+        <textarea id="{{ form.message.id_for_label }}" name="{{ form.message.html_name }}" rows="6"
+                  class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg shadow-sm border border-gray-300 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Tell us your date, group size, and any concessions you’d like (tickets, popcorn, drinks).">{{ form.message.value|default:'' }}</textarea>
+        {% if form.message.errors %}<p class="mt-2 text-sm text-rose-500">{{ form.message.errors|striptags }}</p>{% endif %}
+
+        <p class="mt-4 text-sm text-gray-500">
+          By submitting this form you agree to our
+          <a href="/terms/" class="text-primary-600 hover:underline">terms</a> and
+          <a href="/privacy/" class="text-primary-600 hover:underline">privacy policy</a>.
+        </p>
+      </div>
+
+      <button type="submit"
+              class="py-3 px-5 text-sm font-medium text-center rounded-lg border text-primary-600 border-primary-600 hover:text-white hover:bg-primary-600">
+        Send message
+      </button>
+    </form>
+
+    <!-- Info cards -->
+    <div class="space-y-8 text-center md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-12 md:space-y-0">
+      <div>
+        <div class="flex justify-center items-center mx-auto mb-4 w-10 h-10 bg-gray-100 rounded-lg lg:h-16 lg:w-16">
+          <!-- Mail icon -->
+          <svg class="w-5 h-5 text-gray-600 lg:w-8 lg:h-8" fill="currentColor" viewBox="0 0 20 20"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path></svg>
+        </div>
+        <p class="mb-2 text-xl font-bold">Email us</p>
+        <p class="mb-3 text-gray-500">General questions, private events, and fundraisers.</p>
+        <a href="mailto:brandon.h.goding+fkcinema@gmail.com" class="font-semibold text-primary-600 hover:underline">brandon.h.goding+fkcinema@gmail.com</a>
+      </div>
+
+      <div>
+        <div class="flex justify-center items-center mx-auto mb-4 w-10 h-10 bg-gray-100 rounded-lg lg:h-16 lg:w-16">
+          <!-- Phone icon -->
+          <svg class="w-5 h-5 text-gray-600 lg:w-8 lg:h-8" fill="currentColor" viewBox="0 0 20 20"><path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"></path></svg>
+        </div>
+        <p class="mb-2 text-xl font-bold">Call us</p>
+        <p class="mb-3 text-gray-500">We’re happy to help.</p>
+        <span class="font-semibold text-primary-600">(207) 231-5287</span>
+      </div>
+
+      <div>
+        <div class="flex justify-center items-center mx-auto mb-4 w-10 h-10 bg-gray-100 rounded-lg lg:h-16 lg:w-16">
+          <!-- Clock/Pin icon -->
+          <svg class="w-5 h-5 text-gray-600 lg:w-8 lg:h-8" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11a.75.75 0 00-1.5 0v3.25c0 .199.079.39.22.53l2.25 2.25a.75.75 0 101.06-1.06l-2.03-2.03V7z" clip-rule="evenodd"/></svg>
+        </div>
+        <p class="mb-2 text-xl font-bold">Visit</p>
+        <p class="mb-1 text-gray-700">Fort Kent, Maine</p>
+        <a href="https://maps.google.com/?q=Fort+Kent+Cinema" class="inline-flex py-2 px-4 text-sm font-medium text-center rounded-lg border text-primary-600 border-primary-600 hover:text-white hover:bg-primary-600">Get directions</a>
+      </div>
+    </div>
+
+    <!-- Map (full-width) -->
+    <div class="mt-12">
+      <div class="aspect-[16/9] w-full overflow-hidden rounded-xl border border-gray-200">
+        <iframe
+          title="Fort Kent Cinema location"
+          src="https://www.google.com/maps?q=Fort+Kent+Cinema,Fort+Kent,ME&output=embed"
+          width="100%" height="100%" style="border:0;"
+          allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock content %}

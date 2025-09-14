@@ -1,4 +1,6 @@
 from django.urls import path
+from django.views.generic import TemplateView
+
 from website import views as website_views
 from django.contrib.sitemaps.views import sitemap
 from website.sitemaps import (
@@ -36,6 +38,7 @@ urlpatterns = [
         website_views.BlogDetailView.as_view(),
         name="blog_detail",
     ),
+    path("contact-fort-kent-cinema/", website_views.contact_view, name="contact"),
     path(
         "sitemap.xml", sitemap, {"sitemaps": sitemaps}, name="django.contrib.sitemaps.views.sitemap"
     ),

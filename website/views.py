@@ -1,14 +1,17 @@
 from datetime import timedelta
-
+from django.contrib import messages
+from django.core.mail import send_mail
 from django.http import JsonResponse
-from django.urls import reverse
+from django.shortcuts import redirect, render
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
-from django.views.generic import TemplateView, ListView, DetailView
+from django.views.generic import TemplateView, ListView, DetailView, FormView
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from django.conf import settings
 from cinema.models import Film, Booking
 from blog.models import BlogPost
+from website.forms import ContactForm
 
 
 class HomePageTemplateView(TemplateView):
@@ -94,3 +97,35 @@ class CalendarEventsAPIView(APIView):
                 }
             )
         return Response(events)
+
+
+def contact_view(request):
+    if request.method == "POST":
+        form = ContactForm(request.POST)
+        if form.is_valid() and settings.USE_GMAIL:
+            data = form.cleaned_data
+            subject = f"[Contact] {data['subject']}"
+            body = (
+                f"Name: {data['name']}\n"
+                f"Email: {data['email']}\n"
+                f"Phone: {data.get('phone','')}\n\n"
+                f"Message:\n{data['message']}"
+            )
+
+            to_emails = settings.CONTACT_FORM_TO_ADDRESS
+
+            send_mail(
+                subject=subject,
+                message=body,
+                from_email=settings.EMAIL_HOST_USER,
+                recipient_list=to_emails,
+                fail_silently=False,
+            )
+
+            # Flash success and redirect to the same page (PRG)
+            messages.success(request, "Thanks! Your message has been sent.")
+            return redirect(reverse("contact"))
+    else:
+        form = ContactForm()
+
+    return render(request, "website/contact.html", {"form": form})
