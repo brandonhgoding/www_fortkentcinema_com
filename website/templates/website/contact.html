@@ -82,13 +82,16 @@
                   class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg shadow-sm border border-gray-300 focus:ring-primary-500 focus:border-primary-500"
                   placeholder="Tell us your date, group size, and any concessions you’d like (tickets, popcorn, drinks).">{{ form.message.value|default:'' }}</textarea>
         {% if form.message.errors %}<p class="mt-2 text-sm text-rose-500">{{ form.message.errors|striptags }}</p>{% endif %}
-
-        <p class="mt-4 text-sm text-gray-500">
-          By submitting this form you agree to our
-          <a href="/terms/" class="text-primary-600 hover:underline">terms</a> and
-          <a href="/privacy/" class="text-primary-600 hover:underline">privacy policy</a>.
-        </p>
       </div>
+
+
+    <div class="sm:col-span-2">
+  <label class="block mb-2 text-sm font-medium text-gray-900">Verification</label>
+  {{ form.captcha }}
+  {% if form.captcha.errors %}
+    <p class="mt-2 text-sm text-rose-500">{{ form.captcha.errors|striptags }}</p>
+  {% endif %}
+</div>
 
       <button type="submit"
               class="py-3 px-5 text-sm font-medium text-center rounded-lg border text-primary-600 border-primary-600 hover:text-white hover:bg-primary-600">

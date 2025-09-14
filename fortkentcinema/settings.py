@@ -38,7 +38,7 @@ INSTALLED_APPS = [
     "theme",
     "rest_framework",
     "corsheaders",
-    'django_recaptcha',
+    "django_recaptcha",
 ]
 
 SITE_ID = 1
