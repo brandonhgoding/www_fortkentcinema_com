@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "theme",
     "rest_framework",
     "corsheaders",
+    'django_recaptcha',
 ]
 
 SITE_ID = 1
@@ -201,3 +202,11 @@ if USE_GMAIL := config("USE_GMAIL", default=False, cast=bool):
     EMAIL_HOST_USER = config("EMAIL_HOST_USER")
     EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
     CONTACT_FORM_TO_ADDRESS = [config("CONTACT_FORM_TO_ADDRESS")]
+
+
+# Use your keys from https://www.google.com/recaptcha/admin
+RECAPTCHA_PUBLIC_KEY = config("RECAPTCHA_PUBLIC_KEY", "")
+RECAPTCHA_PRIVATE_KEY = config("RECAPTCHA_PRIVATE_KEY", "")
+
+# Optional: skip captcha when running tests or locally
+RECAPTCHA_REQUIRED = not DEBUG

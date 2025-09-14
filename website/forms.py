@@ -1,5 +1,6 @@
 from django import forms
 from django.core.validators import validate_email
+from django_recaptcha.fields import ReCaptchaField
 
 
 class ContactForm(forms.Form):
@@ -9,11 +10,4 @@ class ContactForm(forms.Form):
     phone = forms.CharField(max_length=30, required=False)
     subject = forms.CharField(max_length=150)
     message = forms.CharField(widget=forms.Textarea(attrs={"rows": 6}))
-
-    # Honeypot to catch bots
-    hp = forms.CharField(required=False, widget=forms.HiddenInput())
-
-    def clean_hp(self):
-        if self.cleaned_data.get("hp"):
-            raise forms.ValidationError("Spam detected.")
-        return ""
+    captcha = ReCaptchaField()
