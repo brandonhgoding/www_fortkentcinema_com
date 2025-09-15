@@ -96,6 +96,13 @@ class CalendarEventsAPIView(APIView):
                     # "url": reverse("showtime-detail", args=[s.id]),
                 }
             )
+        events.append({
+            "title": "Closed For Vacation",
+            "start": "2025-11-01",
+            "end": "2025-11-20",
+            "allDay": True,
+            "color": "red",
+        })
         return Response(events)
 
 
