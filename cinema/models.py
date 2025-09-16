@@ -80,3 +80,18 @@ class ScreeningTime(models.Model):
     class Meta:
         unique_together = ("booking", "date", "time")
         ordering = ["date", "time"]
+
+
+class Event(models.Model):
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    event_start_date = models.DateField()
+    event_end_date = models.DateField()
+
+    def __str__(self) -> str:
+        return f"{self.name} on {self.event_start_date} to {self.event_end_date}"
+
+    class Meta:
+        ordering = ["-event_start_date"]
+        verbose_name = "Event"
+        verbose_name_plural = "Events"

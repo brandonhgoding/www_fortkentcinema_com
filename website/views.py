@@ -1,16 +1,18 @@
 from datetime import timedelta
+
+from django.conf import settings
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
-from django.views.generic import TemplateView, ListView, DetailView, FormView
+from django.views.generic import DetailView, FormView, ListView, TemplateView
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.conf import settings
-from cinema.models import Film, Booking
+
 from blog.models import BlogPost
+from cinema.models import Booking, Event, Film
 from website.forms import ContactForm
 
 
@@ -96,13 +98,25 @@ class CalendarEventsAPIView(APIView):
                     # "url": reverse("showtime-detail", args=[s.id]),
                 }
             )
-        events.append({
-            "title": "Closed For Vacation",
-            "start": "2025-11-01",
-            "end": "2025-11-20",
-            "allDay": True,
-            "color": "red",
-        })
+        events.append(
+            {
+                "title": "Closed For Vacation",
+                "start": "2025-11-01",
+                "end": "2025-11-20",
+                "allDay": True,
+                "color": "red",
+            }
+        )
+        for cinema_event in Event.objects.all():
+            events.append(
+                {
+                    "title": cinema_event.name,
+                    "start": cinema_event.event_start_date.isoformat(),
+                    "end": (cinema_event.event_end_date + timedelta(days=1)).isoformat(),
+                    "allDay": True,
+                    "color": "teal",
+                }
+            )
         return Response(events)
 
 
