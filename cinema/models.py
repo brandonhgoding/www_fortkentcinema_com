@@ -82,11 +82,12 @@ class ScreeningTime(models.Model):
         ordering = ["date", "time"]
 
 
-class Event(models.Model):
+class Event(SlugModelMixin):
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     event_start_date = models.DateField()
     event_end_date = models.DateField()
+    slug_field = "name"
 
     def __str__(self) -> str:
         return f"{self.name} on {self.event_start_date} to {self.event_end_date}"

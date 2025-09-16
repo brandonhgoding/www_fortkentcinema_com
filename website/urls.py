@@ -26,6 +26,7 @@ urlpatterns = [
     path("", website_views.HomePageTemplateView.as_view(), name="index"),
     path("archive/", website_views.ArchiveListView.as_view(), name="archive"),
     path("archive/<slug:slug>/", website_views.FilmDetailView.as_view(), name="film_detail"),
+    path("events/<slug:slug>/", website_views.EventDetailView.as_view(), name="event_detail"),
     path("coming-soon/", website_views.ComingSoonTemplateView.as_view(), name="coming_soon"),
     path(
         "coming-soon/calendar/",

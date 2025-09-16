@@ -150,3 +150,14 @@ def contact_view(request):
         form = ContactForm()
 
     return render(request, "website/contact.html", {"form": form})
+
+
+class EventDetailView(DetailView):
+    model = Event
+
+
+    def get_template_names(self):
+        # Ensure the object is loaded
+        obj = self.get_object()
+        # Use the slug to build the template name
+        return [f"website/{obj.slug}.html"]

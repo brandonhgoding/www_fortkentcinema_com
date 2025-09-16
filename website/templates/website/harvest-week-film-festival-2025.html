@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Harvest Break Film Festival — Fort Kent Cinema{% endblock %}
+{% block description %}Free family movies all week during Harvest Break! Two films a day at 11:00 AM and 2:00 PM — Despicable Me, Minions, Sing, and more.{% endblock %}
+{% block og_title %}Harvest Break Film Festival{% endblock %}
+{% block og_description %}Free admission all week. Two showtimes daily: 11:00 AM & 2:00 PM.{% endblock %}
+{% block og_image %}https://cdn.fortkentcinema.com/static/website/img/projector-background.jpg{% endblock %}
+
+{% block content %}
+
+<!-- HERO -->
+<section class="relative">
+  <div class="absolute inset-0">
+    <div class="hero min-h-[320px] md:min-h-[420px]" style="background-image:url('https://cdn.fortkentcinema.com/static/website/img/projector-background.jpg');">
+      <div class="hero-overlay bg-neutral/60"></div>
+      <div class="hero-content text-center text-neutral-content">
+        <div class="max-w-3xl">
+          <div class="inline-flex items-center gap-2 mb-4">
+            <span class="badge badge-success badge-lg">FREE</span>
+            <span class="badge badge-outline badge-lg">Family Friendly</span>
+          </div>
+          <h1 class="text-4xl md:text-5xl font-extrabold">Harvest Break Film Festival</h1>
+          <p class="mt-3 opacity-90">Two movies every day at <strong>11:00 AM</strong> &amp; <strong>2:00 PM</strong></p>
+          <p class="opacity-90">Mon 9/22 – Fri 9/26</p>
+          <a href="#schedule" class="btn btn-primary mt-6">See Schedule</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div aria-hidden="true" class="pt-[320px] md:pt-[420px]"></div>
+</section>
+
+<!-- SCHEDULE -->
+<section id="schedule" class="">
+  <div class="max-w-6xl mx-auto px-6 py-10">
+    <h2 class="text-2xl md:text-3xl font-bold">Week Schedule</h2>
+    <p class="mt-1 opacity-80">Two films per day — <span class="font-medium">11:00 AM</span> &amp; <span class="font-medium">2:00 PM</span>. Free admission.</p>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+      <!-- Monday -->
+      <article class="card  shadow-sm">
+        <div class="card-body">
+          <div class="flex items-center justify-between">
+            <h3 class="card-title">Monday · 9/22</h3>
+            <span class="badge badge-outline">Illumination</span>
+          </div>
+          <ul class="space-y-3 mt-3">
+            <li class="p-3 rounded-xl  border border-base-300">
+              <p class="font-semibold">Despicable Me</p>
+              <p class="text-sm opacity-80">11:00 AM</p>
+            </li>
+            <li class="p-3 rounded-xl  border border-base-300">
+              <p class="font-semibold">Despicable Me 2</p>
+              <p class="text-sm opacity-80">2:00 PM</p>
+            </li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- Tuesday -->
+      <article class="card  shadow-sm">
+        <div class="card-body">
+          <div class="flex items-center justify-between">
+            <h3 class="card-title">Tuesday · 9/23</h3>
+            <span class="badge badge-outline">Illumination</span>
+          </div>
+          <ul class="space-y-3 mt-3">
+            <li class="p-3 rounded-xl  border border-base-300">
+              <p class="font-semibold">Despicable Me 3</p>
+              <p class="text-sm opacity-80">11:00 AM</p>
+            </li>
+            <li class="p-3 rounded-xl  border border-base-300">
+              <p class="font-semibold">Despicable Me 4</p>
+              <p class="text-sm opacity-80">2:00 PM</p>
+            </li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- Wednesday -->
+      <article class="card  shadow-sm">
+        <div class="card-body">
+          <div class="flex items-center justify-between">
+            <h3 class="card-title">Wednesday · 9/24</h3>
+            <span class="badge badge-outline">Illumination</span>
+          </div>
+          <ul class="space-y-3 mt-3">
+            <li class="p-3 rounded-xl  border border-base-300">
+              <p class="font-semibold">Minions</p>
+              <p class="text-sm opacity-80">11:00 AM</p>
+            </li>
+            <li class="p-3 rounded-xl  border border-base-300">
+              <p class="font-semibold">Minions: The Rise of Gru</p>
+              <p class="text-sm opacity-80">2:00 PM</p>
+            </li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- Thursday -->
+      <article class="card  shadow-sm">
+        <div class="card-body">
+          <div class="flex items-center justify-between">
+            <h3 class="card-title">Thursday · 9/25</h3>
+            <span class="badge badge-outline">Illumination</span>
+          </div>
+          <ul class="space-y-3 mt-3">
+            <li class="p-3 rounded-xl  border border-base-300">
+              <p class="font-semibold">Sing</p>
+              <p class="text-sm opacity-80">11:00 AM</p>
+            </li>
+            <li class="p-3 rounded-xl  border border-base-300">
+              <p class="font-semibold">Sing 2</p>
+              <p class="text-sm opacity-80">2:00 PM</p>
+            </li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- Friday -->
+      <article class="card  shadow-sm">
+        <div class="card-body">
+          <div class="flex items-center justify-between">
+            <h3 class="card-title">Friday · 9/26</h3>
+            <span class="badge badge-outline">Illumination</span>
+          </div>
+          <ul class="space-y-3 mt-3">
+            <li class="p-3 rounded-xl  border border-base-300">
+              <p class="font-semibold">The Secret Life of Pets</p>
+              <p class="text-sm opacity-80">11:00 AM</p>
+            </li>
+            <li class="p-3 rounded-xl  border border-base-300">
+              <p class="font-semibold">The Secret Life of Pets 2</p>
+              <p class="text-sm opacity-80">2:00 PM</p>
+            </li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- Promo / FAQ card -->
+      <article class="card bg-primary text-primary-content shadow-sm">
+        <div class="card-body">
+          <h3 class="card-title">Good to know</h3>
+          <ul class="list-disc pl-5 space-y-2">
+            <li>All shows are <strong>free</strong>.</li>
+            <li>Doors open 30 minutes before showtime.</li>
+            <li>Snacks and drinks available at the concession stand.</li>
+          </ul>
+          <div class="card-actions justify-end mt-4">
+            <a href="{% url "website:coming_soon" %}" class="btn">View Current &amp; Upcoming Movies</a>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class=" border-t border-base-300">
+  <div class="max-w-6xl mx-auto px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-4">
+    <div>
+      <h3 class="text-xl font-bold">Bring a friend!</h3>
+      <p class="opacity-80">Celebrate Harvest Break with back-to-back laughs and adventure.</p>
+    </div>
+    <a href="{% url 'website:contact' %}" class="btn btn-secondary">Questions?</a>
+  </div>
+</section>
+
+{% endblock %}
