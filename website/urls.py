@@ -1,16 +1,11 @@
+from django.contrib.sitemaps.views import sitemap
 from django.urls import path
 from django.views.generic import TemplateView
 
 from website import views as website_views
-from django.contrib.sitemaps.views import sitemap
-from website.sitemaps import (
-    StaticSitemap,
-    BlogStaticSitemap,
-    BlogPostSitemap,
-    FilmArchiveListSitemap,
-    ArchivedFilmDetailSitemap,
-)
-
+from website.sitemaps import (ArchivedFilmDetailSitemap, BlogPostSitemap,
+                              BlogStaticSitemap, FilmArchiveListSitemap,
+                              StaticSitemap)
 
 app_name = "website"
 

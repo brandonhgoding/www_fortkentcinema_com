@@ -16,4 +16,3 @@ class Migration(migrations.Migration):
             field=models.ImageField(upload_to="affiliate/product/img/"),
         ),
     ]
-

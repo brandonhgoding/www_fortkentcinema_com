@@ -115,6 +115,7 @@ class CalendarEventsAPIView(APIView):
                     "end": (cinema_event.event_end_date + timedelta(days=1)).isoformat(),
                     "allDay": True,
                     "color": "teal",
+                    "url": reverse_lazy("website:event_detail", args=[cinema_event.slug])
                 }
             )
         return Response(events)
@@ -154,7 +155,6 @@ def contact_view(request):
 
 class EventDetailView(DetailView):
     model = Event
-
 
     def get_template_names(self):
         # Ensure the object is loaded
