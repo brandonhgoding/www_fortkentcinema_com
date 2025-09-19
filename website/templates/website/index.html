@@ -126,6 +126,18 @@
             <div class="text-center text-sm text-gray-500 mb-2">Select a day to view showtimes.</div>
             <div class="flex space-x-2 mb-4 justify-center">
                 <button class="px-4 py-2 rounded transition-colors duration-200 bg-blue-600 hover:bg-blue-700 text-white">
+                    <span class="hidden sm:inline">Monday</span><span class="sm:hidden">Mon</span>
+                </button>
+                <button class="px-4 py-2 rounded transition-colors duration-200 bg-blue-600 hover:bg-blue-700 text-white">
+                    <span class="hidden sm:inline">Tuesday</span><span class="sm:hidden">Tue</span>
+                </button>
+                <button class="px-4 py-2 rounded transition-colors duration-200 bg-blue-600 hover:bg-blue-700 text-white">
+                    <span class="hidden sm:inline">Wednesday</span><span class="sm:hidden">Wed</span>
+                </button>
+                <button class="px-4 py-2 rounded transition-colors duration-200 bg-blue-600 hover:bg-blue-700 text-white">
+                    <span class="hidden sm:inline">Thursday</span><span class="sm:hidden">Thu</span>
+                </button>
+                <button class="px-4 py-2 rounded transition-colors duration-200 bg-blue-600 hover:bg-blue-700 text-white">
                     <span class="hidden sm:inline">Friday</span><span class="sm:hidden">Fri</span>
                 </button>
                 <button class="px-4 py-2 rounded transition-colors duration-200 bg-blue-600 hover:bg-blue-700 text-white">
@@ -137,9 +149,32 @@
             </div>
 
             <div class="flex flex-col justify-center items-center">
+                <ul id="mon-times" class="space-y-2 flex flex-col items-center justify-center">
+                    <li class="text-2xl font-extrabold text-center">Showtimes for Monday</li>
+                    <li class="text-lg text-center">Despicable Me - 11:00 AM</li>
+                    <li class="text-lg text-center">Despicable Me 2 - 2:00 PM</li>
+                </ul>
+                <ul id="tue-times" class="space-y-2 flex flex-col items-center justify-center">
+                    <li class="text-2xl font-extrabold text-center">Showtimes for Tuesday</li>
+                    <li class="text-lg text-center">Despicable Me 3 - 11:00 AM</li>
+                    <li class="text-lg text-center">Despicable Me 4 - 2:00 PM</li>
+                </ul>
+                <ul id="wed-times" class="space-y-2 flex flex-col items-center justify-center">
+                    <li class="text-2xl font-extrabold text-center">Showtimes for Wednesday</li>
+                    <li class="text-lg text-center">Minions - 11:00 AM</li>
+                    <li class="text-lg text-center">Minions: The Rise of Gru - 2:00 PM</li>
+                </ul>
+                <ul id="thu-times" class="space-y-2 flex flex-col items-center justify-center">
+                    <li class="text-2xl font-extrabold text-center">Showtimes for Thursday</li>
+                    <li class="text-lg text-center">Sing - 11:00 AM</li>
+                    <li class="text-lg text-center">Sing 2 - 2:00 PM</li>
+                </ul>
                 <ul id="fri-times" class="space-y-2 flex flex-col items-center justify-center">
                     <li class="text-2xl font-extrabold text-center">Showtimes for Friday</li>
-                    <li class="text-lg text-center">7:00 PM</li>
+                    <li class="text-lg text-center">The Secret Life of Pets - 11:00 AM</li>
+                    <li class="text-lg text-center">The Secret Life of Pets 2 - 2:00 PM</li>
+                    <li class="text-lg text-center">Gabby's Dollhouse - 4:00 PM</li>
+                   <li class="text-lg text-center">The Senior - 4:00 PM & 7:00 PM</li>
                 </ul>
                 <ul id="sat-times" class="space-y-2 flex flex-col items-center justify-center">
                     <li class="text-2xl font-extrabold text-center">Showtimes for Saturdays</li>
@@ -156,7 +191,7 @@
                     <li class="text-lg text-center">5:00 PM</li>
                 </ul>
             </div>
-            <div class="mt-4 text-center text-xs text-gray-400">Closed Monday - Thursday</div>
+{#            <div class="mt-4 text-center text-xs text-gray-400">Closed Monday - Thursday</div>#}
         </div>
     </section>
 
@@ -165,6 +200,10 @@
             // Map days to IDs
             const dayMap = {
                 0: "sun-times", // Sunday
+                1: "mon-times", // Monday
+                2: "tue-times", // Tuesday
+                3: "wed-times",
+                4: "thu-times",
                 5: "fri-times",
                 6: "sat-times",
             };
@@ -202,8 +241,10 @@
             buttons.forEach((btn) => {
                 btn.addEventListener("click", () => {
                     const label = btn.textContent.toLowerCase();
+                    if (label.includes("mon")) showList("mon-times", btn);
+                    if (label.includes("tue")) showList("tue-times", btn);
                     if (label.includes("wed")) showList("wed-times", btn);
-                    if (label.includes("thu")) showList("thurs-times", btn);
+                    if (label.includes("thu")) showList("thu-times", btn);
                     if (label.includes("fri")) showList("fri-times", btn);
                     if (label.includes("sat")) showList("sat-times", btn);
                     if (label.includes("sun")) showList("sun-times", btn);

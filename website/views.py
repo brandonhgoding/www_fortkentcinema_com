@@ -115,7 +115,7 @@ class CalendarEventsAPIView(APIView):
                     "end": (cinema_event.event_end_date + timedelta(days=1)).isoformat(),
                     "allDay": True,
                     "color": "teal",
-                    "url": reverse_lazy("website:event_detail", args=[cinema_event.slug])
+                    "url": reverse_lazy("website:event_detail", args=[cinema_event.slug]),
                 }
             )
         return Response(events)
