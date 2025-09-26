@@ -23,7 +23,7 @@ from website import urls as website_urls
 
 urlpatterns = [
     path("", include(website_urls)),
-    path("admin/", admin.site.urls),
+    path("fort-kent-cinema-cms/", admin.site.urls),
 ]
 
 if settings.DEBUG:
