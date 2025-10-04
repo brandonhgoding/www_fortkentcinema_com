@@ -27,7 +27,6 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "affiliate.apps.AffiliateConfig",
     "blog.apps.BlogConfig",
     "cinema.apps.CinemaConfig",
     "core.apps.CoreConfig",
