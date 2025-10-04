@@ -59,7 +59,7 @@ class Booking(models.Model):
         return self.confirmed
 
     class Meta:
-        ordering = ["-booking_start_date"]
+        ordering = ["booking_start_date"]
 
 
 class ScreeningTime(models.Model):

@@ -97,9 +97,14 @@
                             <dd class="order-first text-3xl font-semibold tracking-tight text-white mb-5">{{ movie.title }}<br/>
                                 <small>{{ movie.bookings.last.booking_start_date|date:"F j" }} - {{ movie.bookings.last.booking_end_date|date:"F j" }}</small>
                             </dd>
+                        {% if movie.bookings.last.ticket_link %}
+                        <a href="{{ movie.bookings.last.ticket_link }}" class="mt-5 px-4 py-2 rounded transition-colors duration-200 bg-blue-600 hover:bg-blue-700 text-white">Purchase Tickets</a>
+                        {% endif %}
                         </div>
+
                     {% endfor %}
                 </dl>
+
                 {% if not now_playing %}
                     <div class="flex flex-col bg-white/5 p-8 m-auto text-center">
                         <dt class="text-sm/6 font-semibold text-gray-300">No movies are currently playing.</dt>

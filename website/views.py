@@ -14,18 +14,54 @@ from rest_framework.views import APIView
 from blog.models import BlogPost
 from cinema.models import Booking, Event, Film
 from website.forms import ContactForm
+from django.db.models import Min
 
 
 class HomePageTemplateView(TemplateView):
     template_name = "website/index.html"
+    NOW_PLAYING_LIMIT = 2  # you can change this in one place
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         now = timezone.now()
-        context["now_playing"] = Film.objects.filter(
-            bookings__booking_start_date__lte=now, bookings__booking_end_date__gte=now
-        ).order_by("bookings__booking_start_date")[:2]
+
+        # 1) films that are currently playing (bookings cover `now`)
+        current_qs = (
+            Film.objects
+            .filter(bookings__booking_start_date__lte=now, bookings__booking_end_date__gte=now)
+            .annotate(first_start=Min("bookings__booking_start_date"))
+            .order_by("first_start")
+            .distinct()
+        )
+
+        # materialize up to the limit
+        current_list = list(current_qs[: self.NOW_PLAYING_LIMIT])
+
+        # If we already have enough currently-playing films, use them
+        if len(current_list) == self.NOW_PLAYING_LIMIT:
+            context["now_playing"] = current_list
+            return context
+
+        # 2) otherwise, find upcoming films to fill the remaining slots
+        needed = self.NOW_PLAYING_LIMIT - len(current_list)
+        exclude_ids = [f.id for f in current_list] if current_list else []
+
+        upcoming_qs = (
+            Film.objects
+            .filter(bookings__booking_start_date__gt=now)
+            .exclude(id__in=exclude_ids)
+            .annotate(next_start=Min("bookings__booking_start_date"))
+            .order_by("next_start")
+            .distinct()
+        )
+
+        upcoming_list = list(upcoming_qs[:needed])
+
+        # Combine current + upcoming (may be fewer than limit if DB has fewer films)
+        context["now_playing"] = current_list + upcoming_list
         return context
+
+
 
 
 class ArchiveListView(ListView):
