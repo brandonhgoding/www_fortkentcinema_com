@@ -15,7 +15,7 @@ class Film(SlugModelMixin):
     imdb_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
     youtube_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
     omdb_json = models.JSONField(null=True, blank=True)
-    prime_link = models.URLField(null=True, blank=True)
+
 
     def __str__(self) -> str:
         return self.title
@@ -42,6 +42,7 @@ class Booking(models.Model):
     booking_start_date = models.DateField()
     booking_end_date = models.DateField()
     confirmed = models.BooleanField(default=False)
+    ticket_link = models.URLField(max_length=200, null=True, blank=True)
 
     def __str__(self) -> str:
         return (

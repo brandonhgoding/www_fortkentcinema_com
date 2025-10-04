@@ -32,7 +32,6 @@ class FilmSerializer(serializers.ModelSerializer):
             "title",
             "imdb_id",
             "youtube_id",
-            "prime_link",
             "omdb_json",
             "bookings",
         ]
@@ -50,4 +49,4 @@ class FilmArchiveSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Film
-        fields = ["id", "slug", "title", "prime_link", "omdb_json"]
+        fields = ["id", "slug", "title", "omdb_json"]
