@@ -3,8 +3,8 @@ from django.urls import path
 from django.views.generic import TemplateView
 
 from website import views as website_views
-from website.sitemaps import (ArchivedFilmDetailSitemap, BlogPostSitemap,
-                              BlogStaticSitemap, FilmArchiveListSitemap,
+from website.sitemaps import (BlogPostSitemap,
+                              BlogStaticSitemap,
                               StaticSitemap)
 
 app_name = "website"
@@ -13,14 +13,10 @@ sitemaps = {
     "static": StaticSitemap,
     "blog_static": BlogStaticSitemap,
     "blog_posts": BlogPostSitemap,
-    "film_archive": FilmArchiveListSitemap,
-    "archived_film_detail": ArchivedFilmDetailSitemap,
 }
 
 urlpatterns = [
     path("", website_views.HomePageTemplateView.as_view(), name="index"),
-    path("archive/", website_views.ArchiveListView.as_view(), name="archive"),
-    path("archive/<slug:slug>/", website_views.FilmDetailView.as_view(), name="film_detail"),
     path("events/<slug:slug>/", website_views.EventDetailView.as_view(), name="event_detail"),
     path("coming-soon/", website_views.ComingSoonTemplateView.as_view(), name="coming_soon"),
     path(

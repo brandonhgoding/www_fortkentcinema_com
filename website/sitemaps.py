@@ -50,35 +50,3 @@ class BlogStaticSitemap(CinemaSitemap):
 
     def location(self, item):
         return reverse(item)
-
-
-class FilmArchiveListSitemap(CinemaSitemap):
-    changefreq = "weekly"
-    priority = 0.5
-    protocol = "https"
-
-    def items(self):
-        # Named URL for your archive list page
-        return ["website:archive"]
-
-    def location(self, item):
-        return reverse(item)
-
-
-class ArchivedFilmDetailSitemap(CinemaSitemap):
-    changefreq = "weekly"
-    priority = 0.6
-    protocol = "https"
-
-    def items(self):
-        now = timezone.now()
-        # Match ArchiveListView queryset and annotate last booking end date
-        return (
-            Film.objects.filter(bookings__booking_end_date__lt=now)
-            .annotate(last_end=Max("bookings__booking_end_date"))
-            .distinct()
-        )
-
-    def lastmod(self, obj):
-        # If we have a last booking end date, use it; else None (sitemap omits <lastmod>)
-        return getattr(obj, "last_end", None)

@@ -62,21 +62,6 @@ class HomePageTemplateView(TemplateView):
         return context
 
 
-
-
-class ArchiveListView(ListView):
-    model = Film
-    template_name = "website/archive.html"
-
-    def get_queryset(self):
-        now = timezone.now()
-        return (
-            Film.objects.filter(bookings__booking_end_date__lt=now)
-            .order_by("-bookings__booking_end_date")
-            .distinct()
-        )
-
-
 class BlogListView(ListView):
     model = BlogPost
     template_name = "website/blog_list.html"
@@ -100,11 +85,6 @@ class ComingSoonTemplateView(TemplateView):
             bookings__booking_start_date__gt=now, bookings__confirmed=True
         ).order_by("bookings__booking_start_date")[:3]
         return context
-
-
-class FilmDetailView(DetailView):
-    model = Film
-    template_name = "website/film_detail.html"
 
 
 class CalendarEventsAPIView(APIView):
