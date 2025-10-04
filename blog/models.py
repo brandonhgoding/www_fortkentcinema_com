@@ -3,7 +3,6 @@ import uuid
 from django.db import models
 from django.urls import reverse
 
-from affiliate.models import Product
 from core.mixins import SlugModelMixin
 
 
@@ -43,8 +42,6 @@ class BlogPost(SlugModelMixin):
     content = models.TextField()
     summary = models.TextField(blank=True, null=True)
     header_image = models.ImageField(upload_to="blog/images/", null=True, blank=True)
-
-    products = models.ManyToManyField(Product, blank=True, related_name='blog_posts')
 
     slug_field = "subtitle"
 
