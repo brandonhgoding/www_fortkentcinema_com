@@ -100,12 +100,3 @@ class Event(models.Model):
         verbose_name_plural = "Events"
 
     slug = models.SlugField(max_length=100, blank=True, null=True)
-
-
-    def save(self, *args: Any, **kwargs: Any) -> None:
-        if not self.slug:
-            self.slug = self.generate_slug()
-        super().save(*args, **kwargs)
-
-    def generate_slug(self) -> str:
-        return cast(str, slugify(getattr(self, self.slug_field)))
