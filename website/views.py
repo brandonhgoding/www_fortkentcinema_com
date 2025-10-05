@@ -115,16 +115,16 @@ class CalendarEventsAPIView(APIView):
                 }
             )
         for cinema_event in Event.objects.all():
-            events.append(
-                {
+            new_event = {
                     "title": cinema_event.name,
                     "start": cinema_event.event_start_date.isoformat(),
                     "end": (cinema_event.event_end_date + timedelta(days=1)).isoformat(),
                     "allDay": True,
-                    "color": "teal",
-                    "url": reverse_lazy("website:event_detail", args=[cinema_event.slug]),
-                }
-            )
+                    "color": "teal"
+                    }
+            if cinema_event.slug:
+                new_event["url"] = reverse_lazy("website:event_detail", args=[cinema_event.slug])
+            events.append(new_event)
         return Response(events)
 
 
