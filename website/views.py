@@ -122,7 +122,7 @@ class CalendarEventsAPIView(APIView):
                     "allDay": True,
                     "color": "teal"
                     }
-            if cinema_event.slug:
+            if cinema_event.slug is not None:
                 new_event["url"] = reverse_lazy("website:event_detail", args=[cinema_event.slug])
             events.append(new_event)
         return Response(events)
