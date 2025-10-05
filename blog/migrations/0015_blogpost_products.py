@@ -6,16 +6,8 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("affiliate", "0001_initial"),
         ("blog", "0001_squashed_0014_blogpost_summary"),
     ]
 
     operations = [
-        migrations.AddField(
-            model_name="blogpost",
-            name="products",
-            field=models.ManyToManyField(
-                blank=True, related_name="blog_posts", to="affiliate.product"
-            ),
-        ),
     ]

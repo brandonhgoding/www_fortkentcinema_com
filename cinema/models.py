@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 from datetime import datetime, time
 
 from django.db import models
@@ -83,7 +84,7 @@ class ScreeningTime(models.Model):
         ordering = ["date", "time"]
 
 
-class Event(SlugModelMixin):
+class Event(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     event_start_date = models.DateField()
@@ -97,3 +98,14 @@ class Event(SlugModelMixin):
         ordering = ["-event_start_date"]
         verbose_name = "Event"
         verbose_name_plural = "Events"
+
+    slug = models.SlugField(max_length=100, blank=True, null=True)
+
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        if not self.slug:
+            self.slug = self.generate_slug()
+        super().save(*args, **kwargs)
+
+    def generate_slug(self) -> str:
+        return cast(str, slugify(getattr(self, self.slug_field)))
