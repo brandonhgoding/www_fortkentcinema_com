@@ -43,7 +43,6 @@ class Booking(models.Model):
     booking_start_date = models.DateField()
     booking_end_date = models.DateField()
     confirmed = models.BooleanField(default=False)
-    ticket_link = models.URLField(max_length=200, null=True, blank=True)
 
     def __str__(self) -> str:
         return (
