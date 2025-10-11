@@ -6,7 +6,6 @@ from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 
-from cinema.services import OpenMovieDatabaseService
 from core.mixins import SlugModelMixin
 
 
@@ -15,21 +14,9 @@ class Film(SlugModelMixin):
     title = models.CharField(max_length=100)
     imdb_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
     youtube_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
-    omdb_json = models.JSONField(null=True, blank=True)
-
 
     def __str__(self) -> str:
         return self.title
-
-    def fetch_omdb_json(self) -> bool:
-        if not self.omdb_json and self.imdb_id:
-            service = OpenMovieDatabaseService()
-            response = service.get_movie_details(imdb_id=self.imdb_id)
-            if response and response.to_json():
-                self.omdb_json = response.to_json()
-                self.save(update_fields=["omdb_json"])
-                return True
-        return False
 
     def get_absolute_url(self):
         return reverse("website:film_detail", kwargs={"slug": self.slug})
