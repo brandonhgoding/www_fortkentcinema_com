@@ -9,11 +9,33 @@ from django.utils import timezone
 from core.mixins import SlugModelMixin
 
 
+class FilmRating(models.TextChoices):
+    G = "G", "General Audiences"
+    PG = "PG", "Parental Guidance Suggested"
+    PG13 = "PG-13", "Parents Strongly Cautioned"
+    R = "R", "Restricted"
+    NC17 = "NC-17", "Adults Only"
+
+
+class FilmGenre(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+
+    def __str__(self) -> str:
+        return self.name
+
+    class Meta:
+        ordering = ["name"]
+
+
 class Film(SlugModelMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=100)
     imdb_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
     youtube_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
+    rating = models.CharField(max_length=5, choices=FilmRating.choices, default=FilmRating.PG)
+    genres = models.ManyToManyField(FilmGenre, related_name="films", blank=True)
+    runtime = models.PositiveIntegerField(help_text="Runtime in minutes", blank=True, null=True)
+    poster_url = models.URLField(max_length=200, blank=True, null=True)
 
     def __str__(self) -> str:
         return self.title

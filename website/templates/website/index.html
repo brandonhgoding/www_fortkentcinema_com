@@ -57,16 +57,18 @@
                     {% for movie in now_playing %}
                         <div class="flex flex-col bg-white/5 p-8">
                             <dt class="text-sm/6 font-semibold text-gray-300">
+                                {% if movie.poster_url %}
                                 <img alt="{{ movie.title }} Poster" class="mx-auto mb-4 rounded-lg max-h-75"
-                                     src="{{ movie.omdb_json.Poster }}">
-                                {% if movie.omdb_json.Rated %}
-                                    <p>Rating: {{ movie.omdb_json.Rated }}</p>
+                                     src="{{ movie.poster_url }}">
                                 {% endif %}
-                                {% if movie.omdb_json.Runtime %}
-                                    <p>Running Time: {{ movie.omdb_json.Runtime }}</p>
+                                {% if movie.rating %}
+                                    <p>Rating: {{ movie.rating }}</p>
                                 {% endif %}
-                                {% if movie.omdb_json.Genre %}
-                                    <p>Genre: {{ movie.omdb_json.Genre }}</p>
+                                {% if movie.runtime %}
+                                    <p>Running Time: {{ movie.runtime }}</p>
+                                {% endif %}
+                                {% if movie.genres.all %}
+                                    <p>Genre: {% for genre in movie.genres.all %}{{ movie.omdb_json.Genre }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
                                 {% endif %}
                                 <div class="flex justify-center items-center space-x-4 mt-4">
                                     {% if movie.youtube_id %}
