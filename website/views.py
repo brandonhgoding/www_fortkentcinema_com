@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from blog.models import BlogPost
-from cinema.models import Booking, Event, Film
+from cinema.models import Booking, Event, Film, TicketRate
 from website.forms import ContactForm
 from django.db.models import Min
 
@@ -24,6 +24,8 @@ class HomePageTemplateView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         now = timezone.now()
+
+        context["ticket_rates"] = TicketRate.objects.all()
 
         # 1) films that are currently playing (bookings cover `now`)
         current_qs = (
