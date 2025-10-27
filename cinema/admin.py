@@ -1,7 +1,6 @@
 from django.contrib import admin
 
-from cinema.models import Booking, Event, Film, ScreeningTime, FilmGenre
-
+from cinema.models import Booking, Event, Film, ScreeningTime, FilmGenre, TicketRate
 
 class ScreeningTimeInline(admin.TabularInline):
     model = ScreeningTime
@@ -16,3 +15,4 @@ admin.site.register(Event)
 admin.site.register(Film)
 admin.site.register(FilmGenre)
 admin.site.register(Booking, BookingAdmin)
+admin.site.register(TicketRate)

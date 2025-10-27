@@ -3,10 +3,28 @@ from typing import Any
 from datetime import datetime, time
 
 from django.db import models
+from django.db.models import CheckConstraint, Q
 from django.urls import reverse
 from django.utils import timezone
 
 from core.mixins import SlugModelMixin
+
+
+class RateTypes(models.TextChoices):
+    GENERAL_ADMISSION = "GA", "General Admission"
+    MATINEE = "MT", "Matinee"
+    SPECIAL_EVENT_SCREENING = "SE", "Special Event Screening"
+
+
+class TicketRate(models.Model):
+    rate_type = models.CharField(max_length=2, choices=RateTypes.choices, default=RateTypes.GENERAL_ADMISSION, unique=True)
+    price = models.DecimalField(max_digits=6, decimal_places=2)
+
+    def __str__(self) -> str:
+        return f"{self.get_rate_type_display()}: ${self.price}"
+
+    def get_rate_type_display(self) -> str:
+        return dict(RateTypes.choices).get(self.rate_type, "Unknown")
 
 
 class FilmRating(models.TextChoices):
@@ -52,6 +70,34 @@ class Booking(models.Model):
     booking_start_date = models.DateField()
     booking_end_date = models.DateField()
     confirmed = models.BooleanField(default=False)
+    # percentage: a share of gross, e.g., 50.00 => 50%
+    terms_percentage = models.DecimalField(
+        max_digits=5, decimal_places=2, default=0, help_text="0–100"
+    )
+    # guarantee: flat minimum payout (assume currency in site settings)
+    terms_guarantee = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0
+    )
+
+    class Meta:
+        constraints = [
+            CheckConstraint(
+                name="booking_terms_percentage_range",
+                check=Q(terms_percentage__gte=0) & Q(terms_percentage__lte=100),
+            ),
+            CheckConstraint(
+                name="booking_terms_guarantee_nonneg",
+                check=Q(terms_guarantee__gte=0),
+            ),
+        ]
+
+    # def settlement_minimum(self, gross_revenue):
+    #     """
+    #     Returns the minimum owed for this booking based on terms.
+    #     gross_revenue: Decimal
+    #     """
+    #     pct_amount = (self.terms_percentage / 100) * gross_revenue
+    #     return max(pct_amount, self.terms_guarantee)
 
     def __str__(self) -> str:
         return (
