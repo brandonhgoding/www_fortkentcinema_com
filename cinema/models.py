@@ -14,6 +14,7 @@ class RateTypes(models.TextChoices):
     GENERAL_ADMISSION = "GA", "General Admission"
     MATINEE = "MT", "Matinee"
     SPECIAL_EVENT_SCREENING = "SE", "Special Event Screening"
+    DOUBLE_FEATURE = "DF", "Double Feature"
 
 
 class TicketRate(models.Model):
