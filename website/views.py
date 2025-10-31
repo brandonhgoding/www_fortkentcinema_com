@@ -19,7 +19,7 @@ from django.db.models import Min
 
 class HomePageTemplateView(TemplateView):
     template_name = "website/index.html"
-    NOW_PLAYING_LIMIT = 2  # you can change this in one place
+    NOW_PLAYING_LIMIT = 3 # you can change this in one place
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
