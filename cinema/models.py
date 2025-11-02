@@ -1,6 +1,6 @@
 import uuid
 from typing import Any
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 
 from django.db import models
 from django.db.models import CheckConstraint, Q
@@ -113,6 +113,27 @@ class Booking(models.Model):
     @property
     def is_confirmed(self) -> bool:
         return self.confirmed
+
+    @property
+    def showtime_list(self):
+        from collections import defaultdict
+        from django.utils.timezone import now, make_aware, get_current_timezone
+
+        grouped_times = defaultdict(list)
+        current_datetime = now()
+        max_date = current_datetime.date() + timedelta(days=6)  # Calculate the maximum allowed date
+        tz = get_current_timezone()  # Get the current timezone
+
+        for screening in self.screening_times.all():
+            screening_datetime = datetime.combine(screening.date, screening.time)
+            if timezone.is_naive(screening_datetime):  # Check if naive
+                screening_datetime = make_aware(screening_datetime, timezone=tz)  # Make it timezone-aware
+            if current_datetime <= screening_datetime <= datetime.combine(max_date, time.max, tzinfo=tz):
+                formatted_time = screening.time.strftime("%I:%M %p").lstrip("0")  # Format time as "1:00 PM"
+                grouped_times[screening.date].append(formatted_time)
+
+        # Convert defaultdict to a list of dictionaries
+        return [{"date": date, "times": times} for date, times in grouped_times.items()]
 
     class Meta:
         ordering = ["booking_start_date"]

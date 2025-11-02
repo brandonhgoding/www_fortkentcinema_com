@@ -95,10 +95,17 @@
                                     </a>
                                     {% endif %}
                                 </div>
+                            <ul class="text-sm/6 mt-4 space-y-1">
+                                    {% for show_date in movie.bookings.last.showtime_list %}
+                                    <li class="text-gray-300">{{ show_date.date|date:"l n/j" }} - {% for time in show_date.times %}{{ time }}{% if not forloop.last %} & {% endif %}{% endfor %}</li>
+                                        {% endfor %}
+                                </ul>
                             </dt>
                             <dd class="order-first text-3xl font-semibold tracking-tight text-white mb-5">{{ movie.title }}<br/>
                                 <small>{{ movie.bookings.last.booking_start_date|date:"F j" }} - {{ movie.bookings.last.booking_end_date|date:"F j" }}</small>
                             </dd>
+
+
                         {% if movie.bookings.last.ticket_link %}
                         <a href="{{ movie.bookings.last.ticket_link }}" class="mt-5 px-4 py-2 rounded transition-colors duration-200 bg-blue-600 hover:bg-blue-700 text-white">Purchase Tickets</a>
                         {% endif %}
@@ -118,145 +125,13 @@
         </div>
     </div>
 
-    <section class="py-8 flex justify-center flex-col items-center">
-        <div class="flex flex-col">
-            <div class="text-center text-sm text-gray-500 mb-2">Select a day to view showtimes.</div>
-            <div class="flex space-x-2 mb-4 justify-center">
-                {% comment %} <button class="px-4 py-2 rounded transition-colors duration-200 bg-blue-600 hover:bg-blue-700 text-white">
-                    <span class="hidden sm:inline">Monday</span><span class="sm:hidden">Mon</span>
-                </button>
-                <button class="px-4 py-2 rounded transition-colors duration-200 bg-blue-600 hover:bg-blue-700 text-white">
-                    <span class="hidden sm:inline">Tuesday</span><span class="sm:hidden">Tue</span>
-                </button>
-                <button class="px-4 py-2 rounded transition-colors duration-200 bg-blue-600 hover:bg-blue-700 text-white">
-                    <span class="hidden sm:inline">Wednesday</span><span class="sm:hidden">Wed</span>
-                </button>
-                {% endcomment %}
-                <button class="px-4 py-2 rounded transition-colors duration-200 bg-blue-600 hover:bg-blue-700 text-white">
-                    <span class="hidden sm:inline">Thursday</span><span class="sm:hidden">Thu</span>
-                </button>
-                <button class="px-4 py-2 rounded transition-colors duration-200 bg-blue-600 hover:bg-blue-700 text-white">
-                    <span class="hidden sm:inline">Friday</span><span class="sm:hidden">Fri</span>
-                </button>
-                <button class="px-4 py-2 rounded transition-colors duration-200 bg-blue-600 hover:bg-blue-700 text-white">
-                    <span class="hidden sm:inline">Saturday</span><span class="sm:hidden">Sat</span>
-                </button>
-                <button class="px-4 py-2 rounded transition-colors duration-200 bg-blue-600 hover:bg-blue-700 text-white">
-                    <span class="hidden sm:inline">Sunday</span><span class="sm:hidden">Sun</span>
-                </button>
-            </div>
-
-            <div class="flex flex-col justify-center items-center">
-                {% comment %} <ul id="mon-times" class="space-y-2 flex flex-col items-center justify-center">
-                    <li class="text-2xl font-extrabold text-center">Showtimes for Monday</li>
-                    <li class="text-lg text-center">Despicable Me - 11:00 AM</li>
-                    <li class="text-lg text-center">Despicable Me 2 - 2:00 PM</li>
-                </ul>
-                <ul id="tue-times" class="space-y-2 flex flex-col items-center justify-center">
-                    <li class="text-2xl font-extrabold text-center">Showtimes for Tuesday</li>
-                    <li class="text-lg text-center">Despicable Me 3 - 11:00 AM</li>
-                    <li class="text-lg text-center">Despicable Me 4 - 2:00 PM</li>
-                    <li class="text-lg text-center">Downton Abbey: The Grande Finale - 4:00 PM</li>
-                   <li class="text-lg text-center">The Senior - 4:00 PM</li>
-                </ul>
-                <ul id="wed-times" class="space-y-2 flex flex-col items-center justify-center">
-                    <li class="text-2xl font-extrabold text-center">Showtimes for Wednesday</li>
-                    <li class="text-lg text-center">Minions - 11:00 AM</li>
-                    <li class="text-lg text-center">Minions: The Rise of Gru - 2:00 PM</li>
-                    <li class="text-lg text-center">Downton Abbey: The Grande Finale - 4:00 PM</li>
-                   <li class="text-lg text-center">The Senior - 4:00 PM</li>
-                </ul>
-                 {% endcomment %}
-                <ul id="thu-times" class="space-y-2 flex flex-col items-center justify-center">
-                    <li class="text-2xl font-extrabold text-center">Showtimes for Thursday</li>
-                    <li class="text-lg text-center">Casper - 7:30 PM</li>
-                    <li class="text-lg text-center">Regretting You - 7:30 PM</li>
-                </ul>
-                <ul id="fri-times" class="space-y-2 flex flex-col items-center justify-center">
-                    <li class="text-2xl font-extrabold text-center">Showtimes for Friday</li>
-                    <li class="text-lg text-center">Texas Chainsaw Massacre (1974) — 6:00 PM & 10 PM</li>
-                    <li class="text-lg text-center">Chain Reactions -8:00 PM</li>
-                    <li class="text-lg text-center">Regretting You — 6:00 PM & 9:00 PM</li>
-                </ul>
-                <ul id="sat-times" class="space-y-2 flex flex-col items-center justify-center">
-                    <li class="text-2xl font-extrabold text-center">Showtimes for Saturday</li>
-                    <li class="text-lg text-center">Texas Chainsaw Massacre (1974) — 6:00 PM & 10 PM</li>
-                    <li class="text-lg text-center">Chain Reactions - 4 PM & 8:00 PM</li>
-                    <li class="text-lg text-center">Regretting You — 4:00 PM, 6:30 PM & 9:00 PM</li>
-                </ul>
-                <ul id="sun-times" class="space-y-2 flex flex-col items-center justify-center">
-                    <li class="text-2xl font-extrabold text-center">Showtimes for Sunday</li>
-                    <li class="text-lg text-center">Texas Chainsaw Massacre (1974) — 6:00 PM</li>
-                    <li class="text-lg text-center">Chain Reactions - 4 PM</li>
-                    <li class="text-lg text-center">Regretting You — 3:00 PM & 6:00 PM</li>
-                </ul>
-            </div>
-            <div class="mt-4 text-center text-xs text-gray-400">Closed Monday - Wednesday</div>
-        </div>
-    </section>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            // Map days to IDs
-            const dayMap = {
-                0: "sun-times", // Sunday
-                1: "mon-times", // Monday
-                2: "tue-times", // Tuesday
-                3: "wed-times",
-                4: "thu-times",
-                5: "fri-times",
-                6: "sat-times",
-            };
-
-            const lists = document.querySelectorAll("ul[id$='-times']");
-            const buttons = document.querySelectorAll("button");
-
-            // Helper to hide all lists
-            function hideAll() {
-                lists.forEach((list) => (list.style.display = "none"));
-                buttons.forEach((btn) => btn.classList.remove("ring", "ring-yellow-400"));
-            }
-
-            // Show one list by id
-            function showList(id, button) {
-                hideAll();
-                const list = document.getElementById(id);
-                if (list) list.style.display = "block";
-                if (button) button.classList.add("ring", "ring-yellow-400");
-            }
-
-            // Initialize: show today's list if available
-            const today = new Date().getDay(); // 0 = Sunday, 1 = Monday, ...
-            if (dayMap[today]) {
-                const id = dayMap[today];
-                const button = Array.from(buttons).find((btn) =>
-                    btn.textContent.toLowerCase().includes(id.split("-")[0])
-                );
-                showList(id, button);
-            } else {
-                hideAll(); // closed Mon- Thursday
-            }
-
-            // Add click events
-            buttons.forEach((btn) => {
-                btn.addEventListener("click", () => {
-                    const label = btn.textContent.toLowerCase();
-                    if (label.includes("mon")) showList("mon-times", btn);
-                    if (label.includes("tue")) showList("tue-times", btn);
-                    if (label.includes("wed")) showList("wed-times", btn);
-                    if (label.includes("thu")) showList("thu-times", btn);
-                    if (label.includes("fri")) showList("fri-times", btn);
-                    if (label.includes("sat")) showList("sat-times", btn);
-                    if (label.includes("sun")) showList("sun-times", btn);
-                });
-            });
-        });
-    </script>
-
-
-
     <section class="py-8">
         <div class="flex justify-center flex-wrap">
+            <div class="text-center"><h2
+                        class="text-4xl font-semibold tracking-tight text-balance sm:text-5xl mb-4">
+                Ticket & Concession Rates
+            </h2>
+
             <div class="bg-white rounded-lg shadow p-6 flex flex-col flex-grow-1 mx-4 min-w-[320px] max-w-[600px]"><h3
                     class="text-lg font-bold mb-2 text-red-700">Ticket Rates</h3>
                 <ul class="space-y-2 b">
@@ -282,6 +157,7 @@
                     </li>
                 </ul>
             </div>
+            <small>Rates are subject to change without being updated online</small>
         </div>
     </section>
 
