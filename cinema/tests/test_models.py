@@ -2,9 +2,10 @@ from unittest import mock
 from unittest.mock import Mock
 
 from django.db import IntegrityError
+import datetime
 from django.test import TestCase
-
-from cinema.models import Film, ScreeningTime
+from django.utils.timezone import now
+from cinema.models import Booking, Film, ScreeningTime
 
 
 class FilmModelTest(TestCase):
@@ -63,6 +64,75 @@ class BookingModelTest(TestCase):
     def test_is_not_confirmed(self) -> None:
         self.booking.confirmed = False
         self.assertFalse(self.booking.is_confirmed)
+
+
+class ShowtimeListPropertyTests(TestCase):
+    def setUp(self):
+        # Create a film
+        self.film = Film.objects.create(title="Test Film")
+
+        # Create a booking for the film
+        self.booking = Booking.objects.create(
+            film=self.film,
+            booking_start_date=now().date(),
+            booking_end_date=now().date() + datetime.timedelta(days=10),
+            confirmed=True,
+        )
+
+    def test_excludes_past_screening_times(self):
+        # Create a past screening time
+        past_date = now().date() - datetime.timedelta(days=1)
+        ScreeningTime.objects.create(
+            booking=self.booking,
+            date=past_date,
+            time=datetime.time(14, 0),
+        )
+
+        self.assertEqual(self.booking.showtime_list, [])
+
+    def test_excludes_screening_times_beyond_6_days(self):
+        # Create a screening time beyond 6 days
+        future_date = now().date() + datetime.timedelta(days=7)
+        ScreeningTime.objects.create(
+            booking=self.booking,
+            date=future_date,
+            time=datetime.time(14, 0),
+        )
+
+        self.assertEqual(self.booking.showtime_list, [])
+
+    def test_includes_screening_times_within_6_days(self):
+        # Create a screening time within 6 days
+        valid_date = now().date() + datetime.timedelta(days=3)
+        ScreeningTime.objects.create(
+            booking=self.booking,
+            date=valid_date,
+            time=datetime.time(14, 0),
+        )
+
+        showtime_list = self.booking.showtime_list
+        self.assertEqual(len(showtime_list), 1)
+        self.assertEqual(showtime_list[0]["date"], valid_date)
+        self.assertEqual(showtime_list[0]["times"], ["2:00 PM"])
+
+    def test_formats_screening_times_correctly(self):
+        # Create multiple screening times on the same day
+        valid_date = now().date() + datetime.timedelta(days=2)
+        ScreeningTime.objects.create(
+            booking=self.booking,
+            date=valid_date,
+            time=datetime.time(13, 0),
+        )
+        ScreeningTime.objects.create(
+            booking=self.booking,
+            date=valid_date,
+            time=datetime.time(15, 30),
+        )
+
+        showtime_list = self.booking.showtime_list
+        self.assertEqual(len(showtime_list), 1)
+        self.assertEqual(showtime_list[0]["date"], valid_date)
+        self.assertEqual(showtime_list[0]["times"], ["1:00 PM", "3:30 PM"])
 
 
 class PlayDateModelTest(TestCase):
