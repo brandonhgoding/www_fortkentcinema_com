@@ -18,7 +18,9 @@ class RateTypes(models.TextChoices):
 
 
 class TicketRate(models.Model):
-    rate_type = models.CharField(max_length=2, choices=RateTypes.choices, default=RateTypes.GENERAL_ADMISSION, unique=True)
+    rate_type = models.CharField(
+        max_length=2, choices=RateTypes.choices, default=RateTypes.GENERAL_ADMISSION, unique=True
+    )
     price = models.DecimalField(max_digits=6, decimal_places=2)
 
     def __str__(self) -> str:
@@ -76,9 +78,7 @@ class Booking(models.Model):
         max_digits=5, decimal_places=2, default=0, help_text="0–100"
     )
     # guarantee: flat minimum payout (assume currency in site settings)
-    terms_guarantee = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0
-    )
+    terms_guarantee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     class Meta:
         constraints = [

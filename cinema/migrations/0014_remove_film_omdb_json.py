@@ -6,12 +6,12 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('cinema', '0013_remove_booking_ticket_link'),
+        ("cinema", "0013_remove_booking_ticket_link"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='film',
-            name='omdb_json',
+            model_name="film",
+            name="omdb_json",
         ),
     ]

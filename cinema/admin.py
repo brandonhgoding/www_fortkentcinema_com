@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from cinema.models import Booking, Event, Film, ScreeningTime, FilmGenre, TicketRate
 
+
 class ScreeningTimeInline(admin.TabularInline):
     model = ScreeningTime
     extra = 0

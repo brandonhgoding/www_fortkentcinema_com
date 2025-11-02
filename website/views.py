@@ -3,64 +3,28 @@ from datetime import timedelta
 from django.conf import settings
 from django.contrib import messages
 from django.core.mail import send_mail
-from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
-from django.views.generic import DetailView, FormView, ListView, TemplateView
+from django.views.generic import DetailView, ListView, TemplateView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from blog.models import BlogPost
 from cinema.models import Booking, Event, Film, TicketRate
+from cinema.utils import get_current_or_next_films
 from website.forms import ContactForm
-from django.db.models import Min
 
 
 class HomePageTemplateView(TemplateView):
     template_name = "website/index.html"
-    NOW_PLAYING_LIMIT = 3 # you can change this in one place
+    NOW_PLAYING_LIMIT = 2
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         now = timezone.now()
-
         context["ticket_rates"] = TicketRate.objects.all()
-
-        # 1) films that are currently playing (bookings cover `now`)
-        current_qs = (
-            Film.objects
-            .filter(bookings__booking_start_date__lte=now, bookings__booking_end_date__gte=now)
-            .annotate(first_start=Min("bookings__booking_start_date"))
-            .order_by("first_start")
-            .distinct()
-        )
-
-        # materialize up to the limit
-        current_list = list(current_qs[: self.NOW_PLAYING_LIMIT])
-
-        # If we already have enough currently-playing films, use them
-        if len(current_list) == self.NOW_PLAYING_LIMIT:
-            context["now_playing"] = current_list
-            return context
-
-        # 2) otherwise, find upcoming films to fill the remaining slots
-        needed = self.NOW_PLAYING_LIMIT - len(current_list)
-        exclude_ids = [f.id for f in current_list] if current_list else []
-
-        upcoming_qs = (
-            Film.objects
-            .filter(bookings__booking_start_date__gt=now)
-            .exclude(id__in=exclude_ids)
-            .annotate(next_start=Min("bookings__booking_start_date"))
-            .order_by("next_start")
-            .distinct()
-        )
-
-        upcoming_list = list(upcoming_qs[:needed])
-
-        # Combine current + upcoming (may be fewer than limit if DB has fewer films)
-        context["now_playing"] = current_list + upcoming_list
+        context["now_playing"] = get_current_or_next_films(limit=self.NOW_PLAYING_LIMIT, now=now)
         return context
 
 
@@ -118,12 +82,12 @@ class CalendarEventsAPIView(APIView):
             )
         for cinema_event in Event.objects.all():
             new_event = {
-                    "title": cinema_event.name,
-                    "start": cinema_event.event_start_date.isoformat(),
-                    "end": (cinema_event.event_end_date + timedelta(days=1)).isoformat(),
-                    "allDay": True,
-                    "color": "teal"
-                    }
+                "title": cinema_event.name,
+                "start": cinema_event.event_start_date.isoformat(),
+                "end": (cinema_event.event_end_date + timedelta(days=1)).isoformat(),
+                "allDay": True,
+                "color": "teal",
+            }
             if cinema_event.slug is not None:
                 new_event["url"] = reverse_lazy("website:event_detail", args=[cinema_event.slug])
             events.append(new_event)

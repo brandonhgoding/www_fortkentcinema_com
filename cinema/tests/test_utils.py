@@ -1,70 +1,145 @@
-from datetime import timedelta
-from unittest.mock import MagicMock, Mock, patch
-
+from cinema.utils import get_currently_playing_films
+from cinema.utils import get_upcoming_films
+from datetime import datetime, timedelta
 from django.test import TestCase
-from django.utils import timezone
-
-from cinema.models import Film  # adjust this import!
-from cinema.utils import ensure_film_omdb_up_to_date, update_omdb  # adjust this import!
+from cinema.models import Film, Booking
+from cinema.utils import get_current_or_next_films
 
 
-class UpdateOmdbTests(TestCase):
-    def setUp(self) -> None:
-        self.film = Film.objects.create(imdb_id="tt1234567", omdb_json={})
+class GetCurrentlyPlayingFilmsTests(TestCase):
+    def setUp(self):
+        # Create test films and bookings
+        self.now = datetime.now()
+        self.film1 = Film.objects.create(title="Film 1")
+        self.film2 = Film.objects.create(title="Film 2")
+        self.film3 = Film.objects.create(title="Film 3")
 
-    @patch("cinema.utils.OpenMovieDatabaseService")
-    def test_update_omdb_with_valid_response(self, mock_service_class: Mock) -> None:
-        # Arrange
-        mock_service = mock_service_class.return_value
-        mock_response = MagicMock()
-        mock_response.to_json.return_value = {"Title": "Test Movie"}
-        mock_service.get_movie_details.return_value = mock_response
+        # Create bookings for the films
+        Booking.objects.create(
+            film=self.film1,
+            booking_start_date=self.now - timedelta(days=1),
+            booking_end_date=self.now + timedelta(days=1),
+        )
+        Booking.objects.create(
+            film=self.film2,
+            booking_start_date=self.now - timedelta(days=2),
+            booking_end_date=self.now + timedelta(days=2),
+        )
+        Booking.objects.create(
+            film=self.film3,
+            booking_start_date=self.now + timedelta(days=1),
+            booking_end_date=self.now + timedelta(days=3),
+        )
 
-        # Act
-        update_omdb(self.film)
+    def test_get_currently_playing_films_with_limit(self):
+        # Test with a limit of 2
+        films = get_currently_playing_films(limit=2, now=self.now)
+        self.assertEqual(len(films), 2)
+        self.assertIn(self.film1, films)
+        self.assertIn(self.film2, films)
 
-        # Assert
-        mock_service.get_movie_details.assert_called_once_with(imdb_id=self.film.imdb_id)
-        self.film.refresh_from_db()
-        self.assertEqual(self.film.omdb_json, {"Title": "Test Movie"})
-
-    @patch("cinema.utils.OpenMovieDatabaseService")
-    def test_update_omdb_with_no_response(self, mock_service_class: Mock) -> None:
-        # Arrange
-        mock_service = mock_service_class.return_value
-        mock_service.get_movie_details.return_value = None
-
-        # Act
-        update_omdb(self.film)
-
-        # Assert
-        mock_service.get_movie_details.assert_called_once_with(imdb_id=self.film.imdb_id)
-        self.film.refresh_from_db()
-        self.assertEqual(self.film.omdb_json, {})  # Should remain unchanged
+    def test_get_currently_playing_films_no_results(self):
+        # Test with a time outside any booking range
+        future_time = self.now + timedelta(days=10)
+        films = get_currently_playing_films(limit=2, now=future_time)
+        self.assertEqual(len(films), 0)
 
 
-class EnsureFilmOmdbUpToDateTests(TestCase):
-    def setUp(self) -> None:
-        self.film = Film.objects.create(imdb_id="tt1234567", omdb_json={})
+class GetUpcomingFilmsTests(TestCase):
+    def setUp(self):
+        # Create test films and bookings
+        self.now = datetime.now()
+        self.film1 = Film.objects.create(title="Film 1")
+        self.film2 = Film.objects.create(title="Film 2")
+        self.film3 = Film.objects.create(title="Film 3")
+        self.film4 = Film.objects.create(title="Film 4")
 
-    @patch("cinema.utils.update_omdb")
-    def test_calls_update_when_omdb_json_empty(self, mock_update_omdb: Mock) -> None:
-        self.film.omdb_json = {}
-        ensure_film_omdb_up_to_date(self.film)
-        mock_update_omdb.assert_called_once_with(self.film)
+        # Create bookings for the films
+        Booking.objects.create(
+            film=self.film1,
+            booking_start_date=self.now + timedelta(days=1),
+            booking_end_date=self.now + timedelta(days=3),
+        )
+        Booking.objects.create(
+            film=self.film2,
+            booking_start_date=self.now + timedelta(days=2),
+            booking_end_date=self.now + timedelta(days=4),
+        )
+        Booking.objects.create(
+            film=self.film3,
+            booking_start_date=self.now + timedelta(days=3),
+            booking_end_date=self.now + timedelta(days=5),
+        )
+        Booking.objects.create(
+            film=self.film4,
+            booking_start_date=self.now + timedelta(days=4),
+            booking_end_date=self.now + timedelta(days=6),
+        )
 
-    @patch("cinema.utils.update_omdb")
-    def test_calls_update_when_timestamp_older_than_week(self, mock_update_omdb: Mock) -> None:
-        old_timestamp = (timezone.now() - timedelta(days=8)).isoformat()
-        self.film.omdb_json = {"timestamp": old_timestamp}
-        ensure_film_omdb_up_to_date(self.film)
-        mock_update_omdb.assert_called_once_with(self.film)
+    def test_get_upcoming_films_with_limit(self):
+        # Test with a limit of 2
+        current_list = [self.film1]
+        films = get_upcoming_films(now=self.now, current_list=current_list, needed=2)
+        self.assertEqual(len(films), 2)
+        self.assertIn(self.film2, films)
+        self.assertIn(self.film3, films)
+        self.assertNotIn(self.film1, films)
 
-    @patch("cinema.utils.update_omdb")
-    def test_does_not_call_update_when_timestamp_newer_than_week(
-        self, mock_update_omdb: Mock
-    ) -> None:
-        recent_timestamp = (timezone.now() - timedelta(days=2)).isoformat()
-        self.film.omdb_json = {"timestamp": recent_timestamp}
-        ensure_film_omdb_up_to_date(self.film)
-        mock_update_omdb.assert_not_called()
+    def test_get_upcoming_films_no_results(self):
+        # Test with no upcoming films
+        future_time = self.now + timedelta(days=10)
+        films = get_upcoming_films(now=future_time, current_list=[], needed=2)
+        self.assertEqual(len(films), 0)
+
+
+class GetCurrentOrNextFilmsTests(TestCase):
+    def setUp(self):
+        # Create test films and bookings
+        self.now = datetime.now()
+        self.film1 = Film.objects.create(title="Film 1")
+        self.film2 = Film.objects.create(title="Film 2")
+        self.film3 = Film.objects.create(title="Film 3")
+        self.film4 = Film.objects.create(title="Film 4")
+
+        # Create bookings for the films
+        Booking.objects.create(
+            film=self.film1,
+            booking_start_date=self.now - timedelta(days=1),
+            booking_end_date=self.now + timedelta(days=1),
+        )
+        Booking.objects.create(
+            film=self.film2,
+            booking_start_date=self.now - timedelta(days=2),
+            booking_end_date=self.now + timedelta(days=2),
+        )
+        Booking.objects.create(
+            film=self.film3,
+            booking_start_date=self.now + timedelta(days=1),
+            booking_end_date=self.now + timedelta(days=3),
+        )
+        Booking.objects.create(
+            film=self.film4,
+            booking_start_date=self.now + timedelta(days=2),
+            booking_end_date=self.now + timedelta(days=4),
+        )
+
+    def test_get_current_or_next_films_with_exact_limit(self):
+        # Test when the limit is met with currently playing films
+        films = get_current_or_next_films(limit=2, now=self.now)
+        self.assertEqual(len(films), 2)
+        self.assertIn(self.film1, films)
+        self.assertIn(self.film2, films)
+
+    def test_get_current_or_next_films_with_upcoming(self):
+        # Test when the limit is not met and includes upcoming films
+        films = get_current_or_next_films(limit=3, now=self.now)
+        self.assertEqual(len(films), 3)
+        self.assertIn(self.film1, films)
+        self.assertIn(self.film2, films)
+        self.assertIn(self.film3, films)
+
+    def test_get_current_or_next_films_no_results(self):
+        # Test when no films are available
+        future_time = self.now + timedelta(days=10)
+        films = get_current_or_next_films(limit=2, now=future_time)
+        self.assertEqual(len(films), 0)

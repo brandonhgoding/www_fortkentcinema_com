@@ -3,9 +3,7 @@ from django.urls import path
 from django.views.generic import TemplateView
 
 from website import views as website_views
-from website.sitemaps import (BlogPostSitemap,
-                              BlogStaticSitemap,
-                              StaticSitemap)
+from website.sitemaps import BlogPostSitemap, BlogStaticSitemap, StaticSitemap
 
 app_name = "website"
 

@@ -1,27 +1,39 @@
-from datetime import timedelta
+from datetime import datetime
 
-from dateutil.parser import parse as parse_datetime
-from django.utils import timezone
+from django.db.models import Min
 
 from cinema.models import Film
-from cinema.services import OpenMovieDatabaseService
 
 
-def update_omdb(film: Film) -> None:
-    if not film.imdb_id:
-        return
-    service = OpenMovieDatabaseService()
-    response = service.get_movie_details(imdb_id=film.imdb_id)
-    if response:
-        film.omdb_json = response.to_json()
-        film.save()
+def get_currently_playing_films(limit: int, now: datetime) -> list[Film]:
+    return list(
+        Film.objects.filter(
+            bookings__booking_start_date__lte=now,
+            bookings__booking_end_date__gte=now,
+        )
+        .annotate(first_start=Min("bookings__booking_start_date"))
+        .order_by("first_start")
+        .distinct()[:limit]
+    )
 
 
-def ensure_film_omdb_up_to_date(film: Film) -> None:
-    if not film.omdb_json:
-        update_omdb(film)
-    elif timestamp := film.omdb_json.get("timestamp"):
-        timestamp_dt = parse_datetime(timestamp)
-        one_week_ago = timezone.now() - timedelta(days=7)
-        if timestamp_dt < one_week_ago:
-            update_omdb(film)
+def get_upcoming_films(now: datetime, current_list: list[Film], needed: int) -> list[Film]:
+    exclude_ids = [film.id for film in current_list]
+    return list(
+        Film.objects.filter(bookings__booking_start_date__gt=now)
+        .exclude(id__in=exclude_ids)
+        .annotate(next_start=Min("bookings__booking_start_date"))
+        .order_by("next_start")
+        .distinct()[:needed]
+    )
+
+
+def get_current_or_next_films(limit: int, now: datetime) -> list[Film]:
+    current_list = get_currently_playing_films(limit, now)
+
+    if len(current_list) < limit:
+        needed = limit - len(current_list)
+        upcoming_list = get_upcoming_films(now, current_list, needed)
+        current_list.extend(upcoming_list)
+
+    return current_list

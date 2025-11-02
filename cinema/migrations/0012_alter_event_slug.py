@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('cinema', '0011_alter_booking_options'),
+        ("cinema", "0011_alter_booking_options"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='event',
-            name='slug',
+            model_name="event",
+            name="slug",
             field=models.SlugField(blank=True, max_length=100, null=True),
         ),
     ]

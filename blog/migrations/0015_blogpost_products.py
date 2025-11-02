@@ -9,5 +9,4 @@ class Migration(migrations.Migration):
         ("blog", "0001_squashed_0014_blogpost_summary"),
     ]
 
-    operations = [
-    ]
+    operations = []
