@@ -18,7 +18,7 @@ from website.forms import ContactForm
 
 class HomePageTemplateView(TemplateView):
     template_name = "website/index.html"
-    NOW_PLAYING_LIMIT = 2
+    NOW_PLAYING_LIMIT = 3
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
