@@ -14,20 +14,31 @@
 {% block content %}
 
     <div class="flex flex-col items-center justify-center m-2 ">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {% for film in next_films %}
-            <div class="max-w-full sm:max-w-[400px] flex flex-col items-center justify-center p-5 m-2 rounded-lg shadow-md bg-white">
-                <div class="border-b border-gray-200 mb-5"><h3
-                        class="text-base font-semibold text-gray-900 text-center">{{ film.title }}</h3></div>
-                <div class="w-full aspect-w-16 aspect-h-9">
-                    <iframe class="w-full h-full" src="https://www.youtube.com/embed/{{ film.youtube_id }}"
-                            title="The Toxic Avenger" frameborder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowfullscreen=""></iframe>
-                </div>
-                <p class="text-center mt-4">Booking: {{ film.bookings.last.booking_start_date }} to {{ film.bookings.last.booking_end_date }}</p></div>
-            {% endfor %}
-        </div>
+
+            <section class="max-w-3xl mx-auto px-4 py-12 text-gray-800">
+  <h3 class="text-2xl font-semibold text-center text-gray-900 mb-6">
+    Coming Soon at Fort Kent Cinema
+  </h3>
+
+  <div class="space-y-5 text-lg leading-relaxed">
+    <p class="mb-5">
+      Get ready for an exciting lineup heading your way at the St. John Valley’s favorite movie destination.
+      We’ve got something for everyone—thrilling premieres, thoughtful documentaries, family-friendly
+      blockbusters, and underground gems. Stay tuned; your next favorite movie night might be just around the
+      corner.
+    </p>
+
+    <p class="mb-5">
+      Whether you’re planning a date night, a fun outing with friends, or a solo escape from the everyday, we’re here to make it special. Our seats are comfy, the popcorn’s hot, and the atmosphere is all about community and good times. Keep an eye on this page for booking dates, surprise screenings, and exclusive events that only happen at Fort Kent Cinema.
+    </p>
+
+    <p class="mb-5">
+      Bookmark this page and swing by often—because the magic of the big screen is about to drop right here in Fort Kent. We can’t wait to welcome you, share some stories, and make some memories.
+    </p>
+  </div>
+</section>
+
+
         <div class="w-full max-w-full sm:max-w-[600px] md:max-w-[900px] lg:max-w-[1090px] flex flex-col items-center justify-center p-2 sm:p-4 m-2 rounded-lg shadow-md bg-white">
         <div id="calendar" class="w-full max-w-full"></div>
         </div>
