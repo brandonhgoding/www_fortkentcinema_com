@@ -44,14 +44,6 @@ class BlogDetailView(DetailView):
 class ComingSoonTemplateView(TemplateView):
     template_name = "website/coming_soon.html"
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        now = timezone.now()
-        context["next_films"] = Film.objects.filter(
-            bookings__booking_start_date__gt=now, bookings__confirmed=True
-        ).order_by("bookings__booking_start_date")[:3]
-        return context
-
 
 class CalendarEventsAPIView(APIView):
     def get(self, request, *args, **kwargs):
@@ -128,6 +120,9 @@ def contact_view(request):
 
 class EventDetailView(DetailView):
     model = Event
+
+    def get_object(self, queryset=None):
+        return Event.objects.filter(slug=self.kwargs["slug"]).first()
 
     def get_template_names(self):
         # Ensure the object is loaded
