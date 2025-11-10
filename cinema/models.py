@@ -22,6 +22,7 @@ class TicketRate(models.Model):
         max_length=2, choices=RateTypes.choices, default=RateTypes.GENERAL_ADMISSION, unique=True
     )
     price = models.DecimalField(max_digits=6, decimal_places=2)
+    member_price = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
 
     def __str__(self) -> str:
         return f"{self.get_rate_type_display()}: ${self.price}"
