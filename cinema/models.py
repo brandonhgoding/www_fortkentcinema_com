@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 from typing import Any
 from datetime import datetime, time, timedelta
 
@@ -11,11 +12,10 @@ from core.mixins import SlugModelMixin
 
 
 class RateTypes(models.TextChoices):
+    EVENING_ADMISSION = "EA", "Evening Admission"
     GENERAL_ADMISSION = "GA", "General Admission"
-    MATINEE = "MT", "Matinee"
-    SPECIAL_EVENT_SCREENING = "SE", "Special Event Screening"
-    DOUBLE_FEATURE = "DF", "Double Feature"
-
+    MATINEE = ("MT",
+               "Matinee Admission")
 
 class TicketRate(models.Model):
     rate_type = models.CharField(
@@ -24,11 +24,17 @@ class TicketRate(models.Model):
     price = models.DecimalField(max_digits=6, decimal_places=2)
     member_price = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
 
+
     def __str__(self) -> str:
         return f"{self.get_rate_type_display()}: ${self.price}"
 
     def get_rate_type_display(self) -> str:
         return dict(RateTypes.choices).get(self.rate_type, "Unknown")
+
+    def get_member_discount_amount(self) -> Decimal | None:
+        if self.member_price is not None:
+            return self.price - self.member_price
+        return None
 
 
 class FilmRating(models.TextChoices):
@@ -58,6 +64,9 @@ class Film(SlugModelMixin):
     genres = models.ManyToManyField(FilmGenre, related_name="films", blank=True)
     runtime = models.PositiveIntegerField(help_text="Runtime in minutes", blank=True, null=True)
     poster_url = models.URLField(max_length=200, blank=True, null=True)
+    square_catalog_item_id = models.CharField(
+        max_length=255, blank=True, null=True, editable=False
+    )
 
     def __str__(self) -> str:
         return self.title
@@ -70,6 +79,18 @@ class Film(SlugModelMixin):
 
 
 class Booking(models.Model):
+    class AuditoriumChoices(models.TextChoices):
+        SOUTH_AUDITORIUM = "South Auditorium", "South Auditorium"
+        NORTH_AUDITORIUM = "North Auditorium", "North Auditorium"
+
+        @property
+        def capacity(self) -> int:
+            capacities = {
+                self.SOUTH_AUDITORIUM: 100,
+                self.NORTH_AUDITORIUM: 100,
+            }
+            return capacities.get(self, 0)
+
     film = models.ForeignKey(Film, on_delete=models.CASCADE, related_name="bookings")
     booking_start_date = models.DateField()
     booking_end_date = models.DateField()
@@ -80,6 +101,7 @@ class Booking(models.Model):
     )
     # guarantee: flat minimum payout (assume currency in site settings)
     terms_guarantee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    auditorium = models.CharField(max_length=16, choices=AuditoriumChoices.choices, default=AuditoriumChoices.SOUTH_AUDITORIUM)
 
     class Meta:
         constraints = [
@@ -92,14 +114,6 @@ class Booking(models.Model):
                 check=Q(terms_guarantee__gte=0),
             ),
         ]
-
-    # def settlement_minimum(self, gross_revenue):
-    #     """
-    #     Returns the minimum owed for this booking based on terms.
-    #     gross_revenue: Decimal
-    #     """
-    #     pct_amount = (self.terms_percentage / 100) * gross_revenue
-    #     return max(pct_amount, self.terms_guarantee)
 
     def __str__(self) -> str:
         return (
@@ -144,6 +158,9 @@ class ScreeningTime(models.Model):
     booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name="screening_times")
     date = models.DateField()
     time = models.TimeField()
+    square_variation_id = models.CharField(
+        max_length=255, blank=True, null=True, editable=False
+    )
 
     def __str__(self) -> str:
         return f"{self.booking.film.title} on {self.date} at {self.time}"
@@ -159,6 +176,12 @@ class ScreeningTime(models.Model):
     class Meta:
         unique_together = ("booking", "date", "time")
         ordering = ["date", "time"]
+
+
+class Ticket(models.Model):
+    screening_time = models.ForeignKey(ScreeningTime, on_delete=models.RESTRICT, related_name="tickets")
+    rate = models.ForeignKey(TicketRate, on_delete=models.CASCADE)
+    ticket_number = models.CharField(max_length=20, unique=True)
 
 
 class Event(models.Model):
