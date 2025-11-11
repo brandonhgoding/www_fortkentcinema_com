@@ -209,3 +209,6 @@ RECAPTCHA_PRIVATE_KEY = config("RECAPTCHA_PRIVATE_KEY", "")
 
 # Optional: skip captcha when running tests or locally
 RECAPTCHA_REQUIRED = not DEBUG
+
+SQUARE_ACCESS_TOKEN = config("SQUARE_ACCESS_TOKEN")
+SQUARE_ENVIRONMENT = config("SQUARE_ENVIRONMENT")

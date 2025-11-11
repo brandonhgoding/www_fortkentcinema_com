@@ -16,13 +16,13 @@ class RateTypes(models.TextChoices):
     MATINEE = ("MT",
                "Matinee Admission")
 
+
 class TicketRate(models.Model):
     rate_type = models.CharField(
         max_length=2, choices=RateTypes.choices, default=RateTypes.EVENING_ADMISSION, unique=True
     )
     price = models.DecimalField(max_digits=6, decimal_places=2)
     member_price = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
-
 
     def __str__(self) -> str:
         return f"{self.get_rate_type_display()}: ${self.price}"
@@ -57,15 +57,13 @@ class FilmGenre(models.Model):
 class Film(SlugModelMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
     imdb_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
     youtube_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
     rating = models.CharField(max_length=5, choices=FilmRating.choices, default=FilmRating.PG)
     genres = models.ManyToManyField(FilmGenre, related_name="films", blank=True)
     runtime = models.PositiveIntegerField(help_text="Runtime in minutes", blank=True, null=True)
     poster_url = models.URLField(max_length=200, blank=True, null=True)
-    square_catalog_item_id = models.CharField(
-        max_length=255, blank=True, null=True, editable=False
-    )
 
     def __str__(self) -> str:
         return self.title
@@ -101,6 +99,9 @@ class Booking(models.Model):
     # guarantee: flat minimum payout (assume currency in site settings)
     terms_guarantee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     auditorium = models.CharField(max_length=16, choices=AuditoriumChoices.choices, default=AuditoriumChoices.SOUTH_AUDITORIUM)
+    square_item_id = models.CharField(
+        max_length=255, blank=True, null=True, editable=False
+    )
 
     class Meta:
         constraints = [
@@ -162,7 +163,17 @@ class ScreeningTime(models.Model):
     )
 
     def __str__(self) -> str:
+        return self.screening_time_string
+
+    @property
+    def screening_time_string(self) -> str:
         return f"{self.booking.film.title} on {self.date} at {self.time}"
+
+    @property
+    def ticket_rate(self) -> int:
+        if self.is_matinee:
+            return 800
+        return 1200
 
     @property
     def is_matinee(self) -> bool:
