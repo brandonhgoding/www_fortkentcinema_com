@@ -11,3 +11,4 @@ def get_square_client() -> Square:
 
 def idempotency_key(prefix: str) -> str:
     return f"{prefix}-{uuid.uuid4()}"
+
