@@ -26,4 +26,3 @@ def build_categories_list():
         )
         category.square_id = response.catalog_object.id
         category.save()
-

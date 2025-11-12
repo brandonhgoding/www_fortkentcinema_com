@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.text import slugify
+from square_integration.models import Category
 
 
 class MembershipBenefit(models.Model):
@@ -21,8 +22,6 @@ class MembershipType(models.Model):
     # Sales/fulfillment
     active = models.BooleanField(default=True)
     duration_months = models.PositiveIntegerField(default=12)  # 1, 6, 12, etc.
-    limit_per_customer = models.PositiveIntegerField(default=0, help_text="0 = no limit")
-    taxable = models.BooleanField(default=False)
 
     # Price
     price_cents = models.PositiveIntegerField(help_text="Price in cents")
@@ -36,12 +35,8 @@ class MembershipType(models.Model):
 
     # Square linkage (filled on first sync)
     square_item_id = models.CharField(max_length=64, blank=True, default="")
-    square_item_version = models.BigIntegerField(null=True, blank=True)  # for optimistic concurrency
-    square_variation_id = models.CharField(max_length=64, blank=True, default="")
-    square_variation_version = models.BigIntegerField(null=True, blank=True)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    square_item_variation_id = models.CharField(max_length=64, blank=True, default="")
+    square_category = models.ForeignKey(to=Category, on_delete=models.RESTRICT, null=True, blank=True)
 
     class Meta:
         ordering = ["display_order", "name"]
