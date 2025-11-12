@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from blog.models import BlogPost
-from cinema.models import Booking, Event, Film, TicketRate
+from cinema.models import Booking, TicketRate
 from cinema.utils import get_current_or_next_films
 from website.forms import ContactForm
 
@@ -72,17 +72,6 @@ class CalendarEventsAPIView(APIView):
                     # "url": reverse("showtime-detail", args=[s.id]),
                 }
             )
-        for cinema_event in Event.objects.all():
-            new_event = {
-                "title": cinema_event.name,
-                "start": cinema_event.event_start_date.isoformat(),
-                "end": (cinema_event.event_end_date + timedelta(days=1)).isoformat(),
-                "allDay": True,
-                "color": "teal",
-            }
-            if cinema_event.slug is not None:
-                new_event["url"] = reverse_lazy("website:event_detail", args=[cinema_event.slug])
-            events.append(new_event)
         return Response(events)
 
 
@@ -116,16 +105,3 @@ def contact_view(request):
         form = ContactForm()
 
     return render(request, "website/contact.html", {"form": form})
-
-
-class EventDetailView(DetailView):
-    model = Event
-
-    def get_object(self, queryset=None):
-        return Event.objects.filter(slug=self.kwargs["slug"]).first()
-
-    def get_template_names(self):
-        # Ensure the object is loaded
-        obj = self.get_object()
-        # Use the slug to build the template name
-        return [f"website/{obj.slug}.html"]

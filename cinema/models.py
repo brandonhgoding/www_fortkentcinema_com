@@ -13,8 +13,7 @@ from core.mixins import SlugModelMixin
 
 class RateTypes(models.TextChoices):
     EVENING_ADMISSION = "EA", "Evening Admission"
-    MATINEE = ("MT",
-               "Matinee Admission")
+    MATINEE = ("MT", "Matinee Admission")
 
 
 class TicketRate(models.Model):
@@ -98,10 +97,10 @@ class Booking(models.Model):
     )
     # guarantee: flat minimum payout (assume currency in site settings)
     terms_guarantee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    auditorium = models.CharField(max_length=16, choices=AuditoriumChoices.choices, default=AuditoriumChoices.SOUTH_AUDITORIUM)
-    square_item_id = models.CharField(
-        max_length=255, blank=True, null=True, editable=False
+    auditorium = models.CharField(
+        max_length=16, choices=AuditoriumChoices.choices, default=AuditoriumChoices.SOUTH_AUDITORIUM
     )
+    square_item_id = models.CharField(max_length=255, blank=True, null=True, editable=False)
 
     class Meta:
         constraints = [
@@ -142,9 +141,17 @@ class Booking(models.Model):
         for screening in self.screening_times.all():
             screening_datetime = datetime.combine(screening.date, screening.time)
             if timezone.is_naive(screening_datetime):  # Check if naive
-                screening_datetime = make_aware(screening_datetime, timezone=tz)  # Make it timezone-aware
-            if current_datetime <= screening_datetime <= datetime.combine(max_date, time.max, tzinfo=tz):
-                formatted_time = screening.time.strftime("%I:%M %p").lstrip("0")  # Format time as "1:00 PM"
+                screening_datetime = make_aware(
+                    screening_datetime, timezone=tz
+                )  # Make it timezone-aware
+            if (
+                current_datetime
+                <= screening_datetime
+                <= datetime.combine(max_date, time.max, tzinfo=tz)
+            ):
+                formatted_time = screening.time.strftime("%I:%M %p").lstrip(
+                    "0"
+                )  # Format time as "1:00 PM"
                 grouped_times[screening.date].append(formatted_time)
 
         # Convert defaultdict to a list of dictionaries
@@ -158,9 +165,7 @@ class ScreeningTime(models.Model):
     booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name="screening_times")
     date = models.DateField()
     time = models.TimeField()
-    square_variation_id = models.CharField(
-        max_length=255, blank=True, null=True, editable=False
-    )
+    square_variation_id = models.CharField(max_length=255, blank=True, null=True, editable=False)
 
     def __str__(self) -> str:
         return self.screening_time_string
@@ -189,24 +194,8 @@ class ScreeningTime(models.Model):
 
 
 class Ticket(models.Model):
-    screening_time = models.ForeignKey(ScreeningTime, on_delete=models.RESTRICT, related_name="tickets")
+    screening_time = models.ForeignKey(
+        ScreeningTime, on_delete=models.RESTRICT, related_name="tickets"
+    )
     rate = models.ForeignKey(TicketRate, on_delete=models.CASCADE)
     ticket_number = models.CharField(max_length=20, unique=True)
-
-
-class Event(models.Model):
-    name = models.CharField(max_length=200)
-    description = models.TextField(blank=True)
-    event_start_date = models.DateField()
-    event_end_date = models.DateField()
-    slug_field = "name"
-
-    def __str__(self) -> str:
-        return f"{self.name} on {self.event_start_date} to {self.event_end_date}"
-
-    class Meta:
-        ordering = ["-event_start_date"]
-        verbose_name = "Event"
-        verbose_name_plural = "Events"
-
-    slug = models.SlugField(max_length=100, blank=True, null=True)

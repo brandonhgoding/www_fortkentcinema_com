@@ -1,8 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.db.models import Min
+from django.utils import timezone
 
-from cinema.models import Film
+from cinema.models import Film, ScreeningTime
 
 
 def get_currently_playing_films(limit: int, now: datetime) -> list[Film]:
@@ -37,3 +38,22 @@ def get_current_or_next_films(limit: int, now: datetime) -> list[Film]:
         current_list.extend(upcoming_list)
 
     return current_list
+
+
+def get_show_start(show_time: ScreeningTime):
+    show_date = show_time.date
+    show_time = show_time.time
+    return datetime.combine(show_date, show_time)
+
+
+def is_showtime_expired(show_time: ScreeningTime):
+    """
+    True if 20 minutes past showtime is in the past.
+    """
+    start = get_show_start(show_time)
+    if not start:
+        # If we can't resolve a start, be conservative and treat as not expired.
+        return False
+
+    cutoff = start + timedelta(minutes=20)
+    return cutoff < timezone.now()

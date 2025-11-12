@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "blog.apps.BlogConfig",
     "cinema.apps.CinemaConfig",
     "core.apps.CoreConfig",
+    "square_integration.apps.SquareIntegrationConfig",
     "website.apps.WebsiteConfig",
     "django.contrib.sitemaps",
     "django.contrib.sites",

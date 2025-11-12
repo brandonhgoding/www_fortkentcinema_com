@@ -15,7 +15,6 @@ sitemaps = {
 
 urlpatterns = [
     path("", website_views.HomePageTemplateView.as_view(), name="index"),
-    path("events/<slug:slug>/", website_views.EventDetailView.as_view(), name="event_detail"),
     path("coming-soon/", website_views.ComingSoonTemplateView.as_view(), name="coming_soon"),
     path(
         "coming-soon/calendar/",
@@ -28,7 +27,11 @@ urlpatterns = [
         website_views.BlogDetailView.as_view(),
         name="blog_detail",
     ),
-    path('fort-kent-cinema-membership/', TemplateView.as_view(template_name="website/membership.html"), name='membership'),
+    # path(
+    #     "fort-kent-cinema-membership/",
+    #     TemplateView.as_view(template_name="website/membership.html"),
+    #     name="membership",
+    # ),
     path("contact-fort-kent-cinema/", website_views.contact_view, name="contact"),
     path(
         "sitemap.xml", sitemap, {"sitemaps": sitemaps}, name="django.contrib.sitemaps.views.sitemap"
