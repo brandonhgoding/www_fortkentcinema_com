@@ -1,6 +1,5 @@
 from django.db import models
 from django.utils.text import slugify
-from square_integration.models import Category
 
 
 class MembershipBenefit(models.Model):
@@ -34,9 +33,6 @@ class MembershipType(models.Model):
     benefits = models.ManyToManyField(MembershipBenefit, blank=True, related_name="membership_types")
 
     # Square linkage (filled on first sync)
-    square_item_id = models.CharField(max_length=64, blank=True, default="")
-    square_item_variation_id = models.CharField(max_length=64, blank=True, default="")
-    square_category = models.ForeignKey(to=Category, on_delete=models.RESTRICT, null=True, blank=True)
 
     class Meta:
         ordering = ["display_order", "name"]

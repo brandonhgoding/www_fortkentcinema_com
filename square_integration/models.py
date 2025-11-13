@@ -1,50 +1,91 @@
-# cinema/models.py
+import enum
+from typing import ClassVar
 
 from django.db import models
-from django.utils.text import slugify
+from pydantic import BaseModel
 
 
-class Category(models.Model):
-    """
-    Local representation of a Square Catalog Category.
+class CatalogObjectType(enum.Enum):
+    IMAGE = "IMAGE"
+    CATEGORY = "CATEGORY"
+    ITEM_VARIATION = "ITEM_VARIATION"
+    TAX = "TAX"
+    DISCOUNT = "DISCOUNT"
+    MODIFIER_LIST = "MODIFIER_LIST"
+    MODIFIER = "MODIFIER"
+    PRICING_RULE = "PRICING_RULE"
+    PRODUCT_SET = "PRODUCT_SET"
+    TIME_PERIOD = "TIME_PERIOD"
+    MEASUREMENT_UNIT = "MEASUREMENT_UNIT"
+    SUBSCRIPTION_PLAN_VARIATION = "SUBSCRIPTION_PLAN_VARIATION"
+    ITEM_OPTION = "ITEM_OPTION"
+    ITEM_OPTION_VAL = "ITEM_OPTION_VAL"
+    CUSTOM_ATTRIBUTE_DEFINITION = "CUSTOM_ATTRIBUTE_DEFINITION"
+    QUICK_AMOUNTS_SETTINGS = "QUICK_AMOUNTS_SETTINGS"
+    SUBSCRIPTION_PLAN = "SUBSCRIPTION_PLAN"
+    AVAILABILITY_PERIOD = "AVAILABILITY_PERIOD"
 
-    This is meant to sync 1:1 with a Square 'CATEGORY' object:
-      - name -> item_data.name
-      - square_id -> Square's catalog object id
 
-    You can attach this to Film/Booking/etc. and,
-    when creating/updating Square Items, set:
-      item_data["category_id"] = category.square_id
-    """
+class CatalogPriceMoney(BaseModel):
+    amount: int
+    currency: str = "USD"
 
-    name = models.CharField(max_length=100, unique=True)
-    slug = models.SlugField(max_length=120, unique=True, blank=True)
 
-    # Optional: for internal use / admin niceness
-    description = models.TextField(blank=True)
+class CatalogItemVariationData(BaseModel):
+    name: str
+    pricing_money: CatalogPriceMoney
+    pricing_type: str = "FIXED_PRICING"
+    item_id: str | None = None
 
-    # Square catalog object id for this category (e.g. "ABC123...")
-    square_id = models.CharField(
-        max_length=255,
+
+class CatalogItemVariation(BaseModel):
+    type: ClassVar[CatalogObjectType] = CatalogObjectType.ITEM_VARIATION
+    id: str
+    item_variation_data: CatalogItemVariationData
+
+
+class CategoryParent(BaseModel):
+    id: str
+
+
+class CategoryData(BaseModel):
+    name: str
+    category_type: str = "REGULAR_CATEGORY"
+    is_top_level: bool = True
+    parent_category: CategoryParent | None = None
+
+
+class CatalogItemData(BaseModel):
+    abbreviation: str | None = None
+    description: str | None = None
+    name: str
+    variations: list[CatalogItemVariation] | None = None
+
+
+class CatalogObject(BaseModel):
+    type: CatalogObjectType
+    id: str
+    item_data: CatalogItemData | None = None
+    category_data: CategoryData | None = None
+    version: int | None = None
+
+
+class CatalogRequest(BaseModel):
+    idempotency_key: str
+    object: CatalogObject
+
+
+class CatalogCategory(models.Model):
+    name = models.CharField(max_length=255)
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
         blank=True,
         null=True,
-        unique=True,
-        help_text="Square Catalog object ID for this category.",
+        related_name='subcategories'
     )
-
+    square_id = models.CharField(max_length=255, blank=True, null=True)
     active = models.BooleanField(default=True)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ["name"]
 
     def __str__(self):
         return self.name
-
-    def save(self, *args, **kwargs):
-        # Auto-generate slug if not set
-        if not self.slug:
-            self.slug = slugify(self.name)
-        super().save(*args, **kwargs)
