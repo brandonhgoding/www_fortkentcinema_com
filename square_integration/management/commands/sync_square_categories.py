@@ -1,5 +1,4 @@
 from django.core.management.base import BaseCommand
-from square_integration.services.square_client import get_square_client
 from square_integration.services.square_categories import build_categories_list
 
 

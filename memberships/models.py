@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.text import slugify
+from square_integration.models import CatalogCategory
 
 
 class MembershipBenefit(models.Model):
@@ -15,7 +16,6 @@ class MembershipBenefit(models.Model):
 
 class MembershipType(models.Model):
     name = models.CharField(max_length=120, unique=True)
-    slug = models.SlugField(max_length=140, unique=True, blank=True)
     description = models.TextField(blank=True)
 
     # Sales/fulfillment
@@ -33,14 +33,12 @@ class MembershipType(models.Model):
     benefits = models.ManyToManyField(MembershipBenefit, blank=True, related_name="membership_types")
 
     # Square linkage (filled on first sync)
+    square_item_id = models.CharField(max_length=100, blank=True, unique=True)
+    square_item_variation_id = models.CharField(max_length=100, blank=True, unique=True)
+    square_category = models.ForeignKey(to=CatalogCategory, on_delete=models.RESTRICT, null=True, blank=True)
 
     class Meta:
         ordering = ["display_order", "name"]
 
     def __str__(self):
         return self.name
-
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.name)[:140]
-        super().save(*args, **kwargs)

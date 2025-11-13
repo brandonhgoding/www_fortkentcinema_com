@@ -8,6 +8,7 @@ from pydantic import BaseModel
 class CatalogObjectType(enum.Enum):
     IMAGE = "IMAGE"
     CATEGORY = "CATEGORY"
+    ITEM = "ITEM"
     ITEM_VARIATION = "ITEM_VARIATION"
     TAX = "TAX"
     DISCOUNT = "DISCOUNT"
@@ -33,13 +34,13 @@ class CatalogPriceMoney(BaseModel):
 
 class CatalogItemVariationData(BaseModel):
     name: str
-    pricing_money: CatalogPriceMoney
+    price_money: CatalogPriceMoney
     pricing_type: str = "FIXED_PRICING"
     item_id: str | None = None
 
 
 class CatalogItemVariation(BaseModel):
-    type: ClassVar[CatalogObjectType] = CatalogObjectType.ITEM_VARIATION
+    type: str
     id: str
     item_variation_data: CatalogItemVariationData
 
@@ -60,6 +61,7 @@ class CatalogItemData(BaseModel):
     description: str | None = None
     name: str
     variations: list[CatalogItemVariation] | None = None
+    is_taxable: bool = False
 
 
 class CatalogObject(BaseModel):
