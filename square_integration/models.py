@@ -37,6 +37,8 @@ class CatalogItemVariationData(BaseModel):
     price_money: CatalogPriceMoney
     pricing_type: str = "FIXED_PRICING"
     item_id: str | None = None
+    is_taxable: bool = False
+    tax_ids: list[str] | None = None
 
 
 class CatalogItemVariation(BaseModel):
@@ -57,12 +59,17 @@ class CategoryData(BaseModel):
     parent_category: CategoryParent | None = None
 
 
+class ItemCategoryData(BaseModel):
+    id: str
+
 class CatalogItemData(BaseModel):
     abbreviation: str | None = None
     description: str | None = None
     name: str
     variations: list[CatalogItemVariation] | None = None
     is_taxable: bool = False
+    tax_ids: list[str] | None = None
+    categories: list[ItemCategoryData] | None = None
 
 
 class CatalogObject(BaseModel):
@@ -88,3 +95,13 @@ class CatalogCategory(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class TaxRate(models.Model):
+    name = models.CharField(max_length=100)
+    percentage = models.DecimalField(max_digits=5, decimal_places=2)
+    square_id = models.CharField(max_length=255, blank=True, null=True)
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.percentage}%)"
