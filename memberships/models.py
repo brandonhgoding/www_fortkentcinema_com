@@ -40,6 +40,7 @@ class MembershipType(models.Model):
     square_category = models.ForeignKey(
         to=CatalogCategory, on_delete=models.RESTRICT, null=True, blank=True
     )
+    square_payment_link = models.URLField(blank=True)
 
     class Meta:
         ordering = ["display_order", "name"]
