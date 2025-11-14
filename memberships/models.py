@@ -30,12 +30,16 @@ class MembershipType(models.Model):
     display_order = models.PositiveIntegerField(default=0)
 
     # Benefits (optional, for web display)
-    benefits = models.ManyToManyField(MembershipBenefit, blank=True, related_name="membership_types")
+    benefits = models.ManyToManyField(
+        MembershipBenefit, blank=True, related_name="membership_types"
+    )
 
     # Square linkage (filled on first sync)
     square_item_id = models.CharField(max_length=100, blank=True, unique=True)
     square_item_variation_id = models.CharField(max_length=100, blank=True, unique=True)
-    square_category = models.ForeignKey(to=CatalogCategory, on_delete=models.RESTRICT, null=True, blank=True)
+    square_category = models.ForeignKey(
+        to=CatalogCategory, on_delete=models.RESTRICT, null=True, blank=True
+    )
 
     class Meta:
         ordering = ["display_order", "name"]

@@ -81,11 +81,7 @@ class CatalogRequest(BaseModel):
 class CatalogCategory(models.Model):
     name = models.CharField(max_length=255)
     parent = models.ForeignKey(
-        'self',
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-        related_name='subcategories'
+        "self", on_delete=models.CASCADE, blank=True, null=True, related_name="subcategories"
     )
     square_id = models.CharField(max_length=255, blank=True, null=True)
     active = models.BooleanField(default=True)
