@@ -1,7 +1,5 @@
-from django.contrib import admin
 from memberships.models import MembershipType, MembershipBenefit
 from django.contrib import admin, messages
-from square_integration.models import CatalogCategory as Category
 from square_integration.services.square_memberships import build_membership_catalog_items
 
 
