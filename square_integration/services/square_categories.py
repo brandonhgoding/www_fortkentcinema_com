@@ -3,8 +3,7 @@ import uuid
 from square_integration.services.square_client import get_square_client, idempotency_key
 from square_integration.models import CatalogCategory, CatalogObject, CatalogObjectType, CatalogItemData, CategoryData, CategoryParent, CatalogRequest
 
-import pprint
-pp = pprint.PrettyPrinter(indent=4)
+
 def build_categories_list():
     client = get_square_client()
     for category in CatalogCategory.objects.filter(active=True):
@@ -21,7 +20,6 @@ def build_categories_list():
                     )
                 )
             )
-
 
         if category.square_id:
             current_object_response = client.catalog.object.get(object_id=category.square_id)

@@ -26,7 +26,6 @@ def build_membership_catalog_items():
                 pricing_type="FIXED_PRICING",
             ),
         )
-        print(variation_object.model_dump_json(indent=4))
 
         membership_request_object = CatalogObject(
             type=CatalogObjectType.ITEM,
@@ -44,7 +43,7 @@ def build_membership_catalog_items():
                 object_id=membership.square_item_id
             )
             membership_request_object.version = current_object_response.object.version
-
+            variation_object.version = current_object_response.object.item_data.variations[0].version
         response = client.catalog.object.upsert(
             idempotency_key=idempotency_key(prefix=f"mems-{membership.pk}"),
             object=membership_request_object,

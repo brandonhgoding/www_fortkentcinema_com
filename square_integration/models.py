@@ -43,6 +43,7 @@ class CatalogItemVariation(BaseModel):
     type: str
     id: str
     item_variation_data: CatalogItemVariationData
+    version: int | None = None
 
 
 class CategoryParent(BaseModel):
