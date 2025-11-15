@@ -34,10 +34,11 @@ class InventoryItem(models.Model):
         return self.name
 
     def get_active_variations_or_self(self):
-        if self.parent_item is None:
+        if self.variations.exists():
             return InventoryItem.objects.filter(
-                pk=self.pk, active=True
+                parent_item=self, active=True
             )
         return InventoryItem.objects.filter(
-             parent_item=self, active=True
+            pk=self.pk, active=True
         )
+
