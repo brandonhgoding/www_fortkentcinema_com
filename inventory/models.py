@@ -22,6 +22,9 @@ class InventoryItem(models.Model):
     square_item_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
     square_version = models.PositiveIntegerField(null=True, blank=True)
 
+    square_item_variation_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
+    square_variation_version = models.PositiveIntegerField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
