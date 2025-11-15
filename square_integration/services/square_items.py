@@ -86,9 +86,9 @@ def _build_single_item_variation(client, item, item_id):
     variation_id = item.square_item_variation_id or f"#itemvar_{uuid.uuid4()}"
     variation_data = CatalogItemVariation(
         type=CatalogObjectType.ITEM_VARIATION,
+        id=variation_id,
         item_variation_data=CatalogItemVariationData(
             name=item.name,
-            variation_id=variation_id,
             price_money=CatalogPriceMoney(
                 amount=item.price_cents,
                 currency=item.currency,
