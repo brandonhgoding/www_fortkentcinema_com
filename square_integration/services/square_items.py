@@ -20,7 +20,7 @@ def build_square_catalog_items():
 
         variation_objects = []
 
-        for variation in item.get_self_and_active_variations():
+        for variation in item.get_active_variations_or_self():
             variation_id = variation.square_item_variation_id or f"#itemvar_{uuid.uuid4()}"
             variation_data = CatalogItemVariation(
                 type=CatalogObjectType.ITEM_VARIATION,
