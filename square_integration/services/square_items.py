@@ -71,6 +71,5 @@ def build_square_catalog_items():
             if inv_variation:
                 inv_variation.square_item_variation_id = variation.id
                 inv_variation.square_variation_version = variation.version
-                print(variation)
                 inv_variation.save()
 
