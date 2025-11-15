@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models import Q
+
 from square_integration.models import TaxRate
 
 
@@ -20,13 +22,19 @@ class InventoryItem(models.Model):
     active = models.BooleanField(default=True)
 
     square_item_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
-    square_version = models.PositiveIntegerField(null=True, blank=True)
+    square_version = models.BigIntegerField(null=True, blank=True)
 
     square_item_variation_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
-    square_variation_version = models.PositiveIntegerField(null=True, blank=True)
+    square_variation_version = models.BigIntegerField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
+
+    def get_self_and_active_variations(self):
+        return InventoryItem.objects.filter(
+            Q(pk=self.pk) | Q(parent_item=self),
+            active=True
+        )
