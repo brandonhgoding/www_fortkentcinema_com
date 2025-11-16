@@ -100,7 +100,7 @@ def contact_view(request):
 
             # Flash success and redirect to the same page (PRG)
             messages.success(request, "Thanks! Your message has been sent.")
-            return redirect(reverse("contact"))
+            return redirect(reverse("website:contact"))
     else:
         form = ContactForm()
 
