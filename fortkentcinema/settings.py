@@ -13,12 +13,23 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 
 from decouple import Csv, config
+import sentry_sdk
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config("SECRET_KEY")
 DEBUG = config("DEBUG", default=False, cast=bool)
 ENABLE_CDN = config("ENABLE_CDN", default=False, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv())
+
+
+if not DEBUG:
+    sentry_sdk.init(
+        dsn=config("SENTRY_DSN"),
+        # Add data like request headers and IP for users,
+        # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+        send_default_pii=True,
+    )
+
 
 INSTALLED_APPS = [
     "django.contrib.admin",
