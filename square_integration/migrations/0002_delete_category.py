@@ -6,7 +6,6 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("memberships", "0004_remove_membershiptype_square_category_and_more"),
         ("square_integration", "0001_initial"),
     ]
 
