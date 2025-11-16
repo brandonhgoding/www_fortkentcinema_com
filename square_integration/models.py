@@ -1,8 +1,7 @@
 import enum
-from typing import ClassVar
-
 from django.db import models
 from pydantic import BaseModel
+from typing import Literal
 
 
 class CatalogObjectType(enum.Enum):
@@ -36,55 +35,46 @@ class CatalogItemVariationData(BaseModel):
     name: str
     price_money: CatalogPriceMoney
     pricing_type: str = "FIXED_PRICING"
-    item_id: str | None = None
     is_taxable: bool = False
-    tax_ids: list[str] | None = None
+    tax_ids: list[str] = []
+    item_id: str | None = None
 
 
 class CatalogItemVariation(BaseModel):
-    type: str
-    id: str
+    # Type is fixed for this model; you rarely need to override
+    type: Literal["ITEM_VARIATION"] = "ITEM_VARIATION"
+    id: str | None = None
     item_variation_data: CatalogItemVariationData
     version: int | None = None
-
-
-class CategoryParent(BaseModel):
-    id: str
 
 
 class CategoryData(BaseModel):
     name: str
     category_type: str = "REGULAR_CATEGORY"
     is_top_level: bool = True
-    parent_category: CategoryParent | None = None
+    parent_category_id: str | None = None
 
-
-class ItemCategoryData(BaseModel):
-    id: str
 
 class CatalogItemData(BaseModel):
-    abbreviation: str | None = None
-    description: str | None = None
     name: str
-    variations: list[CatalogItemVariation] | None = None
+    description: str | None = None
+    abbreviation: str | None = None
+    variations: list[CatalogItemVariation] = []
     is_taxable: bool = False
-    tax_ids: list[str] | None = None
-    categories: list[ItemCategoryData] | None = None
+    tax_ids: list[str] = []
+    # store raw category IDs instead of nested objects
+    categories: list[str] = []
 
 
 class CatalogObject(BaseModel):
     type: CatalogObjectType
-    id: str
+    id: str | None = None
     item_data: CatalogItemData | None = None
     category_data: CategoryData | None = None
     version: int | None = None
 
 
-class CatalogRequest(BaseModel):
-    idempotency_key: str
-    object: CatalogObject
-
-
+# Django models unchanged
 class CatalogCategory(models.Model):
     name = models.CharField(max_length=255)
     parent = models.ForeignKey(

@@ -100,7 +100,8 @@ class Booking(models.Model):
     auditorium = models.CharField(
         max_length=16, choices=AuditoriumChoices.choices, default=AuditoriumChoices.SOUTH_AUDITORIUM
     )
-    square_item_id = models.CharField(max_length=255, blank=True, null=True, editable=False)
+    square_id = models.CharField(max_length=255, blank=True, null=True, editable=False)
+    square_version = models.BigIntegerField(blank=True, null=True, editable=False)
 
     class Meta:
         constraints = [
@@ -166,6 +167,7 @@ class ScreeningTime(models.Model):
     date = models.DateField()
     time = models.TimeField()
     square_variation_id = models.CharField(max_length=255, blank=True, null=True, editable=False)
+    square_variation_version = models.BigIntegerField(blank=True, null=True, editable=False)
 
     def __str__(self) -> str:
         return self.screening_time_string
