@@ -26,54 +26,6 @@ class CatalogObjectType(enum.Enum):
     AVAILABILITY_PERIOD = "AVAILABILITY_PERIOD"
 
 
-class CatalogPriceMoney(BaseModel):
-    amount: int
-    currency: str = "USD"
-
-
-class CatalogItemVariationData(BaseModel):
-    name: str
-    price_money: CatalogPriceMoney
-    pricing_type: str = "FIXED_PRICING"
-    is_taxable: bool = False
-    tax_ids: list[str] = []
-    item_id: str | None = None
-
-
-class CatalogItemVariation(BaseModel):
-    # Type is fixed for this model; you rarely need to override
-    type: Literal["ITEM_VARIATION"] = "ITEM_VARIATION"
-    id: str | None = None
-    item_variation_data: CatalogItemVariationData
-    version: int | None = None
-
-
-class CategoryData(BaseModel):
-    name: str
-    category_type: str = "REGULAR_CATEGORY"
-    is_top_level: bool = True
-    parent_category_id: str | None = None
-
-
-class CatalogItemData(BaseModel):
-    name: str
-    description: str | None = None
-    abbreviation: str | None = None
-    variations: list[CatalogItemVariation] = []
-    is_taxable: bool = False
-    tax_ids: list[str] = []
-    # store raw category IDs instead of nested objects
-    categories: list[str] = []
-
-
-class CatalogObject(BaseModel):
-    type: CatalogObjectType
-    id: str | None = None
-    item_data: CatalogItemData | None = None
-    category_data: CategoryData | None = None
-    version: int | None = None
-
-
 class SquareItem(models.Model):
     square_id = models.CharField(max_length=255, blank=True, null=True)
     version = models.BigIntegerField(blank=True, null=True)
@@ -86,7 +38,7 @@ class SquareItem(models.Model):
 class CatalogCategory(SquareItem):
     name = models.CharField(max_length=255)
     parent = models.ForeignKey(
-        "self", on_delete=models.CASCADE, blank=True, null=True, related_name="subcategories"
+        "CatalogCategory", on_delete=models.RESTRICT, blank=True, null=True, related_name="subcategories"
     )
     active = models.BooleanField(default=True)
 
