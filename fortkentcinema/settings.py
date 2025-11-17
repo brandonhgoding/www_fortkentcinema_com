@@ -41,7 +41,6 @@ INSTALLED_APPS = [
     "blog.apps.BlogConfig",
     "cinema.apps.CinemaConfig",
     "core.apps.CoreConfig",
-    "square_integration.apps.SquareIntegrationConfig",
     "website.apps.WebsiteConfig",
     "django.contrib.sitemaps",
     "django.contrib.sites",
@@ -221,6 +220,3 @@ RECAPTCHA_PRIVATE_KEY = config("RECAPTCHA_PRIVATE_KEY", "")
 
 # Optional: skip captcha when running tests or locally
 RECAPTCHA_REQUIRED = not DEBUG
-
-SQUARE_ACCESS_TOKEN = config("SQUARE_ACCESS_TOKEN")
-SQUARE_ENVIRONMENT = config("SQUARE_ENVIRONMENT")
