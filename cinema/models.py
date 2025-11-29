@@ -168,6 +168,7 @@ class ScreeningTime(models.Model):
     time = models.TimeField()
     square_variation_id = models.CharField(max_length=255, blank=True, null=True, editable=False)
     square_variation_version = models.BigIntegerField(blank=True, null=True, editable=False)
+    open_captions = models.BooleanField(default=False)
 
     def __str__(self) -> str:
         return self.screening_time_string
