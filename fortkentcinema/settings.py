@@ -105,7 +105,7 @@ if config("USE_POSTGRES", default=False, cast=bool):
             "NAME": config("DB_DB"),
             "USER": config("DB_USER"),
             "PASSWORD": config("DB_PASSWORD"),
-            "HOST": "localhost",
+            "HOST": config("DB_HOST", default="localhost"),
             "PORT": "",
         }
     }
