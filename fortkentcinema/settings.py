@@ -214,6 +214,16 @@ if USE_GMAIL := config("USE_GMAIL", default=False, cast=bool):
     CONTACT_FORM_TO_ADDRESS = [config("CONTACT_FORM_TO_ADDRESS")]
 
 
+if not DEBUG:
+    # Django should treat requests as HTTPS if the ALB says so
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    CSRF_TRUSTED_ORIGINS = [
+        "https://fortkentcinema.com",
+        "https://www.fortkentcinema.com",
+    ]
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+
 # Use your keys from https://www.google.com/recaptcha/admin
 RECAPTCHA_PUBLIC_KEY = config("RECAPTCHA_PUBLIC_KEY", "")
 RECAPTCHA_PRIVATE_KEY = config("RECAPTCHA_PRIVATE_KEY", "")
