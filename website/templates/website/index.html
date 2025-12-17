@@ -26,11 +26,14 @@
                                 heart of downtown Fort Kent, our cozy two-screen theater combines modern technology with
                                 a welcoming atmosphere, perfect for enjoying the latest blockbusters, family favorites,
                                 and indie gems. <br><br>Join us and experience the magic of cinema!</p>
-                            <div class="mt-10 flex items-center gap-x-6"><a href="#now-playing"
-                                                                            class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Now
-                                Playing</a><a href="#up-next"
-                                              class="text-sm/6 font-semibold text-gray-900">Coming
-                                Soon <span aria-hidden="true">→</span></a></div>
+                            <div class="mt-6 flex items-center gap-6">
+                                <a href="#now-playing" class="btn btn-primary btn-lg gap-2 shadow-md">
+                                    🎬 Now Playing This Week
+                                </a>
+                                <a href="#up-next" class="btn btn-ghost btn-lg px-2 font-semibold">
+                                    Coming Soon <span aria-hidden="true">→</span>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -42,19 +45,13 @@
         </div>
     </div>
 
-    <div class="bg-gray-900 py-24 sm:py-32" id="now-playing">
+    <div class="bg-gray-900 py-12 sm:py-16" id="now-playing">
         <div class="mx-auto max-w-7xl px-6 lg:px-8">
             <div class="mx-auto max-w-2xl lg:max-w-none">
                 <div class="text-center"><h2
                         class="text-4xl font-semibold tracking-tight text-balance text-white sm:text-5xl">Now Playing at
                     Fort Kent Cinema</h2>
-                    <p class="mt-4 text-lg/8 text-gray-300">Fort Kent Cinema is a cozy, two-screen theater nestled in
-                        the heart of downtown Fort Kent. Each auditorium offers comfortable seating for up to 100
-                        guests, creating an intimate and inviting moviegoing experience. Whether you're here for the
-                        latest blockbuster or a family-friendly adventure, our modern projection and sound systems
-                        ensure you enjoy every moment. Locally owned and operated, we take pride in providing a
-                        friendly, welcoming environment for our community to relax, snack, and escape into the world of
-                        film.</p></div>
+                </div>
                 <dl class="mt-16 grid grid-cols-1 gap-0.5 overflow-hidden rounded-2xl text-center sm:grid-cols-2 lg:grid-cols-2">
                     {% for movie in now_playing %}
                         <div class="flex flex-col bg-white/5 p-8">
@@ -68,10 +65,6 @@
                                 {% endif %}
                                 {% if movie.runtime %}
                                     <p>Running Time: {{ movie.runtime }}</p>
-                                {% endif %}
-                                {% if movie.genres.all %}
-                                    <p>Genre: {% for genre in movie.genres.all %}{{ genre }}{% if not forloop.last %},
-                                    {% endif %}{% endfor %}</p>
                                 {% endif %}
                                 <div class="flex justify-center items-center space-x-4 mt-4">
                                     {% if movie.youtube_id %}
