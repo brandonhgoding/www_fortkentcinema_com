@@ -1,17 +1,13 @@
-from datetime import timedelta
-
 from django.conf import settings
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.shortcuts import redirect, render
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse
 from django.utils import timezone
 from django.views.generic import DetailView, ListView, TemplateView
-from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from blog.models import BlogPost
-from cinema.models import Booking, TicketRate
+from cinema.models import Booking, TicketRate, Film
 from cinema.utils import get_current_or_next_films
 from website.forms import ContactForm
 
@@ -25,6 +21,8 @@ class HomePageTemplateView(TemplateView):
         now = timezone.now()
         context["ticket_rates"] = TicketRate.objects.all()
         context["now_playing"] = get_current_or_next_films(limit=self.NOW_PLAYING_LIMIT, now=now)
+        context["upcoming_films"] = Film.objects.filter(poster_url__isnull=False)[:4]
+        #context["upcoming_films"] = Film.objects.filter(bookings__booking_start_date__gte=now).order_by("bookings__booking_start_date")
         return context
 
 
@@ -39,40 +37,6 @@ class BlogListView(ListView):
 class BlogDetailView(DetailView):
     model = BlogPost
     template_name = "website/blog_detail.html"
-
-
-class ComingSoonTemplateView(TemplateView):
-    template_name = "website/coming_soon.html"
-
-
-class CalendarEventsAPIView(APIView):
-    def get(self, request, *args, **kwargs):
-        qs = (
-            Booking.objects.select_related("film")
-            # .filter(starts_at__gte=now() - timedelta(days=14),
-            #         starts_at__lte=now() + timedelta(days=90))
-            .order_by("booking_start_date")
-        )
-
-        events = []
-        for s in qs:
-            end_date = s.booking_end_date + timedelta(days=1)
-
-            events.append(
-                {
-                    "title": s.film.title,  # or f"{s.film.title} — {s.screen.name}"
-                    "start": s.booking_start_date.isoformat(),  # FullCalendar handles ISO 8601
-                    "end": end_date.isoformat(),
-                    "allDay": True,
-                    "extendedProps": {
-                        "filmId": s.film_id,
-                        "active": s.is_active,
-                        "confirmed": s.is_confirmed,
-                    },
-                    # "url": reverse("showtime-detail", args=[s.id]),
-                }
-            )
-        return Response(events)
 
 
 def contact_view(request):

@@ -70,6 +70,14 @@ class Film(SlugModelMixin):
     def get_absolute_url(self):
         return reverse("website:film_detail", kwargs={"slug": self.slug})
 
+    @property
+    def imdb_url(self):
+        return f"https://www.imdb.com/title/{self.imdb_id}/" if self.imdb_id else None
+
+    @property
+    def youtube_url(self):
+        return f"https://www.youtube.com/watch?v={self.youtube_id}" if self.youtube_id else None
+
     class Meta:
         ordering = ["title"]
 

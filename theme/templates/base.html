@@ -52,6 +52,7 @@
 
     {% tailwind_css %}
     {% block extra_css %}
+
     {% endblock %}
 
 {% if GA_ENABLED and GA_MEASUREMENT_ID %}
@@ -88,8 +89,7 @@
             </div>
             <div class="hidden lg:flex lg:gap-x-12">
               <a
-                    href="{% url 'website:blog_list' %}" class="text-sm/6 font-semibold text-gray-900">Blog</a><a
-                    href="{% url 'website:coming_soon' %}" class="text-sm/6 font-semibold text-gray-900">Coming Soon</a>
+                    href="{% url 'website:blog_list' %}" class="text-sm/6 font-semibold text-gray-900">Blog</a>
                 <a
                     href="{% url 'website:membership' %}" class="text-sm/6 font-semibold text-gray-900">Become A Member</a>
             <a
@@ -134,7 +134,6 @@
             <div class="-my-6 divide-y divide-gray-500/10 dark:divide-white/10">
               <div class="space-y-2 py-6">
                 <a href="{% url 'website:blog_list' %}" class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-white/5">Blog</a>
-                <a href="{% url 'website:coming_soon' %}" class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-white/5">Coming Soon</a>
               <a href="{% url 'website:membership' %}" class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-white/5">Become A Member</a>
                   <a href="{% url 'website:contact' %}" class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-white/5">Contact</a>
               </div>

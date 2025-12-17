@@ -20,7 +20,7 @@ class StaticSitemap(CinemaSitemap):
     priority = 0.8
 
     def items(self):
-        return ["website:index", "website:coming_soon"]
+        return ["website:index"]
 
     def location(self, item):
         return reverse(item)
