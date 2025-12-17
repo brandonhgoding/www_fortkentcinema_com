@@ -51,6 +51,7 @@
                     {% endif %}
                   </div>
                   {# Badge — pick one approach that matches your model #}
+                    {#  TODO: need to get NEXT booking not first  #}
                   {% if film.bookings.first.booking_start_date %}
                     <div class="absolute left-3 top-3 flex gap-2">
                       <span class="inline-flex items-center rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-gray-900 ring-1 ring-black/10 backdrop-blur">
