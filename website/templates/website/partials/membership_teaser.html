@@ -1,0 +1,169 @@
+<!-- Membership CTA + Savings Calculator -->
+<div class="mt-16 max-w-5xl mx-auto px-6 mb-16">
+
+  <div class="grid gap-8 lg:grid-cols-2">
+    <!-- CTA card -->
+    <div class="rounded-2xl bg-slate-900 text-slate-50 shadow-xl p-6 lg:p-8">
+      <h3 class="text-2xl font-semibold tracking-tight mb-3">
+        Become a Fort Kent Cinema Member
+      </h3>
+      <p class="text-sm text-slate-300 mb-4">
+        Love catching movies in town? Memberships start at just
+        <span class="font-semibold">$60/year</span> and quickly pay for themselves with
+        ticket and popcorn discounts.
+      </p>
+
+      <ul class="space-y-2 text-sm text-slate-200 mb-6">
+        <li>• <span class="font-semibold">$4 off</span> every evening ticket</li>
+        <li>• <span class="font-semibold">$2 off</span> every matinee ticket</li>
+        <li>• Discounts on popcorn (plus free refills on Jumbo)</li>
+        <li>• Exclusive member perks & special screenings</li>
+      </ul>
+
+      <a
+        href="/membership/"
+        class="inline-flex items-center justify-center rounded-full bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-slate-900 shadow hover:bg-emerald-400 transition"
+      >
+        Join the Membership →
+      </a>
+
+      <p class="mt-3 text-[11px] text-slate-400">
+        Prices and perks may change without notice. See membership page for full details.
+      </p>
+    </div>
+
+    <!-- Calculator card -->
+    <div class="rounded-2xl bg-slate-50 shadow-xl p-6 lg:p-8 border border-slate-200">
+      <h3 class="text-lg font-semibold text-slate-900 mb-2">
+        Will a membership pay for you?
+      </h3>
+      <p class="text-xs text-slate-500 mb-4">
+        Estimate your yearly savings on <span class="font-semibold">tickets alone</span>.
+        Popcorn discounts are extra savings on top.
+      </p>
+
+      <div class="space-y-5">
+        <!-- Evening movies -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label for="moviesEvening" class="text-xs font-medium text-slate-700">
+              Evening movies per month
+            </label>
+            <span class="text-xs text-slate-500">
+              <span id="moviesEveningValue" class="font-semibold">2</span> / month
+            </span>
+          </div>
+          <input
+            id="moviesEvening"
+            type="range"
+            min="0"
+            max="10"
+            value="2"
+            class="w-full accent-emerald-500"
+          />
+          <p class="mt-1 text-[11px] text-slate-500">
+            You save <span class="font-semibold">$4</span> per evening ticket.
+          </p>
+        </div>
+
+        <!-- Matinee movies -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label for="moviesMatinee" class="text-xs font-medium text-slate-700">
+              Matinee movies per month
+            </label>
+            <span class="text-xs text-slate-500">
+              <span id="moviesMatineeValue" class="font-semibold">1</span> / month
+            </span>
+          </div>
+          <input
+            id="moviesMatinee"
+            type="range"
+            min="0"
+            max="10"
+            value="1"
+            class="w-full accent-emerald-500"
+          />
+          <p class="mt-1 text-[11px] text-slate-500">
+            You save <span class="font-semibold">$2</span> per matinee ticket.
+          </p>
+        </div>
+
+        <!-- Results -->
+        <div class="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+          <p class="text-xs font-semibold text-slate-700 mb-2">
+            Estimated yearly ticket savings
+          </p>
+          <p class="text-2xl font-bold text-slate-900 mb-1">
+            <span id="yearlySavings">$120</span>
+          </p>
+          <p class="text-xs text-slate-600 mb-2">
+            Membership cost: <span class="font-semibold">$60/year</span>
+          </p>
+          <p id="netResult" class="text-xs font-medium text-emerald-600">
+            You’d be about $60 ahead each year on tickets alone.
+          </p>
+          <p class="mt-2 text-[11px] text-slate-500">
+            This is an estimate based on your movie habits. Popcorn discounts and special
+            events add even more value.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const eveningInput = document.getElementById("moviesEvening");
+    const matineeInput = document.getElementById("moviesMatinee");
+    if (!eveningInput || !matineeInput) return;
+
+    const eveningValueEl = document.getElementById("moviesEveningValue");
+    const matineeValueEl = document.getElementById("moviesMatineeValue");
+    const yearlySavingsEl = document.getElementById("yearlySavings");
+    const netResultEl = document.getElementById("netResult");
+
+    const MEMBERSHIP_COST = 60;
+    const SAVING_EVENING = 4; // $4 off per evening ticket
+    const SAVING_MATINEE = 2; // $2 off per matinee ticket
+
+    function updateCalculator() {
+      const eveningPerMonth = parseInt(eveningInput.value || "0", 10);
+      const matineePerMonth = parseInt(matineeInput.value || "0", 10);
+
+      eveningValueEl.textContent = eveningPerMonth;
+      matineeValueEl.textContent = matineePerMonth;
+
+      const monthlySavings =
+        eveningPerMonth * SAVING_EVENING + matineePerMonth * SAVING_MATINEE;
+      const yearlySavings = monthlySavings * 12;
+
+      yearlySavingsEl.textContent = `$${yearlySavings.toFixed(0)}`;
+
+      const net = yearlySavings - MEMBERSHIP_COST;
+
+      if (net >= 0) {
+        netResultEl.textContent = `You’d be about $${net.toFixed(
+          0
+        )} ahead each year on tickets alone.`;
+        netResultEl.classList.remove("text-red-600");
+        netResultEl.classList.add("text-emerald-600");
+      } else {
+        netResultEl.textContent = `You’d be about $${Math.abs(
+          net
+        ).toFixed(
+          0
+        )} short of breaking even on tickets alone (popcorn discounts may still make it worth it).`;
+        netResultEl.classList.remove("text-emerald-600");
+        netResultEl.classList.add("text-red-600");
+      }
+    }
+
+    eveningInput.addEventListener("input", updateCalculator);
+    matineeInput.addEventListener("input", updateCalculator);
+
+    // initial render
+    updateCalculator();
+  })();
+</script>

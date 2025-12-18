@@ -158,7 +158,7 @@ class Booking(models.Model):
                 <= screening_datetime
                 <= datetime.combine(max_date, time.max, tzinfo=tz)
             ):
-                formatted_time = screening.time.strftime("%I:%M %p").lstrip(
+                formatted_time = screening.time.strftime("%I:%M").lstrip(
                     "0"
                 )  # Format time as "1:00 PM"
                 grouped_times[screening.date].append(formatted_time)

@@ -1,0 +1,91 @@
+    <section class="bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 py-24" id="now-playing">
+  <div class="mx-auto max-w-7xl px-6 lg:px-8">
+    <div class="mx-auto max-w-2xl lg:max-w-none">
+
+      <div class="text-center">
+        <h1 class="text-4xl font-semibold tracking-tight text-balance text-white sm:text-5xl">
+          Now Playing at Fort Kent Cinema
+        </h1>
+        <h2 class="mt-4 text-slate-400">
+          13 Hall Street - Fort Kent, Maine
+        </h2>
+      </div>
+
+      {% if now_playing %}
+        <div class="mt-16 grid grid-cols-1 gap-6 sm:grid-cols-2">
+          {% for movie in now_playing %}
+            {% with booking=movie.bookings.last %}
+              <div class="bg-slate-800/60 rounded-2xl shadow-xl backdrop-blur p-8 text-center">
+
+                <h3 class="text-2xl font-serif text-white">{{ movie.title }}</h3>
+
+                {% if booking %}
+                  <p class="mt-1 text-sm text-slate-400">
+                    {{ booking.booking_start_date|date:"F j" }} – {{ booking.booking_end_date|date:"F j" }}
+                  </p>
+                {% endif %}
+
+                {% if movie.poster_url %}
+                  <img
+                    alt="{{ movie.title }} Poster"
+                    class="mt-6 rounded-lg shadow-lg mx-auto transition-transform duration-300 hover:scale-[1.02]"
+                    src="{{ movie.poster_url }}">
+                {% endif %}
+
+                <div class="mt-6 text-sm text-slate-200 space-y-1">
+                  {% if movie.rating %}<p>Rating: {{ movie.rating }}</p>{% endif %}
+                  {% if movie.runtime %}<p>Running Time: {{ movie.runtime }}</p>{% endif %}
+                </div>
+
+                <div class="flex justify-center items-center gap-4 mt-5 opacity-90 hover:opacity-100 transition">
+                  {% if movie.youtube_id %}
+                    <a href="https://www.youtube.com/watch?v={{ movie.youtube_id }}" target="_blank" rel="noopener noreferrer" aria-label="Watch trailer on YouTube">
+                      <!-- youtube svg -->
+                      <svg viewBox="0 0 576 512" height="28" width="28" style="color:#ff0000" fill="currentColor">
+                        <path d="M549.655 124.083c-6.281-23.65-24.787-42.276-48.284-48.597C458.781 64 288 64 288 64S117.22 64 74.629 75.486c-23.497 6.322-42.003 24.947-48.284 48.597-11.412 42.867-11.412 132.305-11.412 132.305s0 89.438 11.412 132.305c6.281 23.65 24.787 41.5 48.284 47.821C117.22 448 288 448 288 448s170.78 0 213.371-11.486c23.497-6.321 42.003-24.171 48.284-47.821 11.412-42.867 11.412-132.305 11.412-132.305s0-89.438-11.412-132.305zm-317.51 213.508V175.185l142.739 81.205-142.739 81.201z"/>
+                      </svg>
+                    </a>
+                  {% endif %}
+
+                  {% if movie.imdb_id %}
+                    <a href="https://www.imdb.com/title/{{ movie.imdb_id }}/" target="_blank" rel="noopener noreferrer" aria-label="View on IMDb">
+                      <!-- imdb svg -->
+                      <svg viewBox="0 0 448 512" height="28" width="28" style="color:#ffd700" fill="currentColor">
+                        <path d="M400 32H48C21.5 32 0 53.5 0 80v352c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48V80c0-26.5-21.5-48-48-48zM97 319.8H64V192h33zm113.2 0h-28.7v-86.4l-11.6 86.4h-20.6l-12.2-84.5v84.5h-29V192h42.8c3.3 19.8 6 39.9 8.7 59.9l7.6-59.9h43zm11.4 0V192h24.6c17.6 0 44.7-1.6 49 20.9 1.7 7.6 1.4 16.3 1.4 24.4 0 88.5 11.1 82.6-75 82.5zm160.9-29.2c0 15.7-2.4 30.9-22.2 30.9-9 0-15.2-3-20.9-9.8l-1.9 8.1h-29.8V192h31.7v41.7c6-6.5 12-9.2 20.9-9.2 21.4 0 22.2 12.8 22.2 30.1z"/>
+                      </svg>
+                    </a>
+                  {% endif %}
+                </div>
+
+                {% if booking and booking.showtime_list %}
+                  <ul class="mt-6 text-sm text-slate-200 space-y-1">
+                    {% for show_date in booking.showtime_list %}
+                      <li>
+                        <span class="font-semibold">{{ show_date.date|date:"D n/j" }}</span> —
+                        {% for time in show_date.times %}{{ time }}{% if not forloop.last %} &amp; {% endif %}{% endfor %}
+                      </li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+
+                {% if booking and booking.ticket_link %}
+                  <a href="{{ booking.ticket_link }}"
+                     class="btn btn-primary mt-7">
+                    Purchase Tickets
+                  </a>
+                {% endif %}
+
+              </div>
+            {% endwith %}
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="mt-16 flex flex-col bg-white/5 p-8 m-auto text-center rounded-2xl">
+          <dd class="order-first text-3xl font-semibold tracking-tight text-white mb-3">Check back soon!</dd>
+          <dt class="text-sm font-semibold text-gray-300">No movies are currently playing.</dt>
+        </div>
+      {% endif %}
+
+    </div>
+  </div>
+</section>
