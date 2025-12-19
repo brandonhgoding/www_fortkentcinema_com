@@ -21,7 +21,7 @@ class HomePageTemplateView(TemplateView):
         now = timezone.now()
         context["ticket_rates"] = TicketRate.objects.all()
         context["now_playing"] = get_current_or_next_films(limit=self.NOW_PLAYING_LIMIT, now=now)
-        context["upcoming_films"] = Film.objects.filter(bookings__booking_start_date__gte=now).order_by("bookings__booking_start_date")[:4]
+        context["upcoming_films"] = Film.objects.filter(bookings__booking_start_date__gt=now).order_by("bookings__booking_start_date")[:4]
         return context
 
 
