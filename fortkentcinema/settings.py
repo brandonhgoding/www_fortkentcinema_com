@@ -79,7 +79,6 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                "core.context_processors.analytics",
             ],
         },
     },
@@ -188,9 +187,6 @@ REST_FRAMEWORK = {
 }
 
 TAILWIND_APP_NAME = "theme"
-GA_MEASUREMENT_ID = config("GA_MEASUREMENT_ID", default=None)
-GA_ENABLED = bool(GA_MEASUREMENT_ID) and not DEBUG
-
 
 # EMAIL CONFIGURATION
 if USE_GMAIL := config("USE_GMAIL", default=False, cast=bool):
