@@ -174,10 +174,6 @@ class ScreeningTime(models.Model):
     date = models.DateField()
     time = models.TimeField()
     open_captions = models.BooleanField(default=False)
-    regular_ticket_start_number = models.PositiveIntegerField(blank=True, null=True)
-    regular_ticket_end_number = models.PositiveIntegerField(blank=True, null=True)
-    member_ticket_start_number = models.PositiveIntegerField(blank=True, null=True)
-    member_ticket_end_number = models.PositiveIntegerField(blank=True, null=True)
 
     def __str__(self) -> str:
         return self.screening_time_string
