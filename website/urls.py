@@ -14,18 +14,6 @@ sitemaps = {
 }
 
 urlpatterns = [
-    path("fort-kent-cinema-blog/", website_views.BlogListView.as_view(), name="blog_list"),
-    path(
-        "fort-kent-cinema-blog/<slug:slug>/",
-        website_views.BlogDetailView.as_view(),
-        name="blog_detail",
-    ),
-    path(
-        "fort-kent-cinema-membership/",
-        TemplateView.as_view(template_name="website/membership_page.html"),
-        name="membership",
-    ),
-    path("contact-fort-kent-cinema/", website_views.contact_view, name="contact"),
     path(
         "sitemap.xml", sitemap, {"sitemaps": sitemaps}, name="django.contrib.sitemaps.views.sitemap"
     ),

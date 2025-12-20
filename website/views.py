@@ -3,27 +3,7 @@ from django.contrib import messages
 from django.core.mail import send_mail
 from django.shortcuts import redirect, render
 from django.urls import reverse
-from django.utils import timezone
-from django.views.generic import DetailView, ListView, TemplateView
-
-from blog.models import BlogPost
-from cinema.models import Booking, TicketRate, Film
-from cinema.utils import get_current_or_next_films
 from website.forms import ContactForm
-
-
-
-class BlogListView(ListView):
-    model = BlogPost
-    template_name = "website/blog_index.html"
-
-    def get_queryset(self):
-        return BlogPost.objects.all().order_by("-post_date")
-
-
-class BlogDetailView(DetailView):
-    model = BlogPost
-    template_name = "website/blog_detail.html"
 
 
 def contact_view(request):
