@@ -231,6 +231,6 @@ RECAPTCHA_PRIVATE_KEY = config("RECAPTCHA_PRIVATE_KEY", "")
 RECAPTCHA_REQUIRED = not DEBUG
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10_000
-WAGTAIL_SITE_NAME = 'Fort Kent Cinema'
-WAGTAILADMIN_BASE_URL = 'https://www.fortkentcinema.com'
-WAGTAILDOCS_EXTENSIONS = ['csv', 'docx', 'key', 'odt', 'pdf', 'pptx', 'rtf', 'txt', 'xlsx', 'zip']
+WAGTAIL_SITE_NAME = "Fort Kent Cinema"
+WAGTAILADMIN_BASE_URL = "https://www.fortkentcinema.com"
+WAGTAILDOCS_EXTENSIONS = ["csv", "docx", "key", "odt", "pdf", "pptx", "rtf", "txt", "xlsx", "zip"]
