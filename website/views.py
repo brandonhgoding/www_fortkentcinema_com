@@ -15,7 +15,7 @@ from website.forms import ContactForm
 
 class BlogListView(ListView):
     model = BlogPost
-    template_name = "website/blog_list.html"
+    template_name = "website/blog_index.html"
 
     def get_queryset(self):
         return BlogPost.objects.all().order_by("-post_date")
