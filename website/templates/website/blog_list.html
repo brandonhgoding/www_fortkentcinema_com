@@ -20,7 +20,7 @@
             <div class="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-x-8 gap-y-20 lg:mx-0 lg:max-w-none lg:grid-cols-3">
                 {% for post in object_list %}
                 <article class="flex flex-col items-start justify-between"><a
-                        href="{% url "website:blog_detail" post.slug %}" class="relative w-full">
+                        href="" class="relative w-full">
                     <img alt="" class="aspect-video w-full rounded-2xl bg-gray-100 object-cover sm:aspect-2/1 lg:aspect-3/2" src="{% if post.header_image %}https://cdn.fortkentcinema.com/{{ post.header_image }}{% else %}{% static 'website/img/projector-background.jpg' %}{% endif %}">
                     <div class="absolute inset-0 rounded-2xl ring-1 ring-gray-900/10 ring-inset"></div>
                 </a>
@@ -31,7 +31,7 @@
                                class="relative z-10 rounded-full bg-gray-50 px-3 py-1.5 font-medium text-gray-600 hover:bg-gray-100">{{ post.category }}</a></div>
                         <div class="group relative"><h3
                                 class="mt-3 text-lg/6 font-semibold text-gray-900 group-hover:text-gray-600"><a
-                                href="{% url "website:blog_detail" post.slug %}"><span class="absolute inset-0"></span>{{ post.title }}<br><small>{{ post.subtitle }}</small></a></h3>
+                                href=""><span class="absolute inset-0"></span>{{ post.title }}<br><small>{{ post.subtitle }}</small></a></h3>
                             <p class="mt-5 line-clamp-3 text-sm/6 text-gray-600">{{ post.content }}</p></div>
                         <div class="relative mt-3 flex items-center gap-x-4"><img alt=""
                                                                                   class="size-10 rounded-full bg-gray-100"

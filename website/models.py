@@ -16,7 +16,7 @@ from cinema.utils import get_current_or_next_films
 
 class HomePage(Page):
     max_count = 1
-    subpage_types = ['website.BlogIndex']
+    subpage_types = ['website.BlogIndex', 'website.MembershipPage']
 
     NOW_PLAYING_LIMIT = 2
 
@@ -29,6 +29,9 @@ class HomePage(Page):
             bookings__booking_start_date__gt=now
         ).order_by("bookings__booking_start_date")[:4]
         return context
+
+class MembershipPage(Page):
+    max_count = 1
 
 
 class BlogIndex(Page):

@@ -22,7 +22,7 @@ urlpatterns = [
     ),
     path(
         "fort-kent-cinema-membership/",
-        TemplateView.as_view(template_name="website/membership.html"),
+        TemplateView.as_view(template_name="website/membership_page.html"),
         name="membership",
     ),
     path("contact-fort-kent-cinema/", website_views.contact_view, name="contact"),

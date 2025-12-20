@@ -1,3 +1,4 @@
+{% load wagtailcore_tags %}
 <!-- Membership CTA + Savings Calculator -->
 <div class="mt-16 max-w-5xl mx-auto px-6 mb-16">
 
@@ -21,7 +22,7 @@
       </ul>
 
       <a
-        href="{% url 'website:membership' %}"
+        href="{% slugurl 'fort-kent-cinema-membership' %}"
         class="inline-flex items-center justify-center rounded-full bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-slate-900 shadow hover:bg-emerald-400 transition"
       >
         Join Today →
