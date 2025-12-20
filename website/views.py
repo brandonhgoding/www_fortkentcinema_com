@@ -12,20 +12,6 @@ from cinema.utils import get_current_or_next_films
 from website.forms import ContactForm
 
 
-class HomePageTemplateView(TemplateView):
-    template_name = "website/index.html"
-    NOW_PLAYING_LIMIT = 2
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        now = timezone.now()
-        context["ticket_rates"] = TicketRate.objects.all()
-        context["now_playing"] = get_current_or_next_films(limit=self.NOW_PLAYING_LIMIT, now=now)
-        context["upcoming_films"] = Film.objects.filter(
-            bookings__booking_start_date__gt=now
-        ).order_by("bookings__booking_start_date")[:4]
-        return context
-
 
 class BlogListView(ListView):
     model = BlogPost

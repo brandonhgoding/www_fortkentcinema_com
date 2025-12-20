@@ -14,7 +14,6 @@ sitemaps = {
 }
 
 urlpatterns = [
-    path("", website_views.HomePageTemplateView.as_view(), name="index"),
     path("fort-kent-cinema-blog/", website_views.BlogListView.as_view(), name="blog_list"),
     path(
         "fort-kent-cinema-blog/<slug:slug>/",

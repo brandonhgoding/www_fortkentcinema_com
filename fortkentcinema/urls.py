@@ -27,7 +27,7 @@ from wagtail.documents import urls as wagtaildocs_urls
 
 urlpatterns = [
     path("", include(website_urls)),
-    path("fort-kent-cinema-blog/", include(wagtail_urls)),
+    path("test", include(wagtail_urls)),
     path("fort-kent-cinema-cms/", include(wagtailadmin_urls)),
     path("documents/", include(wagtaildocs_urls)),
 ]

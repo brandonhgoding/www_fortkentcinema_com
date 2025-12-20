@@ -1,3 +1,4 @@
+from django.utils import timezone
 from wagtail.models import Page
 from wagtail.search import index
 
@@ -8,6 +9,26 @@ from wagtail.models import Page
 from wagtail.fields import RichTextField
 from wagtail.admin.panels import FieldPanel
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
+from cinema.models import TicketRate, Film
+from cinema.utils import get_current_or_next_films
+
+
+class HomePage(Page):
+    max_count = 1
+    subpage_types = ['website.BlogIndex']
+
+    NOW_PLAYING_LIMIT = 2
+
+    def get_context(self, request, *args, **kwargs):
+        context = super().get_context(request, *args, **kwargs)
+        now = timezone.now()
+        context["ticket_rates"] = TicketRate.objects.all()
+        context["now_playing"] = get_current_or_next_films(limit=self.NOW_PLAYING_LIMIT, now=now)
+        context["upcoming_films"] = Film.objects.filter(
+            bookings__booking_start_date__gt=now
+        ).order_by("bookings__booking_start_date")[:4]
+        return context
 
 
 class BlogIndex(Page):
