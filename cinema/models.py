@@ -107,8 +107,7 @@ class Booking(models.Model):
     auditorium = models.CharField(
         max_length=16, choices=AuditoriumChoices.choices, default=AuditoriumChoices.SOUTH_AUDITORIUM
     )
-    square_id = models.CharField(max_length=255, blank=True, null=True, editable=False)
-    square_version = models.BigIntegerField(blank=True, null=True, editable=False)
+
 
     class Meta:
         constraints = [
@@ -165,6 +164,7 @@ class Booking(models.Model):
         # Convert defaultdict to a list of dictionaries
         return [{"date": date, "times": times} for date, times in grouped_times.items()]
 
+
     class Meta:
         ordering = ["booking_start_date"]
 
@@ -173,9 +173,11 @@ class ScreeningTime(models.Model):
     booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name="screening_times")
     date = models.DateField()
     time = models.TimeField()
-    square_variation_id = models.CharField(max_length=255, blank=True, null=True, editable=False)
-    square_variation_version = models.BigIntegerField(blank=True, null=True, editable=False)
     open_captions = models.BooleanField(default=False)
+    regular_ticket_start_number = models.PositiveIntegerField(blank=True, null=True)
+    regular_ticket_end_number = models.PositiveIntegerField(blank=True, null=True)
+    member_ticket_start_number = models.PositiveIntegerField(blank=True, null=True)
+    member_ticket_end_number = models.PositiveIntegerField(blank=True, null=True)
 
     def __str__(self) -> str:
         return self.screening_time_string
