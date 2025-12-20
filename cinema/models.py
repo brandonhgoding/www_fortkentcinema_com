@@ -1,6 +1,5 @@
 import uuid
 from decimal import Decimal
-from typing import Any
 from datetime import datetime, time, timedelta
 
 from django.db import models
@@ -8,7 +7,7 @@ from django.db.models import CheckConstraint, Q
 from django.urls import reverse
 from django.utils import timezone
 
-from core.mixins import SlugModelMixin
+from website.mixins import SlugModelMixin
 
 
 class RateTypes(models.TextChoices):

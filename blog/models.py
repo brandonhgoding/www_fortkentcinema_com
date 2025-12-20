@@ -3,7 +3,7 @@ import uuid
 from django.db import models
 from django.urls import reverse
 
-from core.mixins import SlugModelMixin
+from website.mixins import SlugModelMixin
 
 
 # Create your models here.
