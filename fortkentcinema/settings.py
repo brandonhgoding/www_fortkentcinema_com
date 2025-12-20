@@ -33,6 +33,19 @@ INSTALLED_APPS = [
     "website.apps.WebsiteConfig",
     "django.contrib.sitemaps",
     "django.contrib.sites",
+    "wagtail.contrib.forms",
+    "wagtail.contrib.redirects",
+    "wagtail.embeds",
+    "wagtail.sites",
+    "wagtail.users",
+    "wagtail.snippets",
+    "wagtail.documents",
+    "wagtail.images",
+    "wagtail.search",
+    "wagtail.admin",
+    "wagtail",
+    "modelcluster",
+    "taggit",
     "tailwind",
     "theme",
     "rest_framework",
@@ -59,6 +72,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "wagtail.contrib.redirects.middleware.RedirectMiddleware",
 ]
 
 if DEBUG:
@@ -215,3 +229,8 @@ RECAPTCHA_PRIVATE_KEY = config("RECAPTCHA_PRIVATE_KEY", "")
 
 # Optional: skip captcha when running tests or locally
 RECAPTCHA_REQUIRED = not DEBUG
+
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10_000
+WAGTAIL_SITE_NAME = 'Fort Kent Cinema'
+WAGTAILADMIN_BASE_URL = 'https://www.fortkentcinema.com'
+WAGTAILDOCS_EXTENSIONS = ['csv', 'docx', 'key', 'odt', 'pdf', 'pptx', 'rtf', 'txt', 'xlsx', 'zip']

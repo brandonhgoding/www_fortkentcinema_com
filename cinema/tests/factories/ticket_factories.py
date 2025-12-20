@@ -14,6 +14,7 @@ fake = Faker()
 
 # --- Helpers so we don't violate uniqueness on rate_type --- #
 
+
 def get_evening_rate():
     """
     Guarantee an Evening Admission rate exists.
@@ -47,6 +48,7 @@ def get_matinee_rate():
 # --- ScreeningTime must be generated elsewhere --- #
 # We rely on another factory, e.g. ScreeningTimeFactory,
 # and only assign a FK if caller doesn't override.
+
 
 class TicketFactory(factory.django.DjangoModelFactory):
     """

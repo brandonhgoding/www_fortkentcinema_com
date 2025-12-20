@@ -21,11 +21,18 @@ from django.urls import path
 from django.urls.conf import include
 from django.conf import settings
 from website import urls as website_urls
+from wagtail.admin import urls as wagtailadmin_urls
+from wagtail import urls as wagtail_urls
+from wagtail.documents import urls as wagtaildocs_urls
 
 urlpatterns = [
     path("", include(website_urls)),
-    path("fort-kent-cinema-cms/", admin.site.urls),
+    path('fort-kent-cinema-blog/', include(wagtail_urls)),
+    path('fort-kent-cinema-cms/', include(wagtailadmin_urls)),
+    path('documents/', include(wagtaildocs_urls)),
+
 ]
+
 
 if settings.DEBUG:
     # Include django_browser_reload URLs only in DEBUG mode
