@@ -55,29 +55,6 @@
 
 <link rel="stylesheet" href="{% static 'src/output.css' %}">
 
-{% if GA_ENABLED and GA_MEASUREMENT_ID %}
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id={{ GA_MEASUREMENT_ID }}"></script>
-  <script>
-    // Respect Do Not Track (optional but nice)
-    (function(){
-      var dnt = (navigator.doNotTrack == "1" || window.doNotTrack == "1" || navigator.msDoNotTrack == "1");
-      if (dnt) { return; }
-
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){ dataLayer.push(arguments); }
-      window.gtag = gtag;
-
-      gtag('js', new Date());
-      // GA4 anonymizes IP by default; keep other config here:
-      gtag('config', '{{ GA_MEASUREMENT_ID }}', {
-        // Example extras:
-        // 'debug_mode': {{ DEBUG|yesno:"true,false" }}, // only if you want DebugView locally
-        'send_page_view': true
-      });
-    })();
-  </script>
-{% endif %}
 </head>
 
 <body class="bg-gray-50 text-black font-serif leading-normal tracking-normal">

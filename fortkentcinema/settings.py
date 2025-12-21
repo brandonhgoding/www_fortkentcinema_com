@@ -54,8 +54,6 @@ INSTALLED_APPS = [
 
 SITE_ID = 1
 
-if DEBUG:
-    INSTALLED_APPS += ["django_browser_reload"]
 
 if ENABLE_CDN:
     INSTALLED_APPS += [
@@ -74,11 +72,6 @@ MIDDLEWARE = [
     "wagtail.contrib.redirects.middleware.RedirectMiddleware",
 ]
 
-if DEBUG:
-    # Add django_browser_reload middleware only in DEBUG mode
-    MIDDLEWARE += [
-        "django_browser_reload.middleware.BrowserReloadMiddleware",
-    ]
 
 ROOT_URLCONF = "fortkentcinema.urls"
 
