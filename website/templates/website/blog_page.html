@@ -57,6 +57,42 @@
 </div>
 
 
+    <!--
+  This example requires updating your template:
+
+  ```
+  <html class="h-full bg-white dark:bg-gray-900">
+  <body class="h-full">
+  ```
+-->
+<div class="flex min-h-full flex-col dark:bg-gray-900">
+  <!-- 3 column wrapper -->
+  <div class="mx-auto w-full max-w-7xl grow lg:flex xl:px-2 dark:bg-gray-900">
+    <!-- Left sidebar & main wrapper -->
+    <div class="flex-1 xl:flex">
+      <div class="px-4 py-6 sm:px-6 lg:pl-8 xl:flex-1 xl:pl-6">
+        <!-- Main area -->
+          <div class="bg-white px-6 lg:px-8 dark:bg-gray-900">
+  <div class="mx-auto max-w-3xl text-base/7 text-gray-700 dark:text-gray-300">
+    <h2 class="mt-2 mb-6 text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl dark:text-white">
+        {{ page.subtitle }}
+    </h2>
+    {{ page.content|richtext }}
+
+      {% if page.header_image %}
+          {% image page.header_image fill-1310x873 class="aspect-video rounded-xl bg-gray-50 object-cover mt-6 dark:bg-gray-800" %}
+      {% endif %}
+
+  </div>
+          </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
 
 
 
