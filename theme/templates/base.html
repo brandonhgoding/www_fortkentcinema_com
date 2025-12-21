@@ -1,4 +1,4 @@
-{% load static tailwind_tags wagtailimages_tags wagtailcore_tags %}
+{% load static wagtailimages_tags wagtailcore_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -49,11 +49,11 @@
       }
     </script>
 
-
-    {% tailwind_css %}
     {% block extra_css %}
 
     {% endblock %}
+
+<link rel="stylesheet" href="{% static 'src/output.css' %}">
 
 {% if GA_ENABLED and GA_MEASUREMENT_ID %}
   <!-- Google tag (gtag.js) -->

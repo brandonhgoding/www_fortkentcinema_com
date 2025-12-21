@@ -50,27 +50,19 @@ class BlogIndex(Page):
         FieldPanel("intro"),
     ]
 
-    def get_context(self, request):
-        context = super().get_context(request)
+    def get_context(self, request, *args, **kwargs):
+        context = super().get_context(request, *args, **kwargs)
+
+        from website.models import BlogPage  # or import at top
+
         posts = (
-            self.get_children()
+            BlogPage.objects
+            .child_of(self)
             .live()
-            .specific()
-            .order_by("-first_published_at")
+            .order_by('-post_date')
         )
 
-        # Optional pagination (e.g., 10 posts per page)
-        paginator = Paginator(posts, 10)
-        page = request.GET.get("page")
-
-        try:
-            posts = paginator.page(page)
-        except PageNotAnInteger:
-            posts = paginator.page(1)
-        except EmptyPage:
-            posts = paginator.page(paginator.num_pages)
-
-        context["posts"] = posts
+        context["object_list"] = posts   # so your old template still works
         return context
 
 

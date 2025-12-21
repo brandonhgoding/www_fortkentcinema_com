@@ -46,7 +46,6 @@ INSTALLED_APPS = [
     "wagtail",
     "modelcluster",
     "taggit",
-    "tailwind",
     "theme",
     "rest_framework",
     "corsheaders",
@@ -199,8 +198,6 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
     "PAGE_SIZE": 6,
 }
-
-TAILWIND_APP_NAME = "theme"
 
 # EMAIL CONFIGURATION
 if USE_GMAIL := config("USE_GMAIL", default=False, cast=bool):
