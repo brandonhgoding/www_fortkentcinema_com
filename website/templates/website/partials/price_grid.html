@@ -1,3 +1,4 @@
+{% load wagtailcore_tags wagtailimages_tags %}
 <section class="bg-slate-900 py-16" id="pricing">
   <div class="mx-auto max-w-5xl px-6">
     <header class="text-center mb-10">
@@ -42,7 +43,7 @@
         <p class="mt-5 text-xs text-slate-400">
           Fort Kent Cinema Memberships start at just <span class="font-semibold text-slate-100">$60/year</span>
           and include ticket and concession discounts plus other exclusive perks.
-          <a href="/membership" class="text-emerald-400 underline underline-offset-2">Learn more →</a>
+          <a href="{% slugurl 'fort-kent-cinema-membership' %}" class="text-emerald-400 underline underline-offset-2">Learn more →</a>
         </p>
       </div>
 
