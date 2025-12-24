@@ -36,7 +36,7 @@
                         <div class="group relative"><h3
                                 class="mt-3 text-lg/6 font-semibold text-gray-900 group-hover:text-gray-600"><a
                                 href=""><span class="absolute inset-0"></span>{{ post.title }}<br><small>{{ post.subtitle }}</small></a></h3>
-                            <p class="mt-5 line-clamp-3 text-sm/6 text-gray-600">{{ post.content }}</p></div>
+                            <p class="mt-5 line-clamp-3 text-sm/6 text-gray-600">{{ post.content|striptags }}</p></div>
                         <div class="relative mt-3 flex items-center gap-x-4"><img alt=""
                                                                                   class="size-10 rounded-full bg-gray-100"
                                                                                   src="{% static 'website/img/projector-background.jpg' %}">
