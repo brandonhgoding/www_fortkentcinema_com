@@ -1,4 +1,6 @@
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from wagtail.contrib.routable_page.models import RoutablePageMixin, route
 from wagtail.models import Page
 from wagtail.search import index
 
@@ -97,3 +99,24 @@ class BlogPage(Page):
     parent_page_types = ['website.BlogIndex']
     subpage_types = []
 
+
+class FilmIndexPage(RoutablePageMixin, Page):
+    intro = RichTextField(blank=True)
+
+    @route(r"^$")
+    def film_list(self, request, *args, **kwargs):
+        films = Film.objects.all()
+        return self.render(
+            request,
+            context_overrides={"films": films},
+            template="films/film_index.html",
+        )
+
+    @route(r"^(?P<slug>[-\w]+)/$")
+    def film_detail(self, request, slug, *args, **kwargs):
+        film = get_object_or_404(Film, slug=slug)
+        return self.render(
+            request,
+            context_overrides={"film": film},
+            template="films/film_detail.html",
+        )

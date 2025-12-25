@@ -1,0 +1,262 @@
+{% load wagtailimages_tags %}
+
+<main class="bg-slate-950 text-slate-100 min-h-screen">
+
+  {# HERO #}
+  <section class="border-b border-slate-800 bg-gradient-to-b from-slate-900 to-slate-950">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-10 lg:py-16 grid gap-8 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)] items-start">
+
+      {# Poster #}
+      <div class="mx-auto w-56 sm:w-64 lg:w-72 flex-shrink-0">
+        {% if film.poster %}
+          {% image film.poster fill-480x720 as poster %}
+          <div class="overflow-hidden rounded-2xl shadow-2xl ring-1 ring-slate-800">
+            <img src="{{ poster.url }}" alt="{{ film.title }} poster" class="w-full h-auto">
+          </div>
+        {% elif film.poster_url %}
+          <div class="overflow-hidden rounded-2xl shadow-2xl ring-1 ring-slate-800">
+            <img src="{{ film.poster_url }}" alt="{{ film.title }} poster" class="w-full h-auto">
+          </div>
+        {% else %}
+          <div class="flex aspect-[2/3] items-center justify-center rounded-2xl border border-dashed border-slate-700 text-slate-500 text-sm">
+            Poster coming soon
+          </div>
+        {% endif %}
+      </div>
+
+      {# Title / meta / CTA #}
+      <div class="space-y-6">
+        <div class="space-y-3">
+          <p class="text-sm font-medium uppercase tracking-[0.18em] text-sky-300">
+            Now Playing at Fort Kent Cinema
+          </p>
+          <h1 class="text-4xl sm:text-5xl font-semibold tracking-tight text-white">
+            {{ film.title }}
+          </h1>
+
+          <div class="flex flex-wrap items-center gap-3 text-sm text-slate-300">
+            {% if film.rating %}
+              <span class="inline-flex items-center rounded-full border border-slate-600 px-2.5 py-0.5 text-xs font-semibold">
+                {{ film.get_rating_display|default:film.rating }}
+              </span>
+            {% endif %}
+
+            {% if film.runtime %}
+              <span>{{ film.runtime }} min</span>
+            {% endif %}
+
+            {% if film.genres.all %}
+              <span class="inline-flex flex-wrap gap-1">
+                {% for genre in film.genres.all %}
+                  <span class="rounded-full bg-slate-800/70 px-2 py-0.5 text-xs">
+                    {{ genre.name }}
+                  </span>
+                {% endfor %}
+              </span>
+            {% endif %}
+          </div>
+
+          {% if film.tagline %}
+            <p class="text-base text-slate-300 max-w-xl">
+              {{ film.tagline }}
+            </p>
+          {% endif %}
+        </div>
+
+        {# Primary CTAs #}
+        <div class="flex flex-wrap gap-3">
+          {% if primary_showtime_url %}
+            <a href="{{ primary_showtime_url }}"
+               class="inline-flex items-center justify-center rounded-full bg-sky-500 px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-lg hover:bg-sky-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950">
+              🎟️ Get Tickets
+            </a>
+          {% endif %}
+
+          {% if film.youtube_id %}
+            <a href="https://www.youtube.com/watch?v={{ film.youtube_id }}"
+               target="_blank"
+               class="inline-flex items-center justify-center rounded-full border border-slate-600 px-4 py-2.5 text-sm font-semibold text-slate-100 hover:border-sky-400 hover:text-sky-200">
+              ▶ Watch Trailer
+            </a>
+          {% endif %}
+        </div>
+
+        {# Quick logistics #}
+        <div class="flex flex-wrap gap-4 text-xs text-slate-400">
+          <div class="flex items-center gap-2">
+            <span class="inline-block h-2 w-2 rounded-full bg-green-400"></span>
+            <span>Downtown · 13 Hall Street, Fort Kent</span>
+          </div>
+          <span>Free parking</span>
+          <span>Fresh popcorn & snacks</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# SHOWTIMES #}
+  <section class="border-b border-slate-900 bg-slate-950/80 py-10">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 space-y-4">
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 class="text-xl font-semibold text-white">Showtimes</h2>
+          <p class="mt-1 text-sm text-slate-400">
+            Tickets open 30 minutes before showtime.
+          </p>
+        </div>
+        {% if membership_cta_url %}
+          <a href="{{ membership_cta_url }}" class="text-xs font-medium text-sky-300 hover:text-sky-200">
+            Members save on tickets & popcorn →
+          </a>
+        {% endif %}
+      </div>
+
+      {% if showtime_groups %}
+        <div class="space-y-4">
+          {% for group in showtime_groups %}
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 sm:px-5">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-baseline gap-2">
+                  <p class="text-sm font-semibold text-slate-100">
+                    {{ group.date|date:"D, M j" }}
+                  </p>
+                  <p class="text-xs text-slate-400">
+                    {{ group.showtimes|length }} showtime{{ group.showtimes|length|pluralize }}
+                  </p>
+                </div>
+
+                <div class="flex flex-wrap gap-2">
+                  {% for s in group.showtimes %}
+                    <a href="{{ s.booking_url }}"
+                       class="inline-flex items-center rounded-full border border-slate-600 px-3 py-1.5 text-xs font-medium text-slate-100 hover:border-sky-400 hover:text-sky-100">
+                      {{ s.start|time:"g:i A" }}
+                    </a>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-sm text-slate-400">
+          Showtimes will be announced soon. Check back or follow us on Facebook for updates.
+        </p>
+      {% endif %}
+    </div>
+  </section>
+
+  {# SYNOPSIS + DETAILS #}
+  <section class="py-10 border-b border-slate-900 bg-slate-950">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 grid gap-10 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+
+      <div class="space-y-4">
+        <h2 class="text-xl font-semibold text-white">About the Film</h2>
+        <p class="text-sm leading-relaxed text-slate-300 whitespace-pre-line">
+          {{ film.description|default:"Details coming soon." }}
+        </p>
+      </div>
+
+      <div class="space-y-4">
+        <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-[0.18em]">
+          Details
+        </h3>
+        <dl class="grid grid-cols-1 gap-x-4 gap-y-3 text-sm sm:grid-cols-2">
+          {% if film.director %}
+            <div>
+              <dt class="text-slate-500">Director</dt>
+              <dd class="text-slate-200">{{ film.director }}</dd>
+            </div>
+          {% endif %}
+          {% if film.cast %}
+            <div class="sm:col-span-2">
+              <dt class="text-slate-500">Cast</dt>
+              <dd class="text-slate-200">{{ film.cast }}</dd>
+            </div>
+          {% endif %}
+          {% if film.runtime %}
+            <div>
+              <dt class="text-slate-500">Runtime</dt>
+              <dd class="text-slate-200">{{ film.runtime }} minutes</dd>
+            </div>
+          {% endif %}
+          {% if film.rating %}
+            <div>
+              <dt class="text-slate-500">Rating</dt>
+              <dd class="text-slate-200">{{ film.get_rating_display|default:film.rating }}</dd>
+            </div>
+          {% endif %}
+          {% if film.imdb_id %}
+            <div>
+              <dt class="text-slate-500">IMDb</dt>
+              <dd>
+                <a href="https://www.imdb.com/title/{{ film.imdb_id }}/"
+                   target="_blank"
+                   class="text-sky-300 hover:text-sky-200 text-sm">
+                  View on IMDb →
+                </a>
+              </dd>
+            </div>
+          {% endif %}
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  {# TRAILER #}
+  {% if film.youtube_id %}
+    <section class="py-10 border-b border-slate-900 bg-slate-950">
+      <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 space-y-4">
+        <h2 class="text-xl font-semibold text-white">Trailer</h2>
+        <div class="aspect-video overflow-hidden rounded-2xl border border-slate-800 bg-black">
+          <iframe
+            class="h-full w-full"
+            src="https://www.youtube-nocookie.com/embed/{{ film.youtube_id }}"
+            title="{{ film.title }} trailer"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen>
+          </iframe>
+        </div>
+      </div>
+    </section>
+  {% endif %}
+
+  {# MORE MOVIES #}
+  {% if other_films %}
+    <section class="py-10 bg-slate-950">
+      <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-semibold text-white">Also Playing</h2>
+          <a href="{% url 'films:index' %}" class="text-xs text-sky-300 hover:text-sky-200">
+            View all movies →
+          </a>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          {% for f in other_films %}
+            <a href="{{ f.get_absolute_url }}" class="group rounded-2xl border border-slate-800 bg-slate-900/60 p-3 hover:border-sky-400/70">
+              <div class="overflow-hidden rounded-xl mb-3">
+                {% if f.poster %}
+                  {% image f.poster fill-320x480 as thumb %}
+                  <img src="{{ thumb.url }}" alt="{{ f.title }} poster"
+                       class="w-full h-auto transform transition duration-300 group-hover:scale-[1.03]">
+                {% elif f.poster_url %}
+                  <img src="{{ f.poster_url }}" alt="{{ f.title }} poster"
+                       class="w-full h-auto transform transition duration-300 group-hover:scale-[1.03]">
+                {% else %}
+                  <div class="aspect-[2/3] flex items-center justify-center text-xs text-slate-500 border border-dashed border-slate-700 rounded-xl">
+                    No image
+                  </div>
+                {% endif %}
+              </div>
+              <p class="text-sm font-semibold text-slate-100 line-clamp-2">{{ f.title }}</p>
+              {% if f.runtime %}
+                <p class="mt-1 text-xs text-slate-400">{{ f.runtime }} min • {{ f.get_rating_display|default:f.rating }}</p>
+              {% endif %}
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+  {% endif %}
+
+</main>
