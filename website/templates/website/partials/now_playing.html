@@ -1,4 +1,4 @@
-{% load runtime %}
+{% load runtime wagtailcore_tags wagtailimages_tags %}
 <section class="bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 py-24" id="now-playing">
     <div class="mx-auto max-w-7xl px-6 lg:px-8">
         <div class="mx-auto max-w-2xl lg:max-w-none">
@@ -56,11 +56,15 @@
                                 {% endif %}
 
 
-                                {% if movie.poster_url %}
-                                    <img
-                                            alt="{{ movie.title }} Poster"
-                                            class="mt-4 rounded-lg shadow-lg mx-auto transition-transform duration-300 hover:scale-[1.02]"
-                                            src="{{ movie.poster_url }}">
+                                {% if movie.poster %}
+                                    {% if film.poster %}
+                                      {% image film.poster fill-300x444 as poster %}
+                                      <img
+                                        src="{{ poster.url }}"
+                                        alt="{{ film.title }} poster"
+                                        class="mt-4 rounded-lg shadow-lg mx-auto transition-transform duration-300 hover:scale-[1.02]"
+                                      >
+                                    {% endif %}
                                 {% endif %}
 
                                 {% if movie.rating or movie.runtime %}

@@ -61,7 +61,13 @@ class Film(SlugModelMixin):
     rating = models.CharField(max_length=5, choices=FilmRating.choices, default=FilmRating.PG)
     genres = models.ManyToManyField(FilmGenre, related_name="films", blank=True)
     runtime = models.PositiveIntegerField(help_text="Runtime in minutes", blank=True, null=True)
-    poster_url = models.URLField(max_length=200, blank=True, null=True)
+    poster = models.ForeignKey(
+        'wagtailimages.Image',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='+'
+    )
 
     def __str__(self) -> str:
         return self.title

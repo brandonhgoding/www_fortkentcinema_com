@@ -1,3 +1,4 @@
+{% load wagtailcore_tags wagtailimages_tags %}
 <section class="py-10" id="up-next">
   <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
@@ -37,13 +38,15 @@
             <a href="#" class="block">
               <div class="relative aspect-[2/3] overflow-hidden bg-gray-100 shadow-sm ring-1 ring-black/10 transition group-hover:shadow-md">
                   <div class="relative aspect-[2/3] w-full overflow-hidden">
-                    {% if film.poster_url %}
-                      <img
-                        src="{{ film.poster_url }}"
-                        alt="{{ film.title }}"
-                        class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
-                        loading="lazy"
-                      />
+                    {% if film.poster %}
+                        {% image film.poster fill-400x600 as poster %}
+                          <img
+                            src="{{ poster.url }}"
+                            alt="{{ film.title }} poster"
+                            class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+                                                loading="lazy"
+                          >
+
                     {% else %}
                       <div class="flex h-full w-full items-center justify-center p-6 text-center text-sm text-base-content/60">
                         Poster coming soon
