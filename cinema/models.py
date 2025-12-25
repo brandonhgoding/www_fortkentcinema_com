@@ -6,6 +6,8 @@ from django.db import models
 from django.db.models import CheckConstraint, Q
 from django.urls import reverse
 from django.utils import timezone
+from wagtail.admin.panels import FieldPanel
+from wagtail.snippets.models import register_snippet
 
 from website.mixins import SlugModelMixin
 
@@ -51,7 +53,7 @@ class FilmGenre(models.Model):
     class Meta:
         ordering = ["name"]
 
-
+@register_snippet
 class Film(SlugModelMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=100)
@@ -68,6 +70,17 @@ class Film(SlugModelMixin):
         on_delete=models.SET_NULL,
         related_name='+'
     )
+
+    panels = [
+        FieldPanel("title"),
+        FieldPanel("description"),
+        FieldPanel("imdb_id"),
+        FieldPanel("youtube_id"),
+        FieldPanel("rating"),
+        FieldPanel("genres"),
+        FieldPanel("runtime"),
+        FieldPanel("poster"),
+    ]
 
     def __str__(self) -> str:
         return self.title
