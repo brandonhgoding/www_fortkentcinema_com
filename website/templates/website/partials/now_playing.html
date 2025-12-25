@@ -57,14 +57,12 @@
 
 
                                 {% if movie.poster %}
-                                    {% if film.poster %}
-                                      {% image film.poster fill-300x444 as poster %}
+                                      {% image movie.poster fill-300x444 as poster %}
                                       <img
                                         src="{{ poster.url }}"
                                         alt="{{ film.title }} poster"
                                         class="mt-4 rounded-lg shadow-lg mx-auto transition-transform duration-300 hover:scale-[1.02]"
                                       >
-                                    {% endif %}
                                 {% endif %}
 
                                 {% if movie.rating or movie.runtime %}
