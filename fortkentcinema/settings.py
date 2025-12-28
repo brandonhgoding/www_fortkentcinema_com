@@ -135,56 +135,18 @@ USE_I18N = True
 
 USE_TZ = True
 
-if ENABLE_CDN:
-    # === S3 & CloudFront ===
-    AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID")
-    AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY")
-    AWS_STORAGE_BUCKET_NAME = "cdn.fortkentcinema.com"
-    AWS_S3_REGION_NAME = "us-east-1"  # or your bucket’s region
-    AWS_S3_SIGNATURE_VERSION = "s3v4"
-    AWS_QUERYSTRING_AUTH = False  # no ?X-Amz-Signature on public files
-    AWS_S3_OBJECT_PARAMETERS = {
-        "CacheControl": "max-age=31536000, public",  # 1 year (change if needed)
-    }
 
-    # CloudFront domain you created
-    CLOUDFRONT_DOMAIN = "cdn.fortkentcinema.com"
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"  # or wherever you want
 
-    # ---------- STATIC ----------
-    STATICFILES_STORAGE = "fortkentcinema.storage_backends.StaticStorage"
-    STATIC_URL = f"https://{CLOUDFRONT_DOMAIN}/static/"
-
-    # ---------- MEDIA ----------
-    DEFAULT_FILE_STORAGE = "fortkentcinema.storage_backends.MediaStorage"
-    MEDIA_URL = f"https://{CLOUDFRONT_DOMAIN}/media/"
-
-    STORAGES = {
-        "default": {
-            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
-            "OPTIONS": {
-                "bucket_name": AWS_STORAGE_BUCKET_NAME,
-                "region_name": AWS_S3_REGION_NAME,
-                "access_key": AWS_ACCESS_KEY_ID,
-                "secret_key": AWS_SECRET_ACCESS_KEY,
-                "custom_domain": CLOUDFRONT_DOMAIN,
-            },
-        },
-        "staticfiles": {
-            "BACKEND": "fortkentcinema.storage_backends.StaticStorage",
-        },
-    }
-else:
-    STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "static_collected"  # local tmp dir for collectstatic
-
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"         # or wherever uploads live
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 OMDB_API_KEY = config("OMDB_API_KEY", default=None)
 CORS_ALLOWED_ORIGINS = [
     "https://www.fortkentcinema.com",
     "https://fortkentcinema.com",
-    "http://localhost:3000",
-    "http://192.168.2.112:3000",
 ]
 
 REST_FRAMEWORK = {
