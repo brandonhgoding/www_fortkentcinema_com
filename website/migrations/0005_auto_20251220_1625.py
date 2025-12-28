@@ -19,9 +19,7 @@ def forwards(apps, schema_editor):
         return
 
     # Keep track of slugs under this parent
-    existing_slugs = set(
-        parent.get_children().values_list("slug", flat=True)
-    )
+    existing_slugs = set(parent.get_children().values_list("slug", flat=True))
 
     def make_slug(base: str) -> str:
         base_slug = slugify(base) or "post"
@@ -54,9 +52,7 @@ def forwards(apps, schema_editor):
         # First published time – use post_date if present, else now
         if post.post_date:
             dt = datetime.combine(post.post_date, time.min)
-            first_published_at = timezone.make_aware(
-                dt, timezone.get_default_timezone()
-            )
+            first_published_at = timezone.make_aware(dt, timezone.get_default_timezone())
         else:
             first_published_at = timezone.now()
 

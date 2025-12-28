@@ -18,7 +18,7 @@ from cinema.utils import get_current_or_next_films
 
 class HomePage(Page):
     max_count = 1
-    subpage_types = ['website.BlogIndex', 'website.MembershipPage']
+    subpage_types = ["website.BlogIndex", "website.MembershipPage"]
 
     NOW_PLAYING_LIMIT = 2
 
@@ -32,6 +32,7 @@ class HomePage(Page):
         ).order_by("bookings__booking_start_date")[:4]
         return context
 
+
 class MembershipPage(Page):
     max_count = 1
 
@@ -40,10 +41,11 @@ class BlogIndex(Page):
     """
     A parent page that lists BlogPage children in reverse chronological order.
     """
+
     intro = RichTextField(blank=True)
 
     # Only allow BlogPage children
-    subpage_types = ['website.BlogPage']
+    subpage_types = ["website.BlogPage"]
 
     # # You normally don’t want BlogIndex created under another BlogPage
     # parent_page_types = []  # change as needed
@@ -57,14 +59,9 @@ class BlogIndex(Page):
 
         from website.models import BlogPage  # or import at top
 
-        posts = (
-            BlogPage.objects
-            .child_of(self)
-            .live()
-            .order_by('-post_date')
-        )
+        posts = BlogPage.objects.child_of(self).live().order_by("-post_date")
 
-        context["object_list"] = posts   # so your old template still works
+        context["object_list"] = posts  # so your old template still works
         return context
 
 
@@ -75,28 +72,24 @@ class BlogPage(Page):
     post_date = models.DateField("Post date")
     content = RichTextField()
     header_image = models.ForeignKey(
-        'wagtailimages.Image',
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name='+'
+        "wagtailimages.Image", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
 
     search_fields = Page.search_fields + [
-        index.SearchField('content'),
-        index.FilterField('post_date')
+        index.SearchField("content"),
+        index.FilterField("post_date"),
     ]
 
     content_panels = Page.content_panels + [
-        FieldPanel('subtitle'),
-        FieldPanel('author'),
-        FieldPanel('category'),
-        FieldPanel('post_date'),
-        FieldPanel('content'),
-        FieldPanel('header_image'),
+        FieldPanel("subtitle"),
+        FieldPanel("author"),
+        FieldPanel("category"),
+        FieldPanel("post_date"),
+        FieldPanel("content"),
+        FieldPanel("header_image"),
     ]
 
-    parent_page_types = ['website.BlogIndex']
+    parent_page_types = ["website.BlogIndex"]
     subpage_types = []
 
 

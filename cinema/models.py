@@ -53,6 +53,7 @@ class FilmGenre(models.Model):
     class Meta:
         ordering = ["name"]
 
+
 @register_snippet
 class Film(SlugModelMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -64,11 +65,7 @@ class Film(SlugModelMixin):
     genres = models.ManyToManyField(FilmGenre, related_name="films", blank=True)
     runtime = models.PositiveIntegerField(help_text="Runtime in minutes", blank=True, null=True)
     poster = models.ForeignKey(
-        'wagtailimages.Image',
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name='+'
+        "wagtailimages.Image", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
 
     panels = [
@@ -127,7 +124,6 @@ class Booking(models.Model):
         max_length=16, choices=AuditoriumChoices.choices, default=AuditoriumChoices.SOUTH_AUDITORIUM
     )
 
-
     class Meta:
         constraints = [
             CheckConstraint(
@@ -182,7 +178,6 @@ class Booking(models.Model):
 
         # Convert defaultdict to a list of dictionaries
         return [{"date": date, "times": times} for date, times in grouped_times.items()]
-
 
     class Meta:
         ordering = ["booking_start_date"]
