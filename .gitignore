@@ -141,3 +141,5 @@ node_modules/
 images/
 original_images/
 
+static_collected/
+static/
