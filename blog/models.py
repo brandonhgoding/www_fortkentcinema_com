@@ -1,13 +1,10 @@
 import uuid
 
 from django.db import models
-from django.urls import reverse
-from wagtail.snippets.models import register_snippet
 
-from website.mixins import SlugModelMixin
+from .mixins import SlugModelMixin
 
 
-@register_snippet
 class BlogAuthor(SlugModelMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     first_name = models.CharField(max_length=100)
@@ -23,18 +20,19 @@ class BlogAuthor(SlugModelMixin):
         return f"{self.first_name} {self.last_name}"
 
 
-@register_snippet
 class BlogCategory(SlugModelMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
 
     slug_field = "name"
 
+    class Meta:
+        verbose_name_plural = "Blog categories"
+
     def __str__(self) -> str:
         return self.name
 
 
-@register_snippet
 class BlogPost(SlugModelMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=200)
@@ -53,6 +51,3 @@ class BlogPost(SlugModelMixin):
 
     def __str__(self) -> str:
         return self.subtitle
-
-    def get_absolute_url(self):
-        return reverse("website:blog_detail", kwargs={"slug": self.slug})

@@ -7,7 +7,7 @@ from django.utils.text import slugify
 class SlugModelMixin(models.Model):
     """
     Mixin to add slug functionality to models.
-    Automatically generates a slug from the name field.
+    Automatically generates a slug from the specified field.
     """
 
     slug_field = "title"

@@ -28,32 +28,9 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "blog.apps.BlogConfig",
-    "cinema.apps.CinemaConfig",
-    "core.apps.CoreConfig",
-    "website.apps.WebsiteConfig",
-    "django.contrib.sitemaps",
-    "django.contrib.sites",
-    "wagtail.contrib.forms",
-    "wagtail.contrib.redirects",
-    "wagtail.embeds",
-    "wagtail.sites",
-    "wagtail.users",
-    "wagtail.snippets",
-    "wagtail.documents",
-    "wagtail.images",
-    "wagtail.search",
-    "wagtail.admin",
-    "wagtail",
-    "modelcluster",
-    "taggit",
-    "theme",
     "rest_framework",
     "corsheaders",
-    "django_recaptcha",
 ]
-
-SITE_ID = 1
-
 
 if ENABLE_CDN:
     INSTALLED_APPS += [
@@ -69,7 +46,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "wagtail.contrib.redirects.middleware.RedirectMiddleware",
 ]
 
 
@@ -137,13 +113,13 @@ USE_TZ = True
 
 
 STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"  # or wherever you want
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"         # or wherever uploads live
+MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-OMDB_API_KEY = config("OMDB_API_KEY", default=None)
+
 CORS_ALLOWED_ORIGINS = [
     "https://www.fortkentcinema.com",
     "https://fortkentcinema.com",
@@ -152,18 +128,10 @@ CORS_ALLOWED_ORIGINS = [
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
     "PAGE_SIZE": 6,
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticatedOrReadOnly",
+    ],
 }
-
-# EMAIL CONFIGURATION
-if USE_GMAIL := config("USE_GMAIL", default=False, cast=bool):
-    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-    EMAIL_HOST = "smtp.gmail.com"
-    EMAIL_PORT = 587
-    EMAIL_USE_TLS = True
-    EMAIL_HOST_USER = config("EMAIL_HOST_USER")
-    EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
-    CONTACT_FORM_TO_ADDRESS = [config("CONTACT_FORM_TO_ADDRESS")]
-
 
 if not DEBUG:
     # Django should treat requests as HTTPS if the ALB says so
@@ -175,15 +143,4 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
 
-# Use your keys from https://www.google.com/recaptcha/admin
-RECAPTCHA_PUBLIC_KEY = config("RECAPTCHA_PUBLIC_KEY", "")
-RECAPTCHA_PRIVATE_KEY = config("RECAPTCHA_PRIVATE_KEY", "")
-
-# Optional: skip captcha when running tests or locally
-RECAPTCHA_REQUIRED = not DEBUG
-
-DATA_UPLOAD_MAX_NUMBER_FIELDS = 10_000
-WAGTAIL_SITE_NAME = "Fort Kent Cinema"
-WAGTAILADMIN_BASE_URL = "https://www.fortkentcinema.com"
-WAGTAILDOCS_EXTENSIONS = ["csv", "docx", "key", "odt", "pdf", "pptx", "rtf", "txt", "xlsx", "zip"]
 AWS_S3_FILE_OVERWRITE = False
