@@ -38,9 +38,9 @@ if ENABLE_CDN:
     ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -120,10 +120,13 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https?://(www\.)?fortkentcinema\.com$",
+]
 CORS_ALLOWED_ORIGINS = [
-    "https://www.fortkentcinema.com",
-    "https://fortkentcinema.com",
-    "https://d2so03josaz26u.cloudfront.net",
+    "https://d123abc.cloudfront.net",
 ]
 
 REST_FRAMEWORK = {
