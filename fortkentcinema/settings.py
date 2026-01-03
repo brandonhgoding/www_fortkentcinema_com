@@ -38,9 +38,9 @@ if ENABLE_CDN:
     ]
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -123,6 +123,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CORS_ALLOWED_ORIGINS = [
     "https://www.fortkentcinema.com",
     "https://fortkentcinema.com",
+    "https://d2so03josaz26u.cloudfront.net",
 ]
 
 REST_FRAMEWORK = {
@@ -132,15 +133,3 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ],
 }
-
-if not DEBUG:
-    # Django should treat requests as HTTPS if the ALB says so
-    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-    CSRF_TRUSTED_ORIGINS = [
-        "https://fortkentcinema.com",
-        "https://www.fortkentcinema.com",
-    ]
-    CSRF_COOKIE_SECURE = True
-    SESSION_COOKIE_SECURE = True
-
-AWS_S3_FILE_OVERWRITE = False
