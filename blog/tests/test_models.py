@@ -1,14 +1,15 @@
 from unittest import mock
 from unittest.mock import Mock
 
-from django.test import TestCase
-
 from blog.models import BlogAuthor, BlogCategory, BlogPost
+from django.test import TestCase
 
 
 class BlogPostTestCase(TestCase):
     def setUp(self) -> None:
-        self.author = BlogAuthor.objects.create(last_name="last_name", first_name="first_name")
+        self.author = BlogAuthor.objects.create(
+            last_name="last_name", first_name="first_name"
+        )
         self.category = BlogCategory.objects.create(name="title")
         self.post = BlogPost.objects.create(
             title="title",
@@ -32,10 +33,14 @@ class BlogPostTestCase(TestCase):
 
 class BlogAuthorTestCase(TestCase):
     def setUp(self) -> None:
-        self.author = BlogAuthor.objects.create(last_name="last_name", first_name="first_name")
+        self.author = BlogAuthor.objects.create(
+            last_name="last_name", first_name="first_name"
+        )
 
     def test_str(self) -> None:
-        self.assertEqual(str(self.author), f"{self.author.first_name} {self.author.last_name}")
+        self.assertEqual(
+            str(self.author), f"{self.author.first_name} {self.author.last_name}"
+        )
 
     @mock.patch("core.mixins.slugify")
     def test_slugify_is_called_on_save_if_no_slug(self, mock_slugify: Mock) -> None:
