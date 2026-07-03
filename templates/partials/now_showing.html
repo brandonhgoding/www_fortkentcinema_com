@@ -11,7 +11,7 @@
       </svg>
     </div>
 
-    {% if now_showing %}
+    {% if ns_dates %}
     {% comment %}Desktop: date navigation + spotlight movie grid. Phone: film-first
     schedule list. Both are rendered; home.css toggles visibility by viewport.{% endcomment %}
     <div class="date-nav">
@@ -38,7 +38,9 @@
 
     <div class="schedule-list">
       {% for movie in now_showing %}
+      {% if movie.upcoming %}
       {% include "partials/movie_schedule_card.html" %}
+      {% endif %}
       {% endfor %}
     </div>
     {% else %}

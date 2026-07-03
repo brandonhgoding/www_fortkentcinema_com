@@ -104,6 +104,23 @@ class HomeViewDataTests(TestCase):
         self.assertIn('data-neon', html)             # hero neon hook
         self.assertIn('data-cursor-bulbs', html)     # hero cursor bulbs hook
 
+    @mock.patch("web.views.get_coming_soon", return_value=[])
+    @mock.patch("web.views.get_now_showing")
+    def test_movie_with_only_past_showtimes_has_no_broken_nav_or_card(self, ns, _cs):
+        # A movie whose only showtime is in the past has no upcoming dates:
+        # the desktop date-nav must not render (it would be empty/broken),
+        # and the phone schedule-list must not render an empty card for it.
+        ns.return_value = [{
+            "id": "1", "title": "Past Movie", "rating": "PG-13", "runtime": "2h",
+            "genre": "", "poster": "p.jpg", "youtube_id": "",
+            "is_free_for_members": False,
+            "showtimes": {"2000-01-01": ["6:00 PM"]},
+        }]
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertNotIn("date-nav__current", html)
+        self.assertNotIn("Past Movie", html)
+        self.assertIn("No showtimes available.", html)
+
 
 class ComingSoonTests(TestCase):
     @mock.patch("web.views.get_now_showing", return_value=[])

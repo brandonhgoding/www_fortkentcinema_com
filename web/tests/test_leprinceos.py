@@ -76,6 +76,38 @@ class GetNowShowingTests(SimpleTestCase):
             m["showtimes"]["2999-01-15"], ["1:00 PM"]
         )  # 18:00Z -> 1:00 PM EST
 
+    def test_skips_malformed_showtime_row(self):
+        engagements = [
+            {
+                "id": 3,
+                "film_title": "Dune",
+                "film_poster_url": "d.jpg",
+                "films": [],
+                "is_free_for_members": False,
+                "show_in_main_listings": True,
+            },
+        ]
+        showtimes = [
+            {"id": 200, "starts_at": "2999-01-15T18:00:00Z"},  # good
+            {"id": 201},  # malformed: missing starts_at entirely
+            {"id": 202, "starts_at": None},  # malformed: starts_at is None
+        ]
+
+        def fake_get(url, timeout=None):
+            if "/engagements/?" in url:
+                return _resp({"results": engagements})
+            if "/showtimes/" in url:
+                return _resp({"results": showtimes})
+            return _resp({"results": []})
+
+        with mock.patch("web.services.leprinceos.requests.get", side_effect=fake_get):
+            movies = leprinceos.get_now_showing()  # must not raise
+
+        self.assertEqual(len(movies), 1)
+        m = movies[0]
+        self.assertEqual(sorted(m["showtimes"].keys()), ["2999-01-15"])
+        self.assertEqual(m["showtimes"]["2999-01-15"], ["1:00 PM"])
+
     def test_stale_fallback_on_error(self):
         engagements = [
             {"id": 2, "film_title": "X", "films": [], "show_in_main_listings": True}
@@ -173,3 +205,34 @@ class GetComingSoonTests(SimpleTestCase):
         self.assertEqual(
             m["films"], [{"id": 5, "title": "Dune Part Two", "poster": "p.jpg"}]
         )
+
+    def test_skips_malformed_engagement_missing_start_date(self):
+        engagements = [
+            {
+                "id": 20,
+                "film_title": "Good Movie",
+                "start_date": "2999-03-01",
+                "films": [],
+                "is_free_for_members": True,
+                "kind": "REGULAR",
+            },
+            {
+                # Malformed: missing start_date entirely
+                "id": 21,
+                "film_title": "Bad Movie",
+                "films": [],
+                "kind": "REGULAR",
+            },
+        ]
+
+        def fake_get(url, timeout=None):
+            if "/engagements/?" in url:
+                return _resp({"results": engagements})
+            return _resp({"results": []})
+
+        with mock.patch("web.services.leprinceos.requests.get", side_effect=fake_get):
+            movies = leprinceos.get_coming_soon()  # must not raise
+
+        self.assertEqual(len(movies), 1)
+        self.assertEqual(movies[0]["id"], "20")
+        self.assertEqual(movies[0]["title"], "Good Movie")

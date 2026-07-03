@@ -90,40 +90,57 @@ def get_now_showing():
         return []
 
     movies = []
-    for engagement in visible_engagements:
-        # Fetch showtimes — this is the critical data
-        showtimes = _get(
-            f"/showtimes/?engagement={engagement['id']}&is_cancelled=false"
-        )
+    try:
+        for engagement in visible_engagements:
+            try:
+                # Fetch showtimes — this is the critical data
+                showtimes = _get(
+                    f"/showtimes/?engagement={engagement['id']}&is_cancelled=false"
+                )
 
-        # Fetch film details separately — optional, for rating/runtime
-        film = None
-        lead_id = _primary_film_id(engagement)
-        if lead_id is not None:
-            film = _get(f"/films/{lead_id}/")
+                # Fetch film details separately — optional, for rating/runtime
+                film = None
+                lead_id = _primary_film_id(engagement)
+                if lead_id is not None:
+                    film = _get(f"/films/{lead_id}/")
 
-        # Group showtimes by local date
-        showtimes_by_date = {}
-        for st in showtimes:
-            local_date = _local_date(st["starts_at"])
-            local_time = _format_showtime(st["starts_at"])
-            showtimes_by_date.setdefault(local_date, []).append(local_time)
+                # Group showtimes by local date, skipping any malformed row
+                # rather than letting it take down the whole listing.
+                showtimes_by_date = {}
+                for st in showtimes:
+                    try:
+                        starts_at = st["starts_at"]
+                        if not starts_at:
+                            continue
+                        local_date = _local_date(starts_at)
+                        local_time = _format_showtime(starts_at)
+                        showtimes_by_date.setdefault(local_date, []).append(
+                            local_time
+                        )
+                    except Exception:
+                        continue
 
-        movies.append(
-            {
-                "id": str(engagement["id"]),
-                "title": engagement.get("film_title"),
-                "rating": (film or {}).get("rating") or "",
-                "runtime": _format_runtime((film or {}).get("runtime_minutes")),
-                "genre": "",
-                "poster": engagement.get("film_poster_url")
-                or (film or {}).get("poster_url")
-                or "",
-                "showtimes": showtimes_by_date,
-                "youtube_id": (film or {}).get("youtube_id") or "",
-                "is_free_for_members": bool(engagement.get("is_free_for_members")),
-            }
-        )
+                movies.append(
+                    {
+                        "id": str(engagement["id"]),
+                        "title": engagement.get("film_title"),
+                        "rating": (film or {}).get("rating") or "",
+                        "runtime": _format_runtime((film or {}).get("runtime_minutes")),
+                        "genre": "",
+                        "poster": engagement.get("film_poster_url")
+                        or (film or {}).get("poster_url")
+                        or "",
+                        "showtimes": showtimes_by_date,
+                        "youtube_id": (film or {}).get("youtube_id") or "",
+                        "is_free_for_members": bool(
+                            engagement.get("is_free_for_members")
+                        ),
+                    }
+                )
+            except Exception:
+                continue
+    except Exception:
+        return movies
 
     # Filter out engagements that have no upcoming showtimes
     return [m for m in movies if m["showtimes"]]
@@ -161,40 +178,50 @@ def get_coming_soon():
 
     # Fetch film details for extra metadata
     movies = []
-    for engagement in unique_engagements:
-        film = None
-        lead_id = _primary_film_id(engagement)
-        if lead_id is not None:
-            film = _get(f"/films/{lead_id}/")
+    try:
+        for engagement in unique_engagements:
+            try:
+                film = None
+                lead_id = _primary_film_id(engagement)
+                if lead_id is not None:
+                    film = _get(f"/films/{lead_id}/")
 
-        release_date = datetime.date.fromisoformat(engagement["start_date"])
-        formatted_date = release_date.strftime("%B %-d")
+                release_date = datetime.date.fromisoformat(
+                    engagement["start_date"]
+                )
+                formatted_date = release_date.strftime("%B %-d")
 
-        films = engagement.get("films") or []
+                films = engagement.get("films") or []
 
-        movies.append(
-            {
-                "id": str(engagement["id"]),
-                "title": engagement.get("display_title")
-                or engagement.get("film_title"),
-                "start_date": engagement.get("start_date"),
-                "release_date": formatted_date,
-                "genre": "",
-                "poster": engagement.get("film_poster_url")
-                or (film or {}).get("poster_url")
-                or "",
-                "films": [
+                movies.append(
                     {
-                        "id": f["id"],
-                        "title": f.get("title"),
-                        "poster": f.get("poster_url"),
+                        "id": str(engagement["id"]),
+                        "title": engagement.get("display_title")
+                        or engagement.get("film_title"),
+                        "start_date": engagement.get("start_date"),
+                        "release_date": formatted_date,
+                        "genre": "",
+                        "poster": engagement.get("film_poster_url")
+                        or (film or {}).get("poster_url")
+                        or "",
+                        "films": [
+                            {
+                                "id": f["id"],
+                                "title": f.get("title"),
+                                "poster": f.get("poster_url"),
+                            }
+                            for f in films
+                        ],
+                        "description": (film or {}).get("synopsis") or "",
+                        "youtube_id": (film or {}).get("youtube_id") or "",
+                        "is_free_for_members": bool(
+                            engagement.get("is_free_for_members")
+                        ),
                     }
-                    for f in films
-                ],
-                "description": (film or {}).get("synopsis") or "",
-                "youtube_id": (film or {}).get("youtube_id") or "",
-                "is_free_for_members": bool(engagement.get("is_free_for_members")),
-            }
-        )
+                )
+            except Exception:
+                continue
+    except Exception:
+        return movies
 
     return movies
