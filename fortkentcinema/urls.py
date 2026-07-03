@@ -13,6 +13,7 @@ from django.urls import include, path
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("blog.urls")),
+    path("blog/", include("blog.urls_site")),
     path("", include("web.urls")),
 ]
 
