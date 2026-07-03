@@ -7,11 +7,20 @@
 {% block og_description %}Your local movie theater in Fort Kent, Maine. Check showtimes, coming soon, and join our membership program.{% endblock %}
 
 {% block extra_css %}
-  {# section sheets linked here as Tasks 5-7 add them #}
+  <link rel="stylesheet" href="{% static 'css/Hero.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/ClassicMovieCTA.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/NowShowing.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/MovieCard.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/MovieScheduleCard.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/home.css' %}" />
 {% endblock %}
 
 {% block content %}
-  {# Task 5 #}{# hero + classic CTA #}
+  {# Task 5: hero + classic CTA + now showing #}
+  {% include "partials/hero.html" %}
+  {% include "partials/ornament_divider.html" %}
+  {% include "partials/cta_classic.html" %}
+  {% include "partials/ornament_divider.html" %}
   {% include "partials/now_showing.html" %}
   {# Task 6 #}{# open-mic CTA + coming soon #}
   {# Task 7 #}{# gift-card CTA + blog teaser #}

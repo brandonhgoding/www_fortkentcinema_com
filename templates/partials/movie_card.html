@@ -1,0 +1,54 @@
+<article class="movie-card" x-cloak x-show='{{ movie.dates_json|safe }}.includes(dates[idx])'>
+  {% if movie.youtube_id %}
+  <div class="movie-poster movie-poster--playable"
+       role="button"
+       tabindex="0"
+       aria-label="Watch {{ movie.title }} trailer"
+       @click="trailer = { title: '{{ movie.title|escapejs }}', youtube_id: '{{ movie.youtube_id|escapejs }}' }"
+       @keydown.enter.prevent="trailer = { title: '{{ movie.title|escapejs }}', youtube_id: '{{ movie.youtube_id|escapejs }}' }"
+       @keydown.space.prevent="trailer = { title: '{{ movie.title|escapejs }}', youtube_id: '{{ movie.youtube_id|escapejs }}' }">
+  {% else %}
+  <div class="movie-poster">
+  {% endif %}
+    {% if movie.is_free_for_members %}
+    <div class="movie-free-banner">Free for Members</div>
+    {% endif %}
+    {% if movie.poster %}
+    <img
+      src="{{ movie.poster }}"
+      alt="{{ movie.title }} poster"
+      class="movie-poster-img"
+      onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+    />
+    {% endif %}
+    <div class="poster-placeholder" style="display: {% if movie.poster %}none{% else %}flex{% endif %};">
+      <div class="poster-placeholder-icon" role="img" aria-label="Movie poster placeholder">
+        🎬
+      </div>
+      <div class="poster-placeholder-text">Movie Poster</div>
+    </div>
+    {% if movie.youtube_id %}
+    <div class="movie-poster-play-overlay">
+      <svg class="movie-poster-play-icon" viewBox="0 0 48 48" aria-hidden="true">
+        <circle cx="24" cy="24" r="23" fill="rgba(0,0,0,0.6)" stroke="white" stroke-width="2" />
+        <polygon points="19,14 19,34 35,24" fill="white" />
+      </svg>
+    </div>
+    {% endif %}
+  </div>
+  <div class="movie-info">
+    <h3 class="movie-title">{{ movie.title }}</h3>
+    <div class="movie-meta">
+      <span class="movie-rating">{{ movie.rating }}</span>
+      <span class="movie-runtime">{{ movie.runtime }}</span>
+    </div>
+    <p class="movie-genre">{{ movie.genre }}</p>
+    {% for slot in movie.upcoming %}
+    <div class="movie-showtimes" x-show="dates[idx] === '{{ slot.key }}'">
+      {% for time in slot.times %}
+      <button class="showtime">{{ time }}</button>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+</article>

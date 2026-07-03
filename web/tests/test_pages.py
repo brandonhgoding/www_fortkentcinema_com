@@ -83,6 +83,25 @@ class HomeViewDataTests(TestCase):
         html = self.client.get(reverse("home")).content.decode()
         self.assertIn("Movies in the St. John Valley", html)  # home <title>/og:title
 
+    @mock.patch("web.views.get_coming_soon", return_value=[])
+    @mock.patch("web.views.get_now_showing")
+    def test_now_showing_renders_movie_and_dates(self, ns, _cs):
+        ns.return_value = [{
+            "id": "1", "title": "Dune", "rating": "PG-13", "runtime": "2h 35min",
+            "genre": "", "poster": "d.jpg", "youtube_id": "abc",
+            "is_free_for_members": True,
+            "showtimes": {"2999-01-15": ["6:00 PM"], "2999-01-16": ["7:00 PM"]},
+        }]
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertIn("now-showing", html)          # section id
+        self.assertIn("Dune", html)                  # movie title
+        self.assertIn("6:00 PM", html)               # a showtime rendered into DOM
+        self.assertIn("7:00 PM", html)               # both dates' times server-rendered
+        self.assertIn("Free for Members", html)      # free banner
+        self.assertIn('data-spotlight', html)        # spotlight grid hook
+        self.assertIn('data-neon', html)             # hero neon hook
+        self.assertIn('data-cursor-bulbs', html)     # hero cursor bulbs hook
+
 
 class StaticAssetsTests(TestCase):
     def test_core_css_present(self):
