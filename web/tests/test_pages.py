@@ -1,5 +1,6 @@
 from django.test import TestCase
 from django.urls import reverse
+from django.contrib.staticfiles.finders import find
 
 
 class HomePageTests(TestCase):
@@ -55,3 +56,14 @@ class BaseChromeTests(TestCase):
     def test_canonical_uses_request_url(self):
         html = self.client.get(reverse("home")).content.decode()
         self.assertIn('rel="canonical"', html)
+
+
+class StaticAssetsTests(TestCase):
+    def test_core_css_present(self):
+        for name in ("css/variables.css", "css/global.css", "css/effects.css"):
+            self.assertIsNotNone(find(name), f"missing static asset: {name}")
+
+    def test_component_css_present(self):
+        # Representative sample of the ported component/page sheets.
+        for name in ("css/Hero.css", "css/Nav.css", "css/Footer.css", "css/NowShowing.css"):
+            self.assertIsNotNone(find(name), f"missing static asset: {name}")

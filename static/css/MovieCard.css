@@ -1,0 +1,238 @@
+.movie-card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition:
+    transform var(--transition-base),
+    box-shadow var(--transition-base);
+  border: 1px solid rgba(201, 168, 76, 0.12);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.movie-card:hover {
+  transform: translateY(-8px);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.4),
+    0 0 20px var(--color-gold-glow);
+  border-color: var(--color-gold);
+}
+
+/* Lobby Poster Frame Style — Art Deco display case */
+.movie-poster {
+  position: relative;
+  aspect-ratio: 2/3;
+  background: linear-gradient(135deg, var(--color-bg-charcoal) 0%, var(--color-bg-dark) 100%);
+  border: 3px solid;
+  border-image: linear-gradient(
+      180deg,
+      var(--color-gold),
+      var(--color-gold-warm),
+      var(--color-gold)
+    )
+    1;
+  margin: 12px;
+  box-shadow:
+    inset 0 0 20px rgba(0, 0, 0, 0.5),
+    0 4px 8px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Art deco corner brackets */
+.movie-poster::before,
+.movie-poster::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.movie-poster::before {
+  top: 6px;
+  left: 6px;
+  border-top: 2px solid var(--color-gold-light);
+  border-left: 2px solid var(--color-gold-light);
+}
+
+.movie-poster::after {
+  bottom: 6px;
+  right: 6px;
+  border-bottom: 2px solid var(--color-gold-light);
+  border-right: 2px solid var(--color-gold-light);
+}
+
+.movie-poster--playable {
+  cursor: pointer;
+}
+
+/* "Free for Members" banner ribbon */
+.movie-free-banner {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  z-index: 3;
+  padding: 0.3rem 0.75rem;
+  background: var(--color-neon-red);
+  color: var(--color-cream);
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border-radius: 0 3px 3px 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+
+.movie-poster-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-base);
+}
+
+.movie-card:hover .movie-poster-img {
+  transform: scale(1.05);
+}
+
+/* Placeholder poster styling */
+.poster-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    var(--color-bg-dark) 0%,
+    var(--color-bg-charcoal) 50%,
+    var(--color-bg-dark) 100%
+  );
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+}
+
+.poster-placeholder-icon {
+  font-size: 4rem;
+  margin-bottom: var(--spacing-sm);
+  opacity: 0.5;
+}
+
+.poster-placeholder-text {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  letter-spacing: 2px;
+  color: var(--color-cream-muted);
+  text-align: center;
+}
+
+.movie-poster-play-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition-base);
+}
+
+.movie-poster--playable:hover .movie-poster-play-overlay {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.movie-poster-play-icon {
+  width: 56px;
+  height: 56px;
+  opacity: 0.85;
+  transition:
+    opacity var(--transition-base),
+    transform var(--transition-base);
+}
+
+.movie-poster--playable:hover .movie-poster-play-icon {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.movie-info {
+  padding: var(--spacing-md);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.movie-title {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-cream);
+  margin-bottom: var(--spacing-xs);
+  line-height: 1.3;
+}
+
+.movie-meta {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.movie-rating {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  background: rgba(201, 168, 76, 0.12);
+  border: 1px solid var(--color-gold);
+  border-radius: 3px;
+  color: var(--color-gold);
+}
+
+.movie-runtime {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-cream-muted);
+}
+
+.movie-genre {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-cream-muted);
+  font-style: italic;
+}
+
+.movie-showtimes {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: var(--spacing-sm);
+}
+
+.showtime {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  padding: 0.4rem 0.8rem;
+  background: rgba(201, 168, 76, 0.08);
+  border: 1px solid var(--color-gold);
+  border-radius: 3px;
+  color: var(--color-gold);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.showtime:hover {
+  background: var(--color-gold);
+  color: var(--color-bg-dark);
+  box-shadow: 0 0 10px var(--color-gold-glow);
+}
+
+.showtime:focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 2px;
+}
