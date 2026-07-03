@@ -174,6 +174,10 @@ class CalendarTests(TestCase):
         self.assertIn("coming-view-toggle", html)
         self.assertIn("coming-calendar-container", html)
 
+    def test_out_of_range_month_404(self):
+        for bad in ("/calendar/2999/12/", "/calendar/2999/13/"):
+            self.assertEqual(self.client.get(bad).status_code, 404)
+
 
 class HomeIntegrationTests(TestCase):
     @mock.patch("web.views.get_coming_soon", return_value=[])

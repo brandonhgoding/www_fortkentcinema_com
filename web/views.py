@@ -2,6 +2,7 @@ import calendar
 import datetime
 import json
 
+from django.http import Http404
 from django.views.generic import TemplateView
 
 from blog.models import BlogPost
@@ -114,6 +115,11 @@ class CalendarMonthView(TemplateView):
         ctx = super().get_context_data(**kwargs)
         year = int(kwargs["year"])
         month = int(kwargs["month"])  # 0-based
+
+        if not (0 <= month <= 11) or not (
+            datetime.MINYEAR <= year <= datetime.MAXYEAR
+        ):
+            raise Http404("Invalid calendar month")
 
         cal_month = month + 1  # 1-based for date/calendar math
         first = datetime.date(year, cal_month, 1)
