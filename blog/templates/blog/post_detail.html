@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load static %}{% load blog_extras %}
+
+{% block title %}{{ post.title }} | Fort Kent Cinema{% endblock %}
+{% block description %}{% if post.subtitle %}{{ post.subtitle }}{% else %}{{ post.content|excerpt:160 }}{% endif %}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{% if post.subtitle %}{{ post.subtitle }}{% else %}{{ post.content|excerpt:160 }}{% endif %}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_image %}{% if og_image_url %}{{ og_image_url }}{% else %}{{ block.super }}{% endif %}{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/BlogDetailPage.css' %}" />
+{% endblock %}
+
+{% block content %}
+<div class="blog-detail-page" x-data="{ copied: false }">
+  {% if post.header_image %}
+  <div class="blog-detail-hero">
+    <img src="{{ post.header_image.url }}" alt="{{ post.title }}" class="blog-detail-hero-img" />
+    <div class="blog-detail-hero-overlay"></div>
+  </div>
+  {% endif %}
+  <div class="blog-detail-container">
+    <nav class="blog-detail-nav"><a href="/blog" class="blog-detail-back">&larr; Back to Blog</a></nav>
+    <article class="blog-detail-article">
+      <header class="blog-detail-header">
+        {% if post.category %}<span class="blog-detail-category">{{ post.category.name }}</span>{% endif %}
+        <h1 class="blog-detail-title">{{ post.title }}</h1>
+        {% if post.subtitle %}<p class="blog-detail-subtitle">{{ post.subtitle }}</p>{% endif %}
+        <div class="blog-detail-meta">
+          {% if post.author %}<span class="blog-detail-author">By {{ post.author.first_name }} {{ post.author.last_name }}</span>{% endif %}
+          <span class="blog-detail-date">{{ post.post_date|date:"l, F j, Y" }}</span>
+          <button class="blog-detail-share" aria-label="Copy link to post"
+                  @click="navigator.clipboard.writeText(window.location.href); copied = true; setTimeout(() => copied = false, 2000)"
+                  x-text="copied ? 'Copied!' : 'Copy Link'">Copy Link</button>
+        </div>
+      </header>
+      <div class="blog-detail-body">
+        {% for para in post.content|paragraphs %}<p>{{ para }}</p>{% endfor %}
+      </div>
+    </article>
+    <footer class="blog-detail-footer"><a href="/blog" class="blog-detail-footer-link">&larr; Back to all posts</a></footer>
+  </div>
+</div>
+{% endblock %}
