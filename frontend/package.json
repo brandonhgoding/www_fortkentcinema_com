@@ -1,0 +1,17 @@
+{
+  "name": "fortkentcinema-effects",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "d3-timer": "^3.0.1"
+  },
+  "devDependencies": {
+    "vite": "^7.2.4",
+    "vitest": "^2.1.9",
+    "jsdom": "^25.0.1"
+  }
+}
