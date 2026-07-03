@@ -1,14 +1,94 @@
-<!doctype html>
+{% load static %}<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block title %}Fort Kent Cinema{% endblock %}</title>
-    <meta name="description" content="{% block description %}Maine's Northernmost Picture Show{% endblock %}" />
+
+    {% block meta %}
+    <title>{% block title %}Fort Kent Cinema | Maine's Northernmost Picture Show{% endblock %}</title>
+    <meta name="description" content="{% block description %}Fort Kent Cinema - Maine's Northernmost Picture Show. View current showtimes, upcoming movies, buy tickets, and join our Cinema Club membership program. Located at 13 Hall Street, Fort Kent, ME.{% endblock %}" />
+    <meta name="author" content="Fort Kent Cinema" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#0a0a0e" />
+    <link rel="canonical" href="{{ request.build_absolute_uri }}" />
+
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}" />
+    <meta property="og:url" content="{{ request.build_absolute_uri }}" />
+    <meta property="og:title" content="{% block og_title %}Fort Kent Cinema | Maine's Northernmost Picture Show{% endblock %}" />
+    <meta property="og:description" content="{% block og_description %}View current showtimes, upcoming movies, and join our Cinema Club membership. Maine's Northernmost Picture Show in Fort Kent.{% endblock %}" />
+    <meta property="og:image" content="{% block og_image %}https://www.fortkentcinema.com/og-image.jpg{% endblock %}" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:site_name" content="Fort Kent Cinema" />
+
+    {# Twitter/X falls back to the og:* tags above when twitter:* value tags are
+       absent, so we intentionally emit only the card type and let og:title/
+       og:description/og:image serve the preview. (Django templates have no
+       Jinja-style {{ self.block }} to re-emit a block's value.) #}
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <meta name="geo.region" content="US-ME" />
+    <meta name="geo.placename" content="Fort Kent" />
+    <meta name="geo.position" content="47.2586;-68.5894" />
+    <meta name="ICBM" content="47.2586, -68.5894" />
+    {% endblock %}
+
+    <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}" />
+    <link rel="apple-touch-icon" href="{% static 'img/favicon.svg' %}" />
+
+    <link rel="stylesheet" href="{% static 'css/global.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/effects.css' %}" />
+    {% block extra_css %}{% endblock %}
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "MovieTheater",
+      "name": "{{ site_config.cinema.name }}",
+      "description": "Maine's Northernmost Picture Show - a community cinema in Fort Kent featuring current movies, special events, and Cinema Club membership.",
+      "url": "https://www.fortkentcinema.com",
+      "telephone": "{{ site_config.cinema.phone }}",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "{{ site_config.cinema.address.street }}",
+        "addressLocality": "{{ site_config.cinema.address.city }}",
+        "addressRegion": "{{ site_config.cinema.address.state }}",
+        "postalCode": "{{ site_config.cinema.address.zip }}",
+        "addressCountry": "US"
+      },
+      "geo": {"@type": "GeoCoordinates", "latitude": 47.2586, "longitude": -68.5894},
+      "sameAs": ["{{ site_config.social.facebook }}"],
+      "priceRange": "$$",
+      "currenciesAccepted": "USD",
+      "paymentAccepted": "Cash, Credit Card"
+    }
+    </script>
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-S2PR27SWGD"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-S2PR27SWGD');
+    </script>
+
+    {% block extra_head %}{% endblock %}
   </head>
   <body>
+    <div class="vignette"></div>
+    <canvas class="fx-dust" data-ambient-dust aria-hidden="true"></canvas>
+    <div class="curtain-left"></div>
+    <div class="curtain-right"></div>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    {% include "partials/nav.html" %}
+
     <main id="main-content">
       {% block content %}{% endblock %}
     </main>
+
+    {% include "partials/footer.html" %}
+
+    <script type="module" src="{% static 'js/effects.js' %}"></script>
+    {% block extra_js %}{% endblock %}
   </body>
 </html>

@@ -27,3 +27,31 @@ class SiteConfigContextTests(TestCase):
         labels = [item["label"] for item in SITE_CONFIG["navigation"]]
         self.assertIn("Now Showing", labels)
         self.assertIn("Blog", labels)
+
+
+class BaseChromeTests(TestCase):
+    def test_default_meta_and_og(self):
+        response = self.client.get(reverse("home"))
+        html = response.content.decode()
+        self.assertIn('property="og:title"', html)
+        self.assertIn('property="og:type"', html)
+        self.assertIn('name="twitter:card"', html)
+
+    def test_structured_data_present(self):
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertIn('"@type": "MovieTheater"', html)
+        self.assertIn("13 Hall Street", html)
+
+    def test_google_analytics_present(self):
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertIn("G-S2PR27SWGD", html)
+
+    def test_chrome_elements_present(self):
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertIn('class="skip-link"', html)
+        self.assertIn("fx-dust", html)
+        self.assertIn("data-ambient-dust", html)
+
+    def test_canonical_uses_request_url(self):
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertIn('rel="canonical"', html)
