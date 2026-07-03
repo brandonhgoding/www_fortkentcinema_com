@@ -2,6 +2,7 @@ import json
 
 from django.views.generic import TemplateView
 
+from blog.models import BlogPost
 from web.services.leprinceos import get_now_showing, get_coming_soon
 from web.services.showtimes import (
     today_eastern,
@@ -19,6 +20,9 @@ class HomeView(TemplateView):
         now_showing = get_now_showing()
         ctx["now_showing"] = now_showing
         ctx["coming_soon"] = get_coming_soon()
+
+        # Home blog teaser: latest 3 posts (model default ordering is -post_date).
+        ctx["recent_posts"] = BlogPost.objects.all()[:3]
 
         # Hero marquee bulbs: 17 across top/bottom, 5 down each side (Hero.jsx).
         ctx["hero_top_bulbs"] = range(17)

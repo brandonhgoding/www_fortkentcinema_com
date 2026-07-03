@@ -26,3 +26,20 @@
     display: flex;
   }
 }
+
+/* Phone-stripping.
+ *
+ * The SPA's App.jsx only mounted Hero, the four CTAs, and the Blog teaser
+ * above a 600px matchMedia check, leaving NowShowing + ComingSoon + the
+ * footer as the phone experience. None of those components' own stylesheets
+ * hide their root element at this breakpoint (they only reflow internal
+ * layout), so the Django port hides them here instead. */
+@media (max-width: 600px) {
+  .hero,
+  .classic-movie-cta,
+  .open-mic-cta,
+  .gift-card-cta,
+  .blog {
+    display: none;
+  }
+}

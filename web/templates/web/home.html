@@ -14,6 +14,9 @@
   <link rel="stylesheet" href="{% static 'css/MovieScheduleCard.css' %}" />
   <link rel="stylesheet" href="{% static 'css/OpenMicCTA.css' %}" />
   <link rel="stylesheet" href="{% static 'css/ComingSoon.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/GiftCardCTA.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/Blog.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/BlogCard.css' %}" />
   <link rel="stylesheet" href="{% static 'css/home.css' %}" />
 {% endblock %}
 
@@ -29,5 +32,9 @@
   {% include "partials/cta_openmic.html" %}
   {% include "partials/ornament_divider.html" %}
   {% include "partials/coming_soon.html" %}
-  {# Task 7 #}{# gift-card CTA + blog teaser #}
+  {# Task 7: gift-card CTA + blog teaser #}
+  {% include "partials/ornament_divider.html" %}
+  {% include "partials/cta_giftcard.html" %}
+  {% include "partials/ornament_divider.html" %}
+  {% include "partials/blog_teaser.html" %}
 {% endblock %}

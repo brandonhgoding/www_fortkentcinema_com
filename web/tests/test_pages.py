@@ -4,6 +4,8 @@ from django.test import TestCase
 from django.urls import reverse
 from django.contrib.staticfiles.finders import find
 
+from blog.models import BlogAuthor, BlogCategory, BlogPost
+
 
 class HomePageTests(TestCase):
     def test_home_returns_200(self):
@@ -116,6 +118,43 @@ class ComingSoonTests(TestCase):
         self.assertIn("coming-soon", html)
         self.assertIn("Wicked", html)
         self.assertIn("NOVEMBER 22", html)  # release_date uppercased in template
+
+
+class HomeIntegrationTests(TestCase):
+    @mock.patch("web.views.get_coming_soon", return_value=[])
+    @mock.patch("web.views.get_now_showing", return_value=[])
+    def test_full_home_composition_order(self, _ns, _cs):
+        html = self.client.get(reverse("home")).content.decode()
+        # Sections appear in the SPA's order
+        order = [html.index(s) for s in (
+            'class="hero"', 'id="now-showing"', 'id="coming-soon"',
+        )]
+        self.assertEqual(order, sorted(order))
+        self.assertIn("ornament", html)          # dividers present
+        self.assertIn('data-ambient-dust', html)  # base chrome intact
+
+
+class BlogTeaserTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.author = BlogAuthor.objects.create(
+            first_name="Jane", last_name="Doe"
+        )
+        cls.category = BlogCategory.objects.create(name="News")
+        cls.post = BlogPost.objects.create(
+            title="Fort Kent Cinema Turns 90",
+            subtitle="A look back at the history of the theater",
+            author=cls.author,
+            category=cls.category,
+            content="Nine decades of movies in the St. John Valley.",
+            post_date="2026-01-01",
+        )
+
+    @mock.patch("web.views.get_coming_soon", return_value=[])
+    @mock.patch("web.views.get_now_showing", return_value=[])
+    def test_recent_post_renders_on_home(self, _ns, _cs):
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertIn("Fort Kent Cinema Turns 90", html)
 
 
 class StaticAssetsTests(TestCase):
