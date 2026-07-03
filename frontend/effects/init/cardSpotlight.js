@@ -3,7 +3,7 @@ import { getMotionTier } from '../core/motionPrefs.js';
 
 const MAX_TILT = 4;
 
-function attach(grid, selector = ':scope > article') {
+function attach(grid, selector = ':scope > article, :scope > a') {
   if (getMotionTier() !== 'full') return;
   try {
     grid.classList.add('fx-spotlight-grid');

@@ -1073,7 +1073,7 @@ function er(t = document) {
   });
 }
 const nr = 4;
-function rr(t, e = ":scope > article") {
+function rr(t, e = ":scope > article, :scope > a") {
   if (K() === "full")
     try {
       t.classList.add("fx-spotlight-grid");
