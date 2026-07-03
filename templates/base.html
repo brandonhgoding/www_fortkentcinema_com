@@ -10,13 +10,13 @@
     <meta name="author" content="Fort Kent Cinema" />
     <meta name="robots" content="index, follow" />
     <meta name="theme-color" content="#0a0a0e" />
-    <link rel="canonical" href="{{ request.build_absolute_uri }}" />
+    <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}" />
 
     <meta property="og:type" content="{% block og_type %}website{% endblock %}" />
-    <meta property="og:url" content="{{ request.build_absolute_uri }}" />
+    <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}" />
     <meta property="og:title" content="{% block og_title %}Fort Kent Cinema | Maine's Northernmost Picture Show{% endblock %}" />
     <meta property="og:description" content="{% block og_description %}View current showtimes, upcoming movies, and join our Cinema Club membership. Maine's Northernmost Picture Show in Fort Kent.{% endblock %}" />
-    <meta property="og:image" content="{% block og_image %}https://www.fortkentcinema.com/og-image.jpg{% endblock %}" />
+    <meta property="og:image" content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/og-image.jpg' %}{% endblock %}" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:site_name" content="Fort Kent Cinema" />
 
@@ -47,20 +47,20 @@
     {
       "@context": "https://schema.org",
       "@type": "MovieTheater",
-      "name": "{{ site_config.cinema.name }}",
+      "name": "{{ site_config.cinema.name|escapejs }}",
       "description": "Maine's Northernmost Picture Show - a community cinema in Fort Kent featuring current movies, special events, and Cinema Club membership.",
       "url": "https://www.fortkentcinema.com",
-      "telephone": "{{ site_config.cinema.phone }}",
+      "telephone": "{{ site_config.cinema.phone|escapejs }}",
       "address": {
         "@type": "PostalAddress",
-        "streetAddress": "{{ site_config.cinema.address.street }}",
-        "addressLocality": "{{ site_config.cinema.address.city }}",
-        "addressRegion": "{{ site_config.cinema.address.state }}",
-        "postalCode": "{{ site_config.cinema.address.zip }}",
+        "streetAddress": "{{ site_config.cinema.address.street|escapejs }}",
+        "addressLocality": "{{ site_config.cinema.address.city|escapejs }}",
+        "addressRegion": "{{ site_config.cinema.address.state|escapejs }}",
+        "postalCode": "{{ site_config.cinema.address.zip|escapejs }}",
         "addressCountry": "US"
       },
       "geo": {"@type": "GeoCoordinates", "latitude": 47.2586, "longitude": -68.5894},
-      "sameAs": ["{{ site_config.social.facebook }}"],
+      "sameAs": ["{{ site_config.social.facebook|escapejs }}"],
       "priceRange": "$$",
       "currenciesAccepted": "USD",
       "paymentAccepted": "Cash, Credit Card"

@@ -299,6 +299,18 @@ class ClassicsPageTests(TestCase):
         self.assertIn("classic-movie-page__featured", html)
 
 
+class SeoTagTests(TestCase):
+    def test_default_og_image_is_static_absolute(self):
+        html = self.client.get(reverse("home")).content.decode()
+        # default og:image should point at the served static file, not a bare root path
+        self.assertIn("/static/img/og-image.jpg", html)
+        self.assertNotIn('content="https://www.fortkentcinema.com/og-image.jpg"', html)
+
+    def test_canonical_strips_query_string(self):
+        html = self.client.get(reverse("home") + "?utm_source=x").content.decode()
+        self.assertNotIn("utm_source", html)          # canonical/og:url must not carry query params
+
+
 class StaticAssetsTests(TestCase):
     def test_core_css_present(self):
         for name in ("css/variables.css", "css/global.css", "css/effects.css"):
