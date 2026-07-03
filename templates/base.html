@@ -20,10 +20,12 @@
     <meta property="og:locale" content="en_US" />
     <meta property="og:site_name" content="Fort Kent Cinema" />
 
-    {# Twitter/X falls back to the og:* tags above when twitter:* value tags are
-       absent, so we intentionally emit only the card type and let og:title/
-       og:description/og:image serve the preview. (Django templates have no
-       Jinja-style {{ self.block }} to re-emit a block's value.) #}
+    {% comment %}
+      Twitter/X falls back to the og:* tags above when twitter:* value tags are
+      absent, so we intentionally emit only the card type and let
+      og:title/og:description/og:image serve the preview. (Django's {# #} comment
+      is single-line only; multi-line notes must use {% comment %}.)
+    {% endcomment %}
     <meta name="twitter:card" content="summary_large_image" />
 
     <meta name="geo.region" content="US-ME" />

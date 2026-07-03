@@ -13,6 +13,14 @@ class HomePageTests(TestCase):
         self.assertTemplateUsed(response, "base.html")
         self.assertTemplateUsed(response, "web/home.html")
 
+    def test_no_template_comment_leaks_into_page(self):
+        # Django's {# #} comment is single-line only; a multi-line {# #} leaks
+        # as literal page text. Guard against that regression.
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertNotIn("Twitter/X falls back", html)
+        self.assertNotIn("{#", html)
+        self.assertNotIn("{% comment %}", html)
+
 
 class SiteConfigContextTests(TestCase):
     def test_site_config_available_in_templates(self):
