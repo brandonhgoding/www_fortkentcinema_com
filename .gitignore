@@ -142,4 +142,4 @@ images/
 original_images/
 
 static_collected/
-static/
+staticfiles/
