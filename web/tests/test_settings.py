@@ -14,3 +14,18 @@ class StaticServingSettingsTests(SimpleTestCase):
             mw.index("django.middleware.security.SecurityMiddleware"),
             mw.index("whitenoise.middleware.WhiteNoiseMiddleware"),
         )
+
+    def test_staticfiles_storage_is_not_manifest_backed_under_tests(self):
+        """
+        Manifest storage (whitenoise.storage.CompressedManifestStaticFilesStorage)
+        requires a prebuilt staticfiles.json from `collectstatic`, which is a
+        gitignored build artifact. If it's forced on unconditionally, a fresh
+        clone / CI run with no manifest present fails every test that renders
+        a template using {% static %}. The test run must use plain storage
+        instead so `manage.py test` needs no prior collectstatic step.
+        """
+        backend = settings.STORAGES["staticfiles"]["BACKEND"]
+        self.assertTrue(backend.endswith("StaticFilesStorage"))
+        self.assertNotEqual(
+            backend, "whitenoise.storage.CompressedManifestStaticFilesStorage"
+        )
