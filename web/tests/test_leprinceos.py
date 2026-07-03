@@ -238,6 +238,28 @@ class GetComingSoonTests(SimpleTestCase):
         self.assertEqual(movies[0]["title"], "Good Movie")
 
 
+class GetCalendarMonthTests(SimpleTestCase):
+    def setUp(self):
+        cache.clear()
+
+    def test_groups_movies_by_local_day(self):
+        showtimes = [
+            {"id": 300, "starts_at": "2999-05-04T23:00:00Z",  # May 4 EDT
+             "film_title": "Wicked", "film_poster_url": "w.jpg", "youtube_id": "y"},
+        ]
+        with mock.patch("web.services.leprinceos.requests.get",
+                        return_value=_resp({"results": showtimes})):
+            data = leprinceos.get_calendar_month(2999, 4)   # month 4 == May (0-based)
+        self.assertIn(4, data)                              # day 4
+        self.assertEqual(data[4][0]["title"], "Wicked")
+        self.assertEqual(data[4][0]["poster"], "w.jpg")
+
+    def test_empty_month(self):
+        with mock.patch("web.services.leprinceos.requests.get",
+                        return_value=_resp({"results": []})):
+            self.assertEqual(leprinceos.get_calendar_month(2999, 4), {})
+
+
 class GetClassicMovieNightTests(SimpleTestCase):
     def setUp(self):
         cache.clear()

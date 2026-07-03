@@ -1,5 +1,5 @@
 <section class="coming-soon" id="coming-soon"
-         x-data="{ trailer: null }"
+         x-data="{ trailer: null, view: 'grid' }"
          x-effect="document.body.style.overflow = trailer ? 'hidden' : ''">
   <div class="section-container">
     <div class="section-header">
@@ -9,13 +9,33 @@
         <path d="M 10 20 L 150 20 L 170 8 L 200 32 L 230 8 L 250 20 L 390 20" pathLength="1" />
         <circle cx="200" cy="20" r="3" />
       </svg>
-      {% comment %}
-      Plan 4 (HTMX) adds the coming-view-toggle buttons and the calendar
-      view here. Plan 2 renders the grid view only.
-      {% endcomment %}
+      <div class="coming-view-toggle">
+        <button class="coming-view-btn"
+                :class="{ 'coming-view-btn--active': view === 'grid' }"
+                @click="view = 'grid'"
+                aria-label="Grid view" title="Grid view">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <rect x="3" y="3" width="7" height="7" rx="1" fill="currentColor" />
+            <rect x="14" y="3" width="7" height="7" rx="1" fill="currentColor" />
+            <rect x="3" y="14" width="7" height="7" rx="1" fill="currentColor" />
+            <rect x="14" y="14" width="7" height="7" rx="1" fill="currentColor" />
+          </svg>
+        </button>
+        <button class="coming-view-btn"
+                :class="{ 'coming-view-btn--active': view === 'calendar' }"
+                @click="view = 'calendar'"
+                aria-label="Calendar view" title="Calendar view">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="17" rx="2" fill="none" stroke="currentColor" stroke-width="2" />
+            <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2" />
+            <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+      </div>
     </div>
 
-    <div class="coming-movies-grid" data-spotlight>
+    <div class="coming-movies-grid" data-spotlight x-show="view === 'grid'">
       {% for movie in coming_soon %}
       <article class="coming-movie-card">
         {% if movie.youtube_id %}
@@ -68,6 +88,15 @@
       </article>
       {% endfor %}
     </div>
+
+    {% comment %}
+    Calendar view. Lazily loads the initial month via HTMX the first time it is
+    revealed (intersect once), then month nav swaps the fragment in place.
+    initial_month is 0-based (matches the calendar_month url / get_calendar_month).
+    {% endcomment %}
+    <div class="coming-calendar-container" x-show="view === 'calendar'" x-cloak
+         hx-get="{% url 'calendar_month' initial_year initial_month %}"
+         hx-trigger="intersect once" hx-swap="innerHTML"></div>
   </div>
 
   <div class="coming-trailer-overlay" x-cloak x-show="trailer" role="dialog"

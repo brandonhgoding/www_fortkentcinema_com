@@ -2,6 +2,7 @@
 (cinema_sass) API. Fetches engagements/showtimes/films, converts UTC times to
 America/New_York, and caches results with a stale-on-failure fallback."""
 
+import calendar
 import datetime
 from zoneinfo import ZoneInfo
 
@@ -225,6 +226,59 @@ def get_coming_soon():
         return movies
 
     return movies
+
+
+def get_calendar_month(year, month):
+    """Port of api.js getCalendarMonth(): showtimes for a single month grouped
+    by local day. `month` is 0-based (0 == January) to match the SPA/JS.
+
+    Fetches non-cancelled showtimes whose start falls within the month's local
+    date range, groups them by local day-of-month (int), and dedups movies per
+    day by title. Returns {day:int -> [{"id","title","poster","youtube_id"}]},
+    or {} on any failure or empty month."""
+    try:
+        # 0-based month -> 1-based calendar month for the date range.
+        cal_month = month + 1
+        last_day = calendar.monthrange(year, cal_month)[1]
+        start_of_month = f"{year:04d}-{cal_month:02d}-01T00:00:00"
+        end_of_month = f"{year:04d}-{cal_month:02d}-{last_day:02d}T23:59:59"
+
+        showtimes = _get(
+            f"/showtimes/?is_cancelled=false"
+            f"&starts_at_after={start_of_month}"
+            f"&starts_at_before={end_of_month}"
+        )
+
+        if not showtimes:
+            return {}
+
+        data = {}
+        for st in showtimes:
+            try:
+                starts_at = st.get("starts_at")
+                if not starts_at:
+                    continue
+                # _local_date -> "YYYY-MM-DD"; day is the local day-of-month.
+                day = int(_local_date(starts_at).split("-")[2])
+                title = st.get("film_title") or ""
+                movies = data.setdefault(day, [])
+                # Dedup movies per day by title.
+                if any(m["title"] == title for m in movies):
+                    continue
+                movies.append(
+                    {
+                        "id": str(st.get("id")),
+                        "title": title,
+                        "poster": st.get("film_poster_url") or "",
+                        "youtube_id": st.get("youtube_id") or "",
+                    }
+                )
+            except Exception:
+                continue
+
+        return data
+    except Exception:
+        return {}
 
 
 def get_classic_movie_night():

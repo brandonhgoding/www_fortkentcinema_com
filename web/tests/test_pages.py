@@ -137,6 +137,44 @@ class ComingSoonTests(TestCase):
         self.assertIn("NOVEMBER 22", html)  # release_date uppercased in template
 
 
+class CalendarTests(TestCase):
+    @mock.patch("web.views.get_calendar_month", return_value={})
+    def test_calendar_fragment_200(self, _m):
+        resp = self.client.get(reverse("calendar_month", args=[2999, 4]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertTemplateUsed(resp, "partials/calendar_month.html")
+        self.assertIn("coming-calendar", resp.content.decode())
+
+    @mock.patch("web.views.get_calendar_month")
+    def test_calendar_fragment_renders_movies_and_nav(self, m):
+        m.return_value = {4: [{"id": "300", "title": "Wicked",
+                               "poster": "w.jpg", "youtube_id": "y"}]}
+        html = self.client.get(reverse("calendar_month", args=[2999, 4])).content.decode()
+        self.assertIn("MAY 2999", html)                       # month_label
+        self.assertIn("Wicked", html)                          # a day's movie
+        self.assertIn("coming-calendar-cell--has-movie", html)
+        # Next-month nav wraps 0-based month 4 -> 5 (June), same year.
+        self.assertIn(reverse("calendar_month", args=[2999, 5]), html)
+        # Prev-month nav 4 -> 3 (April), same year.
+        self.assertIn(reverse("calendar_month", args=[2999, 3]), html)
+
+    @mock.patch("web.views.get_calendar_month", return_value={})
+    def test_calendar_prev_next_wraps_year(self, _m):
+        # January (0-based month 0) prev is December of the previous year.
+        html = self.client.get(reverse("calendar_month", args=[2999, 0])).content.decode()
+        self.assertIn(reverse("calendar_month", args=[2998, 11]), html)
+        # December (month 11) next is January of the next year.
+        html2 = self.client.get(reverse("calendar_month", args=[2999, 11])).content.decode()
+        self.assertIn(reverse("calendar_month", args=[3000, 0]), html2)
+
+    @mock.patch("web.views.get_coming_soon", return_value=[])
+    @mock.patch("web.views.get_now_showing", return_value=[])
+    def test_home_has_view_toggle(self, _ns, _cs):
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertIn("coming-view-toggle", html)
+        self.assertIn("coming-calendar-container", html)
+
+
 class HomeIntegrationTests(TestCase):
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_now_showing", return_value=[])
