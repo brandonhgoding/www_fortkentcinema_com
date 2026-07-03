@@ -150,6 +150,9 @@ if config("USE_PROXY_HEADERS", default=False, cast=bool):
 
 # Production security hardening. All default OFF/empty so local dev and the
 # test suite are unaffected; set the corresponding env vars in production.
+# NOTE: behind a TLS-terminating proxy (nginx), enable SECURE_SSL_REDIRECT ONLY
+# together with USE_PROXY_HEADERS=True — otherwise Django never sees requests as
+# secure and SECURE_SSL_REDIRECT causes an infinite redirect loop.
 SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=False, cast=bool)
 SESSION_COOKIE_SECURE = config("SESSION_COOKIE_SECURE", default=False, cast=bool)
 CSRF_COOKIE_SECURE = config("CSRF_COOKIE_SECURE", default=False, cast=bool)

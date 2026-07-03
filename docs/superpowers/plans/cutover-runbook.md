@@ -343,7 +343,7 @@ change durable for future full (`deploy_app`-less) runs.
       Django-rendered page (check for the `Server` header switching away
       from whatever nginx reports for static file serving, and confirm the
       HTML is the Django template output, not the old Vite `index.html`).
-- [ ] `curl -s https://www.fortkentcinema.com/blog/<any-existing-slug>/ |
+- [ ] `curl -s https://www.fortkentcinema.com/blog/<any-existing-slug> |
       grep -i 'og:'` shows per-post Open Graph tags (title, absolute
       `og:image`, `og:url`) — the SEO polish from Task 2.
 - [ ] `curl -s https://www.fortkentcinema.com/sitemap.xml` and
