@@ -188,9 +188,10 @@ function Oe(t) {
       return;
     }
     t.classList.add("fx-reveal");
-    let e = ze(t, (n) => {
-      t.style.setProperty("--fx-draw", String(n)), t.style.setProperty("--fx-fade", String(Math.min(n / Ce, 1))), n >= 1 && (t.classList.add("fx-revealed"), e && (e(), e = null));
-    });
+    let e = null, n = !1;
+    e = ze(t, (r) => {
+      t.style.setProperty("--fx-draw", String(r)), t.style.setProperty("--fx-fade", String(Math.min(r / Ce, 1))), r >= 1 && (t.classList.add("fx-revealed"), n = !0, e && (e(), e = null));
+    }), n && e && (e(), e = null);
   } catch (e) {
     console.error("[effects] scroll reveal disabled:", e), t.classList.add("fx-reveal", "fx-revealed");
   }

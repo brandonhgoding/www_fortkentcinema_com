@@ -10,14 +10,21 @@ function reveal(node) {
       return;
     }
     node.classList.add('fx-reveal');
-    let unsubscribe = onScrollProgress(node, (progress) => {
+    let unsubscribe = null;
+    let revealed = false;
+    unsubscribe = onScrollProgress(node, (progress) => {
       node.style.setProperty('--fx-draw', String(progress));
       node.style.setProperty('--fx-fade', String(Math.min(progress / FADE_SPAN, 1)));
       if (progress >= 1) {
         node.classList.add('fx-revealed');
+        revealed = true;
         if (unsubscribe) { unsubscribe(); unsubscribe = null; }
       }
     });
+    // If the element was already revealed on the initial synchronous
+    // progress call, `unsubscribe` was still null inside the callback
+    // (this assignment hadn't completed yet) — unsubscribe now.
+    if (revealed && unsubscribe) { unsubscribe(); unsubscribe = null; }
   } catch (err) {
     console.error('[effects] scroll reveal disabled:', err);
     node.classList.add('fx-reveal', 'fx-revealed');
