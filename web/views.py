@@ -3,6 +3,7 @@ import json
 from django.views.generic import TemplateView
 
 from blog.models import BlogPost
+from web.constants import MEMBERSHIP, MEMBERSHIP_FAQ
 from web.services.leprinceos import get_now_showing, get_coming_soon
 from web.services.showtimes import (
     today_eastern,
@@ -66,4 +67,14 @@ class HomeView(TemplateView):
             ns_dates_labeled[today_index]["label"] if ns_dates_labeled else ""
         )
 
+        return ctx
+
+
+class MembershipView(TemplateView):
+    template_name = "web/membership.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["tiers"] = MEMBERSHIP
+        ctx["faqs"] = MEMBERSHIP_FAQ
         return ctx

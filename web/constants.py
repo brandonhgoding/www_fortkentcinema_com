@@ -124,3 +124,27 @@ MEMBERSHIP = [
         "checkout_url": "https://square.link/u/1YSgMFSQ",
     },
 ]
+
+# Ported verbatim from the React SPA's src/data/membershipFaq.json.
+MEMBERSHIP_FAQ = [
+    {
+        "question": "How long does a membership last?",
+        "answer": "Each tier specifies its duration (most are annual). Your card shows the exact end date.",
+    },
+    {
+        "question": "What's included with a family tier?",
+        "answer": "Family tiers cover the cardholder plus immediate family members. Just give your name at the box office.",
+    },
+    {
+        "question": "How do I use my membership at the box office?",
+        "answer": "Tell us your name. We'll look you up and apply your member benefits.",
+    },
+    {
+        "question": "Can I get a refund?",
+        "answer": "Memberships are non-refundable. Reach out to the box office if you have questions.",
+    },
+    {
+        "question": "Do I get a card?",
+        "answer": "Yes — a printable PDF card is emailed to you immediately after purchase.",
+    },
+]
