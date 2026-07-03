@@ -382,10 +382,11 @@ Replace `templates/base.html` entirely:
     <meta property="og:locale" content="en_US" />
     <meta property="og:site_name" content="Fort Kent Cinema" />
 
+    {# Twitter/X falls back to the og:* tags above when twitter:* value tags are
+       absent, so we intentionally emit only the card type and let og:title/
+       og:description/og:image serve the preview. (Django templates have no
+       Jinja-style {{ self.block }} to re-emit a block's value.) #}
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="{{ self.og_title }}" />
-    <meta name="twitter:description" content="{{ self.og_description }}" />
-    <meta name="twitter:image" content="{{ self.og_image }}" />
 
     <meta name="geo.region" content="US-ME" />
     <meta name="geo.placename" content="Fort Kent" />
