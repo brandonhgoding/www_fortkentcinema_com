@@ -173,6 +173,17 @@ class BlogTeaserTests(TestCase):
         html = self.client.get(reverse("home")).content.decode()
         self.assertIn("Fort Kent Cinema Turns 90", html)
 
+    @mock.patch("web.views.get_coming_soon", return_value=[])
+    @mock.patch("web.views.get_now_showing", return_value=[])
+    def test_recent_post_uses_shared_blog_card_partial(self, _ns, _cs):
+        # Guards the blog_teaser.html refactor onto the shared
+        # partials/blog_card.html include: both the post content and the
+        # blog-card markup it renders must appear together on the home page.
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertIn("Fort Kent Cinema Turns 90", html)
+        self.assertIn('class="blog-card"', html)
+        self.assertIn('class="blog-card-excerpt"', html)
+
 
 class StaticAssetsTests(TestCase):
     def test_core_css_present(self):

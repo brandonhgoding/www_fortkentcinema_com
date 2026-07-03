@@ -12,34 +12,7 @@
     <div class="blog-grid blog-grid-preview" data-spotlight>
       {% for post in recent_posts %}
       <a href="/blog/{{ post.slug }}" class="blog-card-link">
-        <article class="blog-card">
-          <div class="blog-card-image">
-            {% if post.header_image %}
-            <img src="{{ post.header_image.url }}" alt="{{ post.title }}" class="blog-card-img" />
-            {% else %}
-            <div class="blog-card-placeholder">
-              <div class="blog-card-placeholder-icon" role="img" aria-label="Blog post placeholder">&#128221;</div>
-            </div>
-            {% endif %}
-            {% if post.category %}
-            <span class="blog-card-category">{{ post.category.name }}</span>
-            {% endif %}
-          </div>
-          <div class="blog-card-content">
-            <h3 class="blog-card-title">{{ post.title }}</h3>
-            {% if post.subtitle %}
-            <p class="blog-card-subtitle">{{ post.subtitle }}</p>
-            {% endif %}
-            <p class="blog-card-excerpt">{{ post.content|truncatechars:150 }}</p>
-            <div class="blog-card-meta">
-              {% if post.author %}
-              <span class="blog-card-author">{{ post.author.first_name }} {{ post.author.last_name }}</span>
-              {% endif %}
-              <span class="blog-card-date">{{ post.post_date|date:"F j, Y" }}</span>
-            </div>
-            <span class="blog-card-read-more">Read More</span>
-          </div>
-        </article>
+        {% include "partials/blog_card.html" %}
       </a>
       {% endfor %}
     </div>
