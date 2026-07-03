@@ -1,5 +1,6 @@
 from unittest import mock
 
+import requests
 from django.core.cache import cache
 from django.test import SimpleTestCase
 
@@ -90,6 +91,27 @@ class GetNowShowingTests(SimpleTestCase):
                 "lpos:/engagements/?status=CONFIRMED"
             )  # expire fresh, keep stale
             data = leprinceos._get("/engagements/?status=CONFIRMED")
+        self.assertEqual(data, engagements)
+
+    def test_non_ok_status_falls_back_to_stale(self):
+        # Prime the stale cache via a successful call.
+        engagements = [
+            {"id": 7, "film_title": "Y", "films": [], "show_in_main_listings": True}
+        ]
+        ok = _resp({"results": engagements})
+        with mock.patch("web.services.leprinceos.requests.get", return_value=ok):
+            leprinceos._get("/engagements/?x=1")
+        # Expire the fresh key but keep the stale copy.
+        cache.delete("lpos:/engagements/?x=1")
+        # A non-2xx response that still returns a JSON body (e.g. a DRF error
+        # payload) must not be treated as a successful fetch: raise_for_status
+        # should raise, triggering the stale fallback instead of caching/
+        # returning the error dict.
+        bad = mock.Mock()
+        bad.json.return_value = {"detail": "boom"}
+        bad.raise_for_status.side_effect = requests.HTTPError("500")
+        with mock.patch("web.services.leprinceos.requests.get", return_value=bad):
+            data = leprinceos._get("/engagements/?x=1")
         self.assertEqual(data, engagements)
 
 

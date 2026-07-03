@@ -22,6 +22,7 @@ def _get(path, ttl=180):
         return cached
     try:
         resp = requests.get(BASE_URL + path, timeout=4)
+        resp.raise_for_status()
         data = resp.json()
         results = (
             data["results"] if isinstance(data, dict) and "results" in data else data
