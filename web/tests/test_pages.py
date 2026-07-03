@@ -204,6 +204,29 @@ class MembershipPageTests(TestCase):
         self.assertIn("Membership", html)
 
 
+class RentalsPageTests(TestCase):
+    def test_rentals_200_and_content(self):
+        resp = self.client.get(reverse("rentals"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertTemplateUsed(resp, "web/rentals.html")
+        html = resp.content.decode()
+        self.assertIn("RENT THE THEATER", html)
+        self.assertIn("$225", html)  # base rate
+        self.assertIn("rentals-page", html)
+
+    def test_rentals_meta(self):
+        html = self.client.get(reverse("rentals")).content.decode()
+        self.assertIn("Private Rentals", html)
+
+    def test_rentals_content_sections(self):
+        html = self.client.get(reverse("rentals")).content.decode()
+        self.assertIn("rental-card--featured", html)
+        self.assertIn("PRIVATE SCREENING", html)
+        self.assertIn("LICENSED SCREENING", html)
+        self.assertIn("POLICIES", html)
+        self.assertIn("READY TO BOOK?", html)
+
+
 class StaticAssetsTests(TestCase):
     def test_core_css_present(self):
         for name in ("css/variables.css", "css/global.css", "css/effects.css"):

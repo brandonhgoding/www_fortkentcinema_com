@@ -78,3 +78,7 @@ class MembershipView(TemplateView):
         ctx["tiers"] = MEMBERSHIP
         ctx["faqs"] = MEMBERSHIP_FAQ
         return ctx
+
+
+class RentalsView(TemplateView):
+    template_name = "web/rentals.html"
