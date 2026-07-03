@@ -1,0 +1,26 @@
+<nav class="nav" x-data="{ open: false }" @keydown.escape.window="open = false">
+  <div class="nav-container">
+    <a href="/" class="nav-logo">{{ site_config.cinema.name|upper }}</a>
+    <button
+      class="nav-hamburger"
+      @click="open = !open"
+      :aria-expanded="open"
+      :aria-label="open ? 'Close menu' : 'Open menu'"
+    >
+      <span class="nav-hamburger-line"></span>
+      <span class="nav-hamburger-line"></span>
+      <span class="nav-hamburger-line"></span>
+    </button>
+    <ul class="nav-links" :class="{ 'nav-links--open': open }">
+      {% for item in site_config.navigation %}
+        <li>
+          {% if item.href|slice:":1" == "/" %}
+            <a href="{{ item.href }}" class="nav-link" @click="open = false">{{ item.label }}</a>
+          {% else %}
+            <a href="{% if request.path == '/' %}{{ item.href }}{% else %}/{{ item.href }}{% endif %}" class="nav-link" @click="open = false">{{ item.label }}</a>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+</nav>

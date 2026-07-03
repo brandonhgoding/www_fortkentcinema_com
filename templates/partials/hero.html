@@ -1,0 +1,50 @@
+{% load static %}
+<section class="hero" data-neon data-cursor-bulbs>
+  <div class="hero-background"></div>
+  <div class="hero-stars"></div>
+  <div class="hero-pines"></div>
+  <div class="light-spill"></div>
+
+  {% comment %}Main Marquee Sign{% endcomment %}
+  <div class="marquee-container">
+    <div class="marquee-outer">
+      {% comment %}Bulbs - Top{% endcomment %}
+      <div class="marquee-bulbs-top">
+        {% for i in hero_top_bulbs %}<span class="bulb"></span>{% endfor %}
+      </div>
+
+      {% comment %}Bulbs - Bottom{% endcomment %}
+      <div class="marquee-bulbs-bottom">
+        {% for i in hero_top_bulbs %}<span class="bulb"></span>{% endfor %}
+      </div>
+
+      {% comment %}Bulbs - Left{% endcomment %}
+      <div class="marquee-bulbs-left">
+        {% for i in hero_side_bulbs %}<span class="bulb"></span>{% endfor %}
+      </div>
+
+      {% comment %}Bulbs - Right{% endcomment %}
+      <div class="marquee-bulbs-right">
+        {% for i in hero_side_bulbs %}<span class="bulb"></span>{% endfor %}
+      </div>
+
+      <div class="marquee-inner">
+        <h1 class="marquee-title">{{ site_config.cinema.name|upper }}</h1>
+        <p class="marquee-subtitle">&#9733; {{ site_config.cinema.tagline|upper }} &#9733;</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-tagline">
+    <p>"{{ site_config.cinema.heroQuote }}"</p>
+  </div>
+
+  <div class="hero-cta">
+    <a href="#now-showing" class="btn btn-ticket">
+      View Showtimes
+    </a>
+    <a href="/membership" class="btn btn-secondary">
+      Join Membership
+    </a>
+  </div>
+</section>

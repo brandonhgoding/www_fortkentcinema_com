@@ -1,0 +1,72 @@
+<section class="now-showing" id="now-showing"
+         x-data='{ dates: {{ ns_dates_json|safe }}, labels: {{ ns_labels_json|safe }}, idx: {{ ns_today_index }}, trailer: null }'
+         x-effect="document.body.style.overflow = trailer ? 'hidden' : ''">
+  <div class="section-container">
+    <div class="section-header">
+      <h2 class="section-title">NOW SHOWING</h2>
+      <p class="section-subtitle">Currently playing at Fort Kent Cinema</p>
+      <svg class="fx-divider" viewBox="0 0 400 40" aria-hidden="true" focusable="false">
+        <path d="M 10 20 L 150 20 L 170 8 L 200 32 L 230 8 L 250 20 L 390 20" pathLength="1" />
+        <circle cx="200" cy="20" r="3" />
+      </svg>
+    </div>
+
+    {% if ns_dates %}
+    {% comment %}Desktop: date navigation + spotlight movie grid. Phone: film-first
+    schedule list. Both are rendered; home.css toggles visibility by viewport.{% endcomment %}
+    <div class="date-nav">
+      <button class="date-nav__arrow"
+              @click="idx = Math.max(0, idx - 1)"
+              :disabled="idx === 0"
+              aria-label="Previous day">
+        <span aria-hidden="true">&#8249;</span>
+      </button>
+      <span class="date-nav__current" x-text="labels[idx]">{{ ns_today_label }}</span>
+      <button class="date-nav__arrow"
+              @click="idx = Math.min(dates.length - 1, idx + 1)"
+              :disabled="idx === dates.length - 1"
+              aria-label="Next day">
+        <span aria-hidden="true">&#8250;</span>
+      </button>
+    </div>
+
+    <div class="movies-grid" data-spotlight>
+      {% for movie in now_showing %}
+      {% include "partials/movie_card.html" %}
+      {% endfor %}
+    </div>
+
+    <div class="schedule-list">
+      {% for movie in now_showing %}
+      {% if movie.upcoming %}
+      {% include "partials/movie_schedule_card.html" %}
+      {% endif %}
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="no-showtimes">
+      <p>No showtimes available.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="now-trailer-overlay" x-cloak x-show="trailer" role="dialog"
+       :aria-label="(trailer ? trailer.title : '') + ' trailer'">
+    <div class="now-trailer-content">
+      <button class="now-trailer-close" @click="trailer = null" aria-label="Close trailer">
+        <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+          <line x1="4" y1="4" x2="20" y2="20" stroke="white" stroke-width="2.5" stroke-linecap="round" />
+          <line x1="20" y1="4" x2="4" y2="20" stroke="white" stroke-width="2.5" stroke-linecap="round" />
+        </svg>
+      </button>
+      <div class="now-trailer-player">
+        <iframe
+          :src="trailer ? 'https://www.youtube-nocookie.com/embed/' + trailer.youtube_id + '?autoplay=1&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3' : ''"
+          :title="(trailer ? trailer.title : '') + ' trailer'"
+          allow="autoplay; encrypted-media"
+          allowfullscreen>
+        </iframe>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,39 @@
+{% load blog_extras %}
+{% comment %}
+  Shared blog card partial (transcribed from BlogCard.jsx).
+  Expects a `post` context variable: a BlogPost instance.
+  Callers are responsible for wrapping this in a link
+  (e.g. <a class="blog-card-link" href="...">) as needed.
+{% endcomment %}
+<article class="blog-card">
+  <div class="blog-card-image">
+    {% if post.header_image %}
+    <img
+      src="{{ post.header_image.url }}"
+      alt="{{ post.title }}"
+      class="blog-card-img"
+      onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+    />
+    {% endif %}
+    <div class="blog-card-placeholder" style="display: {% if post.header_image %}none{% else %}flex{% endif %};">
+      <div class="blog-card-placeholder-icon" role="img" aria-label="Blog post placeholder">&#128221;</div>
+    </div>
+    {% if post.category %}
+    <span class="blog-card-category">{{ post.category.name }}</span>
+    {% endif %}
+  </div>
+  <div class="blog-card-content">
+    <h3 class="blog-card-title">{{ post.title }}</h3>
+    {% if post.subtitle %}
+    <p class="blog-card-subtitle">{{ post.subtitle }}</p>
+    {% endif %}
+    <p class="blog-card-excerpt">{{ post.content|excerpt }}</p>
+    <div class="blog-card-meta">
+      {% if post.author %}
+      <span class="blog-card-author">{{ post.author.first_name }} {{ post.author.last_name }}</span>
+      {% endif %}
+      <span class="blog-card-date">{{ post.post_date|date:"F j, Y" }}</span>
+    </div>
+    <span class="blog-card-read-more">Read More</span>
+  </div>
+</article>

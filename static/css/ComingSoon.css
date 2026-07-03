@@ -1,0 +1,445 @@
+.coming-soon {
+  padding: var(--spacing-2xl) var(--spacing-lg);
+  background: var(--color-bg-charcoal);
+}
+
+/* View Toggle */
+.coming-view-toggle {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+  justify-content: center;
+}
+
+.coming-view-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  background: transparent;
+  border: 2px solid var(--color-cream-muted);
+  border-radius: 50%;
+  color: var(--color-cream-muted);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.coming-view-btn:hover {
+  border-color: var(--color-gold);
+  color: var(--color-gold);
+  box-shadow: 0 0 12px var(--color-gold-glow);
+}
+
+.coming-view-btn--active {
+  background: var(--color-gold);
+  border-color: var(--color-gold);
+  color: var(--color-bg-dark);
+}
+
+.coming-view-btn--active:hover {
+  background: var(--color-gold-light);
+  border-color: var(--color-gold-light);
+  color: var(--color-bg-dark);
+}
+
+.coming-view-btn:focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+/* Grid View */
+.coming-movies-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-lg);
+}
+
+.coming-movie-card {
+  display: flex;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 2px solid transparent;
+  transition: all var(--transition-base);
+}
+
+.coming-movie-card:hover {
+  border-color: var(--color-gold-warm);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.4),
+    0 0 20px var(--color-gold-glow);
+}
+
+.coming-movie-poster {
+  width: 120px;
+  flex-shrink: 0;
+  aspect-ratio: 2/3;
+  background: var(--color-bg-dark);
+  border-right: 2px solid var(--color-gold-warm);
+  overflow: hidden;
+  position: relative;
+}
+
+.coming-movie-poster--playable {
+  cursor: pointer;
+}
+
+/* "Free for Members" banner ribbon */
+.coming-free-banner {
+  position: absolute;
+  top: 8px;
+  left: 0;
+  z-index: 3;
+  padding: 0.25rem 0.5rem;
+  background: var(--color-neon-red);
+  color: var(--color-cream);
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border-radius: 0 3px 3px 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+
+.coming-poster-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.coming-poster-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, var(--color-bg-dark) 0%, var(--color-bg-charcoal) 100%);
+}
+
+.coming-poster-icon {
+  font-size: 2rem;
+  opacity: 0.5;
+}
+
+.coming-poster-multi {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  gap: 2px;
+}
+
+.coming-poster-img--multi,
+.coming-poster-placeholder--multi {
+  flex: 1 1 0;
+  min-width: 0;
+  object-fit: cover;
+  height: 100%;
+}
+
+.coming-poster-play-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition-base);
+}
+
+.coming-movie-poster--playable:hover .coming-poster-play-overlay {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.coming-poster-play-icon {
+  width: 40px;
+  height: 40px;
+  opacity: 0.85;
+  transition:
+    opacity var(--transition-base),
+    transform var(--transition-base);
+}
+
+.coming-movie-poster--playable:hover .coming-poster-play-icon {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.coming-movie-info {
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.coming-movie-date {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  letter-spacing: 2px;
+  color: var(--color-neon-red);
+  margin-bottom: var(--spacing-xs);
+}
+
+.coming-movie-title {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-cream);
+  margin-bottom: var(--spacing-xs);
+}
+
+.coming-movie-genre {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-cream-muted);
+}
+
+/* Calendar View */
+.coming-calendar {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.coming-calendar-loading {
+  text-align: center;
+  padding: var(--spacing-xl) 0;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  letter-spacing: 2px;
+  color: var(--color-cream-muted);
+}
+
+.coming-calendar-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.coming-calendar-nav__arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: transparent;
+  border: 2px solid var(--color-gold-warm);
+  border-radius: 50%;
+  color: var(--color-gold);
+  font-size: 1.75rem;
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.coming-calendar-nav__arrow:hover {
+  background: var(--color-gold);
+  color: var(--color-bg-dark);
+  border-color: var(--color-gold);
+  box-shadow: 0 0 15px var(--color-gold-glow);
+}
+
+.coming-calendar-nav__arrow:focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+.coming-calendar-nav__label {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  letter-spacing: 3px;
+  color: var(--color-cream);
+  min-width: 220px;
+  text-align: center;
+}
+
+.coming-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.coming-calendar-dayheader {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: 2px;
+  color: var(--color-gold);
+  text-align: center;
+  padding: var(--spacing-xs) 0;
+  border-bottom: 2px solid var(--color-gold-warm);
+}
+
+.coming-calendar-dayheader--short {
+  display: none;
+}
+
+.coming-calendar-cell {
+  min-height: 90px;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  position: relative;
+}
+
+.coming-calendar-cell--empty {
+  background: transparent;
+  opacity: 0.2;
+}
+
+.coming-calendar-cell--has-movie {
+  border: 1px solid var(--color-gold-warm);
+  box-shadow: 0 0 8px var(--color-gold-glow);
+}
+
+.coming-calendar-cell__day {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  color: var(--color-cream-muted);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.coming-calendar-cell__movies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.coming-calendar-cell__poster {
+  width: 48px;
+  aspect-ratio: 2/3;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--color-bg-dark);
+}
+
+.coming-calendar-cell__poster--playable {
+  cursor: pointer;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.coming-calendar-cell__poster--playable:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 10px var(--color-gold-glow);
+}
+
+.coming-calendar-cell__poster:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 1px;
+}
+
+.coming-calendar-cell__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.coming-calendar-cell__placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  opacity: 0.5;
+}
+
+/* Trailer overlay */
+.coming-trailer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.coming-trailer-content {
+  position: relative;
+  width: 90vw;
+  max-width: 960px;
+}
+
+.coming-trailer-close {
+  position: absolute;
+  top: -44px;
+  right: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 0;
+  opacity: 0.8;
+  transition: opacity var(--transition-base);
+}
+
+.coming-trailer-close:hover {
+  opacity: 1;
+}
+
+.coming-trailer-player {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 */
+}
+
+.coming-trailer-player iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: var(--radius-md);
+}
+
+@media (max-width: 1200px) {
+  .coming-movies-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .coming-movies-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .coming-trailer-content {
+    width: 95vw;
+  }
+
+  .coming-trailer-close {
+    top: -40px;
+  }
+
+  .coming-calendar-dayheader--full {
+    display: none;
+  }
+
+  .coming-calendar-dayheader--short {
+    display: inline;
+  }
+
+  .coming-calendar-cell {
+    min-height: 60px;
+    padding: 2px;
+  }
+
+  .coming-calendar-cell__poster {
+    width: 32px;
+  }
+
+  .coming-calendar-nav__arrow {
+    width: 40px;
+    height: 40px;
+    font-size: 1.5rem;
+  }
+
+  .coming-calendar-nav__label {
+    font-size: 1.2rem;
+    min-width: 180px;
+  }
+}

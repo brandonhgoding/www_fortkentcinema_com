@@ -1,0 +1,55 @@
+.gift-card-cta {
+  position: relative;
+  background: linear-gradient(135deg, var(--color-bg-charcoal-dark) 0%, var(--color-bg-dark) 100%);
+  border-top: 1px solid var(--color-gold-warm);
+  border-bottom: 1px solid var(--color-gold-warm);
+  padding: var(--spacing-xl) var(--spacing-lg);
+  overflow: hidden;
+}
+
+/* Subtle spotlight behind CTA */
+.gift-card-cta::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 200px;
+  background: radial-gradient(ellipse at center, rgba(240, 195, 74, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.gift-card-cta__content {
+  position: relative;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xl);
+  flex-wrap: wrap;
+}
+
+.gift-card-cta__title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  letter-spacing: 4px;
+  color: var(--color-gold);
+  text-shadow:
+    0 0 8px var(--color-gold-glow),
+    0 0 20px var(--neon-gold-far);
+  margin: 0;
+}
+
+@media (max-width: 600px) {
+  .gift-card-cta__content {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--spacing-md);
+  }
+
+  .gift-card-cta__title {
+    font-size: 1.5rem;
+  }
+}

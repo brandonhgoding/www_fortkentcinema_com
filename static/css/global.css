@@ -1,0 +1,474 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=Poiret+One&display=swap');
+@import './variables.css';
+
+/* ============================================
+   RESET & BASE STYLES
+============================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  font-family: var(--font-body);
+  font-weight: 500;
+  background-color: var(--color-bg-dark);
+  color: var(--color-cream);
+  line-height: 1.7;
+  overflow-x: hidden;
+  font-size: 18px;
+}
+
+/* Film grain overlay — silver-toned */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.06'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.25;
+  animation: grain 0.5s steps(4) infinite;
+}
+
+@keyframes grain {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(-2px, 2px);
+  }
+  50% {
+    transform: translate(2px, -1px);
+  }
+  75% {
+    transform: translate(-1px, -2px);
+  }
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ============================================
+   BUTTON STYLES — Art Deco Geometric
+============================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  letter-spacing: 3px;
+  padding: 1rem 2rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  border: none;
+  text-transform: uppercase;
+}
+
+.btn:focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-warm) 100%);
+  color: var(--color-bg-dark);
+  box-shadow:
+    0 4px 15px var(--color-gold-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.btn-primary:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 8px 25px var(--color-gold-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.btn-primary:focus-visible {
+  outline: 3px solid var(--color-bg-dark);
+  outline-offset: 2px;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--color-gold);
+  border: 1px solid var(--color-gold);
+  box-shadow: 0 0 8px var(--neon-gold-far);
+}
+
+.btn-secondary:hover {
+  background: var(--color-gold);
+  color: var(--color-bg-dark);
+  box-shadow: 0 0 20px var(--color-gold-glow);
+}
+
+.btn-secondary:focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+.btn-ticket {
+  position: relative;
+  background: linear-gradient(180deg, var(--color-gold) 0%, var(--color-gold-warm) 100%);
+  color: var(--color-bg-dark);
+  padding: 1rem 2.5rem;
+  box-shadow: 0 4px 15px var(--color-gold-glow);
+}
+
+.btn-ticket::before,
+.btn-ticket::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  background: var(--color-bg-charcoal-dark);
+  border-radius: 50%;
+}
+
+.btn-ticket::before {
+  left: -6px;
+}
+
+.btn-ticket::after {
+  right: -6px;
+}
+
+.btn-ticket:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px var(--color-gold-glow);
+}
+
+.btn-ticket:focus-visible {
+  outline: 3px solid var(--color-bg-dark);
+  outline-offset: 2px;
+}
+
+/* ============================================
+   SECTION STYLES
+============================================ */
+.section-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: var(--spacing-2xl);
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  letter-spacing: 8px;
+  color: var(--color-gold);
+  text-shadow: 0 0 12px var(--neon-gold-far);
+  position: relative;
+  display: inline-block;
+}
+
+.section-title::before,
+.section-title::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 60px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-gold), transparent);
+}
+
+.section-title::before {
+  right: calc(100% + 20px);
+}
+
+.section-title::after {
+  left: calc(100% + 20px);
+}
+
+.section-title--red {
+  color: var(--color-neon-red);
+  text-shadow: 0 0 12px var(--color-neon-red-glow);
+}
+
+.section-title--red::before,
+.section-title--red::after {
+  background: linear-gradient(90deg, transparent, var(--color-neon-red), transparent);
+}
+
+.section-subtitle {
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  font-style: italic;
+  color: var(--color-cream-muted);
+  margin-top: var(--spacing-sm);
+  letter-spacing: 1px;
+}
+
+/* ============================================
+   ANIMATIONS
+============================================ */
+@keyframes bulb-chase {
+  0%,
+  100% {
+    opacity: 0.35;
+    background: radial-gradient(
+      circle at 30% 30%,
+      #a09040 0%,
+      var(--color-brass) 50%,
+      #1a1a22 100%
+    );
+    box-shadow:
+      0 0 3px var(--color-gold-warm),
+      0 0 6px var(--neon-gold-far);
+  }
+  50% {
+    opacity: 1;
+    background: radial-gradient(
+      circle at 30% 30%,
+      #fff8e0 0%,
+      #e8d080 40%,
+      var(--color-gold-warm) 100%
+    );
+    box-shadow:
+      0 0 6px #e8d080,
+      0 0 14px var(--neon-gold-mid),
+      0 0 24px var(--neon-gold-far);
+  }
+}
+
+/* Hero entrance animations */
+@keyframes curtain-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes twinkle {
+  0% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* ============================================
+   VIGNETTE OVERLAY
+============================================ */
+.vignette {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.7) 100%);
+  pointer-events: none;
+  z-index: 9998;
+}
+
+/* ============================================
+   CURTAIN GLOW EDGES — deep midnight
+============================================ */
+.curtain-left,
+.curtain-right {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 120px;
+  z-index: 50;
+  pointer-events: none;
+}
+
+.curtain-left {
+  left: 0;
+  background: linear-gradient(90deg, var(--color-burgundy) 0%, transparent 100%);
+  opacity: 0.4;
+}
+
+.curtain-right {
+  right: 0;
+  background: linear-gradient(-90deg, var(--color-burgundy) 0%, transparent 100%);
+  opacity: 0.4;
+}
+
+/* ============================================
+   ORNAMENTAL DIVIDERS — Art Deco Geometric
+============================================ */
+.ornament-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 2rem 0;
+}
+
+.ornament-line {
+  height: 1px;
+  width: 200px;
+  background: linear-gradient(90deg, transparent, var(--color-gold), transparent);
+}
+
+.ornament-diamond {
+  width: 2px;
+  height: 18px;
+  background: var(--color-gold);
+  transform: none;
+  flex-shrink: 0;
+  box-shadow: 0 0 4px var(--neon-gold-far);
+}
+
+.ornament-star {
+  color: var(--color-gold);
+  font-size: 18px;
+  flex-shrink: 0;
+  text-shadow: 0 0 6px var(--neon-gold-outer);
+  letter-spacing: 2px;
+}
+
+@media (max-width: 600px) {
+  .ornament-line {
+    width: 60px;
+  }
+}
+
+/* ============================================
+   SKIP LINK
+============================================ */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 16px;
+  background: var(--color-gold);
+  color: var(--color-bg-dark);
+  padding: 12px 24px;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  z-index: 10000;
+  transition: top 0.2s ease;
+}
+.skip-link:focus {
+  top: 16px;
+}
+.skip-link:focus-visible {
+  outline: 3px solid var(--color-bg-dark);
+  outline-offset: 2px;
+}
+
+/* ============================================
+   UTILITY CLASSES
+============================================ */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ============================================
+   REDUCED MOTION
+============================================ */
+@media (prefers-reduced-motion: reduce) {
+  body::before {
+    animation: none;
+  }
+
+  .bulb {
+    animation: none !important;
+    opacity: 0.8 !important;
+  }
+
+  .hero-stars {
+    animation: none !important;
+  }
+
+  .marquee-container,
+  .hero-tagline,
+  .hero-cta {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+
+  .movie-card:hover,
+  .blog-card:hover {
+    transform: none;
+  }
+
+  .movie-card:hover .movie-poster-img {
+    transform: none;
+  }
+
+  .btn:hover,
+  .btn-primary:hover,
+  .btn-ticket:hover {
+    transform: none;
+  }
+
+  .nav-cta:hover {
+    transform: none;
+  }
+
+  .date-nav__arrow:hover:not(:disabled),
+  .pagination-arrow:hover:not(:disabled) {
+    transition: none;
+  }
+}

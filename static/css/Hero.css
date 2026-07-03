@@ -1,0 +1,382 @@
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding-top: 70px;
+  overflow: hidden;
+}
+
+/* Cool Charcoal-Black Background — midnight theater */
+.hero-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, #06060c 0%, #0a0a12 30%, #12121c 70%, #0a0a12 100%);
+  z-index: -3;
+}
+
+/* Stars — cooler silver tones */
+.hero-stars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  z-index: -2;
+  background-image: radial-gradient(2px 2px at 20px 30px, #e8e4dc, transparent),
+    radial-gradient(2px 2px at 40px 70px, rgba(232, 228, 220, 0.8), transparent),
+    radial-gradient(1px 1px at 90px 40px, #c0beb8, transparent),
+    radial-gradient(2px 2px at 130px 80px, rgba(200, 196, 188, 0.6), transparent),
+    radial-gradient(1px 1px at 160px 120px, #e8e4dc, transparent),
+    radial-gradient(2px 2px at 200px 50px, rgba(201, 168, 76, 0.4), transparent),
+    radial-gradient(1px 1px at 250px 160px, #dcdad4, transparent),
+    radial-gradient(2px 2px at 300px 90px, rgba(220, 216, 208, 0.5), transparent),
+    radial-gradient(1px 1px at 350px 30px, #c0beb8, transparent),
+    radial-gradient(2px 2px at 400px 140px, rgba(232, 228, 220, 0.7), transparent),
+    radial-gradient(1px 1px at 450px 70px, #e8e4dc, transparent),
+    radial-gradient(2px 2px at 500px 110px, rgba(201, 168, 76, 0.3), transparent);
+  background-size: 550px 200px;
+  animation: twinkle 4s ease-in-out infinite alternate;
+}
+
+/* Pine Tree Silhouettes */
+.hero-pines {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 300px;
+  z-index: -1;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%2306060c' d='M0,320 L0,200 L30,200 L40,120 L50,180 L60,100 L70,160 L80,80 L90,140 L100,60 L110,130 L120,200 L150,200 L160,140 L170,190 L180,130 L190,170 L200,110 L210,160 L220,200 L280,200 L290,150 L300,190 L310,120 L320,170 L330,90 L340,150 L350,70 L360,140 L370,200 L430,200 L440,160 L450,190 L460,140 L470,180 L480,120 L490,170 L500,200 L560,200 L570,130 L580,180 L590,110 L600,160 L610,80 L620,150 L630,200 L700,200 L710,170 L720,195 L730,150 L740,185 L750,130 L760,175 L770,200 L830,200 L840,140 L850,185 L860,120 L870,170 L880,90 L890,160 L900,70 L910,145 L920,200 L980,200 L990,165 L1000,190 L1010,145 L1020,180 L1030,125 L1040,170 L1050,200 L1110,200 L1120,150 L1130,185 L1140,130 L1150,175 L1160,100 L1170,160 L1180,200 L1240,200 L1250,155 L1260,190 L1270,140 L1280,180 L1290,110 L1300,165 L1310,200 L1370,200 L1380,145 L1390,185 L1400,125 L1410,170 L1420,95 L1430,155 L1440,200 L1440,320 Z'/%3E%3C/svg%3E")
+    no-repeat bottom center;
+  background-size: cover;
+}
+
+/* Art Deco Sunburst + Spotlight */
+.light-spill {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200vmax;
+  height: 200vmax;
+  background: radial-gradient(
+      ellipse 20% 25% at center,
+      rgba(201, 168, 76, 0.06) 0%,
+      transparent 100%
+    ),
+    repeating-conic-gradient(
+      from 0deg,
+      transparent 0deg 4.5deg,
+      rgba(201, 168, 76, 0.015) 4.5deg 5deg
+    );
+  -webkit-mask-image: radial-gradient(ellipse 35% 45% at center, black, transparent);
+  mask-image: radial-gradient(ellipse 35% 45% at center, black, transparent);
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Main Marquee Sign — Art Deco Double Border */
+.marquee-container {
+  position: relative;
+  z-index: 10;
+  margin-bottom: var(--spacing-xl);
+  animation: curtain-reveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.marquee-outer {
+  position: relative;
+  background: linear-gradient(180deg, #14141a 0%, #0c0c12 100%);
+  border: 2px solid var(--color-gold);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  box-shadow:
+    inset 0 0 0 6px #0a0a0e,
+    inset 0 0 0 7px var(--color-gold-warm),
+    0 0 40px rgba(0, 0, 0, 0.9),
+    0 0 80px var(--neon-gold-far);
+}
+
+/* Marquee Bulbs */
+.marquee-bulbs-top,
+.marquee-bulbs-bottom {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.marquee-bulbs-top {
+  top: -10px;
+}
+
+.marquee-bulbs-bottom {
+  bottom: -10px;
+}
+
+.marquee-bulbs-left,
+.marquee-bulbs-right {
+  position: absolute;
+  top: 20px;
+  bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.marquee-bulbs-left {
+  left: -10px;
+}
+
+.marquee-bulbs-right {
+  right: -10px;
+}
+
+.bulb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #fff8e0 0%, #e8d080 50%, var(--color-brass) 100%);
+  box-shadow:
+    0 0 6px #e8d080,
+    0 0 12px var(--color-gold-glow);
+  animation: bulb-chase 1.8s ease-in-out infinite;
+}
+
+/* Sequential chase pattern */
+.bulb:nth-child(1) {
+  animation-delay: 0s;
+}
+.bulb:nth-child(2) {
+  animation-delay: 0.1s;
+}
+.bulb:nth-child(3) {
+  animation-delay: 0.2s;
+}
+.bulb:nth-child(4) {
+  animation-delay: 0.3s;
+}
+.bulb:nth-child(5) {
+  animation-delay: 0.4s;
+}
+.bulb:nth-child(6) {
+  animation-delay: 0.5s;
+}
+.bulb:nth-child(7) {
+  animation-delay: 0.6s;
+}
+.bulb:nth-child(8) {
+  animation-delay: 0.7s;
+}
+.bulb:nth-child(9) {
+  animation-delay: 0.8s;
+}
+.bulb:nth-child(10) {
+  animation-delay: 0.9s;
+}
+.bulb:nth-child(11) {
+  animation-delay: 1s;
+}
+.bulb:nth-child(12) {
+  animation-delay: 1.1s;
+}
+.bulb:nth-child(13) {
+  animation-delay: 1.2s;
+}
+.bulb:nth-child(14) {
+  animation-delay: 1.3s;
+}
+.bulb:nth-child(15) {
+  animation-delay: 1.4s;
+}
+.bulb:nth-child(16) {
+  animation-delay: 1.5s;
+}
+.bulb:nth-child(17) {
+  animation-delay: 1.6s;
+}
+
+/* Reverse direction for bottom and right bulbs */
+.marquee-bulbs-bottom .bulb:nth-child(1) {
+  animation-delay: 1.6s;
+}
+.marquee-bulbs-bottom .bulb:nth-child(2) {
+  animation-delay: 1.5s;
+}
+.marquee-bulbs-bottom .bulb:nth-child(3) {
+  animation-delay: 1.4s;
+}
+.marquee-bulbs-bottom .bulb:nth-child(4) {
+  animation-delay: 1.3s;
+}
+.marquee-bulbs-bottom .bulb:nth-child(5) {
+  animation-delay: 1.2s;
+}
+.marquee-bulbs-bottom .bulb:nth-child(6) {
+  animation-delay: 1.1s;
+}
+.marquee-bulbs-bottom .bulb:nth-child(7) {
+  animation-delay: 1s;
+}
+.marquee-bulbs-bottom .bulb:nth-child(8) {
+  animation-delay: 0.9s;
+}
+.marquee-bulbs-bottom .bulb:nth-child(9) {
+  animation-delay: 0.8s;
+}
+.marquee-bulbs-bottom .bulb:nth-child(10) {
+  animation-delay: 0.7s;
+}
+.marquee-bulbs-bottom .bulb:nth-child(11) {
+  animation-delay: 0.6s;
+}
+.marquee-bulbs-bottom .bulb:nth-child(12) {
+  animation-delay: 0.5s;
+}
+.marquee-bulbs-bottom .bulb:nth-child(13) {
+  animation-delay: 0.4s;
+}
+.marquee-bulbs-bottom .bulb:nth-child(14) {
+  animation-delay: 0.3s;
+}
+.marquee-bulbs-bottom .bulb:nth-child(15) {
+  animation-delay: 0.2s;
+}
+.marquee-bulbs-bottom .bulb:nth-child(16) {
+  animation-delay: 0.1s;
+}
+.marquee-bulbs-bottom .bulb:nth-child(17) {
+  animation-delay: 0s;
+}
+
+.marquee-bulbs-right .bulb:nth-child(1) {
+  animation-delay: 1.2s;
+}
+.marquee-bulbs-right .bulb:nth-child(2) {
+  animation-delay: 0.9s;
+}
+.marquee-bulbs-right .bulb:nth-child(3) {
+  animation-delay: 0.6s;
+}
+.marquee-bulbs-right .bulb:nth-child(4) {
+  animation-delay: 0.3s;
+}
+.marquee-bulbs-right .bulb:nth-child(5) {
+  animation-delay: 0s;
+}
+
+/* Inner panel — Art Deco double-line frame */
+.marquee-inner {
+  background: linear-gradient(180deg, #0c0c12 0%, #08080e 100%);
+  border: 1px solid var(--color-gold);
+  border-radius: 3px;
+  padding: 30px 60px;
+  text-align: center;
+  box-shadow:
+    inset 0 0 0 4px #0a0a10,
+    inset 0 0 0 5px rgba(201, 168, 76, 0.35);
+}
+
+/* Art Deco Neon Title — champagne glow */
+.marquee-title {
+  font-family: var(--font-display);
+  font-size: 5.5rem;
+  letter-spacing: 14px;
+  color: var(--neon-gold-inner);
+  text-shadow:
+    0 0 4px var(--neon-gold-inner),
+    0 0 10px var(--color-gold),
+    0 0 20px var(--color-gold),
+    0 0 35px var(--neon-gold-mid),
+    0 0 50px var(--neon-gold-outer);
+}
+
+.marquee-subtitle {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  letter-spacing: 10px;
+  color: var(--color-gold);
+  margin-top: var(--spacing-sm);
+  text-shadow: 0 0 8px var(--neon-gold-far);
+}
+
+/* Hero Tagline */
+.hero-tagline {
+  text-align: center;
+  z-index: 10;
+  margin-bottom: var(--spacing-lg);
+  animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both;
+}
+
+.hero-tagline p {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-style: italic;
+  color: var(--color-cream-muted);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Hero CTA Buttons */
+.hero-cta {
+  display: flex;
+  gap: var(--spacing-md);
+  z-index: 10;
+  animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.9s both;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .marquee-title {
+    font-size: 3.5rem;
+    letter-spacing: 8px;
+  }
+
+  .marquee-subtitle {
+    font-size: 1.2rem;
+    letter-spacing: 6px;
+  }
+
+  .marquee-inner {
+    padding: 20px 40px;
+  }
+}
+
+@media (max-width: 600px) {
+  .marquee-title {
+    font-size: 2.2rem;
+    letter-spacing: 5px;
+    text-shadow:
+      0 0 4px var(--neon-gold-inner),
+      0 0 8px var(--color-gold),
+      0 0 16px var(--neon-gold-mid);
+  }
+
+  .marquee-subtitle {
+    font-size: 1rem;
+    letter-spacing: 3px;
+  }
+
+  .marquee-inner {
+    padding: 20px 30px;
+  }
+
+  .marquee-outer {
+    padding: 18px;
+  }
+
+  .hero-cta {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .hero-tagline p {
+    font-size: 1.2rem;
+    padding: 0 var(--spacing-md);
+  }
+}

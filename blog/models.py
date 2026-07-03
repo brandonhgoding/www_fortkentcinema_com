@@ -51,3 +51,8 @@ class BlogPost(SlugModelMixin):
 
     def __str__(self) -> str:
         return self.subtitle
+
+    def get_absolute_url(self):
+        from django.urls import reverse
+
+        return reverse("blog_detail", kwargs={"slug": self.slug})

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Blog | Fort Kent Cinema{% endblock %}
+{% block description %}News, reviews, and updates from Fort Kent Cinema. Stay up to date with the latest movie announcements, events, and community news.{% endblock %}
+{% block og_title %}Blog | Fort Kent Cinema{% endblock %}
+{% block og_description %}News, reviews, and updates from Fort Kent Cinema.{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/BlogListPage.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/BlogCard.css' %}" />
+{% endblock %}
+
+{% block content %}
+<div class="blog-list-page">
+  <div class="blog-list-container">
+    <div class="blog-list-header" data-reveal>
+      <a href="/" class="blog-list-back">&larr; Back to Home</a>
+      <h1 class="blog-list-title">BLOG</h1>
+      <p class="blog-list-subtitle">News, reviews, and updates from Fort Kent Cinema</p>
+    </div>
+    <div class="blog-list-grid" data-spotlight>
+      {% include "blog/_post_cards.html" %}
+    </div>
+    <div class="blog-list-count" aria-live="polite" role="status" id="blog-count">
+      Showing {{ page_obj.end_index }} of {{ paginator.count }} posts
+    </div>
+  </div>
+</div>
+{% endblock %}

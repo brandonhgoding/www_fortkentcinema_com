@@ -1,0 +1,121 @@
+<section class="coming-soon" id="coming-soon"
+         x-data="{ trailer: null, view: 'grid' }"
+         x-effect="document.body.style.overflow = trailer ? 'hidden' : ''">
+  <div class="section-container">
+    <div class="section-header">
+      <h2 class="section-title section-title--red">COMING SOON</h2>
+      <p class="section-subtitle">Get excited for these upcoming releases</p>
+      <svg class="fx-divider" viewBox="0 0 400 40" aria-hidden="true" focusable="false">
+        <path d="M 10 20 L 150 20 L 170 8 L 200 32 L 230 8 L 250 20 L 390 20" pathLength="1" />
+        <circle cx="200" cy="20" r="3" />
+      </svg>
+      <div class="coming-view-toggle">
+        <button class="coming-view-btn"
+                :class="{ 'coming-view-btn--active': view === 'grid' }"
+                @click="view = 'grid'"
+                aria-label="Grid view" title="Grid view">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <rect x="3" y="3" width="7" height="7" rx="1" fill="currentColor" />
+            <rect x="14" y="3" width="7" height="7" rx="1" fill="currentColor" />
+            <rect x="3" y="14" width="7" height="7" rx="1" fill="currentColor" />
+            <rect x="14" y="14" width="7" height="7" rx="1" fill="currentColor" />
+          </svg>
+        </button>
+        <button class="coming-view-btn"
+                :class="{ 'coming-view-btn--active': view === 'calendar' }"
+                @click="view = 'calendar'"
+                aria-label="Calendar view" title="Calendar view">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="17" rx="2" fill="none" stroke="currentColor" stroke-width="2" />
+            <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2" />
+            <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="coming-movies-grid" data-spotlight x-show="view === 'grid'">
+      {% for movie in coming_soon %}
+      <article class="coming-movie-card">
+        {% if movie.youtube_id %}
+        <div class="coming-movie-poster coming-movie-poster--playable"
+             role="button"
+             tabindex="0"
+             aria-label="Watch {{ movie.title }} trailer"
+             @click="trailer = { title: '{{ movie.title|escapejs }}', youtube_id: '{{ movie.youtube_id|escapejs }}' }"
+             @keydown.enter.prevent="trailer = { title: '{{ movie.title|escapejs }}', youtube_id: '{{ movie.youtube_id|escapejs }}' }"
+             @keydown.space.prevent="trailer = { title: '{{ movie.title|escapejs }}', youtube_id: '{{ movie.youtube_id|escapejs }}' }">
+        {% else %}
+        <div class="coming-movie-poster">
+        {% endif %}
+          {% if movie.is_free_for_members %}
+          <div class="coming-free-banner">Free for Members</div>
+          {% endif %}
+          {% if movie.films|length > 1 %}
+          <div class="coming-poster-multi">
+            {% for f in movie.films %}
+            {% if f.poster %}
+            <img src="{{ f.poster }}" alt="{{ f.title }} poster" class="coming-poster-img coming-poster-img--multi" />
+            {% else %}
+            <div class="coming-poster-placeholder coming-poster-placeholder--multi">
+              <span class="coming-poster-icon" role="img" aria-label="Movie poster placeholder">&#127916;</span>
+            </div>
+            {% endif %}
+            {% endfor %}
+          </div>
+          {% elif movie.poster %}
+          <img src="{{ movie.poster }}" alt="{{ movie.title }} poster" class="coming-poster-img" />
+          {% else %}
+          <div class="coming-poster-placeholder">
+            <span class="coming-poster-icon" role="img" aria-label="Movie poster placeholder">&#127916;</span>
+          </div>
+          {% endif %}
+          {% if movie.youtube_id %}
+          <div class="coming-poster-play-overlay">
+            <svg class="coming-poster-play-icon" viewBox="0 0 48 48" aria-hidden="true">
+              <circle cx="24" cy="24" r="23" fill="rgba(0,0,0,0.6)" stroke="white" stroke-width="2" />
+              <polygon points="19,14 19,34 35,24" fill="white" />
+            </svg>
+          </div>
+          {% endif %}
+        </div>
+        <div class="coming-movie-info">
+          <p class="coming-movie-date">{{ movie.release_date|upper }}</p>
+          <h3 class="coming-movie-title">{{ movie.title }}</h3>
+          <p class="coming-movie-genre">{{ movie.genre }}</p>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+
+    {% comment %}
+    Calendar view. Lazily loads the initial month via HTMX the first time it is
+    revealed (intersect once), then month nav swaps the fragment in place.
+    initial_month is 0-based (matches the calendar_month url / get_calendar_month).
+    {% endcomment %}
+    <div class="coming-calendar-container" x-show="view === 'calendar'" x-cloak
+         hx-get="{% url 'calendar_month' initial_year initial_month %}"
+         hx-trigger="intersect once" hx-swap="innerHTML"></div>
+  </div>
+
+  <div class="coming-trailer-overlay" x-cloak x-show="trailer" role="dialog"
+       :aria-label="(trailer ? trailer.title : '') + ' trailer'">
+    <div class="coming-trailer-content">
+      <button class="coming-trailer-close" @click="trailer = null" aria-label="Close trailer">
+        <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+          <line x1="4" y1="4" x2="20" y2="20" stroke="white" stroke-width="2.5" stroke-linecap="round" />
+          <line x1="20" y1="4" x2="4" y2="20" stroke="white" stroke-width="2.5" stroke-linecap="round" />
+        </svg>
+      </button>
+      <div class="coming-trailer-player">
+        <iframe
+          :src="trailer ? 'https://www.youtube-nocookie.com/embed/' + trailer.youtube_id + '?autoplay=1&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3' : ''"
+          :title="(trailer ? trailer.title : '') + ' trailer'"
+          allow="autoplay; encrypted-media"
+          allowfullscreen>
+        </iframe>
+      </div>
+    </div>
+  </div>
+</section>

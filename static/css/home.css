@@ -1,0 +1,45 @@
+/* Homepage-only glue for the Django port.
+ *
+ * Alpine's x-cloak keeps server-rendered elements that should start hidden
+ * (inactive movie cards, collapsed schedule dates, the trailer modal) from
+ * flashing before Alpine initializes. */
+[x-cloak] {
+  display: none !important;
+}
+
+/* Now Showing phone/desktop split.
+ *
+ * The SPA chose between the desktop date-nav grid and the phone schedule list
+ * with a JS matchMedia('(max-width: 600px)') check and rendered only one. The
+ * Django port renders BOTH and toggles them here, matching that breakpoint. */
+.schedule-list {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .date-nav,
+  .movies-grid {
+    display: none;
+  }
+
+  .schedule-list {
+    display: flex;
+  }
+}
+
+/* Phone-stripping.
+ *
+ * The SPA's App.jsx only mounted Hero, the four CTAs, and the Blog teaser
+ * above a 600px matchMedia check, leaving NowShowing + ComingSoon + the
+ * footer as the phone experience. None of those components' own stylesheets
+ * hide their root element at this breakpoint (they only reflow internal
+ * layout), so the Django port hides them here instead. */
+@media (max-width: 600px) {
+  .hero,
+  .classic-movie-cta,
+  .open-mic-cta,
+  .gift-card-cta,
+  .blog {
+    display: none;
+  }
+}

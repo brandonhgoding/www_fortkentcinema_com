@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Fort Kent Cinema | Movies in the St. John Valley{% endblock %}
+{% block description %}Fort Kent Cinema - Your local movie theater in Fort Kent, Maine. Check showtimes, coming soon, and join our membership program.{% endblock %}
+{% block og_title %}Fort Kent Cinema | Movies in the St. John Valley{% endblock %}
+{% block og_description %}Your local movie theater in Fort Kent, Maine. Check showtimes, coming soon, and join our membership program.{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/Hero.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/ClassicMovieCTA.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/NowShowing.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/MovieCard.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/MovieScheduleCard.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/OpenMicCTA.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/ComingSoon.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/GiftCardCTA.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/Blog.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/BlogCard.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/home.css' %}" />
+{% endblock %}
+
+{% block content %}
+  {# Task 5: hero + classic CTA + now showing #}
+  {% include "partials/hero.html" %}
+  {% include "partials/ornament_divider.html" %}
+  {% include "partials/cta_classic.html" %}
+  {% include "partials/ornament_divider.html" %}
+  {% include "partials/now_showing.html" %}
+  {# Task 6: open-mic CTA + coming soon (grid view; calendar deferred to Plan 4) #}
+  {% include "partials/ornament_divider.html" %}
+  {% include "partials/cta_openmic.html" %}
+  {% include "partials/ornament_divider.html" %}
+  {% include "partials/coming_soon.html" %}
+  {# Task 7: gift-card CTA + blog teaser #}
+  {% include "partials/ornament_divider.html" %}
+  {% include "partials/cta_giftcard.html" %}
+  {% include "partials/ornament_divider.html" %}
+  {% include "partials/blog_teaser.html" %}
+{% endblock %}

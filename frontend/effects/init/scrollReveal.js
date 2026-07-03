@@ -1,0 +1,40 @@
+import { onScrollProgress } from '../core/scrollProgress.js';
+import { getMotionTier } from '../core/motionPrefs.js';
+
+const FADE_SPAN = 0.3;
+
+function reveal(node) {
+  try {
+    if (getMotionTier() === 'static') {
+      node.classList.add('fx-reveal', 'fx-revealed');
+      return;
+    }
+    node.classList.add('fx-reveal');
+    let unsubscribe = null;
+    let revealed = false;
+    unsubscribe = onScrollProgress(node, (progress) => {
+      node.style.setProperty('--fx-draw', String(progress));
+      node.style.setProperty('--fx-fade', String(Math.min(progress / FADE_SPAN, 1)));
+      if (progress >= 1) {
+        node.classList.add('fx-revealed');
+        revealed = true;
+        if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+      }
+    });
+    // If the element was already revealed on the initial synchronous
+    // progress call, `unsubscribe` was still null inside the callback
+    // (this assignment hadn't completed yet) — unsubscribe now.
+    if (revealed && unsubscribe) { unsubscribe(); unsubscribe = null; }
+  } catch (err) {
+    console.error('[effects] scroll reveal disabled:', err);
+    node.classList.add('fx-reveal', 'fx-revealed');
+  }
+}
+
+export function initScrollReveal(root = document) {
+  root.querySelectorAll('[data-reveal]').forEach((node) => {
+    if (node.dataset.revealInit) return; // idempotent across HTMX swaps
+    node.dataset.revealInit = '1';
+    reveal(node);
+  });
+}

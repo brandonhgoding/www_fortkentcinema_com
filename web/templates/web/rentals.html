@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Private Rentals | Fort Kent Cinema{% endblock %}
+{% block description %}Rent the whole theater at Fort Kent Cinema. One simple rate — bring your own movie for a private screening, or we'll arrange a licensed film for public, group, and fundraiser events.{% endblock %}
+{% block og_title %}Private Rentals | Fort Kent Cinema{% endblock %}
+{% block og_description %}Rent the whole theater at Fort Kent Cinema. One simple rate for private screenings and licensed events.{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/PrivateRentalsPage.css' %}" />
+{% endblock %}
+
+{% block content %}
+  <div class="rentals-page">
+    <div class="rentals-container">
+      <div class="rentals-header">
+        <a href="/" class="rentals-back">&larr; Back to Home</a>
+        <h1 class="rentals-title">RENT THE THEATER</h1>
+        <p class="rentals-subtitle">
+          The whole place to yourself — one simple rate
+        </p>
+      </div>
+
+      {% comment %} Base rate {% endcomment %}
+      <section class="rentals-section">
+        <h2 class="rentals-section-title">THE RENTAL</h2>
+        <p class="rentals-section-note">
+          Birthday party, gaming night, private screening, corporate gathering, or fundraiser —
+          it&rsquo;s all the same simple rental. Bring your own movie, or we&rsquo;ll arrange a
+          licensed film for you.
+        </p>
+        <div class="rentals-base">
+          <div class="rental-card rental-card--featured">
+            <h3 class="rental-card-title">BASE RATE</h3>
+            <div class="rental-card-price">$225</div>
+            <p class="rental-card-description">
+              Two hours of the theater to yourself, popcorn included.
+            </p>
+            <ul class="rental-card-features">
+              <li>2-hour private theater rental</li>
+              <li>Up to 20 guests</li>
+              <li>Popcorn for your group included</li>
+              <li>$50 per additional half-hour</li>
+              <li>$10 per guest over 20</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {% comment %} Choose your film {% endcomment %}
+      <section class="rentals-section">
+        <h2 class="rentals-section-title">CHOOSE YOUR FILM</h2>
+        <p class="rentals-section-note">
+          The base rate is the same either way — the only difference is what you put on the screen.
+        </p>
+        <div class="rentals-grid">
+          <div class="rental-card">
+            <h3 class="rental-card-title">PRIVATE SCREENING</h3>
+            <div class="rental-card-price">$225</div>
+            <p class="rental-card-description">
+              For invited family and friends. Bring your own movie — no added film cost.
+            </p>
+            <ul class="rental-card-features">
+              <li>Bring your own DVD or Blu-ray</li>
+              <li>No added film cost</li>
+              <li>Perfect for birthdays, gaming, and private parties</li>
+              <li>No ticket sales or public advertising</li>
+            </ul>
+          </div>
+          <div class="rental-card rental-card--featured">
+            <h3 class="rental-card-title">LICENSED SCREENING</h3>
+            <div class="rental-card-price">
+              $225 <span>+ film licensing</span>
+            </div>
+            <p class="rental-card-description">
+              A current or licensed title for public, group, and fundraiser events.
+            </p>
+            <ul class="rental-card-features">
+              <li>Licensed film of your choice</li>
+              <li>We arrange licensing through our partners</li>
+              <li>Film fee quoted per film, added to your base rate</li>
+              <li>Public events, school groups &amp; fundraisers welcome</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {% comment %} Policies {% endcomment %}
+      <details class="rentals-policies">
+        <summary>POLICIES &amp; INFORMATION</summary>
+        <div class="rentals-policies-content">
+          <ul>
+            <li>
+              A 50% deposit is required to reserve your date. The remaining balance is due on the
+              day of the event.
+            </li>
+            <li>
+              Cancellations made 7+ days in advance receive a full refund. Cancellations within 7
+              days forfeit the deposit.
+            </li>
+            <li>
+              Outside food and drink are not permitted. All food and beverage must be purchased
+              through or arranged with Fort Kent Cinema.
+            </li>
+            <li>
+              The renting party is responsible for any damages to the theater or equipment during
+              the event.
+            </li>
+            <li>All events must end by 11:00 PM.</li>
+            <li>A signed rental agreement is required before confirmation of your booking.</li>
+            <li>
+              <strong>Private screenings</strong>: For invited family and friends only. You may
+              bring your own DVD or Blu-ray. No ticket sales or public advertising permitted.
+            </li>
+            <li>
+              <strong>Licensed screenings</strong>: Public, group, and fundraiser events require
+              properly licensed films. We can arrange licensing through our partners - fees vary by
+              film and will be quoted per film.
+            </li>
+            <li>
+              Decorations are allowed but must be approved in advance. No confetti, glitter, or
+              anything that may damage the seats or screen.
+            </li>
+          </ul>
+        </div>
+      </details>
+
+      {% comment %} CTA {% endcomment %}
+      <div class="rentals-cta">
+        <h2 class="rentals-cta-title">READY TO BOOK?</h2>
+        <p class="rentals-cta-text">
+          Contact us to check availability and reserve your event date.
+        </p>
+        <div class="rentals-cta-contact">
+          <a href="tel:+12072315287">(207) 231-5287</a>
+          <a href="mailto:brandon.h.goding@gmail.com">brandon.h.goding@gmail.com</a>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
