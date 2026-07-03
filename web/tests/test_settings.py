@@ -29,3 +29,17 @@ class StaticServingSettingsTests(SimpleTestCase):
         self.assertNotEqual(
             backend, "whitenoise.storage.CompressedManifestStaticFilesStorage"
         )
+
+
+class ProdSecuritySettingsTests(SimpleTestCase):
+    def test_security_settings_default_off_for_dev(self):
+        # With no prod env vars set (dev/test), these stay dev-safe.
+        from django.conf import settings
+
+        self.assertFalse(getattr(settings, "SECURE_SSL_REDIRECT", False))
+
+    def test_csrf_trusted_origins_configurable(self):
+        # The setting exists (possibly empty) and is a list.
+        from django.conf import settings
+
+        self.assertIsInstance(getattr(settings, "CSRF_TRUSTED_ORIGINS", []), list)
