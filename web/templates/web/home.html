@@ -1,7 +1,18 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block title %}Fort Kent Cinema | Maine's Northernmost Picture Show{% endblock %}
+{% block title %}Fort Kent Cinema | Movies in the St. John Valley{% endblock %}
+{% block description %}Fort Kent Cinema - Your local movie theater in Fort Kent, Maine. Check showtimes, coming soon, and join our membership program.{% endblock %}
+{% block og_title %}Fort Kent Cinema | Movies in the St. John Valley{% endblock %}
+{% block og_description %}Your local movie theater in Fort Kent, Maine. Check showtimes, coming soon, and join our membership program.{% endblock %}
+
+{% block extra_css %}
+  {# section sheets linked here as Tasks 5-7 add them #}
+{% endblock %}
 
 {% block content %}
-  <h1>Fort Kent Cinema</h1>
+  {# Task 5 #}{# hero + classic CTA #}
+  {% include "partials/now_showing.html" %}
+  {# Task 6 #}{# open-mic CTA + coming soon #}
+  {# Task 7 #}{# gift-card CTA + blog teaser #}
 {% endblock %}

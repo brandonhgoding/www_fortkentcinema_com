@@ -1,3 +1,5 @@
+from unittest import mock
+
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.staticfiles.finders import find
@@ -64,6 +66,22 @@ class BaseChromeTests(TestCase):
     def test_canonical_uses_request_url(self):
         html = self.client.get(reverse("home")).content.decode()
         self.assertIn('rel="canonical"', html)
+
+
+class HomeViewDataTests(TestCase):
+    @mock.patch("web.views.get_coming_soon", return_value=[])
+    @mock.patch("web.views.get_now_showing", return_value=[])
+    def test_context_has_movie_lists(self, _ns, _cs):
+        resp = self.client.get(reverse("home"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("now_showing", resp.context)
+        self.assertIn("coming_soon", resp.context)
+
+    @mock.patch("web.views.get_coming_soon", return_value=[])
+    @mock.patch("web.views.get_now_showing", return_value=[])
+    def test_home_meta_overrides(self, _ns, _cs):
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertIn("Movies in the St. John Valley", html)  # home <title>/og:title
 
 
 class StaticAssetsTests(TestCase):
