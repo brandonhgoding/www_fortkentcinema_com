@@ -103,6 +103,21 @@ class HomeViewDataTests(TestCase):
         self.assertIn('data-cursor-bulbs', html)     # hero cursor bulbs hook
 
 
+class ComingSoonTests(TestCase):
+    @mock.patch("web.views.get_now_showing", return_value=[])
+    @mock.patch("web.views.get_coming_soon")
+    def test_coming_soon_grid_renders(self, cs, _ns):
+        cs.return_value = [{
+            "id": "5", "title": "Wicked", "release_date": "November 22",
+            "genre": "", "poster": "w.jpg", "youtube_id": "", "films": [],
+            "is_free_for_members": False, "start_date": "2999-11-22",
+        }]
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertIn("coming-soon", html)
+        self.assertIn("Wicked", html)
+        self.assertIn("NOVEMBER 22", html)  # release_date uppercased in template
+
+
 class StaticAssetsTests(TestCase):
     def test_core_css_present(self):
         for name in ("css/variables.css", "css/global.css", "css/effects.css"):
