@@ -21,7 +21,7 @@
   </div>
   {% endif %}
   <div class="blog-detail-container">
-    <nav class="blog-detail-nav"><a href="/blog" class="blog-detail-back">&larr; Back to Blog</a></nav>
+    <nav class="blog-detail-nav"><a href="{% url 'blog_list' %}" class="blog-detail-back">&larr; Back to Blog</a></nav>
     <article class="blog-detail-article">
       <header class="blog-detail-header">
         {% if post.category %}<span class="blog-detail-category">{{ post.category.name }}</span>{% endif %}
@@ -39,7 +39,7 @@
         {% for para in post.content|paragraphs %}<p>{{ para }}</p>{% endfor %}
       </div>
     </article>
-    <footer class="blog-detail-footer"><a href="/blog" class="blog-detail-footer-link">&larr; Back to all posts</a></footer>
+    <footer class="blog-detail-footer"><a href="{% url 'blog_list' %}" class="blog-detail-footer-link">&larr; Back to all posts</a></footer>
   </div>
 </div>
 {% endblock %}

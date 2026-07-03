@@ -43,6 +43,45 @@ class BlogListTests(TestCase):
         self.assertIn("You've reached the end", html)  # page 2 is last (8 posts, 6/page)
 
 
+class BlogListSameDatePaginationTests(TestCase):
+    """Regression test for undefined ordering when many posts share a
+    day-granular post_date: without a unique tiebreaker (-id), the DB is
+    free to return that tied group in a different relative order for the
+    page-1 vs page-2 query, causing cards to be duplicated or skipped at
+    the 6-per-page boundary."""
+
+    @classmethod
+    def setUpTestData(cls):
+        author = BlogAuthor.objects.create(first_name="Ada", last_name="Lovelace")
+        cat = BlogCategory.objects.create(name="News")
+        cls.posts = [
+            BlogPost.objects.create(
+                title=f"Same Date Post {i}", subtitle=f"sub-{i}",
+                author=author, category=cat, post_date="2026-05-01",
+                content=f"Body paragraph for post {i}.",
+            )
+            for i in range(7)  # > paginate_by (6), all sharing one post_date
+        ]
+
+    def test_no_duplicates_or_skips_across_page_boundary(self):
+        page1 = self.client.get(reverse("blog_list"))
+        page2 = self.client.get(reverse("blog_list") + "?page=2")
+
+        slugs_page1 = [p.slug for p in page1.context["page_obj"].object_list]
+        slugs_page2 = [p.slug for p in page2.context["page_obj"].object_list]
+
+        self.assertEqual(len(slugs_page1), 6)
+        self.assertEqual(len(slugs_page2), 1)
+
+        # No slug should appear on both pages.
+        self.assertEqual(set(slugs_page1) & set(slugs_page2), set())
+
+        # Union of both pages must cover every created post (none skipped).
+        all_slugs = set(slugs_page1) | set(slugs_page2)
+        expected_slugs = {p.slug for p in self.posts}
+        self.assertEqual(all_slugs, expected_slugs)
+
+
 class BlogDetailTests(TestCase):
     @classmethod
     def setUpTestData(cls):

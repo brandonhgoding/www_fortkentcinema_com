@@ -9,6 +9,9 @@ class PostListView(ListView):
     context_object_name = "posts"
     template_name = "blog/post_list.html"
 
+    def get_queryset(self):
+        return BlogPost.objects.select_related("author", "category").order_by("-post_date", "-id")
+
     def get_template_names(self):
         if self.request.headers.get("HX-Request"):
             return ["blog/_post_cards.html"]

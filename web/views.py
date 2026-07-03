@@ -21,8 +21,8 @@ class HomeView(TemplateView):
         ctx["now_showing"] = now_showing
         ctx["coming_soon"] = get_coming_soon()
 
-        # Home blog teaser: latest 3 posts (model default ordering is -post_date).
-        ctx["recent_posts"] = BlogPost.objects.all()[:3]
+        # Home blog teaser: latest 3 posts, deterministically ordered.
+        ctx["recent_posts"] = BlogPost.objects.select_related("author", "category").order_by("-post_date", "-id")[:3]
 
         # Hero marquee bulbs: 17 across top/bottom, 5 down each side (Hero.jsx).
         ctx["hero_top_bulbs"] = range(17)
