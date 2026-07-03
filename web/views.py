@@ -4,7 +4,11 @@ from django.views.generic import TemplateView
 
 from blog.models import BlogPost
 from web.constants import MEMBERSHIP, MEMBERSHIP_FAQ
-from web.services.leprinceos import get_now_showing, get_coming_soon
+from web.services.leprinceos import (
+    get_now_showing,
+    get_coming_soon,
+    get_classic_movie_night,
+)
 from web.services.showtimes import (
     today_eastern,
     format_showtime_date,
@@ -86,3 +90,12 @@ class RentalsView(TemplateView):
 
 class AboutView(TemplateView):
     template_name = "web/about.html"
+
+
+class ClassicsView(TemplateView):
+    template_name = "web/classics.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["classics"] = get_classic_movie_night()
+        return ctx

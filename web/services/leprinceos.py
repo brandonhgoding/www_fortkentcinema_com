@@ -225,3 +225,81 @@ def get_coming_soon():
         return movies
 
     return movies
+
+
+def get_classic_movie_night():
+    """Port of api.js getClassicMovieNight(): confirmed CLASSIC-kind
+    engagements still running or yet to start, expanded into individual
+    screenings (one per showtime) enriched with film detail. Returns
+    {"next_screening": <dict|None>, "upcoming": [<dict>]}."""
+    empty = {"next_screening": None, "upcoming": []}
+    try:
+        now = datetime.datetime.now(CINEMA_TZ)
+        today = now.date().isoformat()
+
+        # Classic engagements still running or yet to start. Passing `kind`
+        # bypasses the API's default show_in_main_listings filter for
+        # non-staff.
+        engagements = _get(
+            f"/engagements/?kind=CLASSIC&status=CONFIRMED&end_date_after={today}"
+        )
+
+        if not engagements:
+            return empty
+
+        screenings = []
+        for engagement in engagements:
+            try:
+                showtimes = _get(
+                    f"/showtimes/?engagement={engagement['id']}&is_cancelled=false"
+                )
+
+                film = None
+                lead_id = _primary_film_id(engagement)
+                if lead_id is not None:
+                    film = _get(f"/films/{lead_id}/")
+
+                for st in showtimes:
+                    try:
+                        starts_at = st["starts_at"]
+                        if not starts_at:
+                            continue
+                        local_date = _local_date(starts_at)
+                        if local_date < today:
+                            continue
+                        dt = datetime.datetime.fromisoformat(
+                            starts_at.replace("Z", "+00:00")
+                        ).astimezone(CINEMA_TZ)
+                        display_date = dt.strftime("%A, %B %-d")
+
+                        screenings.append(
+                            {
+                                "id": str(st["id"]),
+                                "title": engagement.get("display_title")
+                                or engagement.get("film_title"),
+                                "poster": engagement.get("film_poster_url")
+                                or (film or {}).get("poster_url")
+                                or "",
+                                "rating": (film or {}).get("rating") or "",
+                                "runtime": _format_runtime(
+                                    (film or {}).get("runtime_minutes")
+                                ),
+                                "synopsis": (film or {}).get("synopsis") or "",
+                                "youtube_id": (film or {}).get("youtube_id") or "",
+                                "date": local_date,
+                                "display_date": display_date,
+                            }
+                        )
+                    except Exception:
+                        continue
+            except Exception:
+                continue
+
+        screenings.sort(key=lambda s: s["date"])
+
+        return {
+            "next_screening": screenings[0] if screenings else None,
+            "upcoming": screenings[1:],
+        }
+    except Exception:
+        return empty

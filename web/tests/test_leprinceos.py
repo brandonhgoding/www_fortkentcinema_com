@@ -236,3 +236,44 @@ class GetComingSoonTests(SimpleTestCase):
         self.assertEqual(len(movies), 1)
         self.assertEqual(movies[0]["id"], "20")
         self.assertEqual(movies[0]["title"], "Good Movie")
+
+
+class GetClassicMovieNightTests(SimpleTestCase):
+    def setUp(self):
+        cache.clear()
+
+    def test_returns_next_and_upcoming_sorted(self):
+        engagements = [{"id": 3, "kind": "CLASSIC", "display_title": "Casablanca",
+                        "film_title": "Casablanca", "film_poster_url": "c.jpg",
+                        "films": [{"id": 9}]}]
+        showtimes = [
+            {"id": 200, "starts_at": "2999-03-01T23:00:00Z"},
+            {"id": 201, "starts_at": "2999-03-08T23:00:00Z"},
+        ]
+        film = {"rating": "PG", "runtime_minutes": 102, "synopsis": "A classic.", "youtube_id": "z"}
+
+        def fake_get(url, timeout=None):
+            if "/engagements/" in url:
+                return _resp({"results": engagements})
+            if "/showtimes/" in url:
+                return _resp({"results": showtimes})
+            if "/films/9" in url:
+                return _resp(film)
+            return _resp({"results": []})
+
+        with mock.patch("web.services.leprinceos.requests.get", side_effect=fake_get):
+            data = leprinceos.get_classic_movie_night()
+
+        self.assertIsNotNone(data["next_screening"])
+        self.assertEqual(data["next_screening"]["title"], "Casablanca")
+        self.assertEqual(data["next_screening"]["synopsis"], "A classic.")
+        self.assertEqual(len(data["upcoming"]), 1)          # 2 screenings: 1 next + 1 upcoming
+        self.assertTrue(
+            data["next_screening"]["date"] <= data["upcoming"][0]["date"]
+        )
+
+    def test_no_screenings(self):
+        with mock.patch("web.services.leprinceos.requests.get",
+                        return_value=_resp({"results": []})):
+            data = leprinceos.get_classic_movie_night()
+        self.assertEqual(data, {"next_screening": None, "upcoming": []})
