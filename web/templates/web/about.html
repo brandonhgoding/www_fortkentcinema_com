@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}About | Fort Kent Cinema{% endblock %}
+{% block description %}The story behind Fort Kent Cinema — a community movie theater in the heart of the St. John Valley.{% endblock %}
+{% block og_title %}About | Fort Kent Cinema{% endblock %}
+{% block og_description %}The story behind Fort Kent Cinema — a community movie theater in northern Maine.{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/AboutPage.css' %}" />
+{% endblock %}
+
+{% block content %}
+  <div class="about-page">
+    <div class="about-container">
+      <div class="about-header">
+        <a href="/" class="about-back">&larr; Back to Home</a>
+        <h1 class="about-title">OUR STORY</h1>
+        <p class="about-subtitle">
+          Maine&rsquo;s northernmost picture show &mdash; bringing the big screen to
+          the St. John Valley since 1917.
+        </p>
+      </div>
+
+      {% comment %} How it started {% endcomment %}
+      <section class="about-section">
+        <h2 class="about-section-title">HOW IT STARTED</h2>
+        <p class="about-text">
+          Our story begins with an old barn. In the early 1900s a group of local
+          investors tied to the Modern Woodmen of America bought it, and by 1917 they
+          were showing moving pictures inside &mdash; and the Savoy Theater was born.
+          In those early days the Savoy stood on the very lot where Fort Kent&rsquo;s
+          post office sits today, a gathering place where Valley families first watched
+          the world flicker to life on a screen.
+        </p>
+        <p class="about-text">
+          In 1969, as Fort Kent celebrated its 100th birthday, a brand-new theater rose
+          right next door on Hall Street. The old Savoy came down and the Century Theater
+          took its place &mdash; the same beloved picture show, rebuilt for a new
+          generation. For decades the Century was cared for by Ben Paradis, who kept it
+          going through every change the movie business could throw at it. He brought in
+          digital projection, and with the help of a grant he divided the single grand
+          auditorium into the two cozy screens you&rsquo;ll find today.
+        </p>
+        <p class="about-text">
+          When the world went dark in 2020, the Century closed its doors for the first
+          time in its history. It reopened in 2021, and in 2024 &mdash; after the
+          community rallied to keep the lights on &mdash; it began a new chapter under
+          new local ownership as Fort Kent Cinema. Same seats, same balcony, same
+          small-town magic: a new name carrying more than a century of stories forward.
+        </p>
+      </section>
+
+      {% comment %} Mission {% endcomment %}
+      <section class="about-section">
+        <h2 class="about-section-title">OUR MISSION</h2>
+        <p class="about-text">
+          Fort Kent is a long way from the nearest big-city multiplex &mdash; and that is
+          exactly why this place matters. Fort Kent Cinema exists to keep the big-screen
+          experience alive and affordable right here in the St. John Valley: a warm,
+          welcoming spot where neighbors run into neighbors, kids see their very first
+          movie, and a Friday night out doesn&rsquo;t mean a two-hour drive. We&rsquo;re
+          proud to be Maine&rsquo;s northernmost picture show &mdash; and prouder still to
+          be yours.
+        </p>
+      </section>
+
+      {% comment %} Team {% endcomment %}
+      <section class="about-section">
+        <h2 class="about-section-title">WHO RUNS IT</h2>
+        <p class="about-text">
+          Fort Kent Cinema is locally owned and operated by Brandon Goding, who helped
+          run the theater as a co-manager before purchasing it from longtime owner Ben
+          Paradis and keeping its doors open for the community. [Add a line or two here
+          about the rest of your crew &mdash; the folks in the booth and behind the
+          concession counter &mdash; and what keeps you all coming back to a small-town
+          cinema.]
+        </p>
+      </section>
+
+      {% comment %} By the numbers {% endcomment %}
+      <section class="about-section about-stats">
+        <h2 class="about-section-title">BY THE NUMBERS</h2>
+        <div class="about-stats-grid">
+          <div class="about-stat">
+            <span class="about-stat-number">1917</span>
+            <span class="about-stat-label">Showing Films Since</span>
+          </div>
+          <div class="about-stat">
+            <span class="about-stat-number">2</span>
+            <span class="about-stat-label">Screens</span>
+          </div>
+          <div class="about-stat">
+            <span class="about-stat-number">~250</span>
+            <span class="about-stat-label">Seats</span>
+          </div>
+          <div class="about-stat">
+            <span class="about-stat-number">100+</span>
+            <span class="about-stat-label">Years of Movies</span>
+          </div>
+        </div>
+      </section>
+
+      {% comment %} Photos {% endcomment %}
+      <section class="about-section">
+        <h2 class="about-section-title">THE THEATER</h2>
+        <div class="about-photos">
+          <div class="about-photo-placeholder">
+            <span aria-hidden="true">🎬</span>
+            <span class="about-photo-label">Photo coming soon</span>
+          </div>
+          <div class="about-photo-placeholder">
+            <span aria-hidden="true">🎬</span>
+            <span class="about-photo-label">Photo coming soon</span>
+          </div>
+          <div class="about-photo-placeholder">
+            <span aria-hidden="true">🎬</span>
+            <span class="about-photo-label">Photo coming soon</span>
+          </div>
+        </div>
+      </section>
+
+      {% comment %} CTA {% endcomment %}
+      <div class="about-cta">
+        <h2 class="about-cta-title">COME SEE A SHOW</h2>
+        <p class="about-cta-text">
+          There&rsquo;s a seat waiting and a story on the screen. See what&rsquo;s playing
+          this week and come be part of the Fort Kent Cinema community &mdash; more than a
+          hundred years in the making.
+        </p>
+        <a href="/" class="about-cta-button">
+          See What&rsquo;s Playing
+        </a>
+      </div>
+    </div>
+  </div>
+{% endblock %}

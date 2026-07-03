@@ -82,3 +82,7 @@ class MembershipView(TemplateView):
 
 class RentalsView(TemplateView):
     template_name = "web/rentals.html"
+
+
+class AboutView(TemplateView):
+    template_name = "web/about.html"

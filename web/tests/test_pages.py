@@ -227,6 +227,17 @@ class RentalsPageTests(TestCase):
         self.assertIn("READY TO BOOK?", html)
 
 
+class AboutPageTests(TestCase):
+    def test_about_200_and_content(self):
+        resp = self.client.get(reverse("about"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertTemplateUsed(resp, "web/about.html")
+        html = resp.content.decode()
+        self.assertIn("OUR STORY", html)
+        self.assertIn("Savoy", html)     # from the real history copy
+        self.assertIn("about-page", html)
+
+
 class StaticAssetsTests(TestCase):
     def test_core_css_present(self):
         for name in ("css/variables.css", "css/global.css", "css/effects.css"):
