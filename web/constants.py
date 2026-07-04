@@ -23,7 +23,7 @@ SITE_CONFIG = {
         {"label": "Classics", "href": "/classics"},
         {"label": "Membership", "href": "/membership"},
         {"label": "Rentals", "href": "/rentals"},
-        {"label": "About", "href": "/about"},
+        # {"label": "About", "href": "/about"},  # About page temporarily hidden
         {"label": "Blog", "href": "/blog"},
     ],
 }

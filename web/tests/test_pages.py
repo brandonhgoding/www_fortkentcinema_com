@@ -1,4 +1,4 @@
-from unittest import mock
+from unittest import mock, skip
 
 from django.test import TestCase
 from django.urls import reverse
@@ -269,6 +269,7 @@ class RentalsPageTests(TestCase):
         self.assertIn("READY TO BOOK?", html)
 
 
+@skip("About page temporarily hidden from nav/urls — re-enable when the /about route is restored")
 class AboutPageTests(TestCase):
     def test_about_200_and_content(self):
         resp = self.client.get(reverse("about"))

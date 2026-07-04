@@ -9,7 +9,8 @@ class StaticViewSitemap(Sitemap):
     priority = 0.7
 
     def items(self):
-        return ["home", "membership", "classics", "rentals", "about", "blog_list"]
+        # "about" temporarily removed while the About page is hidden
+        return ["home", "membership", "classics", "rentals", "blog_list"]
 
     def location(self, name):
         return reverse(name)
