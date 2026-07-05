@@ -348,7 +348,7 @@ import datetime
 
 from cinema.models import Engagement, EngagementFilm  # add to top imports
 from django.core.exceptions import ValidationError
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 
 
 class EngagementTestCase(TestCase):
@@ -391,7 +391,9 @@ class EngagementTestCase(TestCase):
     def test_unique_engagement_position(self) -> None:
         eng = self._engagement()
         EngagementFilm.objects.create(engagement=eng, film=self.film_a, position=1)
-        with self.assertRaises(IntegrityError):
+        # Wrap the failing INSERT in atomic() so the broken transaction is
+        # contained and TestCase teardown can still roll back cleanly.
+        with self.assertRaises(IntegrityError), transaction.atomic():
             EngagementFilm.objects.create(engagement=eng, film=self.film_b, position=1)
 
     def test_is_free_for_members_by_kind(self) -> None:
@@ -618,6 +620,7 @@ Append to `cinema/tests/test_models.py`:
 
 ```python
 from cinema.models import Showtime  # add to top imports
+from django.db import transaction  # if not already imported at top
 from django.utils import timezone as dj_timezone
 
 
@@ -649,7 +652,7 @@ class ShowtimeTestCase(TestCase):
 
     def test_unique_screen_starts_at(self) -> None:
         Showtime.objects.create(engagement=self.eng, starts_at=self._dt(2, 19))
-        with self.assertRaises(IntegrityError):
+        with self.assertRaises(IntegrityError), transaction.atomic():
             Showtime.objects.create(engagement=self.eng, starts_at=self._dt(2, 19))
 
     def test_is_outside_engagement_range(self) -> None:
