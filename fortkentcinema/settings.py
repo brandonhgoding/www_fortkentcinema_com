@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.sitemaps",
     "blog.apps.BlogConfig",
     "web.apps.WebConfig",
+    "cinema.apps.CinemaConfig",
     "rest_framework",
     "corsheaders",
 ]
