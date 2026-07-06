@@ -1,6 +1,12 @@
-from cinema.models import Screen
-from django.views.generic import TemplateView
+import json
 
+from cinema.models import Screen
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, render
+from django.urls import reverse
+from django.views.generic import TemplateView, View
+
+from .forms import ScreenForm
 from .mixins import StaffRequiredMixin
 
 
@@ -32,6 +38,55 @@ class ScreenListView(StaffRequiredMixin, TemplateView):
         ctx["screens"] = Screen.objects.all()
         ctx.update(screen_labels())
         return ctx
+
+
+def _render_screen_form(request, form, action_url, submit_label):
+    return render(request, "dashboard/_screen_form.html",
+                  {"form": form, "form_action": action_url, "submit_label": submit_label})
+
+
+def _screen_list_response(request, toast_message):
+    """Success response: OOB-swap the list, close the drawer, and toast."""
+    html = render(request, "dashboard/_screen_list.html",
+                  {"screens": Screen.objects.all(), **screen_labels()}).content.decode()
+    # mark the list for out-of-band swap so it replaces #screen-list on the page
+    html = html.replace('<div id="screen-list">', '<div id="screen-list" hx-swap-oob="true">', 1)
+    resp = HttpResponse(html)
+    resp["HX-Trigger"] = json.dumps({
+        "close-drawer": True,
+        "dashboard-toast": {"kind": "success", "message": toast_message},
+    })
+    return resp
+
+
+class ScreenCreateView(StaffRequiredMixin, View):
+    def get(self, request):
+        return _render_screen_form(request, ScreenForm(),
+                                   reverse("dashboard:screen_create"), "Create Screen")
+
+    def post(self, request):
+        form = ScreenForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return _screen_list_response(request, "Screen created")
+        return _render_screen_form(request, form,
+                                   reverse("dashboard:screen_create"), "Create Screen")
+
+
+class ScreenEditView(StaffRequiredMixin, View):
+    def get(self, request, pk):
+        screen = get_object_or_404(Screen, pk=pk)
+        return _render_screen_form(request, ScreenForm(instance=screen),
+                                   reverse("dashboard:screen_edit", args=[pk]), "Save Changes")
+
+    def post(self, request, pk):
+        screen = get_object_or_404(Screen, pk=pk)
+        form = ScreenForm(request.POST, instance=screen)
+        if form.is_valid():
+            form.save()
+            return _screen_list_response(request, "Screen updated")
+        return _render_screen_form(request, form,
+                                   reverse("dashboard:screen_edit", args=[pk]), "Save Changes")
 
 
 class EngagementsStubView(StaffRequiredMixin, TemplateView):

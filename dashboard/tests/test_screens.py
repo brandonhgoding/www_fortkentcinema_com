@@ -40,3 +40,60 @@ class ScreenListTests(TestCase):
     def test_screens_css_linked(self) -> None:
         html = self.client.get(reverse("dashboard:screens")).content.decode()
         self.assertIn("dashboard/css/screens.css", html)
+
+
+import json
+
+
+class ScreenCreateEditTests(TestCase):
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+
+    def test_get_create_form(self) -> None:
+        html = self.client.get(reverse("dashboard:screen_create")).content.decode()
+        self.assertIn('id="screen-form"', html)
+        self.assertIn("Create Screen", html)  # footer submit label
+
+    def test_post_create_valid(self) -> None:
+        resp = self.client.post(
+            reverse("dashboard:screen_create"),
+            {"name": "Main", "capacity": 200, "screen_type": "standard",
+             "aspect_ratio": "flat", "sound_system": "standard", "supports_3d": ""},
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(Screen.objects.filter(name="Main").exists())
+        self.assertIn('id="screen-list"', resp.content.decode())  # OOB list swap
+        self.assertIn("close-drawer", resp["HX-Trigger"])
+        self.assertIn("dashboard-toast", resp["HX-Trigger"])
+
+    def test_post_create_invalid_shows_errors(self) -> None:
+        resp = self.client.post(
+            reverse("dashboard:screen_create"),
+            {"name": "", "capacity": 0, "screen_type": "standard",
+             "aspect_ratio": "flat", "sound_system": "standard"},
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('id="screen-form"', resp.content.decode())
+        self.assertNotIn("HX-Trigger", resp)  # drawer stays open, no close
+        self.assertEqual(Screen.objects.count(), 0)
+
+    def test_get_edit_prefilled(self) -> None:
+        s = Screen.objects.create(name="Edit Me", capacity=99, screen_type="imax",
+                                  aspect_ratio="scope", sound_system="dolby_atmos", supports_3d=True)
+        html = self.client.get(reverse("dashboard:screen_edit", args=[s.pk])).content.decode()
+        self.assertIn("Edit Me", html)
+        self.assertIn("Save Changes", html)  # footer submit label for edit
+
+    def test_post_edit_updates(self) -> None:
+        s = Screen.objects.create(name="Old", capacity=50, screen_type="standard",
+                                  aspect_ratio="flat", sound_system="standard", supports_3d=False)
+        resp = self.client.post(
+            reverse("dashboard:screen_edit", args=[s.pk]),
+            {"name": "New", "capacity": 75, "screen_type": "standard",
+             "aspect_ratio": "flat", "sound_system": "standard", "supports_3d": "on"},
+        )
+        self.assertEqual(resp.status_code, 200)
+        s.refresh_from_db()
+        self.assertEqual(s.name, "New")
+        self.assertTrue(s.supports_3d)
