@@ -36,3 +36,7 @@ class ScreenListTests(TestCase):
         User.objects.create_user(username="p", password="pw12345", is_staff=False)
         self.client.login(username="p", password="pw12345")
         self.assertEqual(self.client.get(reverse("dashboard:screens")).status_code, 403)
+
+    def test_screens_css_linked(self) -> None:
+        html = self.client.get(reverse("dashboard:screens")).content.decode()
+        self.assertIn("dashboard/css/screens.css", html)
