@@ -7,14 +7,25 @@
     <title>{% block title %}LeprinceOS{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'dashboard/css/fonts.css' %}" />
     <link rel="stylesheet" href="{% static 'dashboard/css/design-system.css' %}" />
+    <link rel="stylesheet" href="{% static 'dashboard/css/layout.css' %}" />
+    <link rel="stylesheet" href="{% static 'dashboard/css/sidebar.css' %}" />
+    <style>[x-cloak]{display:none !important;}</style>
     {% block head_extra %}{% endblock %}
+    <script defer src="{% static 'dashboard/js/dashboard.js' %}"></script>
+    <script defer src="{% static 'js/htmx.min.js' %}"></script>
+    <script defer src="{% static 'js/alpine.min.js' %}"></script>
   </head>
   <body>
-    <div class="layout">
-      {% block chrome %}{% endblock %}
-      <main class="main">
-        <div class="container">
+    <div class="layout" x-data="dashboardLayout">
+      {% include "dashboard/_mobile_header.html" %}
+      {% include "dashboard/_sidebar.html" %}
+      <main :class="isFullscreen ? 'mainFullscreen' : 'main'">
+        <div :class="isFullscreen ? 'containerFullscreen' : 'container'">
           {% block content %}{% endblock %}
+        </div>
+        <div class="keyboardHint" x-show="!isFullscreen" title="Press Alt+N to create new engagement">
+          <kbd class="kbd">Alt+N</kbd>
+          <span class="hintText">New Engagement</span>
         </div>
       </main>
     </div>

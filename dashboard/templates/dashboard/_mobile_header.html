@@ -1,0 +1,6 @@
+<header class="mobileHeader" x-show="!isFullscreen">
+  <button class="mobileMenuToggle" @click="sidebarOpen = true" aria-label="Toggle navigation">
+    <span class="hamburgerIcon"><span></span><span></span><span></span></span>
+  </button>
+  <a href="{% url 'dashboard:home' %}" class="mobileBrand">LeprinceOS</a>
+</header>
