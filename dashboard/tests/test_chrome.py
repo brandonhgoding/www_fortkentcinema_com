@@ -22,7 +22,14 @@ class ChromeTests(TestCase):
 
     def test_logout_link_present(self) -> None:
         html = self.client.get(reverse("dashboard:home")).content.decode()
-        self.assertIn('href="/logout/"', html)
+        self.assertIn("<form", html)
+        self.assertIn(f'action="{reverse("logout")}"', html)
+        self.assertIn('method="post"', html)
+        self.assertIn('data-cy="logout-button"', html)
+
+    def test_logout_get_not_allowed(self) -> None:
+        resp = self.client.get("/logout/")
+        self.assertEqual(resp.status_code, 405)
 
     def test_username_rendered(self) -> None:
         html = self.client.get(reverse("dashboard:home")).content.decode()

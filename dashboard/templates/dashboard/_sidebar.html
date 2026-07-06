@@ -16,9 +16,12 @@
     <div class="sidebarUserInfo">
       <span class="sidebarUsername" data-cy="username">{{ request.user.username }}</span>
     </div>
-    <a class="sidebarLogout" href="/logout/" data-cy="logout-button">
-      <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7 17H4a1 1 0 01-1-1V4a1 1 0 011-1h3M13 14l4-4-4-4M17 10H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      Log Out
-    </a>
+    <form method="post" action="{% url 'logout' %}" style="display: contents">
+      {% csrf_token %}
+      <button type="submit" class="sidebarLogout" data-cy="logout-button">
+        <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7 17H4a1 1 0 01-1-1V4a1 1 0 011-1h3M13 14l4-4-4-4M17 10H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Log Out
+      </button>
+    </form>
   </div>
 </aside>
