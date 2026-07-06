@@ -402,7 +402,9 @@ def get_item(mapping, key):
 
 ```html
 {% extends "dashboard/base_dashboard.html" %}
+{% load static %}
 {% block title %}Screens · LeprinceOS{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/screens.css' %}" />{% endblock %}
 {% block content %}
 <div class="page">
   <div class="header">
