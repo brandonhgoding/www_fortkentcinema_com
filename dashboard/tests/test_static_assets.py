@@ -22,3 +22,10 @@ class FontAssetTests(TestCase):
     def test_woff2_files_present(self) -> None:
         files = list(FONTS_DIR.glob("*.woff2"))
         self.assertGreaterEqual(len(files), 8)  # 4 + 3 + (2-3) weights
+
+
+class DesignSystemCssTests(TestCase):
+    def test_design_system_sentinels(self) -> None:
+        css = (CSS_DIR / "design-system.css").read_text()
+        for sentinel in ("--brass:", ".btn-primary", ".status-badge", ".page-header", ".empty-state"):
+            self.assertIn(sentinel, css)
