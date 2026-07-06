@@ -1,0 +1,5 @@
+.field-error {
+  color: var(--status-cancelled);
+  font-size: var(--text-xs);
+  margin-top: var(--space-xs);
+}

@@ -1,16 +1,16 @@
 <form id="screen-form" class="form" hx-post="{{ form_action }}" hx-target="#drawer-content" hx-swap="innerHTML">
   {% csrf_token %}
-  {% if form.non_field_errors %}<div class="login-error">{{ form.non_field_errors }}</div>{% endif %}
+  {% if form.non_field_errors %}<div class="field-error">{{ form.non_field_errors }}</div>{% endif %}
   <div class="formRow">
     <div class="formGroup">
       <label for="{{ form.name.id_for_label }}">Screen Name</label>
       {{ form.name }}
-      {% if form.name.errors %}<div class="login-error">{{ form.name.errors|striptags }}</div>{% endif %}
+      {% if form.name.errors %}<div class="field-error">{{ form.name.errors|striptags }}</div>{% endif %}
     </div>
     <div class="formGroup">
       <label for="{{ form.capacity.id_for_label }}">Capacity (seats)</label>
       {{ form.capacity }}
-      {% if form.capacity.errors %}<div class="login-error">{{ form.capacity.errors|striptags }}</div>{% endif %}
+      {% if form.capacity.errors %}<div class="field-error">{{ form.capacity.errors|striptags }}</div>{% endif %}
     </div>
   </div>
   <div class="formRow">

@@ -12,13 +12,14 @@
     <link rel="stylesheet" href="{% static 'dashboard/css/alertbanner.css' %}" />
     <link rel="stylesheet" href="{% static 'dashboard/css/confirm.css' %}" />
     <link rel="stylesheet" href="{% static 'dashboard/css/drawer.css' %}" />
+    <link rel="stylesheet" href="{% static 'dashboard/css/dashboard.css' %}" />
     <style>[x-cloak]{display:none !important;}</style>
     {% block head_extra %}{% endblock %}
     <script defer src="{% static 'dashboard/js/dashboard.js' %}"></script>
     <script defer src="{% static 'js/htmx.min.js' %}"></script>
     <script defer src="{% static 'js/alpine.min.js' %}"></script>
   </head>
-  <body>
+  <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
     <div class="layout" x-data="dashboardLayout">
       {% include "dashboard/_mobile_header.html" %}
       {% include "dashboard/_sidebar.html" %}

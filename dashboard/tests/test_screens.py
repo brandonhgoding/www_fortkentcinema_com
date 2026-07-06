@@ -129,3 +129,74 @@ class ScreenDeleteTests(TestCase):
         self.assertIn("dashboard-toast", trigger)
         self.assertIn("Can't delete", trigger)
         self.assertIn("engagement", trigger)
+
+
+from pathlib import Path
+
+from django.test import Client
+
+
+class HtmxCsrfTests(TestCase):
+    """Covers the whole-branch review fix: HTMX POSTs need a CSRF token,
+    since the Delete buttons in _screen_list.html are hx-post on a bare
+    <button> (not inside a <form>), so htmx must supply the header itself."""
+
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+
+    def test_body_has_csrf_hx_headers(self) -> None:
+        self.client.login(username="s", password="pw12345")
+        html = self.client.get(reverse("dashboard:screens")).content.decode()
+        self.assertIn("hx-headers", html)
+        self.assertIn("X-CSRFToken", html)
+
+    def test_delete_with_csrf_header_succeeds_under_enforcement(self) -> None:
+        # Django's default test client disables CSRF enforcement entirely,
+        # which is exactly why this bug wasn't caught by existing tests.
+        client = Client(enforce_csrf_checks=True)
+        client.login(username="s", password="pw12345")
+
+        # Load a page first so the CSRF cookie is set on the client,
+        # mirroring what the browser does before htmx fires its request.
+        client.get(reverse("dashboard:screens"))
+        token = client.cookies["csrftoken"].value
+
+        screen = Screen.objects.create(
+            name="Csrf Target", capacity=10, screen_type="standard",
+            aspect_ratio="flat", sound_system="standard", supports_3d=False,
+        )
+        resp = client.post(
+            reverse("dashboard:screen_delete", args=[screen.pk]),
+            HTTP_X_CSRFTOKEN=token,
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(Screen.objects.filter(pk=screen.pk).exists())
+
+    def test_delete_without_csrf_header_is_rejected_under_enforcement(self) -> None:
+        client = Client(enforce_csrf_checks=True)
+        client.login(username="s", password="pw12345")
+        client.get(reverse("dashboard:screens"))
+
+        screen = Screen.objects.create(
+            name="Csrf Target 2", capacity=10, screen_type="standard",
+            aspect_ratio="flat", sound_system="standard", supports_3d=False,
+        )
+        resp = client.post(reverse("dashboard:screen_delete", args=[screen.pk]))
+        self.assertEqual(resp.status_code, 403)
+        self.assertTrue(Screen.objects.filter(pk=screen.pk).exists())
+
+
+class FieldErrorStylingTests(TestCase):
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+
+    def test_field_error_styling_linked(self) -> None:
+        html = self.client.get(reverse("dashboard:screens")).content.decode()
+        self.assertIn("dashboard/css/dashboard.css", html)
+
+        css_path = (
+            Path(__file__).resolve().parent.parent
+            / "static" / "dashboard" / "css" / "dashboard.css"
+        )
+        self.assertIn(".field-error", css_path.read_text())
