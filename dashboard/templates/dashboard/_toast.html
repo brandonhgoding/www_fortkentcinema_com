@@ -1,0 +1,13 @@
+<div class="alertContainer" x-show="$store.toast.items.length > 0" x-cloak>
+  <template x-for="alert in $store.toast.items" :key="alert.id">
+    <div role="alert" aria-live="polite"
+         class="alert"
+         :class="{ alertWarning: alert.kind==='warning', alertInfo: alert.kind==='info', alertSuccess: alert.kind==='success', alertError: alert.kind==='error' }">
+      <div class="alertIcon" x-text="$store.toast.icon(alert.kind)"></div>
+      <p class="alertMessage" x-text="alert.message"></p>
+      <button type="button" class="dismissButton" aria-label="Dismiss alert" @click="$store.toast.dismiss(alert.id)">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+  </template>
+</div>

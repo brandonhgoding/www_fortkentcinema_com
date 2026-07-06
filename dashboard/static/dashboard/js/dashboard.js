@@ -19,6 +19,61 @@ document.addEventListener('alpine:init', () => {
   }));
 });
 
+document.addEventListener('alpine:init', () => {
+  // Toast store — mirrors ToastContext (auto-dismiss 6s).
+  Alpine.store('toast', {
+    items: [],
+    add(kind, message) {
+      const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      this.items.push({ id, kind, message });
+      setTimeout(() => this.dismiss(id), 6000);
+    },
+    dismiss(id) {
+      this.items = this.items.filter((t) => t.id !== id);
+    },
+    icon(kind) {
+      return { warning: '⚠', info: 'ℹ', success: '✓', error: '✕' }[kind] || 'ℹ';
+    },
+  });
+
+  // Confirm store — mirrors ConfirmContext (promise-based, ESC cancels).
+  Alpine.store('confirm', {
+    open: false,
+    title: '',
+    message: '',
+    confirmLabel: 'Confirm',
+    variant: 'default',
+    _resolve: null,
+    ask({ title, message, confirmLabel = 'Confirm', variant = 'default' }) {
+      this.title = title;
+      this.message = message;
+      this.confirmLabel = confirmLabel;
+      this.variant = variant;
+      this.open = true;
+      document.body.style.overflow = 'hidden';
+      return new Promise((resolve) => {
+        this._resolve = resolve;
+      });
+    },
+    _settle(value) {
+      this.open = false;
+      document.body.style.overflow = '';
+      const r = this._resolve;
+      this._resolve = null;
+      if (r) r(value);
+    },
+    accept() {
+      this._settle(true);
+    },
+    cancel() {
+      this._settle(false);
+    },
+  });
+});
+
+window.dashboardToast = (kind, message) => window.Alpine?.store('toast').add(kind, message);
+window.dashboardConfirm = (opts) => window.Alpine.store('confirm').ask(opts);
+
 // Alt+N -> go to engagements (create-drawer wiring lands in the Engagements sub-project).
 document.addEventListener('keydown', (e) => {
   const el = document.activeElement;
