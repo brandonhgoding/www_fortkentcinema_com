@@ -1,0 +1,17 @@
+<div class="overlay" x-show="$store.drawer.open" x-cloak
+     @keydown.escape.window="$store.drawer.open && $store.drawer.close()"
+     @click="$store.drawer.close()" data-cy="drawer-overlay">
+  <div class="drawer md" @click.stop role="dialog" aria-modal="true"
+       aria-labelledby="drawer-title" tabindex="-1" data-cy="drawer">
+    <div class="header">
+      <h2 id="drawer-title" class="title" x-text="$store.drawer.title" data-cy="drawer-title"></h2>
+      <button type="button" class="closeButton" @click="$store.drawer.close()"
+              aria-label="Close drawer" data-cy="drawer-close">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg>
+      </button>
+    </div>
+    <div class="content" id="drawer-content" data-cy="drawer-content"></div>
+    <div class="footer" id="drawer-footer" data-cy="drawer-footer"></div>
+  </div>
+</div>

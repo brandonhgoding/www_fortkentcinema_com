@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="{% static 'dashboard/css/sidebar.css' %}" />
     <link rel="stylesheet" href="{% static 'dashboard/css/alertbanner.css' %}" />
     <link rel="stylesheet" href="{% static 'dashboard/css/confirm.css' %}" />
+    <link rel="stylesheet" href="{% static 'dashboard/css/drawer.css' %}" />
     <style>[x-cloak]{display:none !important;}</style>
     {% block head_extra %}{% endblock %}
     <script defer src="{% static 'dashboard/js/dashboard.js' %}"></script>
@@ -32,6 +33,7 @@
         </div>
       </main>
       {% include "dashboard/_confirm.html" %}
+      {% include "dashboard/_drawer.html" %}
     </div>
     {% block body_extra %}{% endblock %}
   </body>

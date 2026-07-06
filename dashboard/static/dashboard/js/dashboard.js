@@ -85,3 +85,44 @@ document.addEventListener('keydown', (e) => {
     window.location.href = '/dashboard/engagements';
   }
 });
+
+document.addEventListener('alpine:init', () => {
+  Alpine.store('drawer', {
+    open: false,
+    title: '',
+    show(title = '') {
+      this.title = title;
+      this.open = true;
+      document.body.style.overflow = 'hidden';
+    },
+    close() {
+      this.open = false;
+      document.body.style.overflow = '';
+    },
+  });
+});
+
+// After a fragment is swapped into the drawer content, focus the first field.
+document.body.addEventListener('htmx:afterSwap', (e) => {
+  if (e.detail.target && e.detail.target.id === 'drawer-content') {
+    const first = e.detail.target.querySelector('input, select, textarea');
+    first?.focus();
+  }
+});
+
+// HX-Trigger bridge: close-drawer + dashboard-toast (kind/message).
+document.body.addEventListener('close-drawer', () => window.Alpine?.store('drawer').close());
+document.body.addEventListener('dashboard-toast', (e) => {
+  const d = e.detail || {};
+  if (d.message) window.dashboardToast(d.kind || 'info', d.message);
+});
+
+// Themed confirm for HTMX requests: elements with data-dashboard-confirm='{...}'.
+document.body.addEventListener('htmx:confirm', (e) => {
+  const raw = e.detail.elt.getAttribute('data-dashboard-confirm');
+  if (!raw) return; // no custom confirm -> let HTMX proceed normally
+  e.preventDefault();
+  let opts = {};
+  try { opts = JSON.parse(raw); } catch (_) { opts = { title: 'Confirm', message: raw }; }
+  window.dashboardConfirm(opts).then((ok) => { if (ok) e.detail.issueRequest(true); });
+});
