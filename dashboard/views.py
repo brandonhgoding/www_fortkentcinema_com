@@ -1,6 +1,7 @@
 import json
 
 from cinema.models import Screen
+from django.db.models import ProtectedError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
@@ -59,6 +60,16 @@ def _screen_list_response(request, toast_message):
     return resp
 
 
+def _screen_list_response_error(request, message):
+    """Re-render the (unchanged) list OOB and fire an error toast; keep the row."""
+    html = render(request, "dashboard/_screen_list.html",
+                  {"screens": Screen.objects.all(), **screen_labels()}).content.decode()
+    html = html.replace('<div id="screen-list">', '<div id="screen-list" hx-swap-oob="true">', 1)
+    resp = HttpResponse(html)
+    resp["HX-Trigger"] = json.dumps({"dashboard-toast": {"kind": "error", "message": message}})
+    return resp
+
+
 class ScreenCreateView(StaffRequiredMixin, View):
     def get(self, request):
         return _render_screen_form(request, ScreenForm(),
@@ -87,6 +98,23 @@ class ScreenEditView(StaffRequiredMixin, View):
             return _screen_list_response(request, "Screen updated")
         return _render_screen_form(request, form,
                                    reverse("dashboard:screen_edit", args=[pk]), "Save Changes")
+
+
+class ScreenDeleteView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        screen = get_object_or_404(Screen, pk=pk)
+        name = screen.name
+        try:
+            screen.delete()
+        except ProtectedError:
+            eng = screen.engagements.count()
+            shows = screen.showtimes.count()
+            msg = (
+                f"Can't delete \"{name}\" — it's used by "
+                f"{eng} engagement(s) and {shows} showtime(s)."
+            )
+            return _screen_list_response_error(request, msg)
+        return _screen_list_response(request, "Screen deleted")
 
 
 class EngagementsStubView(StaffRequiredMixin, TemplateView):

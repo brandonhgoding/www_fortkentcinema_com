@@ -97,3 +97,35 @@ class ScreenCreateEditTests(TestCase):
         s.refresh_from_db()
         self.assertEqual(s.name, "New")
         self.assertTrue(s.supports_3d)
+
+
+import datetime
+
+from cinema.models import Engagement, Showtime
+
+
+class ScreenDeleteTests(TestCase):
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+
+    def test_delete_unreferenced(self) -> None:
+        s = Screen.objects.create(name="Trash", capacity=10, screen_type="standard",
+                                  aspect_ratio="flat", sound_system="standard", supports_3d=False)
+        resp = self.client.post(reverse("dashboard:screen_delete", args=[s.pk]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(Screen.objects.filter(pk=s.pk).exists())
+        self.assertIn("dashboard-toast", resp["HX-Trigger"])
+
+    def test_delete_protected(self) -> None:
+        s = Screen.objects.create(name="Busy", capacity=100, screen_type="standard",
+                                  aspect_ratio="flat", sound_system="standard", supports_3d=False)
+        Engagement.objects.create(screen=s, start_date=datetime.date(2026, 7, 1),
+                                  end_date=datetime.date(2026, 7, 7))
+        resp = self.client.post(reverse("dashboard:screen_delete", args=[s.pk]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(Screen.objects.filter(pk=s.pk).exists())  # NOT deleted
+        trigger = resp["HX-Trigger"]
+        self.assertIn("dashboard-toast", trigger)
+        self.assertIn("Can't delete", trigger)
+        self.assertIn("engagement", trigger)
