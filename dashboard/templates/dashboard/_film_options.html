@@ -1,0 +1,29 @@
+{% load static %}
+{% if q %}
+  {% if films %}
+    <div class="sectionHeader">Your Films</div>
+    {% for film in films %}
+    <button type="button" class="resultItem" role="option"
+            @click="$dispatch('film-selected', {id: {{ film.id }}, title: '{{ film.title|escapejs }}', poster: '{{ film.poster_url|escapejs }}'}); selectDone()">
+      <div class="posterWrapper">
+        {% if film.poster_url %}<img src="{{ film.poster_url }}" alt="" class="poster" />
+        {% else %}<div class="posterPlaceholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>{% endif %}
+      </div>
+      <div class="resultContent">
+        <div class="resultTitle">{{ film.title }}{% if film.runtime_minutes %}<span class="resultMeta">{{ film.runtime_minutes }} min</span>{% endif %}</div>
+        {% if film.rating %}<span class="resultRating">{{ film.rating }}</span>{% endif %}
+      </div>
+    </button>
+    {% endfor %}
+  {% else %}
+    <div class="emptyLocalState"><p class="emptyText">No films found for "{{ q }}"</p></div>
+  {% endif %}
+  <div class="divider"></div>
+  <button type="button" class="tmdbOption" role="option"
+          hx-get="{% url 'dashboard:film_search_tmdb' %}?q={{ q|urlencode }}"
+          hx-target="#tmdb-results" hx-swap="innerHTML">
+    <svg class="tmdbIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+    <span>Search TMDB for "{{ q }}"</span>
+  </button>
+  <div id="tmdb-results"></div>
+{% endif %}

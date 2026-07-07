@@ -1,6 +1,8 @@
 import json
 
-from cinema.models import Screen
+from cinema.models import Film, Screen
+from cinema.tmdb import TMDBAPIError
+from cinema.tmdb.services import TMDBService
 from django.db.models import ProtectedError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
@@ -115,6 +117,33 @@ class ScreenDeleteView(StaffRequiredMixin, View):
             )
             return _screen_list_response_error(request, msg)
         return _screen_list_response(request, "Screen deleted")
+
+
+class FilmSearchView(StaffRequiredMixin, View):
+    def get(self, request):
+        q = request.GET.get("q", "").strip()
+        films = Film.objects.filter(title__icontains=q)[:8] if q else Film.objects.none()
+        return render(request, "dashboard/_film_options.html", {"q": q, "films": films})
+
+
+class FilmSearchTMDBView(StaffRequiredMixin, View):
+    def get(self, request):
+        q = request.GET.get("q", "").strip()
+        ctx = {"q": q, "results": [], "error": False}
+        if q:
+            try:
+                ctx["results"] = TMDBService().search_films(q)
+            except (TMDBAPIError, ValueError):
+                ctx["error"] = True
+        return render(request, "dashboard/_tmdb_options.html", ctx)
+
+
+class FilmFromTMDBView(StaffRequiredMixin, View):
+    """Placeholder route target so `{% url 'dashboard:film_from_tmdb' %}` resolves
+    from _tmdb_options.html; the real import-from-TMDB behavior lands in the next task."""
+
+    def post(self, request):
+        return HttpResponse(status=204)
 
 
 class EngagementsStubView(StaffRequiredMixin, TemplateView):
