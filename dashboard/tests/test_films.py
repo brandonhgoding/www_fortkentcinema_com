@@ -1,11 +1,17 @@
-from unittest import mock
+import json
+from pathlib import Path
+from unittest import mock, skipUnless
 
 from cinema.models import Film
+from django.conf import settings as dj_settings
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
 User = get_user_model()
+COMBO_CSS_SRC = Path(
+    "/Users/bgoding/code/SoftwareMaine/www_leprinceos_com/src/components/FilmSearchCombo/FilmSearchCombo.module.css"
+)
 
 
 class FilmSearchTests(TestCase):
@@ -50,9 +56,6 @@ class FilmSearchTests(TestCase):
         self.assertEqual(self.client.get(reverse("dashboard:film_search")).status_code, 302)
 
 
-import json
-
-
 class FilmFromTMDBTests(TestCase):
     def setUp(self) -> None:
         User.objects.create_user(username="s", password="pw12345", is_staff=True)
@@ -80,17 +83,14 @@ class FilmFromTMDBTests(TestCase):
         self.assertEqual(trigger["dashboard-toast"]["kind"], "error")
 
 
-from pathlib import Path
-from django.conf import settings as dj_settings
-
-
 class FilmComboTests(TestCase):
     def setUp(self) -> None:
         User.objects.create_user(username="s", password="pw12345", is_staff=True)
         self.client.login(username="s", password="pw12345")
 
+    @skipUnless(COMBO_CSS_SRC.exists(), "leprinceos source not present")
     def test_combo_css_byte_identical(self) -> None:
-        src = Path("/Users/bgoding/code/SoftwareMaine/www_leprinceos_com/src/components/FilmSearchCombo/FilmSearchCombo.module.css").read_bytes()
+        src = COMBO_CSS_SRC.read_bytes()
         dest = Path(dj_settings.BASE_DIR) / "dashboard/static/dashboard/css/film_search_combo.css"
         self.assertEqual(dest.read_bytes(), src)
 

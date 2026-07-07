@@ -159,5 +159,6 @@ document.body.addEventListener('film-selected', (e) => {
     if (input) input.value = '';
     const results = c.querySelector('.dropdown');
     if (results) results.innerHTML = '';
+    if (window.Alpine) window.Alpine.$data(c).open = false;
   });
 });
