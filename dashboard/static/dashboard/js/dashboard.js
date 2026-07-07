@@ -166,3 +166,32 @@ document.body.addEventListener('film-selected', (e) => {
 document.addEventListener('alpine:init', () => {
   Alpine.data('statusDropdown', () => ({ open: false }));
 });
+
+document.addEventListener('alpine:init', () => {
+  Alpine.data('engagementForm', () => ({
+    films: [],
+    kind: 'REGULAR',
+    init() {
+      const el = document.getElementById('engagement-initial-films');
+      this.films = el ? JSON.parse(el.textContent) : [];
+      this.kind = this.$root.dataset.initialKind || 'REGULAR';
+      // film-selected fires on document.body from BOTH the local combo $dispatch
+      // (bubbles up) and the server TMDB-import HX-Trigger. Only one engagement
+      // form exists at a time, so apply unconditionally.
+      this._onSel = (e) => this.addFilm(e.detail);
+      document.body.addEventListener('film-selected', this._onSel);
+    },
+    destroy() { document.body.removeEventListener('film-selected', this._onSel); },
+    addFilm(film) {
+      if (this.kind === 'DOUBLE_FEATURE') {
+        if (!this.films.some((f) => f.id === film.id)) this.films.push({ id: film.id, title: film.title, poster: film.poster });
+      } else {
+        this.films = [{ id: film.id, title: film.title, poster: film.poster }];
+      }
+    },
+    removeFilm(id) { this.films = this.films.filter((f) => f.id !== id); },
+    onKindChange() {
+      if (this.kind !== 'DOUBLE_FEATURE') this.films = this.films.slice(0, 1);
+    },
+  }));
+});

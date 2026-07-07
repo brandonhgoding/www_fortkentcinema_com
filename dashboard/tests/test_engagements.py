@@ -114,3 +114,59 @@ class EngagementDeleteTests(TestCase):
         self.assertFalse(Engagement.objects.filter(pk=e.pk).exists())
         self.assertEqual(EngagementFilm.objects.count(), 0)  # cascaded
         self.assertIn("dashboard-toast", resp["HX-Trigger"])
+
+
+class EngagementCreateTests(TestCase):
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+        self.screen = Screen.objects.create(name="S1", capacity=50)
+        self.f1 = Film.objects.create(title="A")
+        self.f2 = Film.objects.create(title="B")
+        self.today = timezone.localdate()
+
+    def _payload(self, **over):
+        data = {
+            "kind": "REGULAR", "event_title": "", "screen": self.screen.pk,
+            "start_date": self.today.isoformat(), "end_date": self.today.isoformat(),
+            "presentation_format": "2d", "status": "DRAFT", "show_in_main_listings": "on",
+            "notes": "", "films": [self.f1.pk],
+        }
+        data.update(over)
+        return data
+
+    def test_get_form(self) -> None:
+        html = self.client.get(reverse("dashboard:engagement_create")).content.decode()
+        self.assertIn('id="engagement-form"', html)
+        self.assertIn("Create Engagement", html)
+
+    def test_create_single_film(self) -> None:
+        resp = self.client.post(reverse("dashboard:engagement_create") + "?tab=DRAFT", self._payload())
+        self.assertEqual(resp.status_code, 200)
+        e = Engagement.objects.get()
+        self.assertEqual(list(e.engagement_films.values_list("film_id", "position")), [(self.f1.pk, 1)])
+        self.assertIn("close-drawer", resp["HX-Trigger"])
+
+    def test_create_double_feature_orders_films(self) -> None:
+        resp = self.client.post(reverse("dashboard:engagement_create"),
+                                self._payload(kind="DOUBLE_FEATURE", films=[self.f2.pk, self.f1.pk]))
+        self.assertEqual(resp.status_code, 200)
+        e = Engagement.objects.get()
+        self.assertEqual(list(e.engagement_films.values_list("film_id", "position")),
+                         [(self.f2.pk, 1), (self.f1.pk, 2)])
+
+    def test_double_feature_requires_two(self) -> None:
+        resp = self.client.post(reverse("dashboard:engagement_create"),
+                                self._payload(kind="DOUBLE_FEATURE", films=[self.f1.pk]))
+        self.assertEqual(Engagement.objects.count(), 0)
+        self.assertIn("at least two", resp.content.decode().lower())
+
+    def test_missing_film(self) -> None:
+        resp = self.client.post(reverse("dashboard:engagement_create"), self._payload(films=[]))
+        self.assertEqual(Engagement.objects.count(), 0)
+        self.assertIn('id="engagement-form"', resp.content.decode())
+
+    def test_end_before_start(self) -> None:
+        resp = self.client.post(reverse("dashboard:engagement_create"),
+                                self._payload(end_date=(self.today - datetime.timedelta(days=1)).isoformat()))
+        self.assertEqual(Engagement.objects.count(), 0)

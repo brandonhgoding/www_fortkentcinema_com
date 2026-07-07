@@ -5,6 +5,7 @@ from cinema.models import Engagement, EngagementFilm, Film, Screen
 from cinema.services import import_film_from_tmdb
 from cinema.tmdb import TMDBAPIError
 from cinema.tmdb.services import TMDBService
+from django.db import transaction
 from django.db.models import ProtectedError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
@@ -12,7 +13,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.generic import TemplateView, View
 
-from .forms import ScreenForm
+from .forms import EngagementForm, ScreenForm
 from .mixins import StaffRequiredMixin
 
 
@@ -224,6 +225,71 @@ def _engagement_list_response(request, tab, toast=None, status_code=200):
     if trigger:
         resp["HX-Trigger"] = json.dumps(trigger)
     return resp
+
+
+def save_engagement_films(engagement, film_ids):
+    engagement.engagement_films.all().delete()
+    for pos, fid in enumerate(film_ids, start=1):
+        EngagementFilm.objects.create(engagement=engagement, film_id=fid, position=pos)
+
+
+def _film_ids(request):
+    ids = []
+    for raw in request.POST.getlist("films"):
+        try:
+            ids.append(int(raw))
+        except (TypeError, ValueError):
+            continue
+    # preserve order, drop duplicates
+    seen = set()
+    return [i for i in ids if not (i in seen or seen.add(i))]
+
+
+def _validate_film_set(kind, film_ids):
+    if kind == "DOUBLE_FEATURE":
+        return None if len(film_ids) >= 2 else "Add at least two films for a double feature."
+    return None if len(film_ids) == 1 else "Select a film for this engagement."
+
+
+def _render_engagement_form(request, form, action_url, submit_label, film_ids, film_error=None):
+    from .forms import KIND_OPTIONS
+    initial = [{"id": f.id, "title": f.title, "poster": f.poster_url}
+               for f in Film.objects.filter(id__in=film_ids)]
+    # keep submitted order
+    order = {fid: i for i, fid in enumerate(film_ids)}
+    initial.sort(key=lambda d: order.get(d["id"], 0))
+    return render(request, "dashboard/_engagement_form.html", {
+        "form": form, "form_action": action_url, "submit_label": submit_label,
+        "kind_options": KIND_OPTIONS, "film_error": film_error,
+        "initial_films": initial,
+    })
+
+
+class EngagementCreateView(StaffRequiredMixin, View):
+    def get(self, request):
+        return _render_engagement_form(request, EngagementForm(),
+                                       reverse("dashboard:engagement_create"), "Create Engagement", [])
+
+    def post(self, request):
+        form = EngagementForm(request.POST)
+        film_ids = _film_ids(request)
+        film_error = _validate_film_set(request.POST.get("kind", "REGULAR"), film_ids)
+        # validate film films exist
+        if film_ids and Film.objects.filter(id__in=film_ids).count() != len(film_ids):
+            film_error = "One or more selected films no longer exist."
+        if form.is_valid() and not film_error:
+            with transaction.atomic():
+                engagement = form.save()
+                save_engagement_films(engagement, film_ids)
+            tab = request.GET.get("tab") or "CURRENT"
+            resp = _engagement_list_response(request, tab, toast={"kind": "success", "message": "Engagement created"})
+            existing = resp["HX-Trigger"]
+            trigger = json.loads(existing) if existing else {}
+            trigger["close-drawer"] = True
+            resp["HX-Trigger"] = json.dumps(trigger)
+            return resp
+        return _render_engagement_form(request, form, reverse("dashboard:engagement_create"),
+                                       "Create Engagement", film_ids, film_error)
 
 
 class EngagementStatusView(StaffRequiredMixin, View):
