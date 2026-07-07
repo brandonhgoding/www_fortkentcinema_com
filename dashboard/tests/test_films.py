@@ -78,3 +78,29 @@ class FilmFromTMDBTests(TestCase):
         trigger = json.loads(resp["HX-Trigger"])
         self.assertNotIn("film-selected", trigger)
         self.assertEqual(trigger["dashboard-toast"]["kind"], "error")
+
+
+from pathlib import Path
+from django.conf import settings as dj_settings
+
+
+class FilmComboTests(TestCase):
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+
+    def test_combo_css_byte_identical(self) -> None:
+        src = Path("/Users/bgoding/code/SoftwareMaine/www_leprinceos_com/src/components/FilmSearchCombo/FilmSearchCombo.module.css").read_bytes()
+        dest = Path(dj_settings.BASE_DIR) / "dashboard/static/dashboard/css/film_search_combo.css"
+        self.assertEqual(dest.read_bytes(), src)
+
+    def test_filmcombo_registered(self) -> None:
+        js = (Path(dj_settings.BASE_DIR) / "dashboard/static/dashboard/js/dashboard.js").read_text()
+        self.assertIn("Alpine.data('filmCombo'", js)
+
+    def test_combo_partial_renders(self) -> None:
+        from django.template.loader import render_to_string
+        html = render_to_string("dashboard/_film_search_combo.html", {"combo_id": "eng-film"})
+        self.assertIn('x-data="filmCombo"', html)
+        self.assertIn('id="eng-film-results"', html)
+        self.assertIn(reverse("dashboard:film_search"), html)

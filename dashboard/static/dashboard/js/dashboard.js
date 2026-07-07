@@ -126,3 +126,38 @@ document.body.addEventListener('htmx:confirm', (e) => {
   try { opts = JSON.parse(raw); } catch (_) { opts = { title: 'Confirm', message: raw }; }
   window.dashboardConfirm(opts).then((ok) => { if (ok) e.detail.issueRequest(true); });
 });
+
+document.addEventListener('alpine:init', () => {
+  Alpine.data('filmCombo', () => ({
+    open: false,
+    // Called from an option button after a local selection: clear + close.
+    selectDone() {
+      this.open = false;
+      const input = this.$root.querySelector('input[name="q"]');
+      if (input) input.value = '';
+      const results = this.$root.querySelector('.dropdown');
+      if (results) results.innerHTML = '';
+    },
+    // Roving focus across the rendered option buttons.
+    move(dir) {
+      this.open = true;
+      const items = Array.from(this.$root.querySelectorAll('.dropdown button'));
+      if (!items.length) return;
+      const idx = items.indexOf(document.activeElement);
+      const next = Math.max(0, Math.min(items.length - 1, idx + dir));
+      items[next].focus();
+    },
+  }));
+});
+
+// When a film is imported from TMDB, the option button lives inside a combo;
+// close/clear that combo after the server fires film-selected.
+document.body.addEventListener('film-selected', (e) => {
+  const combos = document.querySelectorAll('[x-data="filmCombo"]');
+  combos.forEach((c) => {
+    const input = c.querySelector('input[name="q"]');
+    if (input) input.value = '';
+    const results = c.querySelector('.dropdown');
+    if (results) results.innerHTML = '';
+  });
+});
