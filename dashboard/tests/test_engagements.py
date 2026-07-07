@@ -97,3 +97,20 @@ class EngagementStatusTests(TestCase):
         html = self.client.get(reverse("dashboard:engagements"), {"tab": "ENDED"}).content.decode()
         # locked: the status button is disabled for an ended engagement
         self.assertIn("disabled", html)
+
+
+class EngagementDeleteTests(TestCase):
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+        self.screen = Screen.objects.create(name="S1", capacity=50)
+        self.today = timezone.localdate()
+
+    def test_delete_cascades(self) -> None:
+        f = Film.objects.create(title="X")
+        e = make_engagement(self.screen, start=self.today, end=self.today, films=[f])
+        resp = self.client.post(reverse("dashboard:engagement_delete", args=[e.pk]) + "?tab=CURRENT")
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(Engagement.objects.filter(pk=e.pk).exists())
+        self.assertEqual(EngagementFilm.objects.count(), 0)  # cascaded
+        self.assertIn("dashboard-toast", resp["HX-Trigger"])

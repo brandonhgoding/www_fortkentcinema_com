@@ -17,6 +17,6 @@ urlpatterns = [
     path("engagements/<int:pk>", views.EngagementDetailStubView.as_view(), name="engagement_detail"),
     path("engagements/new", views.EngagementListView.as_view(), name="engagement_create"),
     path("engagements/<int:pk>/edit", views.EngagementListView.as_view(), name="engagement_edit"),
-    path("engagements/<int:pk>/delete", views.EngagementListView.as_view(), name="engagement_delete"),
+    path("engagements/<int:pk>/delete", views.EngagementDeleteView.as_view(), name="engagement_delete"),
     path("engagements/<int:pk>/status", views.EngagementStatusView.as_view(), name="engagement_status"),
 ]

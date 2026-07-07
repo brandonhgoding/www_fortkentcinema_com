@@ -236,3 +236,11 @@ class EngagementStatusView(StaffRequiredMixin, View):
         engagement.save(update_fields=["status"])
         tab = request.GET.get("tab") or "CURRENT"
         return _engagement_list_response(request, tab, toast={"kind": "success", "message": "Status updated"})
+
+
+class EngagementDeleteView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        engagement = get_object_or_404(Engagement, pk=pk)
+        engagement.delete()
+        tab = request.GET.get("tab") or "CURRENT"
+        return _engagement_list_response(request, tab, toast={"kind": "success", "message": "Engagement deleted"})
