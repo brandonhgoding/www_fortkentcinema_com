@@ -1,6 +1,7 @@
+import datetime
 import json
 
-from cinema.models import Film, Screen
+from cinema.models import Engagement, EngagementFilm, Film, Screen
 from cinema.services import import_film_from_tmdb
 from cinema.tmdb import TMDBAPIError
 from cinema.tmdb.services import TMDBService
@@ -8,6 +9,7 @@ from django.db.models import ProtectedError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views.generic import TemplateView, View
 
 from .forms import ScreenForm
@@ -157,10 +159,52 @@ class FilmFromTMDBView(StaffRequiredMixin, View):
         return resp
 
 
-class EngagementsStubView(StaffRequiredMixin, TemplateView):
+KIND_LABELS = {"REGULAR": "Regular", "SPECIAL_EVENT": "Event", "CLASSIC": "Classic",
+               "DOUBLE_FEATURE": "Double Feature"}
+ENGAGEMENT_TABS = ["CURRENT", "UPCOMING", "DRAFT", "ENDED", "CANCELLED"]
+
+
+def engagement_queryset(tab: str):
+    today = timezone.localdate()
+    qs = Engagement.objects.select_related("screen").prefetch_related("engagement_films__film")
+    if tab == "UPCOMING":
+        return qs.filter(status="CONFIRMED", start_date__gt=today)
+    if tab == "ENDED":
+        return qs.filter(end_date__lt=today)
+    if tab == "DRAFT":
+        return qs.filter(status="DRAFT")
+    if tab == "CANCELLED":
+        return qs.filter(status="CANCELLED")
+    # CURRENT (default)
+    return qs.filter(status="CONFIRMED", start_date__lte=today, end_date__gte=today)
+
+
+def engagement_list_context(request):
+    tab = request.GET.get("tab") or "CURRENT"
+    if tab not in ENGAGEMENT_TABS:
+        tab = "CURRENT"
+    return {
+        "engagements": engagement_queryset(tab),
+        "tab": tab,
+        "tabs": ENGAGEMENT_TABS,
+        "KIND_LABELS": KIND_LABELS,
+        "today": timezone.localdate(),
+    }
+
+
+class EngagementListView(StaffRequiredMixin, TemplateView):
+    template_name = "dashboard/engagements.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx.update(engagement_list_context(self.request))
+        return ctx
+
+
+class EngagementDetailStubView(StaffRequiredMixin, TemplateView):
     template_name = "dashboard/_stub_page.html"
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["page_title"] = "Engagements"
+        ctx["page_title"] = "Engagement detail"
         return ctx
