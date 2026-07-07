@@ -292,6 +292,34 @@ class EngagementCreateView(StaffRequiredMixin, View):
                                        "Create Engagement", film_ids, film_error)
 
 
+class EngagementEditView(StaffRequiredMixin, View):
+    def get(self, request, pk):
+        engagement = get_object_or_404(Engagement, pk=pk)
+        film_ids = list(engagement.engagement_films.order_by("position").values_list("film_id", flat=True))
+        return _render_engagement_form(request, EngagementForm(instance=engagement),
+                                       reverse("dashboard:engagement_edit", args=[pk]), "Save Changes", film_ids)
+
+    def post(self, request, pk):
+        engagement = get_object_or_404(Engagement, pk=pk)
+        form = EngagementForm(request.POST, instance=engagement)
+        film_ids = _film_ids(request)
+        film_error = _validate_film_set(request.POST.get("kind", "REGULAR"), film_ids)
+        if film_ids and Film.objects.filter(id__in=film_ids).count() != len(film_ids):
+            film_error = "One or more selected films no longer exist."
+        if form.is_valid() and not film_error:
+            with transaction.atomic():
+                engagement = form.save()
+                save_engagement_films(engagement, film_ids)
+            tab = request.GET.get("tab") or "CURRENT"
+            resp = _engagement_list_response(request, tab, toast={"kind": "success", "message": "Engagement updated"})
+            trigger = json.loads(resp["HX-Trigger"]) if resp.get("HX-Trigger") else {}
+            trigger["close-drawer"] = True
+            resp["HX-Trigger"] = json.dumps(trigger)
+            return resp
+        return _render_engagement_form(request, form, reverse("dashboard:engagement_edit", args=[pk]),
+                                       "Save Changes", film_ids, film_error)
+
+
 class EngagementStatusView(StaffRequiredMixin, View):
     def post(self, request, pk):
         engagement = get_object_or_404(Engagement, pk=pk)

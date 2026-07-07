@@ -170,3 +170,33 @@ class EngagementCreateTests(TestCase):
         resp = self.client.post(reverse("dashboard:engagement_create"),
                                 self._payload(end_date=(self.today - datetime.timedelta(days=1)).isoformat()))
         self.assertEqual(Engagement.objects.count(), 0)
+
+
+class EngagementEditTests(TestCase):
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+        self.screen = Screen.objects.create(name="S1", capacity=50)
+        self.f1 = Film.objects.create(title="A")
+        self.f2 = Film.objects.create(title="B")
+        self.today = timezone.localdate()
+
+    def test_get_prefilled(self) -> None:
+        e = make_engagement(self.screen, start=self.today, end=self.today, films=[self.f1])
+        html = self.client.get(reverse("dashboard:engagement_edit", args=[e.pk])).content.decode()
+        self.assertIn("Save Changes", html)
+        self.assertIn('"title": "A"', html)  # initial_films_json seeds the Alpine state
+
+    def test_edit_replaces_film_set(self) -> None:
+        e = make_engagement(self.screen, start=self.today, end=self.today,
+                            kind="DOUBLE_FEATURE", films=[self.f1, self.f2])
+        data = {
+            "kind": "DOUBLE_FEATURE", "event_title": "", "screen": self.screen.pk,
+            "start_date": self.today.isoformat(), "end_date": self.today.isoformat(),
+            "presentation_format": "2d", "status": "DRAFT", "show_in_main_listings": "on",
+            "notes": "", "films": [self.f2.pk, self.f1.pk],  # reversed order
+        }
+        resp = self.client.post(reverse("dashboard:engagement_edit", args=[e.pk]), data)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(list(e.engagement_films.values_list("film_id", "position")),
+                         [(self.f2.pk, 1), (self.f1.pk, 2)])
