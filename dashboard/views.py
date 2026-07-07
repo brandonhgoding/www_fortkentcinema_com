@@ -1,6 +1,7 @@
 import json
 
 from cinema.models import Film, Screen
+from cinema.services import import_film_from_tmdb
 from cinema.tmdb import TMDBAPIError
 from cinema.tmdb.services import TMDBService
 from django.db.models import ProtectedError
@@ -139,11 +140,21 @@ class FilmSearchTMDBView(StaffRequiredMixin, View):
 
 
 class FilmFromTMDBView(StaffRequiredMixin, View):
-    """Placeholder route target so `{% url 'dashboard:film_from_tmdb' %}` resolves
-    from _tmdb_options.html; the real import-from-TMDB behavior lands in the next task."""
-
     def post(self, request):
-        return HttpResponse(status=204)
+        tmdb_id = request.POST.get("tmdb_id")
+        resp = HttpResponse(status=204)
+        try:
+            film = import_film_from_tmdb(int(tmdb_id))
+        except (TMDBAPIError, ValueError, TypeError):
+            resp["HX-Trigger"] = json.dumps(
+                {"dashboard-toast": {"kind": "error", "message": "Failed to add film from TMDB."}}
+            )
+            return resp
+        resp["HX-Trigger"] = json.dumps({
+            "film-selected": {"id": film.id, "title": film.title, "poster": film.poster_url},
+            "dashboard-toast": {"kind": "success", "message": f"Added {film.title}"},
+        })
+        return resp
 
 
 class EngagementsStubView(StaffRequiredMixin, TemplateView):

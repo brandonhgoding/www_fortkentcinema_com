@@ -48,3 +48,33 @@ class FilmSearchTests(TestCase):
     def test_requires_staff(self) -> None:
         self.client.logout()
         self.assertEqual(self.client.get(reverse("dashboard:film_search")).status_code, 302)
+
+
+import json
+
+
+class FilmFromTMDBTests(TestCase):
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+
+    @mock.patch("dashboard.views.import_film_from_tmdb")
+    def test_import_fires_film_selected(self, mimport) -> None:
+        film = Film.objects.create(title="Imported", tmdb_id="99", poster_url="https://img/p.jpg")
+        mimport.return_value = film
+        resp = self.client.post(reverse("dashboard:film_from_tmdb"), {"tmdb_id": 99})
+        self.assertEqual(resp.status_code, 204)
+        trigger = json.loads(resp["HX-Trigger"])
+        self.assertEqual(trigger["film-selected"]["id"], film.id)
+        self.assertEqual(trigger["film-selected"]["title"], "Imported")
+        self.assertIn("dashboard-toast", trigger)
+
+    @mock.patch("dashboard.views.import_film_from_tmdb")
+    def test_import_error_toasts(self, mimport) -> None:
+        from cinema.tmdb import TMDBAPIError
+        mimport.side_effect = TMDBAPIError("nope")
+        resp = self.client.post(reverse("dashboard:film_from_tmdb"), {"tmdb_id": 1})
+        self.assertEqual(resp.status_code, 204)
+        trigger = json.loads(resp["HX-Trigger"])
+        self.assertNotIn("film-selected", trigger)
+        self.assertEqual(trigger["dashboard-toast"]["kind"], "error")
