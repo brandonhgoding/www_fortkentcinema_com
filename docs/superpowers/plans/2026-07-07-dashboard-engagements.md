@@ -395,7 +395,7 @@ In `engagements.html` `head_extra`, add after the engagements.css link:
 {% with locked=engagement.is_ended_or_past %}
 <div class="statusDropdown" x-data="statusDropdown">
   <button type="button" class="status-badge status-{{ engagement.status|lower }} statusButton"
-          @click="open = !open" x-bind:disabled="false"
+          @click="open = !open"
           {% if locked %}disabled{% endif %}
           aria-haspopup="listbox" :aria-expanded="open">
     {{ engagement.get_status_display }}
