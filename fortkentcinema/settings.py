@@ -191,3 +191,8 @@ REST_FRAMEWORK = {
 
 LOGIN_URL = "/login"
 LOGIN_REDIRECT_URL = "/dashboard/"
+
+# TMDB (The Movie Database) integration
+TMDB_API_KEY = config("TMDB_API_KEY", default="")
+TMDB_BASE_URL = "https://api.themoviedb.org/3"
+TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/"
