@@ -62,6 +62,18 @@ class EngagementListTests(TestCase):
         self.client.logout()
         self.assertEqual(self.client.get(reverse("dashboard:engagements")).status_code, 302)
 
+    def test_htmx_tab_returns_partial(self) -> None:
+        resp = self.client.get(reverse("dashboard:engagements"), {"tab": "DRAFT"},
+                               HTTP_HX_REQUEST="true")
+        body = resp.content.decode()
+        self.assertIn('id="engagement-list"', body)
+        self.assertNotIn("<!doctype", body.lower())   # not the full page
+        self.assertNotIn('class="sidebar"', body)       # no chrome
+
+    def test_non_htmx_returns_full_page(self) -> None:
+        body = self.client.get(reverse("dashboard:engagements")).content.decode()
+        self.assertIn("<!doctype", body.lower())
+
 
 import json
 

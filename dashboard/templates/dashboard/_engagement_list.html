@@ -23,7 +23,7 @@
             <div class="actions">
               <a href="{% url 'dashboard:engagement_detail' e.pk %}" class="actionButton detailsButton">Details</a>
               <button class="actionButton" hx-get="{% url 'dashboard:engagement_edit' e.pk %}" hx-target="#drawer-content" @click="$store.drawer.show('Edit Engagement')">Edit</button>
-              <button class="actionButton deleteButton" hx-post="{% url 'dashboard:engagement_delete' e.pk %}?tab={{ tab }}" hx-target="#engagement-list" hx-swap="outerHTML"
+              <button class="actionButton deleteButton" hx-post="{% url 'dashboard:engagement_delete' e.pk %}?tab={{ tab }}" hx-swap="none"
                       data-dashboard-confirm='{"title":"Delete Engagement","message":"Are you sure you want to delete the engagement for \"{{ e.display_title|escapejs }}\"?","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
             </div>
           </td>
