@@ -1,7 +1,7 @@
 {% load dashboard_extras %}
 <div class="statusDropdown" x-data="statusDropdown">
   <button type="button" class="status-badge status-{{ engagement.status|lower }} statusButton"
-          @click="open = !open" x-bind:disabled="false"
+          @click="open = !open"
           {% if engagement.status == 'ENDED' or engagement.end_date < today %}disabled{% endif %}
           aria-haspopup="listbox" :aria-expanded="open">
     {{ engagement.get_status_display }}
