@@ -61,3 +61,39 @@ class EngagementListTests(TestCase):
     def test_requires_staff(self) -> None:
         self.client.logout()
         self.assertEqual(self.client.get(reverse("dashboard:engagements")).status_code, 302)
+
+
+import json
+
+
+class EngagementStatusTests(TestCase):
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+        self.screen = Screen.objects.create(name="S1", capacity=50)
+        self.today = timezone.localdate()
+
+    def test_status_change_updates_and_refreshes(self) -> None:
+        e = make_engagement(self.screen, start=self.today, end=self.today, status="DRAFT")
+        resp = self.client.post(reverse("dashboard:engagement_status", args=[e.pk]) + "?tab=DRAFT",
+                                {"status": "CONFIRMED"})
+        self.assertEqual(resp.status_code, 200)
+        e.refresh_from_db()
+        self.assertEqual(e.status, "CONFIRMED")
+        self.assertIn('id="engagement-list"', resp.content.decode())
+        self.assertIn("dashboard-toast", resp["HX-Trigger"])
+
+    def test_status_rejects_ended_value(self) -> None:
+        e = make_engagement(self.screen, start=self.today, end=self.today, status="DRAFT")
+        resp = self.client.post(reverse("dashboard:engagement_status", args=[e.pk]),
+                                {"status": "ENDED"})
+        e.refresh_from_db()
+        self.assertEqual(e.status, "DRAFT")  # ENDED not manually settable
+        self.assertEqual(resp.status_code, 400)
+
+    def test_ended_engagement_locked(self) -> None:
+        past = self.today - datetime.timedelta(days=5)
+        e = make_engagement(self.screen, start=past, end=past, status="CONFIRMED")
+        html = self.client.get(reverse("dashboard:engagements"), {"tab": "ENDED"}).content.decode()
+        # locked: the status button is disabled for an ended engagement
+        self.assertIn("disabled", html)

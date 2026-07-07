@@ -189,6 +189,9 @@ def engagement_list_context(request):
         "tabs": ENGAGEMENT_TABS,
         "KIND_LABELS": KIND_LABELS,
         "today": timezone.localdate(),
+        "status_options": [("DRAFT", "Draft"), ("CONFIRMED", "Confirmed"), ("CANCELLED", "Cancelled")],
+        "status_descriptions": {"DRAFT": "Not yet confirmed", "CONFIRMED": "Active engagement",
+                                "CANCELLED": "Engagement cancelled", "ENDED": "Engagement has ended"},
     }
 
 
@@ -208,3 +211,28 @@ class EngagementDetailStubView(StaffRequiredMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         ctx["page_title"] = "Engagement detail"
         return ctx
+
+
+def _engagement_list_response(request, tab, toast=None, status_code=200):
+    ctx = {**engagement_list_context(request), "tab": tab, "engagements": engagement_queryset(tab)}
+    html = render(request, "dashboard/_engagement_list.html", ctx).content.decode()
+    html = html.replace('<div id="engagement-list"', '<div id="engagement-list" hx-swap-oob="true"', 1)
+    resp = HttpResponse(html, status=status_code)
+    trigger = {}
+    if toast:
+        trigger["dashboard-toast"] = toast
+    if trigger:
+        resp["HX-Trigger"] = json.dumps(trigger)
+    return resp
+
+
+class EngagementStatusView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        engagement = get_object_or_404(Engagement, pk=pk)
+        new_status = request.POST.get("status")
+        if new_status not in {"DRAFT", "CONFIRMED", "CANCELLED"}:
+            return HttpResponse(status=400)
+        engagement.status = new_status
+        engagement.save(update_fields=["status"])
+        tab = request.GET.get("tab") or "CURRENT"
+        return _engagement_list_response(request, tab, toast={"kind": "success", "message": "Status updated"})

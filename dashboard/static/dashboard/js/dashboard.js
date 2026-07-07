@@ -162,3 +162,7 @@ document.body.addEventListener('film-selected', (e) => {
     if (window.Alpine) window.Alpine.$data(c).open = false;
   });
 });
+
+document.addEventListener('alpine:init', () => {
+  Alpine.data('statusDropdown', () => ({ open: false }));
+});
