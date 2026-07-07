@@ -152,7 +152,12 @@ def engagement_list_context(request):
 
 
 class EngagementListView(StaffRequiredMixin, TemplateView):
-    template_name = "dashboard/engagements.html"
+    def get_template_names(self):
+        # A tab click is an HTMX GET that swaps only the #engagement-list region,
+        # so return the partial (not the full base-extending page) for HX requests.
+        if self.request.headers.get("HX-Request"):
+            return ["dashboard/_engagement_list.html"]
+        return ["dashboard/engagements.html"]
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
