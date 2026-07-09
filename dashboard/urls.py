@@ -22,5 +22,5 @@ urlpatterns = [
     path("engagements/<int:eng_pk>/showtimes/new", views.ShowtimeCreateView.as_view(), name="showtime_create"),
     path("engagements/<int:eng_pk>/showtimes/bulk", views.EngagementDetailView.as_view(), name="showtime_bulk"),
     path("showtimes/<int:pk>/edit", views.ShowtimeEditView.as_view(), name="showtime_edit"),
-    path("showtimes/<int:pk>/delete", views.EngagementDetailView.as_view(), name="showtime_delete"),
+    path("showtimes/<int:pk>/delete", views.ShowtimeDeleteView.as_view(), name="showtime_delete"),
 ]

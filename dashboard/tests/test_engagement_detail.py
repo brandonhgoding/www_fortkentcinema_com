@@ -141,3 +141,22 @@ class ShowtimeCreateEditTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         a.refresh_from_db()
         self.assertTrue(a.is_cancelled)
+
+
+class ShowtimeDeleteTests(TestCase):
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+        self.screen = Screen.objects.create(name="Screen 1", capacity=100)
+        self.film = Film.objects.create(title="Dune", runtime_minutes=155)
+        self.eng = make_eng(self.screen, films=[self.film])
+
+    def test_delete(self) -> None:
+        import datetime as d
+        from django.utils import timezone
+        st = Showtime.objects.create(engagement=self.eng,
+                                     starts_at=timezone.make_aware(d.datetime(2026, 7, 4, 19, 0)))
+        resp = self.client.post(reverse("dashboard:showtime_delete", args=[st.pk]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(Showtime.objects.filter(pk=st.pk).exists())
+        self.assertIn("dashboard-toast", resp["HX-Trigger"])

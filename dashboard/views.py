@@ -452,3 +452,12 @@ class ShowtimeEditView(StaffRequiredMixin, View):
         st.save()
         return _showtime_list_response(request, engagement,
                                        {"kind": "success", "message": "Showtime updated"}, close_drawer=True)
+
+
+class ShowtimeDeleteView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        st = get_object_or_404(Showtime.objects.select_related("engagement"), pk=pk)
+        engagement = st.engagement
+        st.delete()
+        return _showtime_list_response(request, engagement,
+                                       {"kind": "success", "message": "Showtime deleted"})
