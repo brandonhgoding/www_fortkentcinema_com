@@ -252,6 +252,10 @@ class EngagementDetailView(StaffRequiredMixin, TemplateView):
         ctx["films"] = [ef.film for ef in engagement.engagement_films.all()]
         ctx["showtimes"] = engagement.showtimes.all()
         ctx["KIND_LABELS"] = KIND_LABELS
+        ctx["STATUS_BADGE_CLASSES"] = {
+            "DRAFT": "statusDraft", "CONFIRMED": "statusConfirmed",
+            "CANCELLED": "statusCancelled", "ENDED": "statusEnded",
+        }
         return ctx
 ```
 
@@ -301,7 +305,7 @@ class EngagementDetailView(StaffRequiredMixin, TemplateView):
       <h2 class="cardTitle">Engagement Details</h2>
       <div class="engagementInfo">
         <div class="infoRow"><span class="label">Status:</span>
-          <span class="statusBadge status{{ engagement.status|capfirst }}">{{ engagement.status }}</span></div>
+          <span class="statusBadge {{ STATUS_BADGE_CLASSES|get_item:engagement.status }}">{{ engagement.status }}</span></div>
         <div class="infoRow"><span class="label">Kind:</span><span>{{ KIND_LABELS|get_item:engagement.kind }}</span></div>
         {% if engagement.event_title and engagement.event_title != engagement.display_title %}
         <div class="infoRow"><span class="label">Event:</span><span>{{ engagement.event_title }}</span></div>{% endif %}
@@ -323,7 +327,7 @@ class EngagementDetailView(StaffRequiredMixin, TemplateView):
 {% endblock %}
 ```
 
-Note: the status badge class in the source is `statusConfirmed`/`statusDraft`/`statusCancelled`/`statusEnded`; `status{{ engagement.status|capfirst }}` yields `statusConfirmed` etc. (status values are DRAFT/CONFIRMED/CANCELLED/ENDED → capfirst → Draft/Confirmed/… → `statusConfirmed`). These classes are in the verbatim `engagement_detail.css`.
+Note: the status badge class in the source is `statusConfirmed`/`statusDraft`/`statusCancelled`/`statusEnded` (camelCase). Django's `capfirst` only uppercases the first char without lowering the rest, so `{{ "CONFIRMED"|capfirst }}` is `"CONFIRMED"` (not `"Confirmed"`) — do NOT derive the class from the status string. Instead map it via the `STATUS_BADGE_CLASSES` context dict + `get_item` (mirrors the source's explicit `getStatusBadgeClass` switch). These classes are in the verbatim `engagement_detail.css`.
 
 - [ ] **Step 6: Create a temporary showtime section stub + routes**
 
