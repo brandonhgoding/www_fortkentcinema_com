@@ -48,3 +48,12 @@ class EngagementDetailPageTests(TestCase):
         eng = make_eng(self.screen, films=[self.film])
         self.client.logout()
         self.assertEqual(self.client.get(reverse("dashboard:engagement_detail", args=[eng.pk])).status_code, 302)
+
+    def test_status_badge_camelcase_class(self) -> None:
+        """Regression: status badge should render with camelCase CSS class, not capfirst."""
+        eng = make_eng(self.screen, films=[self.film], status="CONFIRMED")
+        html = self.client.get(reverse("dashboard:engagement_detail", args=[eng.pk])).content.decode()
+        # Should contain the camelCase class
+        self.assertIn('statusConfirmed', html)
+        # Should NOT contain the broken capfirst class
+        self.assertNotIn('statusCONFIRMED', html)

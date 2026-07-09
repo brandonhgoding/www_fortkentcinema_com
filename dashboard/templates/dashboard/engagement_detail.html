@@ -39,7 +39,7 @@
       <h2 class="cardTitle">Engagement Details</h2>
       <div class="engagementInfo">
         <div class="infoRow"><span class="label">Status:</span>
-          <span class="statusBadge status{{ engagement.status|capfirst }}">{{ engagement.status }}</span></div>
+          <span class="statusBadge {{ STATUS_BADGE_CLASSES|get_item:engagement.status }}">{{ engagement.status }}</span></div>
         <div class="infoRow"><span class="label">Kind:</span><span>{{ KIND_LABELS|get_item:engagement.kind }}</span></div>
         {% if engagement.event_title and engagement.event_title != engagement.display_title %}
         <div class="infoRow"><span class="label">Event:</span><span>{{ engagement.event_title }}</span></div>{% endif %}

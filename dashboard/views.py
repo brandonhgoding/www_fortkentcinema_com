@@ -222,6 +222,10 @@ class EngagementDetailView(StaffRequiredMixin, TemplateView):
         ctx["films"] = [ef.film for ef in engagement.engagement_films.all()]
         ctx["showtimes"] = engagement.showtimes.all()
         ctx["KIND_LABELS"] = KIND_LABELS
+        ctx["STATUS_BADGE_CLASSES"] = {
+            "DRAFT": "statusDraft", "CONFIRMED": "statusConfirmed",
+            "CANCELLED": "statusCancelled", "ENDED": "statusEnded",
+        }
         return ctx
 
 
