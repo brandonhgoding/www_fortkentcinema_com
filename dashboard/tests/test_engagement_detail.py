@@ -57,3 +57,35 @@ class EngagementDetailPageTests(TestCase):
         self.assertIn('statusConfirmed', html)
         # Should NOT contain the broken capfirst class
         self.assertNotIn('statusCONFIRMED', html)
+
+
+from cinema.models import Showtime
+import datetime as _dt
+from django.utils import timezone
+
+
+class ShowtimeListTests(TestCase):
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+        self.screen = Screen.objects.create(name="Screen 1", capacity=100)
+        self.film = Film.objects.create(title="Dune", runtime_minutes=155)
+        self.eng = make_eng(self.screen, films=[self.film])
+
+    def _url(self, eng):
+        return reverse("dashboard:engagement_detail", args=[eng.pk])
+
+    def test_empty_state(self) -> None:
+        html = self.client.get(self._url(self.eng)).content.decode()
+        self.assertIn("No showtimes scheduled", html)
+
+    def test_lists_showtimes_with_badges(self) -> None:
+        aware = timezone.make_aware(_dt.datetime(2026, 7, 4, 19, 0))
+        Showtime.objects.create(engagement=self.eng, starts_at=aware, captions="CC")
+        Showtime.objects.create(
+            engagement=self.eng, starts_at=timezone.make_aware(_dt.datetime(2026, 7, 5, 19, 0)),
+            is_cancelled=True)
+        html = self.client.get(self._url(self.eng)).content.decode()
+        self.assertIn("CC", html)             # captions badge
+        self.assertIn("Cancelled", html)      # cancelled badge
+        self.assertIn("Active", html)         # active badge
