@@ -160,3 +160,40 @@ class ShowtimeDeleteTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(Showtime.objects.filter(pk=st.pk).exists())
         self.assertIn("dashboard-toast", resp["HX-Trigger"])
+
+
+class ShowtimeBulkTests(TestCase):
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+        self.screen = Screen.objects.create(name="Screen 1", capacity=100)
+        self.film = Film.objects.create(title="Dune", runtime_minutes=100)
+        self.eng = make_eng(self.screen, films=[self.film])
+
+    def test_get_bulk_form(self) -> None:
+        html = self.client.get(reverse("dashboard:showtime_bulk", args=[self.eng.pk])).content.decode()
+        self.assertIn('id="bulk-showtime-form"', html)
+        self.assertIn("bulkShowtimeForm", html)
+
+    def test_bulk_creates_grid(self) -> None:
+        resp = self.client.post(reverse("dashboard:showtime_bulk", args=[self.eng.pk]),
+                                {"start_date": "2026-07-01", "end_date": "2026-07-03",
+                                 "times": ["13:00", "19:00"], "captions": ""})
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(Showtime.objects.count(), 6)  # 3 days x 2 times
+        self.assertIn("close-drawer", resp["HX-Trigger"])
+
+    def test_bulk_rejects_overlap(self) -> None:
+        # two times 30 min apart with a 100-min film overlap -> whole batch rejected
+        resp = self.client.post(reverse("dashboard:showtime_bulk", args=[self.eng.pk]),
+                                {"start_date": "2026-07-01", "end_date": "2026-07-01",
+                                 "times": ["19:00", "19:30"], "captions": ""})
+        self.assertEqual(Showtime.objects.count(), 0)
+        self.assertIn("overlaps with", resp.content.decode())
+
+    def test_bulk_requires_times(self) -> None:
+        resp = self.client.post(reverse("dashboard:showtime_bulk", args=[self.eng.pk]),
+                                {"start_date": "2026-07-01", "end_date": "2026-07-01",
+                                 "times": ["", ""], "captions": ""})
+        self.assertEqual(Showtime.objects.count(), 0)
+        self.assertIn("at least one time", resp.content.decode().lower())

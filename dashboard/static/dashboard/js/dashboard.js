@@ -195,3 +195,11 @@ document.addEventListener('alpine:init', () => {
     },
   }));
 });
+
+document.addEventListener('alpine:init', () => {
+  Alpine.data('bulkShowtimeForm', () => ({
+    times: [''],
+    add() { this.times.push(''); },
+    remove(i) { this.times.splice(i, 1); if (!this.times.length) this.times = ['']; },
+  }));
+});

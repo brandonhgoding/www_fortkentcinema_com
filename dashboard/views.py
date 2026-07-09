@@ -4,7 +4,12 @@ from zoneinfo import ZoneInfo
 
 from cinema.models import Engagement, EngagementFilm, Film, Screen, Showtime
 from cinema.services import import_film_from_tmdb
-from cinema.showtimes_overlap import check_overlap_against_existing, format_overlap_error
+from cinema.showtimes_overlap import (
+    _ProposedShowtime,
+    check_intra_batch_overlaps,
+    check_overlap_against_existing,
+    format_overlap_error,
+)
 from cinema.tmdb import TMDBAPIError
 from cinema.tmdb.services import TMDBService
 from django.db import transaction
@@ -461,3 +466,74 @@ class ShowtimeDeleteView(StaffRequiredMixin, View):
         st.delete()
         return _showtime_list_response(request, engagement,
                                        {"kind": "success", "message": "Showtime deleted"})
+
+
+def _render_bulk_form(request, engagement, start_date="", end_date="", captions="", errors=None):
+    return render(request, "dashboard/_showtime_bulk_form.html", {
+        "engagement": engagement,
+        "form_action": reverse("dashboard:showtime_bulk", args=[engagement.pk]),
+        "start_date": start_date, "end_date": end_date, "captions": captions or "",
+        "errors": errors or [],
+    })
+
+
+class ShowtimeBulkView(StaffRequiredMixin, View):
+    def get(self, request, eng_pk):
+        engagement = get_object_or_404(Engagement, pk=eng_pk)
+        return _render_bulk_form(request, engagement,
+                                 start_date=engagement.start_date.isoformat(),
+                                 end_date=engagement.end_date.isoformat())
+
+    def post(self, request, eng_pk):
+        engagement = get_object_or_404(Engagement, pk=eng_pk)
+        start_str, end_str = request.POST.get("start_date", ""), request.POST.get("end_date", "")
+        captions = request.POST.get("captions") or None
+        times = [t for t in request.POST.getlist("times") if t.strip()]
+
+        def again(errors):
+            return _render_bulk_form(request, engagement, start_date=start_str,
+                                     end_date=end_str, captions=captions, errors=errors)
+
+        if not start_str or not end_str:
+            return again(["Start and end date are required."])
+        if not times:
+            return again(["Add at least one time."])
+        start_date = datetime.date.fromisoformat(start_str)
+        end_date = datetime.date.fromisoformat(end_str)
+        if end_date < start_date:
+            return again(["End date cannot be before start date."])
+
+        screen = engagement.screen
+        runtime = engagement.total_runtime_minutes
+        title = engagement.display_title
+        proposed_showtimes = []
+        current = start_date
+        one_day = datetime.timedelta(days=1)
+        while current <= end_date:
+            for t in times:
+                starts_at = datetime.datetime.combine(current, datetime.time.fromisoformat(t), tzinfo=CINEMA_TZ)
+                proposed_showtimes.append(starts_at)
+            current += one_day
+
+        with transaction.atomic():
+            Screen.objects.select_for_update().get(pk=screen.pk)
+            errors = []
+            for starts_at in proposed_showtimes:
+                errors += [format_overlap_error(c) for c in check_overlap_against_existing(
+                    screen, starts_at, runtime, title)]
+            proposed = [_ProposedShowtime(i, screen, s, runtime, title)
+                        for i, s in enumerate(proposed_showtimes)]
+            errors += [format_overlap_error(c) for c in check_intra_batch_overlaps(proposed)]
+            if errors:
+                seen, unique = set(), []
+                for e in errors:
+                    if e not in seen:
+                        seen.add(e); unique.append(e)
+                return again(unique)
+            Showtime.objects.bulk_create([
+                Showtime(engagement=engagement, screen=screen, starts_at=s, captions=captions)
+                for s in proposed_showtimes])
+
+        return _showtime_list_response(
+            request, engagement,
+            {"kind": "success", "message": f"Created {len(proposed_showtimes)} showtimes"}, close_drawer=True)
