@@ -209,12 +209,19 @@ class EngagementListView(StaffRequiredMixin, TemplateView):
         return ctx
 
 
-class EngagementDetailStubView(StaffRequiredMixin, TemplateView):
-    template_name = "dashboard/_stub_page.html"
+class EngagementDetailView(StaffRequiredMixin, TemplateView):
+    template_name = "dashboard/engagement_detail.html"
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["page_title"] = "Engagement detail"
+        engagement = get_object_or_404(
+            Engagement.objects.select_related("screen").prefetch_related("engagement_films__film"),
+            pk=kwargs["pk"],
+        )
+        ctx["engagement"] = engagement
+        ctx["films"] = [ef.film for ef in engagement.engagement_films.all()]
+        ctx["showtimes"] = engagement.showtimes.all()
+        ctx["KIND_LABELS"] = KIND_LABELS
         return ctx
 
 
