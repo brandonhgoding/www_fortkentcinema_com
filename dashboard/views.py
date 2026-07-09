@@ -1,7 +1,10 @@
+import datetime
 import json
+from zoneinfo import ZoneInfo
 
-from cinema.models import Engagement, EngagementFilm, Film, Screen
+from cinema.models import Engagement, EngagementFilm, Film, Screen, Showtime
 from cinema.services import import_film_from_tmdb
+from cinema.showtimes_overlap import check_overlap_against_existing, format_overlap_error
 from cinema.tmdb import TMDBAPIError
 from cinema.tmdb.services import TMDBService
 from django.db import transaction
@@ -353,3 +356,99 @@ class EngagementDeleteView(StaffRequiredMixin, View):
         engagement.delete()
         tab = request.GET.get("tab") or "CURRENT"
         return _engagement_list_response(request, tab, toast={"kind": "success", "message": "Engagement deleted"})
+
+
+CINEMA_TZ = ZoneInfo("America/New_York")
+
+
+def _showtime_list_response(request, engagement, toast, close_drawer=False):
+    ctx = {"engagement": engagement, "showtimes": engagement.showtimes.all()}
+    html = render(request, "dashboard/_showtime_list.html", ctx).content.decode()
+    html = html.replace('<div id="showtime-list">', '<div id="showtime-list" hx-swap-oob="true">', 1)
+    resp = HttpResponse(html)
+    trigger = {"dashboard-toast": toast}
+    if close_drawer:
+        trigger["close-drawer"] = True
+    resp["HX-Trigger"] = json.dumps(trigger)
+    return resp
+
+
+def _parse_starts_at(date_str, time_str):
+    d = datetime.date.fromisoformat(date_str)
+    t = datetime.time.fromisoformat(time_str)
+    return datetime.datetime.combine(d, t, tzinfo=CINEMA_TZ)
+
+
+def _render_showtime_form(request, engagement, action_url, submit_label, mode,
+                          date="", time="", captions="", is_cancelled=False, errors=None):
+    return render(request, "dashboard/_showtime_form.html", {
+        "engagement": engagement, "form_action": action_url, "submit_label": submit_label,
+        "mode": mode, "date": date, "time": time, "captions": captions or "",
+        "is_cancelled": is_cancelled, "errors": errors or [],
+    })
+
+
+class ShowtimeCreateView(StaffRequiredMixin, View):
+    def get(self, request, eng_pk):
+        engagement = get_object_or_404(Engagement, pk=eng_pk)
+        return _render_showtime_form(
+            request, engagement, reverse("dashboard:showtime_create", args=[eng_pk]),
+            "Add Showtime", "create", date=engagement.start_date.isoformat())
+
+    def post(self, request, eng_pk):
+        engagement = get_object_or_404(Engagement, pk=eng_pk)
+        date_str, time_str = request.POST.get("date", ""), request.POST.get("time", "")
+        captions = request.POST.get("captions") or None
+        action = reverse("dashboard:showtime_create", args=[eng_pk])
+        if not date_str or not time_str:
+            return _render_showtime_form(request, engagement, action, "Add Showtime", "create",
+                                         date=date_str, time=time_str, captions=captions,
+                                         errors=["Date and time are required."])
+        starts_at = _parse_starts_at(date_str, time_str)
+        conflicts = check_overlap_against_existing(
+            engagement.screen, starts_at, engagement.total_runtime_minutes, engagement.display_title)
+        if conflicts:
+            return _render_showtime_form(request, engagement, action, "Add Showtime", "create",
+                                         date=date_str, time=time_str, captions=captions,
+                                         errors=[format_overlap_error(c) for c in conflicts])
+        Showtime.objects.create(engagement=engagement, starts_at=starts_at, captions=captions)
+        return _showtime_list_response(request, engagement,
+                                       {"kind": "success", "message": "Showtime added"}, close_drawer=True)
+
+
+class ShowtimeEditView(StaffRequiredMixin, View):
+    def get(self, request, pk):
+        st = get_object_or_404(Showtime.objects.select_related("engagement"), pk=pk)
+        local = st.starts_at.astimezone(CINEMA_TZ)
+        return _render_showtime_form(
+            request, st.engagement, reverse("dashboard:showtime_edit", args=[pk]),
+            "Save Changes", "edit", date=local.date().isoformat(),
+            time=local.strftime("%H:%M"), captions=st.captions or "", is_cancelled=st.is_cancelled)
+
+    def post(self, request, pk):
+        st = get_object_or_404(Showtime.objects.select_related("engagement"), pk=pk)
+        engagement = st.engagement
+        date_str, time_str = request.POST.get("date", ""), request.POST.get("time", "")
+        captions = request.POST.get("captions") or None
+        is_cancelled = request.POST.get("is_cancelled") == "on"
+        action = reverse("dashboard:showtime_edit", args=[pk])
+        if not date_str or not time_str:
+            return _render_showtime_form(request, engagement, action, "Save Changes", "edit",
+                                         date=date_str, time=time_str, captions=captions,
+                                         is_cancelled=is_cancelled, errors=["Date and time are required."])
+        starts_at = _parse_starts_at(date_str, time_str)
+        if not is_cancelled:  # cancelling skips the overlap check (matches source)
+            conflicts = check_overlap_against_existing(
+                engagement.screen, starts_at, engagement.total_runtime_minutes,
+                engagement.display_title, exclude_showtime_id=st.pk)
+            if conflicts:
+                return _render_showtime_form(request, engagement, action, "Save Changes", "edit",
+                                             date=date_str, time=time_str, captions=captions,
+                                             is_cancelled=is_cancelled,
+                                             errors=[format_overlap_error(c) for c in conflicts])
+        st.starts_at = starts_at
+        st.captions = captions
+        st.is_cancelled = is_cancelled
+        st.save()
+        return _showtime_list_response(request, engagement,
+                                       {"kind": "success", "message": "Showtime updated"}, close_drawer=True)

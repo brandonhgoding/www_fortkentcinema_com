@@ -89,3 +89,55 @@ class ShowtimeListTests(TestCase):
         self.assertIn("CC", html)             # captions badge
         self.assertIn("Cancelled", html)      # cancelled badge
         self.assertIn("Active", html)         # active badge
+
+
+import json
+from zoneinfo import ZoneInfo
+
+TZ = ZoneInfo("America/New_York")
+
+
+class ShowtimeCreateEditTests(TestCase):
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+        self.screen = Screen.objects.create(name="Screen 1", capacity=100)
+        self.film = Film.objects.create(title="Dune", runtime_minutes=155)
+        self.eng = make_eng(self.screen, films=[self.film])
+
+    def test_get_form(self) -> None:
+        html = self.client.get(reverse("dashboard:showtime_create", args=[self.eng.pk])).content.decode()
+        self.assertIn('id="showtime-form"', html)
+        self.assertIn("Add Showtime", html)
+
+    def test_create_combines_tz_aware(self) -> None:
+        resp = self.client.post(reverse("dashboard:showtime_create", args=[self.eng.pk]),
+                                {"date": "2026-07-04", "time": "19:30", "captions": ""})
+        self.assertEqual(resp.status_code, 200)
+        st = Showtime.objects.get()
+        local = st.starts_at.astimezone(TZ)
+        self.assertEqual((local.hour, local.minute), (19, 30))
+        self.assertEqual(st.screen_id, self.screen.id)  # defaulted from engagement
+        self.assertIn("close-drawer", resp["HX-Trigger"])
+
+    def test_create_overlap_rejected(self) -> None:
+        import datetime as d
+        from django.utils import timezone
+        Showtime.objects.create(engagement=self.eng,
+                                starts_at=timezone.make_aware(d.datetime(2026, 7, 4, 19, 0)))
+        resp = self.client.post(reverse("dashboard:showtime_create", args=[self.eng.pk]),
+                                {"date": "2026-07-04", "time": "20:00", "captions": ""})
+        self.assertEqual(Showtime.objects.count(), 1)  # not created
+        self.assertIn("overlaps with", resp.content.decode())
+
+    def test_edit_cancel_skips_overlap(self) -> None:
+        import datetime as d
+        from django.utils import timezone
+        a = Showtime.objects.create(engagement=self.eng,
+                                    starts_at=timezone.make_aware(d.datetime(2026, 7, 4, 19, 0)))
+        # editing 'a' to cancelled must not conflict with itself/others
+        resp = self.client.post(reverse("dashboard:showtime_edit", args=[a.pk]),
+                                {"date": "2026-07-04", "time": "19:00", "captions": "", "is_cancelled": "on"})
+        self.assertEqual(resp.status_code, 200)
+        a.refresh_from_db()
+        self.assertTrue(a.is_cancelled)
