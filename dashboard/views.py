@@ -228,7 +228,7 @@ class EngagementDetailView(StaffRequiredMixin, TemplateView):
         )
         ctx["engagement"] = engagement
         ctx["films"] = [ef.film for ef in engagement.engagement_films.all()]
-        ctx["showtimes"] = engagement.showtimes.all()
+        ctx["showtimes"] = engagement.showtimes.select_related("screen")
         ctx["KIND_LABELS"] = KIND_LABELS
         ctx["STATUS_BADGE_CLASSES"] = {
             "DRAFT": "statusDraft", "CONFIRMED": "statusConfirmed",
@@ -367,7 +367,7 @@ CINEMA_TZ = ZoneInfo("America/New_York")
 
 
 def _showtime_list_response(request, engagement, toast, close_drawer=False):
-    ctx = {"engagement": engagement, "showtimes": engagement.showtimes.all()}
+    ctx = {"engagement": engagement, "showtimes": engagement.showtimes.select_related("screen")}
     html = render(request, "dashboard/_showtime_list.html", ctx).content.decode()
     html = html.replace('<div id="showtime-list">', '<div id="showtime-list" hx-swap-oob="true">', 1)
     resp = HttpResponse(html)
