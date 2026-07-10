@@ -1,8 +1,11 @@
 import datetime
+from io import StringIO
 from unittest import mock
 
 from cinema.leprinceos_import import fetch_all, import_all
 from cinema.models import Engagement, EngagementFilm, Film, Screen, Showtime
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import TestCase
 
 
@@ -114,3 +117,17 @@ class ImportAllTests(TestCase):
         with self.assertRaises(ValueError):
             import_all("http://api", flush=False)
         self.assertEqual(Screen.objects.count(), 0)  # nothing written
+
+
+class CommandTests(TestCase):
+    @mock.patch("cinema.leprinceos_import.fetch_all", side_effect=_fake_fetch)
+    def test_command_with_flush_imports(self, _f) -> None:
+        out = StringIO()
+        call_command("import_leprinceos", "--flush", "--base-url", "http://api", stdout=out)
+        self.assertEqual(Film.objects.count(), 2)
+        self.assertIn("films", out.getvalue().lower())
+
+    def test_command_without_flush_writes_nothing(self) -> None:
+        with self.assertRaises(CommandError):
+            call_command("import_leprinceos", "--base-url", "http://api")
+        self.assertEqual(Film.objects.count(), 0)
