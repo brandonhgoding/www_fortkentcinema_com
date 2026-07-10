@@ -1,0 +1,76 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% block title %}Dashboard · LeprinceOS{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/home.css' %}" />{% endblock %}
+{% block content %}
+<div class="dashboardHome">
+  <div class="pageHeader">
+    <h1 class="pageTitle">Dashboard</h1>
+    <p class="welcomeText">Welcome back, {{ display_name }}</p>
+  </div>
+
+  {% include "dashboard/_alerts.html" %}
+
+  <div class="summaryGrid">
+    <div class="card"><div class="cardBody">
+      <p class="cardLabel">Active Engagements</p>
+      <p class="cardValue">{{ active_engagements_count }}</p>
+      <a href="{% url 'dashboard:engagements' %}" class="cardLink">View all &rarr;</a>
+    </div></div>
+    <div class="card"><div class="cardBody">
+      <p class="cardLabel">Today's Showtimes</p>
+      <p class="cardValue">{{ today_showtimes_count }}</p>
+    </div></div>
+    <div class="card"><div class="cardBody">
+      <p class="cardLabel">Screens</p>
+      <p class="cardValue">{{ screens_count }}</p>
+      <a href="{% url 'dashboard:screens' %}" class="cardLink">Manage &rarr;</a>
+    </div></div>
+  </div>
+
+  <section class="section">
+    <h2 class="sectionTitle">Today's Showtimes</h2>
+    {% if today_showtimes %}
+    <div class="tableCard">
+      <div class="tableWrapper">
+        <table class="table">
+          <thead><tr><th>Time</th><th>Film</th><th>Screen</th><th>Format</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for st in today_showtimes %}
+            <tr>
+              <td class="timeCell">{{ st.starts_at|date:"g:i A" }}</td>
+              <td class="filmCell">{{ st.engagement.display_title }}</td>
+              <td class="screenCell">{{ st.screen.name }}</td>
+              <td class="formatCell">{{ st.engagement.presentation_format|upper }}</td>
+              <td>{% if st.is_cancelled %}<span class="statusCancelled">Cancelled</span>{% else %}<span class="statusActive">Active</span>{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="cardList">
+      {% for st in today_showtimes %}
+      <div class="showtimeCard">
+        <div class="showtimeCardHeader">
+          <span class="showtimeTime">{{ st.starts_at|date:"g:i A" }}</span>
+          {% if st.is_cancelled %}<span class="statusCancelled">Cancelled</span>{% else %}<span class="statusActive">Active</span>{% endif %}
+        </div>
+        <div class="showtimeCardBody">
+          <h3 class="showtimeFilm">{{ st.engagement.display_title }}</h3>
+          <div class="showtimeMeta"><span>{{ st.screen.name }}</span><span class="showtimeFormat">{{ st.engagement.presentation_format|upper }}</span></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-state-icon" style="font-size: 2.5rem;">🎬</div>
+      <h3 class="empty-state-title">No Showtimes Today</h3>
+      <p class="empty-state-description">Get started by creating an engagement and scheduling showtimes for your films.</p>
+      <a href="{% url 'dashboard:engagements' %}" class="btn btn-primary">View Engagements</a>
+    </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

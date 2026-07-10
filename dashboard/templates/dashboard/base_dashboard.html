@@ -1,0 +1,41 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}LeprinceOS{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'dashboard/css/fonts.css' %}" />
+    <link rel="stylesheet" href="{% static 'dashboard/css/design-system.css' %}" />
+    <link rel="stylesheet" href="{% static 'dashboard/css/layout.css' %}" />
+    <link rel="stylesheet" href="{% static 'dashboard/css/sidebar.css' %}" />
+    <link rel="stylesheet" href="{% static 'dashboard/css/alertbanner.css' %}" />
+    <link rel="stylesheet" href="{% static 'dashboard/css/confirm.css' %}" />
+    <link rel="stylesheet" href="{% static 'dashboard/css/drawer.css' %}" />
+    <link rel="stylesheet" href="{% static 'dashboard/css/dashboard.css' %}" />
+    <style>[x-cloak]{display:none !important;}</style>
+    {% block head_extra %}{% endblock %}
+    <script defer src="{% static 'dashboard/js/dashboard.js' %}"></script>
+    <script defer src="{% static 'js/htmx.min.js' %}"></script>
+    <script defer src="{% static 'js/alpine.min.js' %}"></script>
+  </head>
+  <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+    <div class="layout" x-data="dashboardLayout">
+      {% include "dashboard/_mobile_header.html" %}
+      {% include "dashboard/_sidebar.html" %}
+      <main :class="isFullscreen ? 'mainFullscreen' : 'main'">
+        <div :class="isFullscreen ? 'containerFullscreen' : 'container'">
+          {% include "dashboard/_toast.html" %}
+          {% block content %}{% endblock %}
+        </div>
+        <div class="keyboardHint" x-show="!isFullscreen" title="Press Alt+N to create new engagement">
+          <kbd class="kbd">Alt+N</kbd>
+          <span class="hintText">New Engagement</span>
+        </div>
+      </main>
+      {% include "dashboard/_confirm.html" %}
+      {% include "dashboard/_drawer.html" %}
+    </div>
+    {% block body_extra %}{% endblock %}
+  </body>
+</html>

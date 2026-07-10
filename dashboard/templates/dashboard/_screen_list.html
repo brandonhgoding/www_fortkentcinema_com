@@ -1,0 +1,71 @@
+{% load static dashboard_extras %}
+<div id="screen-list">
+  {% if screens %}
+  <div class="tableWrapper">
+    <table class="table">
+      <thead>
+        <tr><th>Name</th><th>Capacity</th><th>Type</th><th>Aspect Ratio</th><th>Sound</th><th>3D</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for screen in screens %}
+        <tr>
+          <td class="screenName">{{ screen.name }}</td>
+          <td>{{ screen.capacity }} seats</td>
+          <td><span class="typeBadge type{{ screen.screen_type }}">{{ SCREEN_TYPE_LABELS|get_item:screen.screen_type }}</span></td>
+          <td>{{ ASPECT_RATIO_LABELS|get_item:screen.aspect_ratio }}</td>
+          <td>{{ SOUND_SYSTEM_LABELS|get_item:screen.sound_system }}</td>
+          <td>{% if screen.supports_3d %}<span class="badge3d">3D</span>{% else %}<span class="badgeNo">—</span>{% endif %}</td>
+          <td>
+            <div class="actions">
+              <button class="actionButton" hx-get="{% url 'dashboard:screen_edit' screen.pk %}"
+                      hx-target="#drawer-content" @click="$store.drawer.show('Edit Screen')">Edit</button>
+              <button class="actionButton deleteButton"
+                      hx-post="{% url 'dashboard:screen_delete' screen.pk %}"
+                      hx-target="#screen-list" hx-swap="outerHTML"
+                      data-dashboard-confirm='{"title":"Delete Screen","message":"Are you sure you want to delete \"{{ screen.name|escapejs }}\"? This may affect existing engagements and showtimes.","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="cardList">
+    {% for screen in screens %}
+    <div class="card">
+      <div class="cardHeader">
+        <div class="cardTitleRow">
+          <h3 class="cardTitle">{{ screen.name }}</h3>
+          <span class="typeBadge type{{ screen.screen_type }}">{{ SCREEN_TYPE_LABELS|get_item:screen.screen_type }}</span>
+        </div>
+        <div class="cardBadges">
+          <span class="cardCapacity">{{ screen.capacity }} seats</span>
+          {% if screen.supports_3d %}<span class="badge3d">3D</span>{% endif %}
+        </div>
+      </div>
+      <div class="cardBody">
+        <div class="cardDetail"><span class="cardLabel">Aspect Ratio</span><span class="cardValue">{{ ASPECT_RATIO_LABELS|get_item:screen.aspect_ratio }}</span></div>
+        <div class="cardDetail"><span class="cardLabel">Sound</span><span class="cardValue">{{ SOUND_SYSTEM_LABELS|get_item:screen.sound_system }}</span></div>
+      </div>
+      <div class="cardActions">
+        <button class="actionButton" hx-get="{% url 'dashboard:screen_edit' screen.pk %}"
+                hx-target="#drawer-content" @click="$store.drawer.show('Edit Screen')">Edit</button>
+        <button class="actionButton deleteButton"
+                hx-post="{% url 'dashboard:screen_delete' screen.pk %}"
+                hx-target="#screen-list" hx-swap="outerHTML"
+                data-dashboard-confirm='{"title":"Delete Screen","message":"Are you sure you want to delete \"{{ screen.name|escapejs }}\"? This may affect existing engagements and showtimes.","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon" style="font-size: 2.5rem;">🎭</div>
+    <h3 class="empty-state-title">No Screens Configured</h3>
+    <p class="empty-state-description">Define your cinema's auditoriums and screens to begin scheduling engagements and showtimes. Each screen can have unique technical specifications.</p>
+    <button class="btn btn-primary" hx-get="{% url 'dashboard:screen_create' %}"
+            hx-target="#drawer-content" @click="$store.drawer.show('New Screen')">Add First Screen</button>
+  </div>
+  {% endif %}
+</div>

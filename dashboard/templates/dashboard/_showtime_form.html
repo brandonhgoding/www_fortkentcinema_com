@@ -1,0 +1,34 @@
+<form id="showtime-form" class="form" hx-post="{{ form_action }}" hx-target="#drawer-content" hx-swap="innerHTML">
+  {% csrf_token %}
+  {% if errors %}<div class="field-error">{% for e in errors %}{{ e }}<br />{% endfor %}</div>{% endif %}
+  <div class="formRow">
+    <div class="formGroup">
+      <label for="st-date">Date</label>
+      <input id="st-date" type="date" name="date" class="input" required value="{{ date }}"
+             min="{{ engagement.start_date|date:'Y-m-d' }}" max="{{ engagement.end_date|date:'Y-m-d' }}" />
+    </div>
+    <div class="formGroup">
+      <label for="st-time">Time</label>
+      <input id="st-time" type="time" name="time" class="input" required value="{{ time }}" />
+    </div>
+  </div>
+  <div class="formRow">
+    <div class="formGroup">
+      <label for="st-captions">Captions</label>
+      <select id="st-captions" name="captions" class="input">
+        <option value="" {% if captions == '' %}selected{% endif %}>None</option>
+        <option value="CC" {% if captions == 'CC' %}selected{% endif %}>Closed Captions (CC)</option>
+        <option value="OC" {% if captions == 'OC' %}selected{% endif %}>Open Captions (OC)</option>
+      </select>
+    </div>
+    {% if mode == 'edit' %}
+    <div class="formGroup">
+      <label class="checkboxLabel"><input type="checkbox" name="is_cancelled" {% if is_cancelled %}checked{% endif %} /> Cancelled</label>
+    </div>
+    {% endif %}
+  </div>
+</form>
+<div id="drawer-footer" class="footer" hx-swap-oob="true">
+  <button type="button" class="cancelButton" @click="$store.drawer.close()">Cancel</button>
+  <button type="submit" form="showtime-form" class="submitButton">{{ submit_label }}</button>
+</div>

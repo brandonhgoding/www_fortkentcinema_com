@@ -1,0 +1,71 @@
+{% load dashboard_extras %}
+<div id="engagement-list" data-tab="{{ tab }}">
+  {% if engagements %}
+  <div class="tableWrapper">
+    <table class="table">
+      <thead><tr><th>Film</th><th>Screen</th><th>Dates</th><th>Format</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for e in engagements %}
+        <tr>
+          <td>
+            <div class="filmCell">
+              {% with p=e.primary_film %}{% if p and p.poster_url %}<img src="{{ p.poster_url }}" alt="" class="posterThumb" />{% endif %}{% endwith %}
+              <span class="filmTitle">{{ e.display_title }}</span>
+              {% if e.kind != 'REGULAR' %}<span class="kindBadge">{{ KIND_LABELS|get_item:e.kind }}</span>{% endif %}
+              {% if not e.show_in_main_listings %}<span class="hiddenBadge" title="Hidden from public listings">Hidden</span>{% endif %}
+            </div>
+          </td>
+          <td>{{ e.screen.name }}</td>
+          <td>{{ e.start_date|date:"M j, Y" }} - {{ e.end_date|date:"M j, Y" }}</td>
+          <td class="formatCell">{{ e.presentation_format|upper }}</td>
+          <td>{% include "dashboard/_status_dropdown.html" with engagement=e %}</td>
+          <td>
+            <div class="actions">
+              <a href="{% url 'dashboard:engagement_detail' e.pk %}" class="actionButton detailsButton">Details</a>
+              <button class="actionButton" hx-get="{% url 'dashboard:engagement_edit' e.pk %}" hx-target="#drawer-content" @click="$store.drawer.show('Edit Engagement')">Edit</button>
+              <button class="actionButton deleteButton" hx-post="{% url 'dashboard:engagement_delete' e.pk %}?tab={{ tab }}" hx-swap="none"
+                      data-dashboard-confirm='{"title":"Delete Engagement","message":"Are you sure you want to delete the engagement for \"{{ e.display_title|escapejs }}\"?","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="cardList">
+    {% for e in engagements %}
+    <div class="card">
+      <div class="cardHeader">
+        {% with p=e.primary_film %}{% if p and p.poster_url %}<img src="{{ p.poster_url }}" alt="" class="cardPoster" />{% endif %}{% endwith %}
+        <div class="cardTitleSection">
+          <h3 class="cardTitle">{{ e.display_title }}</h3>
+          {% if e.kind != 'REGULAR' %}<span class="kindBadge">{{ KIND_LABELS|get_item:e.kind }}</span>{% endif %}
+          {% if not e.show_in_main_listings %}<span class="hiddenBadge" title="Hidden from public listings">Hidden</span>{% endif %}
+          <div class="cardBadges">
+            {% include "dashboard/_status_dropdown.html" with engagement=e %}
+            <span class="formatBadge">{{ e.presentation_format|upper }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="cardBody">
+        <div class="cardDetail"><span class="cardLabel">Screen</span><span class="cardValue">{{ e.screen.name }}</span></div>
+        <div class="cardDetail"><span class="cardLabel">Dates</span><span class="cardValue">{{ e.start_date|date:"M j, Y" }} - {{ e.end_date|date:"M j, Y" }}</span></div>
+      </div>
+      <div class="cardActions">
+        <a href="{% url 'dashboard:engagement_detail' e.pk %}" class="actionButton detailsButton">Details</a>
+        <button class="actionButton" hx-get="{% url 'dashboard:engagement_edit' e.pk %}" hx-target="#drawer-content" @click="$store.drawer.show('Edit Engagement')">Edit</button>
+        <button class="actionButton deleteButton" hx-post="{% url 'dashboard:engagement_delete' e.pk %}?tab={{ tab }}" hx-target="#engagement-list" hx-swap="outerHTML"
+                data-dashboard-confirm='{"title":"Delete Engagement","message":"Are you sure you want to delete the engagement for \"{{ e.display_title|escapejs }}\"?","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon" style="font-size: 2.5rem;">🎬</div>
+    <h3 class="empty-state-title">No {{ tab|lower }} engagements</h3>
+    <p class="empty-state-description">Nothing here for this filter. Create an engagement or switch tabs.</p>
+  </div>
+  {% endif %}
+</div>

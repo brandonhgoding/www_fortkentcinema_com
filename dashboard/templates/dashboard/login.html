@@ -1,0 +1,32 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign in · LeprinceOS</title>
+    <link rel="stylesheet" href="{% static 'dashboard/css/fonts.css' %}" />
+    <link rel="stylesheet" href="{% static 'dashboard/css/design-system.css' %}" />
+    <link rel="stylesheet" href="{% static 'dashboard/css/login.css' %}" />
+  </head>
+  <body class="login-body">
+    <main class="login-shell">
+      <div class="login-card card">
+        <div class="login-brand">LeprinceOS</div>
+        <p class="login-subtitle">Cinema Management</p>
+        {% if form.errors %}
+          <div class="login-error">Invalid username or password.</div>
+        {% endif %}
+        <form method="post" action="{% url 'login' %}" class="login-form">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ next }}" />
+          <label class="login-label" for="id_username">Username</label>
+          {{ form.username }}
+          <label class="login-label" for="id_password">Password</label>
+          {{ form.password }}
+          <button type="submit" class="btn btn-primary login-submit">Sign In</button>
+        </form>
+      </div>
+    </main>
+  </body>
+</html>

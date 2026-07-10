@@ -1,0 +1,26 @@
+{% load dashboard_extras %}
+<div class="statusDropdown" x-data="statusDropdown">
+  <button type="button" class="status-badge status-{{ engagement.status|lower }} statusButton"
+          @click="open = !open"
+          {% if engagement.status == 'ENDED' or engagement.end_date < today %}disabled{% endif %}
+          aria-haspopup="listbox" :aria-expanded="open">
+    {{ engagement.get_status_display }}
+    {% if engagement.status != 'ENDED' and engagement.end_date >= today %}<span class="chevron" aria-hidden="true">▼</span>{% endif %}
+  </button>
+  {% if engagement.status != 'ENDED' and engagement.end_date >= today %}
+  <div class="dropdown" role="listbox" x-show="open" x-cloak @click.outside="open = false" @keydown.escape.window="open = false">
+    {% for value, label in status_options %}
+    <button type="button" role="option" class="dropdownItem {% if value == engagement.status %}currentItem{% endif %}"
+            {% if value == engagement.status %}disabled{% endif %}
+            hx-post="{% url 'dashboard:engagement_status' engagement.pk %}?tab={{ tab }}"
+            hx-vals='{"status": "{{ value }}"}' hx-swap="none" @click="open = false">
+      <div class="statusOption">
+        <span class="status-badge status-{{ value|lower }} optionBadge">{{ label }}</span>
+        {% if value == engagement.status %}<span class="checkmark" aria-label="Current status">✓</span>{% endif %}
+      </div>
+      <p class="statusDescription">{{ status_descriptions|get_item:value }}</p>
+    </button>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>

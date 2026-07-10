@@ -1,0 +1,61 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static dashboard_extras %}
+{% block title %}{{ engagement.display_title }} · LeprinceOS{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/engagement_detail.css' %}" />{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="header">
+    <div>
+      <a href="{% url 'dashboard:engagements' %}" class="backLink">&larr; Back to Engagements</a>
+      <h1 class="title">{{ engagement.display_title }}</h1>
+      <p class="subtitle">Engagement Details &amp; Showtimes</p>
+    </div>
+  </div>
+
+  <div class="cardsGrid">
+    <div class="card">
+      <h2 class="cardTitle">Film Details</h2>
+      <div class="cardContent">
+        {% if films.0.poster_url %}<img src="{{ films.0.poster_url }}" alt="{{ engagement.display_title }}" class="poster" />{% endif %}
+        <div class="filmInfo">
+          <h3 class="filmTitle">{{ engagement.display_title }}</h3>
+          <div class="filmList">
+            {% for film in films %}
+            <div class="filmRow">
+              {% if films|length > 1 %}<span class="filmOrder">{{ forloop.counter }}</span>{% endif %}
+              {% if film.poster_url and not forloop.first %}<img src="{{ film.poster_url }}" alt="" class="posterThumb" />{% endif %}
+              <div>
+                <div class="filmRowTitle">{{ film.title }}</div>
+                {% if film.runtime_minutes != None %}<div class="filmRowMeta">{{ film.runtime_minutes }} min</div>{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="cardTitle">Engagement Details</h2>
+      <div class="engagementInfo">
+        <div class="infoRow"><span class="label">Status:</span>
+          <span class="statusBadge {{ STATUS_BADGE_CLASSES|get_item:engagement.status }}">{{ engagement.status }}</span></div>
+        <div class="infoRow"><span class="label">Kind:</span><span>{{ KIND_LABELS|get_item:engagement.kind }}</span></div>
+        {% if engagement.event_title and engagement.event_title != engagement.display_title %}
+        <div class="infoRow"><span class="label">Event:</span><span>{{ engagement.event_title }}</span></div>{% endif %}
+        {% if not engagement.show_in_main_listings %}
+        <div class="infoRow"><span class="hiddenNote">Hidden from public listings</span></div>{% endif %}
+        <div class="infoRow"><span class="label">Screen:</span><span>{{ engagement.screen.name }}</span></div>
+        <div class="infoRow"><span class="label">Format:</span><span>{{ engagement.presentation_format|upper }}</span></div>
+        <div class="infoRow"><span class="label">Start Date:</span><span>{{ engagement.start_date|date:"M j, Y" }}</span></div>
+        <div class="infoRow"><span class="label">End Date:</span><span>{{ engagement.end_date|date:"M j, Y" }}</span></div>
+        {% if engagement.notes %}<div class="notes"><span class="label">Notes:</span><p>{{ engagement.notes }}</p></div>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <section class="showtimesSection">
+    {% include "dashboard/_showtime_section.html" %}
+  </section>
+</div>
+{% endblock %}
