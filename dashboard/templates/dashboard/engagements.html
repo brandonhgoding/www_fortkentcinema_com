@@ -2,7 +2,8 @@
 {% load static %}
 {% block title %}Engagements · LeprinceOS{% endblock %}
 {% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/engagements.css' %}" />
-<link rel="stylesheet" href="{% static 'dashboard/css/status_dropdown.css' %}" />{% endblock %}
+<link rel="stylesheet" href="{% static 'dashboard/css/status_dropdown.css' %}" />
+<link rel="stylesheet" href="{% static 'dashboard/css/film_search_combo.css' %}" />{% endblock %}
 {% block content %}
 <div class="page">
   <div class="header">
@@ -14,9 +15,10 @@
             hx-target="#drawer-content" @click="$store.drawer.show('New Engagement')">+ New Engagement</button>
   </div>
 
-  <div class="filter-tabs" role="tablist">
+  <div class="filter-tabs" role="tablist" x-data="{ tab: '{{ tab }}' }">
     {% for t in tabs %}
-    <button class="filter-tab {% if t == tab %}active{% endif %}" role="tab"
+    <button class="filter-tab" :class="{ active: tab === '{{ t }}' }" role="tab"
+            @click="tab = '{{ t }}'"
             hx-get="{% url 'dashboard:engagements' %}?tab={{ t }}"
             hx-target="#engagement-list" hx-swap="outerHTML"
             hx-push-url="true">{{ t|capfirst }}</button>

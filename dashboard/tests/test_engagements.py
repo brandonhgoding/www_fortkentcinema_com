@@ -58,6 +58,14 @@ class EngagementListTests(TestCase):
     def test_detail_stub_resolves(self) -> None:
         self.assertEqual(reverse("dashboard:engagement_detail", args=[1]), "/dashboard/engagements/1")
 
+    def test_combo_css_and_reactive_tabs_present(self) -> None:
+        html = self.client.get(reverse("dashboard:engagements")).content.decode()
+        # FilmSearchCombo dropdown CSS must be linked (else the picker is unstyled/off-screen)
+        self.assertIn("dashboard/css/film_search_combo.css", html)
+        # Filter tabs are client-reactive so the active pill follows HTMX tab selection
+        self.assertIn("x-data=\"{ tab:", html)
+        self.assertIn(":class=\"{ active: tab ===", html)
+
     def test_requires_staff(self) -> None:
         self.client.logout()
         self.assertEqual(self.client.get(reverse("dashboard:engagements")).status_code, 302)
