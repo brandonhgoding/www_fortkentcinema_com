@@ -135,8 +135,10 @@ class ComingSoonTests(TestCase):
         self._future([self.a], days=3)
         self._future([self.a], days=5)   # same film -> deduped
         self._future([self.a, self.b], days=6, kind="DOUBLE_FEATURE")  # distinct set -> kept
-        titles = sorted(m["title"] for m in get_coming_soon())
-        self.assertEqual(len(get_coming_soon()), 2)
+        out = get_coming_soon()
+        self.assertEqual(len(out), 2)
+        # the single-Alpha runs collapse to one; the double feature survives as its own set
+        self.assertEqual(sorted(m["title"] for m in out), ["Alpha", "Alpha + Beta"])
 
     def test_release_date_format(self) -> None:
         s = self.today + datetime.timedelta(days=3)

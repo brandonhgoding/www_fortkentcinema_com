@@ -88,7 +88,6 @@ def get_calendar_month(year, month):
 
     showtimes = (
         Showtime.objects.filter(is_cancelled=False, starts_at__gte=start, starts_at__lte=end)
-        .select_related("screen")
         .prefetch_related("engagement__engagement_films__film")
     )
 
