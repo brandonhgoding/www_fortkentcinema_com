@@ -55,6 +55,11 @@ class BuildSmartAlertsTests(TestCase):
         msgs = [a["message"] for a in build_smart_alerts(Engagement.objects.all(), 5, self.today)]
         self.assertIn("You have 2 draft engagements waiting to be confirmed", msgs)
 
+    def test_draft_count_singular(self) -> None:
+        make_eng(self.screen, self.film, end=datetime.date(2026, 7, 20), status="DRAFT")
+        msgs = [a["message"] for a in build_smart_alerts(Engagement.objects.all(), 5, self.today)]
+        self.assertIn("You have 1 draft engagement waiting to be confirmed", msgs)
+
     def test_clean_state_no_alerts(self) -> None:
         make_eng(self.screen, self.film, end=datetime.date(2026, 7, 20))  # confirmed, far end
         alerts = build_smart_alerts(Engagement.objects.all(), 5, self.today)
