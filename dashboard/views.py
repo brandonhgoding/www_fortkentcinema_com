@@ -22,10 +22,48 @@ from django.views.generic import TemplateView, View
 
 from .forms import EngagementForm, ScreenForm
 from .mixins import StaffRequiredMixin
+from .smart_alerts import build_smart_alerts
 
 
 class HomeView(StaffRequiredMixin, TemplateView):
     template_name = "dashboard/home.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        today = timezone.localdate()
+        tomorrow = today + datetime.timedelta(days=1)
+        day_after = today + datetime.timedelta(days=2)
+
+        def day_range(d1, d2):
+            start = timezone.make_aware(datetime.datetime.combine(d1, datetime.time.min))
+            end = timezone.make_aware(datetime.datetime.combine(d2, datetime.time.min))
+            return start, end
+
+        today_start, today_end = day_range(today, tomorrow)
+        tomo_start, tomo_end = day_range(tomorrow, day_after)
+
+        today_showtimes = (
+            Showtime.objects.filter(starts_at__gte=today_start, starts_at__lt=today_end)
+            .select_related("screen")
+            .prefetch_related("engagement__engagement_films__film")
+            .order_by("starts_at")
+        )
+        tomorrow_count = Showtime.objects.filter(
+            starts_at__gte=tomo_start, starts_at__lt=tomo_end).count()
+
+        engagements = list(
+            Engagement.objects.prefetch_related("engagement_films__film"))
+
+        user = self.request.user
+        ctx.update({
+            "active_engagements_count": sum(1 for e in engagements if e.status == "CONFIRMED"),
+            "screens_count": Screen.objects.count(),
+            "today_showtimes": today_showtimes,
+            "today_showtimes_count": today_showtimes.count(),
+            "alerts": build_smart_alerts(engagements, tomorrow_count, today),
+            "display_name": user.get_short_name() or user.get_username(),
+        })
+        return ctx
 
 
 SCREEN_TYPE_LABELS = {"standard": "Standard", "imax": "IMAX", "dolby_cinema": "Dolby Cinema"}
