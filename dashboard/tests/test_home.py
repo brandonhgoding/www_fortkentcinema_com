@@ -60,3 +60,43 @@ class HomeViewTests(TestCase):
         User.objects.create_user(username="p", password="pw12345", is_staff=False)
         self.client.login(username="p", password="pw12345")
         self.assertEqual(self.client.get(reverse("dashboard:home")).status_code, 403)
+
+
+class HomeRenderTests(TestCase):
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+        self.screen = Screen.objects.create(name="Screen 1", capacity=100)
+        self.film = Film.objects.create(title="Dune", runtime_minutes=155)
+
+    def _local(self, day, hh, mm=0):
+        return timezone.make_aware(datetime.datetime.combine(day, datetime.time(hh, mm)))
+
+    def test_cards_and_links(self) -> None:
+        html = self.client.get(reverse("dashboard:home")).content.decode()
+        self.assertIn("Active Engagements", html)
+        self.assertIn("Today's Showtimes", html)
+        self.assertIn("Screens", html)
+        self.assertIn(reverse("dashboard:engagements"), html)
+        self.assertIn(reverse("dashboard:screens"), html)
+        self.assertIn("summaryGrid", html)
+
+    def test_today_showtimes_table(self) -> None:
+        eng = make_eng(self.screen, self.film)
+        Showtime.objects.create(engagement=eng, starts_at=self._local(timezone.localdate(), 19, 30))
+        html = self.client.get(reverse("dashboard:home")).content.decode()
+        self.assertIn("Dune", html)
+        self.assertIn("Screen 1", html)
+        self.assertIn("Active", html)
+
+    def test_empty_state(self) -> None:
+        html = self.client.get(reverse("dashboard:home")).content.decode()
+        self.assertIn("No Showtimes Today", html)
+
+    def test_alerts_rendered(self) -> None:
+        # a confirmed engagement with no showtimes tomorrow -> no-showtimes-tomorrow warning
+        make_eng(self.screen, self.film)
+        html = self.client.get(reverse("dashboard:home")).content.decode()
+        self.assertIn("No showtimes scheduled for tomorrow", html)
+        self.assertIn("alertContainer", html)
+        self.assertIn("dismissButton", html)
