@@ -143,3 +143,34 @@ class ComingSoonTests(TestCase):
         self._future([self.a], days=3)
         expected = s.strftime("%B %-d")
         self.assertEqual(get_coming_soon()[0]["release_date"], expected)
+
+
+from web.services.cinema_data import get_calendar_month
+
+
+class CalendarMonthTests(TestCase):
+    def setUp(self) -> None:
+        self.screen = make_screen()
+        self.film = make_film("Dune", poster_url="http://p/d.jpg", youtube_id="yt1")
+        self.eng = make_engagement(self.screen, [self.film],
+                                   start=datetime.date(2026, 6, 1), end=datetime.date(2026, 6, 30))
+
+    def test_groups_by_local_day(self) -> None:
+        Showtime.objects.create(engagement=self.eng, starts_at=aware(2026, 6, 4, 13, 0))
+        Showtime.objects.create(engagement=self.eng, starts_at=aware(2026, 6, 4, 19, 0))  # same day, dedup by title
+        Showtime.objects.create(engagement=self.eng, starts_at=aware(2026, 6, 10, 19, 0))
+        data = get_calendar_month(2026, 5)  # month 5 == June (0-based)
+        self.assertEqual(sorted(data.keys()), [4, 10])
+        self.assertEqual(len(data[4]), 1)  # deduped per day by title
+        self.assertEqual(data[4][0]["title"], "Dune")
+        self.assertEqual(data[4][0]["poster"], "http://p/d.jpg")
+        self.assertEqual(data[4][0]["youtube_id"], "yt1")
+
+    def test_late_night_local_day(self) -> None:
+        # 23:00 local on the 15th stays on the 15th (not the 16th UTC)
+        Showtime.objects.create(engagement=self.eng, starts_at=aware(2026, 6, 15, 23, 0))
+        data = get_calendar_month(2026, 5)
+        self.assertIn(15, data)
+
+    def test_empty_month(self) -> None:
+        self.assertEqual(get_calendar_month(2026, 0), {})  # January, no showtimes

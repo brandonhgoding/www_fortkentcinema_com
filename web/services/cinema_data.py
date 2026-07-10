@@ -4,12 +4,13 @@ Reproduces the return shapes of the retired web/services/leprinceos.py (which
 fetched the leprinceos HTTP API) so web/views.py and the templates are
 unchanged. No request-time cache — reads the DB directly."""
 
+import calendar
 import datetime
 from zoneinfo import ZoneInfo
 
 from django.utils import timezone
 
-from cinema.models import Engagement
+from cinema.models import Engagement, Showtime
 
 CINEMA_TZ = ZoneInfo("America/New_York")
 
@@ -74,6 +75,40 @@ def get_now_showing():
             }
         )
     return movies
+
+
+def get_calendar_month(year, month):
+    """Non-cancelled showtimes whose local day falls in the month, grouped by
+    day-of-month (int), deduped per day by title. `month` is 0-based (0=Jan).
+    Returns {} for an empty month."""
+    cal_month = month + 1
+    last_day = calendar.monthrange(year, cal_month)[1]
+    start = timezone.make_aware(datetime.datetime(year, cal_month, 1, 0, 0, 0))
+    end = timezone.make_aware(datetime.datetime(year, cal_month, last_day, 23, 59, 59))
+
+    showtimes = (
+        Showtime.objects.filter(is_cancelled=False, starts_at__gte=start, starts_at__lte=end)
+        .select_related("screen")
+        .prefetch_related("engagement__engagement_films__film")
+    )
+
+    data = {}
+    for st in showtimes:
+        day = _local_date(st.starts_at).day
+        pf = st.engagement.primary_film
+        title = pf.title if pf else ""
+        movies = data.setdefault(day, [])
+        if any(m["title"] == title for m in movies):
+            continue
+        movies.append(
+            {
+                "id": str(st.id),
+                "title": title,
+                "poster": (pf.poster_url if pf else "") or "",
+                "youtube_id": (pf.youtube_id if pf else "") or "",
+            }
+        )
+    return data
 
 
 def get_coming_soon():
