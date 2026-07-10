@@ -23,10 +23,6 @@ DEBUG = config("DEBUG", default=False, cast=bool)
 ENABLE_CDN = config("ENABLE_CDN", default=False, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv())
 
-LEPRINCEOS_BASE_URL = config(
-    "LEPRINCEOS_BASE_URL", default="https://www.leprinceos.com/api/v1"
-)
-
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
