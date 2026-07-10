@@ -174,3 +174,44 @@ class CalendarMonthTests(TestCase):
 
     def test_empty_month(self) -> None:
         self.assertEqual(get_calendar_month(2026, 0), {})  # January, no showtimes
+
+
+from web.services.cinema_data import get_classic_movie_night
+
+
+class ClassicMovieNightTests(TestCase):
+    def setUp(self) -> None:
+        self.screen = make_screen()
+        self.today = timezone.localdate()
+        self.film = make_film("Casablanca", runtime_minutes=102, rating="PG",
+                              synopsis="classic-syn", poster_url="http://p/c.jpg", youtube_id="ytc")
+
+    def _classic(self):
+        return make_engagement(self.screen, [self.film],
+                               start=self.today, end=self.today + datetime.timedelta(days=14),
+                               kind="CLASSIC", event_title="Casablanca Night")
+
+    def test_future_screenings_split(self) -> None:
+        eng = self._classic()
+        d1 = self.today + datetime.timedelta(days=1)
+        d2 = self.today + datetime.timedelta(days=8)
+        Showtime.objects.create(engagement=eng, starts_at=aware(d2.year, d2.month, d2.day, 19, 0))
+        Showtime.objects.create(engagement=eng, starts_at=aware(d1.year, d1.month, d1.day, 19, 0))
+        out = get_classic_movie_night()
+        self.assertIsNotNone(out["next_screening"])
+        self.assertEqual(out["next_screening"]["date"], d1.isoformat())
+        self.assertEqual(out["next_screening"]["title"], "Casablanca Night")
+        self.assertEqual(out["next_screening"]["rating"], "PG")
+        self.assertEqual(out["next_screening"]["runtime"], "1h 42min")
+        self.assertEqual(out["next_screening"]["synopsis"], "classic-syn")
+        self.assertEqual(len(out["upcoming"]), 1)
+        self.assertEqual(out["upcoming"][0]["date"], d2.isoformat())
+
+    def test_past_showtimes_excluded(self) -> None:
+        eng = self._classic()
+        past = self.today - datetime.timedelta(days=1)
+        Showtime.objects.create(engagement=eng, starts_at=aware(past.year, past.month, past.day, 19, 0))
+        self.assertEqual(get_classic_movie_night(), {"next_screening": None, "upcoming": []})
+
+    def test_no_classics(self) -> None:
+        self.assertEqual(get_classic_movie_night(), {"next_screening": None, "upcoming": []})
