@@ -7,7 +7,7 @@ from django.views.generic import TemplateView
 
 from blog.models import BlogPost
 from web.constants import MEMBERSHIP, MEMBERSHIP_FAQ
-from web.services.leprinceos import (
+from web.services.cinema_data import (
     CINEMA_TZ,
     get_now_showing,
     get_coming_soon,
