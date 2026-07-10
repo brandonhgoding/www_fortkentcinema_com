@@ -74,3 +74,46 @@ def get_now_showing():
             }
         )
     return movies
+
+
+def get_coming_soon():
+    """Confirmed engagements starting tomorrow+, non-CLASSIC, deduped by film
+    set (a double feature is a distinct set)."""
+    today = timezone.localdate()
+    tomorrow = today + datetime.timedelta(days=1)
+
+    engagements = (
+        Engagement.objects.filter(status="CONFIRMED", start_date__gte=tomorrow)
+        .exclude(kind="CLASSIC")
+        .prefetch_related("engagement_films__film")
+        .order_by("start_date")
+    )
+
+    seen = set()
+    movies = []
+    for engagement in engagements:
+        films = engagement.ordered_films
+        ids = sorted(f.id for f in films)
+        key = ",".join(str(i) for i in ids) if ids else engagement.display_title
+        if key in seen:
+            continue
+        seen.add(key)
+
+        pf = engagement.primary_film
+        movies.append(
+            {
+                "id": str(engagement.id),
+                "title": engagement.display_title or (pf.title if pf else ""),
+                "start_date": engagement.start_date.isoformat(),
+                "release_date": engagement.start_date.strftime("%B %-d"),
+                "genre": "",
+                "poster": (pf.poster_url if pf else "") or "",
+                "films": [
+                    {"id": f.id, "title": f.title, "poster": f.poster_url} for f in films
+                ],
+                "description": (pf.synopsis if pf else "") or "",
+                "youtube_id": (pf.youtube_id if pf else "") or "",
+                "is_free_for_members": bool(engagement.is_free_for_members),
+            }
+        )
+    return movies

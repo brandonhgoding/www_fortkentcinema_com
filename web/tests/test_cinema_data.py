@@ -97,3 +97,49 @@ class NowShowingTests(TestCase):
         Showtime.objects.create(engagement=eng, starts_at=aware(self.today.year, self.today.month, self.today.day, 19, 0))
         out = get_now_showing()
         self.assertTrue(out[0]["is_free_for_members"])
+
+
+from web.services.cinema_data import get_coming_soon
+
+
+class ComingSoonTests(TestCase):
+    def setUp(self) -> None:
+        self.screen = make_screen()
+        self.today = timezone.localdate()
+        self.a = make_film("Alpha", runtime_minutes=90, synopsis="a-syn",
+                           poster_url="http://p/a.jpg", youtube_id="yta")
+        self.b = make_film("Beta", runtime_minutes=100, poster_url="http://p/b.jpg")
+
+    def _future(self, films, days=3, **kw):
+        s = self.today + datetime.timedelta(days=days)
+        return make_engagement(self.screen, films, start=s, end=s + datetime.timedelta(days=2), **kw)
+
+    def test_future_non_classic_returned(self) -> None:
+        self._future([self.a])
+        out = get_coming_soon()
+        self.assertEqual(len(out), 1)
+        m = out[0]
+        self.assertEqual(m["title"], "Alpha")
+        self.assertEqual(m["genre"], "")
+        self.assertEqual(m["poster"], "http://p/a.jpg")
+        self.assertEqual(m["description"], "a-syn")
+        self.assertEqual(m["youtube_id"], "yta")
+        self.assertEqual(m["films"], [{"id": self.a.id, "title": "Alpha", "poster": "http://p/a.jpg"}])
+        self.assertEqual(m["start_date"], (self.today + datetime.timedelta(days=3)).isoformat())
+
+    def test_classic_excluded(self) -> None:
+        self._future([self.a], kind="CLASSIC")
+        self.assertEqual(get_coming_soon(), [])
+
+    def test_dedup_by_film_set(self) -> None:
+        self._future([self.a], days=3)
+        self._future([self.a], days=5)   # same film -> deduped
+        self._future([self.a, self.b], days=6, kind="DOUBLE_FEATURE")  # distinct set -> kept
+        titles = sorted(m["title"] for m in get_coming_soon())
+        self.assertEqual(len(get_coming_soon()), 2)
+
+    def test_release_date_format(self) -> None:
+        s = self.today + datetime.timedelta(days=3)
+        self._future([self.a], days=3)
+        expected = s.strftime("%B %-d")
+        self.assertEqual(get_coming_soon()[0]["release_date"], expected)
