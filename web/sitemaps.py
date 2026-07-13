@@ -1,7 +1,7 @@
+from blog.models import BlogPost
+from cinema.models import Film
 from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
-
-from blog.models import BlogPost
 
 
 class StaticViewSitemap(Sitemap):
@@ -25,3 +25,17 @@ class BlogPostSitemap(Sitemap):
 
     def lastmod(self, obj):
         return obj.post_date
+
+
+class FilmSitemap(Sitemap):
+    changefreq = "weekly"
+    priority = 0.8
+
+    def items(self):
+        # Only films we've actually booked. A never-booked film has no showtimes
+        # and no run history — nothing but the TMDB blurb — so it has no page.
+        return (
+            Film.objects.filter(engagements__isnull=False)
+            .exclude(slug__isnull=True)
+            .distinct()
+        )
