@@ -1,5 +1,16 @@
 User-agent: *
 Allow: /
+
 Disallow: /admin/
 Disallow: /api/
+Disallow: /dashboard/
+Disallow: /login
+Disallow: /logout/
+
+# /calendar/ is deliberately NOT disallowed. It serves a bare HTML fragment that
+# cannot carry a <meta name="robots">, so it sends `X-Robots-Tag: noindex, nofollow`
+# instead — and a disallowed URL is never fetched, which means Google would never
+# see that header on any calendar URL it already holds. Disallow and noindex
+# defeat each other here; noindex is the one that removes content from the index.
+
 Sitemap: {{ request.scheme }}://{{ request.get_host }}/sitemap.xml

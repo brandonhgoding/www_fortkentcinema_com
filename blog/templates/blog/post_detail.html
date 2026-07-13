@@ -8,6 +8,48 @@
 {% block og_type %}article{% endblock %}
 {% block og_image %}{% if og_image_url %}{{ og_image_url }}{% else %}{{ block.super }}{% endif %}{% endblock %}
 
+{% block extra_head %}
+{% comment %}
+The page already declared og:type=article but emitted no structured data at all.
+
+No `dateModified`: BlogPost has no updated_at/modified field, so there is nothing
+honest to put there. Faking it with post_date would tell Google that an edited
+post was last modified the day it was published.
+{% endcomment %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "{{ post.title|escapejs }}",
+  "url": "{{ request.scheme }}://{{ request.get_host }}{{ post.get_absolute_url }}",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "{{ request.scheme }}://{{ request.get_host }}{{ post.get_absolute_url }}"
+  },
+  "datePublished": "{{ post.post_date|date:'Y-m-d' }}"
+  {% if post.subtitle %},
+  "description": "{{ post.subtitle|escapejs }}"
+  {% endif %}
+  {% if og_image_url %},
+  "image": "{{ og_image_url|escapejs }}"
+  {% endif %}
+  {% if post.author %},
+  "author": {
+    "@type": "Person",
+    "name": "{{ post.author.first_name|escapejs }} {{ post.author.last_name|escapejs }}"
+  }
+  {% endif %}
+  {% if post.category %},
+  "articleSection": "{{ post.category.name|escapejs }}"
+  {% endif %},
+  "publisher": {
+    "@type": "Organization",
+    "name": "{{ site_config.cinema.name|escapejs }}",
+    "url": "https://www.fortkentcinema.com"
+  }
+}
+</script>
+{% endblock %}
 
 {% block content %}
 <div class="blog-detail-page" x-data="{ copied: false }">

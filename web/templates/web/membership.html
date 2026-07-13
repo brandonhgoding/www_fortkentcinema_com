@@ -6,6 +6,30 @@
 {% block og_title %}Membership — Fort Kent Cinema{% endblock %}
 {% block og_description %}Become a Fort Kent Cinema member: popcorn discounts, member ticket rates, and supporting Maine's northernmost picture show.{% endblock %}
 
+{% block extra_head %}
+{% comment %}
+MEMBERSHIP_FAQ (web/constants.py) is already a literal Q&A list rendered further
+down this page. Marking it up costs nothing and is eligible for an FAQ rich
+result. The answers must match the visible page text — Google penalises FAQ
+markup that isn't on the page.
+{% endcomment %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {% for faq in faqs %}{
+      "@type": "Question",
+      "name": "{{ faq.question|escapejs }}",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "{{ faq.answer|escapejs }}"
+      }
+    }{% if not forloop.last %},{% endif %}{% endfor %}
+  ]
+}
+</script>
+{% endblock %}
 
 {% block content %}
   <div class="membership-page">
