@@ -186,3 +186,43 @@ class ComingSoonCalendarE2E(SeleniumTestCase):
         self.assertTrue(
             self.driver.find_elements(By.CSS_SELECTOR, ".coming-calendar")
         )
+
+
+class AnalyticsClickE2E(SeleniumTestCase):
+    """The tracked-click path end to end in a real browser: a click on a real
+    element must reach gtag with the right event name and params.
+
+    The vitest suite exercises analytics.js in isolation; this proves the module
+    actually loads on the page and the data-track attributes are wired to it.
+
+    gtag is stubbed to capture calls, because GA4_MEASUREMENT_ID is unset in
+    tests (so the real gtag never loads) — and because a test has no business
+    sending hits to production analytics.
+    """
+
+    def test_giftcard_click_reaches_gtag(self):
+        from selenium.webdriver.common.by import By
+
+        self.driver.get(self.live_server_url + "/")
+
+        # Stub gtag before clicking; analytics.js reads window.gtag at call time.
+        self.driver.execute_script(
+            "window.__events = [];"
+            "window.gtag = function () { window.__events.push([...arguments]); };"
+        )
+
+        link = self.wait().until(
+            lambda d: d.find_element(By.CSS_SELECTOR, '[data-track="giftcard_click"]')
+        )
+        # The link opens Square in a new tab (target=_blank), so this page stays
+        # put and we can read what was captured.
+        self.driver.execute_script(
+            "arguments[0].scrollIntoView({block: 'center', behavior: 'instant'});", link
+        )
+        link.click()
+
+        events = self.wait().until(
+            lambda d: d.execute_script("return window.__events;") or False
+        )
+        self.assertEqual(events[0][0], "event")
+        self.assertEqual(events[0][1], "giftcard_click")

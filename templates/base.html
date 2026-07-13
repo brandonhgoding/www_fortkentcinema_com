@@ -8,7 +8,7 @@
     <title>{% block title %}Fort Kent Cinema | Maine's Northernmost Picture Show{% endblock %}</title>
     <meta name="description" content="{% block description %}Fort Kent Cinema - Maine's Northernmost Picture Show. View current showtimes, upcoming movies, buy tickets, and join our Cinema Club membership program. Located at 13 Hall Street, Fort Kent, ME.{% endblock %}" />
     <meta name="author" content="Fort Kent Cinema" />
-    <meta name="robots" content="index, follow" />
+    <meta name="robots" content="{% block robots %}index, follow{% endblock %}" />
     <meta name="theme-color" content="#0a0a0e" />
     <link rel="canonical" href="{% block canonical %}{{ request.scheme }}://{{ request.get_host }}{{ request.path }}{% endblock %}" />
 
@@ -67,16 +67,24 @@
     }
     </script>
 
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-S2PR27SWGD"></script>
+    {% comment %}
+    Only renders when GA4_MEASUREMENT_ID is set, i.e. production. The ID used to
+    be hardcoded here, so every local `runserver` sent hits to production
+    analytics.
+    {% endcomment %}
+    {% if ga4_measurement_id %}
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga4_measurement_id }}"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-      gtag('config', 'G-S2PR27SWGD');
+      gtag('config', '{{ ga4_measurement_id }}');
     </script>
+    {% endif %}
 
     <script defer src="{% static 'js/alpine.min.js' %}"></script>
     <script defer src="{% static 'js/htmx.min.js' %}"></script>
+    <script type="module" src="{% static 'js/analytics.js' %}"></script>
 
     {% block extra_head %}{% endblock %}
   </head>

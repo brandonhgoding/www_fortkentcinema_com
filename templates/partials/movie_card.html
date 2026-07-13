@@ -3,6 +3,7 @@
   <div class="movie-poster movie-poster--playable"
        role="button"
        tabindex="0"
+       data-track="trailer_play" data-track-film="{{ movie.title }}"
        aria-label="Watch {{ movie.title }} trailer"
        @click="trailer = { title: '{{ movie.title|escapejs }}', youtube_id: '{{ movie.youtube_id|escapejs }}' }"
        @keydown.enter.prevent="trailer = { title: '{{ movie.title|escapejs }}', youtube_id: '{{ movie.youtube_id|escapejs }}' }"
