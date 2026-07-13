@@ -1,10 +1,18 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Blog | Fort Kent Cinema{% endblock %}
+{% block title %}Blog{% if page_obj.number > 1 %} — Page {{ page_obj.number }}{% endif %} | Fort Kent Cinema{% endblock %}
 {% block description %}News, reviews, and updates from Fort Kent Cinema. Stay up to date with the latest movie announcements, events, and community news.{% endblock %}
 {% block og_title %}Blog | Fort Kent Cinema{% endblock %}
 {% block og_description %}News, reviews, and updates from Fort Kent Cinema.{% endblock %}
+
+{% comment %}
+Paginated pages must canonical to themselves. Pointing ?page=2 at /blog/ tells
+Google to discard the page and every post link on it — which is how 71 posts
+ended up orphaned. Page 1 keeps the bare /blog/ canonical so we don't mint a
+?page=1 duplicate.
+{% endcomment %}
+{% block canonical %}{{ request.scheme }}://{{ request.get_host }}{{ request.path }}{% if page_obj.number > 1 %}?page={{ page_obj.number }}{% endif %}{% endblock %}
 
 {% block extra_css %}
   <link rel="stylesheet" href="{% static 'css/BlogListPage.css' %}" />
@@ -22,9 +30,10 @@
     <div class="blog-list-grid" data-spotlight>
       {% include "blog/_post_cards.html" %}
     </div>
-    <div class="blog-list-count" aria-live="polite" role="status" id="blog-count">
-      Showing {{ page_obj.end_index }} of {{ paginator.count }} posts
+    <div class="blog-list-count" role="status" id="blog-count">
+      Showing {{ page_obj.start_index }}&ndash;{{ page_obj.end_index }} of {{ paginator.count }} posts
     </div>
+    {% include "blog/_pagination.html" %}
   </div>
 </div>
 {% endblock %}

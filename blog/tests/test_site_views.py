@@ -9,10 +9,10 @@ class BlogListTests(TestCase):
     def setUpTestData(cls):
         author = BlogAuthor.objects.create(first_name="Ada", last_name="Lovelace")
         cat = BlogCategory.objects.create(name="News")
-        for i in range(8):  # > paginate_by (6)
+        for i in range(15):  # > paginate_by (12)
             BlogPost.objects.create(
                 title=f"Post {i}", subtitle=f"sub-{i}", author=author, category=cat,
-                post_date=f"2026-01-0{i+1}" if i < 9 else "2026-02-01",
+                post_date=f"2026-01-{i+1:02d}",
                 content=f"Body paragraph for post {i}.",
             )
 
@@ -27,20 +27,17 @@ class BlogListTests(TestCase):
         self.assertIn("Blog | Fort Kent Cinema", html)   # title/og:title
         self.assertIn('class="blog-list-grid"', html)
 
-    def test_paginates_six(self):
+    def test_paginates_twelve(self):
         resp = self.client.get(reverse("blog_list"))
-        self.assertEqual(len(resp.context["posts"]), 6)
+        self.assertEqual(len(resp.context["posts"]), 12)
         self.assertTrue(resp.context["page_obj"].has_next())
 
-    def test_htmx_returns_fragment_only(self):
-        resp = self.client.get(reverse("blog_list") + "?page=2", HTTP_HX_REQUEST="true")
-        self.assertTemplateUsed(resp, "blog/_post_cards.html")
-        self.assertTemplateNotUsed(resp, "base.html")     # fragment, not full page
-        html = resp.content.decode()
-        self.assertIn("blog-list-card-link", html)
-        # Literal template text isn't autoescaped by Django (only variable
-        # output is), so the apostrophe renders as-is rather than an entity.
-        self.assertIn("You've reached the end", html)  # page 2 is last (8 posts, 6/page)
+    def test_renders_a_crawlable_pagination_nav(self):
+        """Paging must be plain links. It was an HTMX `hx-trigger="revealed"`
+        sentinel, which hid 71 of 77 posts from Googlebot."""
+        html = self.client.get(reverse("blog_list")).content.decode()
+        self.assertIn('class="blog-pagination"', html)
+        self.assertIn('href="/blog/?page=2"', html)
 
 
 class BlogListSameDatePaginationTests(TestCase):
@@ -48,7 +45,7 @@ class BlogListSameDatePaginationTests(TestCase):
     day-granular post_date: without a unique tiebreaker (-id), the DB is
     free to return that tied group in a different relative order for the
     page-1 vs page-2 query, causing cards to be duplicated or skipped at
-    the 6-per-page boundary."""
+    the 12-per-page boundary."""
 
     @classmethod
     def setUpTestData(cls):
@@ -60,7 +57,7 @@ class BlogListSameDatePaginationTests(TestCase):
                 author=author, category=cat, post_date="2026-05-01",
                 content=f"Body paragraph for post {i}.",
             )
-            for i in range(7)  # > paginate_by (6), all sharing one post_date
+            for i in range(13)  # > paginate_by (12), all sharing one post_date
         ]
 
     def test_no_duplicates_or_skips_across_page_boundary(self):
@@ -70,7 +67,7 @@ class BlogListSameDatePaginationTests(TestCase):
         slugs_page1 = [p.slug for p in page1.context["page_obj"].object_list]
         slugs_page2 = [p.slug for p in page2.context["page_obj"].object_list]
 
-        self.assertEqual(len(slugs_page1), 6)
+        self.assertEqual(len(slugs_page1), 12)
         self.assertEqual(len(slugs_page2), 1)
 
         # No slug should appear on both pages.

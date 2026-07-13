@@ -93,10 +93,11 @@ class NavMenuE2E(SeleniumTestCase):
         self.assertIn("nav-links--open", links.get_attribute("class"))
 
 
-class BlogInfiniteScrollE2E(SeleniumTestCase):
-    """Blog listing's HTMX `hx-trigger="revealed"` infinite scroll. Seeds
-    more posts than the first page (6) so scrolling to the bottom must
-    reveal the "load more" sentinel and pull in another page.
+class BlogPaginationE2E(SeleniumTestCase):
+    """Blog listing's numbered pagination. This replaced an HTMX infinite
+    scroll, which hid every post past the first page from crawlers — see
+    blog/tests/test_indexability.py. Seeds more posts than one page so the
+    pagination nav must render and navigate.
     """
 
     def setUp(self):
@@ -106,7 +107,7 @@ class BlogInfiniteScrollE2E(SeleniumTestCase):
         super().setUp()
         author = BlogAuthor.objects.create(first_name="Jane", last_name="Doe")
         category = BlogCategory.objects.create(name="News")
-        for i in range(9):
+        for i in range(15):  # > paginate_by (12)
             BlogPost.objects.create(
                 title=f"Post {i}",
                 subtitle=f"Subtitle {i}",
@@ -116,7 +117,7 @@ class BlogInfiniteScrollE2E(SeleniumTestCase):
                 post_date=f"2026-01-{i + 1:02d}",
             )
 
-    def test_scrolling_to_bottom_loads_more_posts(self):
+    def test_next_link_navigates_to_page_two(self):
         from selenium.webdriver.common.by import By
 
         self.driver.get(self.live_server_url + "/blog/")
@@ -124,19 +125,23 @@ class BlogInfiniteScrollE2E(SeleniumTestCase):
         cards = self.wait().until(
             lambda d: d.find_elements(By.CSS_SELECTOR, ".blog-card") or False
         )
-        initial_count = len(cards)
-        self.assertEqual(initial_count, 6)  # PostListView.paginate_by
+        self.assertEqual(len(cards), 12)  # PostListView.paginate_by
 
+        next_link = self.driver.find_element(
+            By.CSS_SELECTOR, ".blog-pagination a[rel='next']"
+        )
+        # global.css sets `scroll-behavior: smooth`, so Selenium's own
+        # scroll-into-view is still animating when it hit-tests the click.
+        # `behavior: 'instant'` overrides it.
         self.driver.execute_script(
-            "window.scrollTo(0, document.body.scrollHeight);"
+            "arguments[0].scrollIntoView({block: 'center', behavior: 'instant'});",
+            next_link,
         )
+        next_link.click()
 
-        self.wait(15).until(
-            lambda d: len(d.find_elements(By.CSS_SELECTOR, ".blog-card"))
-            > initial_count
-        )
+        self.wait(15).until(lambda d: "page=2" in d.current_url)
         self.assertEqual(
-            len(self.driver.find_elements(By.CSS_SELECTOR, ".blog-card")), 9
+            len(self.driver.find_elements(By.CSS_SELECTOR, ".blog-card")), 3
         )
 
 

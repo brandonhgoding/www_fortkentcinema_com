@@ -20,11 +20,13 @@ SITE_CONFIG = {
     "navigation": [
         {"label": "Now Showing", "href": "#now-showing"},
         {"label": "Coming Soon", "href": "#coming-soon"},
-        {"label": "Classics", "href": "/classics"},
-        {"label": "Membership", "href": "/membership"},
-        {"label": "Rentals", "href": "/rentals"},
-        # {"label": "About", "href": "/about"},  # About page temporarily hidden
-        {"label": "Blog", "href": "/blog"},
+        # Trailing slashes are required — these routes are defined with them, and
+        # a bare /blog costs a 301 on every click and every crawl.
+        {"label": "Classics", "href": "/classics/"},
+        {"label": "Membership", "href": "/membership/"},
+        {"label": "Rentals", "href": "/rentals/"},
+        # {"label": "About", "href": "/about/"},  # About page temporarily hidden
+        {"label": "Blog", "href": "/blog/"},
     ],
 }
 
