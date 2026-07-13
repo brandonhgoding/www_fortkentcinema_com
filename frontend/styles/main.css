@@ -14,9 +14,8 @@
  *   4. components (reusable sections/cards)
  *   5. pages      (page-specific; must come last so a page can override a component)
  *
- * BlogPost.css is deliberately absent: it is dead (no template references it,
- * and no .blog-post-* class appears in any template). Adding it here would make
- * its rules start applying for the first time.
+ * Every stylesheet in static/css/ is imported here. If you add one, add it to
+ * this list — there are no per-page <link> tags any more.
  */
 
 /* 1. Variables — must be first. */
@@ -44,10 +43,7 @@
 @import '../../static/css/BlogCard.css';
 @import '../../static/css/TierCard.css';
 
-/* 5. Pages — last, so a page can override a component.
- * BlogListPage.css must follow Blog.css: both define .blog-pagination, and the
- * live one (the blog list's numbered nav) is BlogListPage's. Blog.css's version
- * is a dead SPA leftover. */
+/* 5. Pages — last, so a page can override a component. */
 @import '../../static/css/home.css';
 @import '../../static/css/AboutPage.css';
 @import '../../static/css/ClassicMoviePage.css';
