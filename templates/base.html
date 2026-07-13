@@ -10,7 +10,7 @@
     <meta name="author" content="Fort Kent Cinema" />
     <meta name="robots" content="index, follow" />
     <meta name="theme-color" content="#0a0a0e" />
-    <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}" />
+    <link rel="canonical" href="{% block canonical %}{{ request.scheme }}://{{ request.get_host }}{{ request.path }}{% endblock %}" />
 
     <meta property="og:type" content="{% block og_type %}website{% endblock %}" />
     <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}" />

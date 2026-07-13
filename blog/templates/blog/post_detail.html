@@ -10,6 +10,7 @@
 
 {% block extra_css %}
   <link rel="stylesheet" href="{% static 'css/BlogDetailPage.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/BlogCard.css' %}" />
 {% endblock %}
 
 {% block content %}
@@ -39,6 +40,20 @@
         {% for para in post.content|paragraphs %}<p>{{ para }}</p>{% endfor %}
       </div>
     </article>
+    {% if related_posts %}
+    <section class="blog-related" aria-labelledby="blog-related-title">
+      <h2 class="blog-related-title" id="blog-related-title">
+        {% if post.category %}MORE FROM {{ post.category.name|upper }}{% else %}MORE POSTS{% endif %}
+      </h2>
+      <div class="blog-related-grid">
+        {% for related in related_posts %}
+          <a href="{% url 'blog_detail' related.slug %}" class="blog-list-card-link">
+            {% include "partials/blog_card.html" with post=related %}
+          </a>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
     <footer class="blog-detail-footer"><a href="{% url 'blog_list' %}" class="blog-detail-footer-link">&larr; Back to all posts</a></footer>
   </div>
 </div>

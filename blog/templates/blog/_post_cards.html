@@ -1,20 +1,4 @@
 {% load static %}
 {% for post in posts %}
-  <a href="/blog/{{ post.slug }}" class="blog-list-card-link">{% include "partials/blog_card.html" %}</a>
+  <a href="{% url 'blog_detail' post.slug %}" class="blog-list-card-link">{% include "partials/blog_card.html" %}</a>
 {% endfor %}
-{% if page_obj.has_next %}
-  <div class="blog-list-load-more"
-       hx-get="{% url 'blog_list' %}?page={{ page_obj.next_page_number }}"
-       hx-trigger="revealed"
-       hx-swap="outerHTML"
-       role="status" aria-live="polite">
-    <div class="blog-list-loading-more"><p>Loading more posts...</p></div>
-  </div>
-{% else %}
-  <div class="blog-list-end"><p>You've reached the end</p></div>
-{% endif %}
-{% if is_htmx %}
-  <div id="blog-count" hx-swap-oob="true" class="blog-list-count" aria-live="polite" role="status">
-    Showing {{ page_obj.end_index }} of {{ paginator.count }} posts
-  </div>
-{% endif %}

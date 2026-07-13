@@ -1,0 +1,41 @@
+{% comment %}
+Numbered pagination. Every page is a plain <a href> on purpose: this is the only
+path a crawler has to posts beyond page one, and Googlebot runs no JavaScript on
+its first pass. Do not replace this with a JS-driven control.
+{% endcomment %}
+{% if page_obj.paginator.num_pages > 1 %}
+<nav class="blog-pagination" aria-label="Blog pagination">
+  {% if page_obj.has_previous %}
+    <a class="blog-pagination-step" rel="prev"
+       href="{% if page_obj.previous_page_number == 1 %}{% url 'blog_list' %}{% else %}{% url 'blog_list' %}?page={{ page_obj.previous_page_number }}{% endif %}">
+      &lsaquo; Prev
+    </a>
+  {% else %}
+    <span class="blog-pagination-step blog-pagination-step--disabled" aria-hidden="true">&lsaquo; Prev</span>
+  {% endif %}
+
+  <ul class="blog-pagination-pages">
+    {% for num in page_range %}
+      <li>
+        {% if num == ellipsis %}
+          <span class="blog-pagination-ellipsis" aria-hidden="true">{{ num }}</span>
+        {% elif num == page_obj.number %}
+          <span class="blog-pagination-page blog-pagination-page--current" aria-current="page">{{ num }}</span>
+        {% else %}
+          <a class="blog-pagination-page"
+             href="{% if num == 1 %}{% url 'blog_list' %}{% else %}{% url 'blog_list' %}?page={{ num }}{% endif %}">{{ num }}</a>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+
+  {% if page_obj.has_next %}
+    <a class="blog-pagination-step" rel="next"
+       href="{% url 'blog_list' %}?page={{ page_obj.next_page_number }}">
+      Next &rsaquo;
+    </a>
+  {% else %}
+    <span class="blog-pagination-step blog-pagination-step--disabled" aria-hidden="true">Next &rsaquo;</span>
+  {% endif %}
+</nav>
+{% endif %}
