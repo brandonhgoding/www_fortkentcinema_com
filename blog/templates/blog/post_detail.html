@@ -8,16 +8,12 @@
 {% block og_type %}article{% endblock %}
 {% block og_image %}{% if og_image_url %}{{ og_image_url }}{% else %}{{ block.super }}{% endif %}{% endblock %}
 
-{% block extra_css %}
-  <link rel="stylesheet" href="{% static 'css/BlogDetailPage.css' %}" />
-  <link rel="stylesheet" href="{% static 'css/BlogCard.css' %}" />
-{% endblock %}
 
 {% block content %}
 <div class="blog-detail-page" x-data="{ copied: false }">
   {% if post.header_image %}
   <div class="blog-detail-hero">
-    <img src="{{ post.header_image.url }}" alt="{{ post.title }}" class="blog-detail-hero-img" />
+    <img src="{{ post.header_image.url }}" alt="{{ post.title }}" class="blog-detail-hero-img" fetchpriority="high" />
     <div class="blog-detail-hero-overlay"></div>
   </div>
   {% endif %}

@@ -1,0 +1,58 @@
+/* CSS bundle entry.
+ *
+ * The site used to ship 15 separate render-blocking stylesheets. The bytes were
+ * never the problem (~25KB total) — the ROUND TRIPS were, especially over
+ * HTTP/1.1 with its ~6-connection limit. Lighthouse put the cost at ~1,680ms.
+ *
+ * Everything is concatenated here into one request, cached across every page:
+ * a second pageview downloads no CSS at all.
+ *
+ * ORDER MATTERS — it is the cascade. Keep these groups in sequence:
+ *   1. variables  (custom properties everything else depends on)
+ *   2. fonts      (@font-face, self-hosted)
+ *   3. base       (global, effects, chrome)
+ *   4. components (reusable sections/cards)
+ *   5. pages      (page-specific; must come last so a page can override a component)
+ *
+ * Every stylesheet in static/css/ is imported here. If you add one, add it to
+ * this list — there are no per-page <link> tags any more.
+ */
+
+/* 1. Variables — must be first. */
+@import '../../static/css/variables.css';
+
+/* 2. Fonts — self-hosted; see fonts.css for why. */
+@import '../../static/css/fonts.css';
+
+/* 3. Base + chrome. */
+@import '../../static/css/global.css';
+@import '../../static/css/effects.css';
+@import '../../static/css/Nav.css';
+@import '../../static/css/Footer.css';
+
+/* 4. Components. */
+@import '../../static/css/Hero.css';
+@import '../../static/css/ClassicMovieCTA.css';
+@import '../../static/css/NowShowing.css';
+@import '../../static/css/MovieCard.css';
+@import '../../static/css/MovieScheduleCard.css';
+@import '../../static/css/OpenMicCTA.css';
+@import '../../static/css/ComingSoon.css';
+@import '../../static/css/GiftCardCTA.css';
+@import '../../static/css/Blog.css';
+@import '../../static/css/BlogCard.css';
+@import '../../static/css/TierCard.css';
+
+/* 5. Pages — last, so a page can override a component. */
+@import '../../static/css/home.css';
+@import '../../static/css/AboutPage.css';
+@import '../../static/css/ClassicMoviePage.css';
+@import '../../static/css/MembershipPage.css';
+@import '../../static/css/MembershipHero.css';
+@import '../../static/css/MembershipBenefits.css';
+@import '../../static/css/MembershipTiers.css';
+@import '../../static/css/MembershipFAQ.css';
+@import '../../static/css/MoviePage.css';
+@import '../../static/css/PrivateRentalsPage.css';
+@import '../../static/css/BlogListPage.css';
+@import '../../static/css/BlogDetailPage.css';

@@ -19,6 +19,7 @@
       src="{{ movie.poster }}"
       alt="{{ movie.title }} poster"
       class="movie-poster-img"
+      {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy" decoding="async"{% endif %}
       onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
     />
     {% endif %}

@@ -65,7 +65,7 @@ so (per the brief) calendar posters render as non-interactive images with a
         {% for movie in cell.movies %}
         <div class="coming-calendar-cell__poster" title="{{ movie.title }}">
           {% if movie.poster %}
-          <img src="{{ movie.poster }}" alt="{{ movie.title }}" class="coming-calendar-cell__img" />
+          <img src="{{ movie.poster }}" alt="{{ movie.title }}" loading="lazy" decoding="async" class="coming-calendar-cell__img" />
           {% else %}
           <div class="coming-calendar-cell__placeholder">&#127916;</div>
           {% endif %}

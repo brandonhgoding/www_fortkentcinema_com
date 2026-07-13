@@ -37,11 +37,41 @@
     <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}" />
     <link rel="apple-touch-icon" href="{% static 'img/favicon.svg' %}" />
 
-    <link rel="stylesheet" href="{% static 'css/global.css' %}" />
-    <link rel="stylesheet" href="{% static 'css/effects.css' %}" />
-    <link rel="stylesheet" href="{% static 'css/Nav.css' %}" />
-    <link rel="stylesheet" href="{% static 'css/Footer.css' %}" />
-    {% block extra_css %}{% endblock %}
+    {% comment %}
+    Posters are served from these hosts. Warming the connection early saves the
+    DNS + TCP + TLS round trip when the browser reaches the first <img>.
+    {% endcomment %}
+    <link rel="preconnect" href="https://image.tmdb.org" crossorigin />
+    <link rel="preconnect" href="https://m.media-amazon.com" crossorigin />
+
+    {% comment %}
+    The three latin faces used above the fold. Without these the browser can't
+    discover a font until it has parsed the CSS, so it paints in the fallback and
+    then swaps — and that reflow is a layout shift (it moved the fixed curtain
+    overlays: CLS 0.027 under mobile emulation). Preloading gets them in flight
+    alongside the stylesheet, so text paints once, in the right font.
+
+    `crossorigin` is required on font preloads even same-origin; without it the
+    browser fetches the file twice.
+    {% endcomment %}
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+          href="{% static 'fonts/poiret-one-latin.woff2' %}" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+          href="{% static 'fonts/playfair-display-latin.woff2' %}" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+          href="{% static 'fonts/cormorant-garamond-latin.woff2' %}" />
+
+    {% comment %}
+    ONE stylesheet. This used to be 15 separate render-blocking links, and
+    global.css began with two @imports (Google Fonts, then variables.css) — a
+    4-level-deep chain into two third-party hosts that cost 911ms on its own.
+    The bytes were never the problem; the round trips were.
+
+    bundle.css is built by `npm run build` (frontend/styles/main.css defines the
+    cascade order). Fonts are self-hosted. Do not add per-page stylesheets here —
+    add the import to frontend/styles/main.css instead.
+    {% endcomment %}
+    <link rel="stylesheet" href="{% static 'css/bundle.css' %}" />
 
     <script type="application/ld+json">
     {

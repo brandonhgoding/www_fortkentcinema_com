@@ -69,70 +69,8 @@
   color: var(--color-neon-red);
 }
 
-/* Pagination */
-.blog-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-lg);
-}
-
-.pagination-arrow {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  background: transparent;
-  border: 2px solid var(--color-gold-warm);
-  border-radius: 50%;
-  color: var(--color-gold);
-  font-size: 1.75rem;
-  cursor: pointer;
-  transition: all var(--transition-base);
-}
-
-.pagination-arrow:hover:not(:disabled) {
-  background: var(--color-gold);
-  color: var(--color-bg-dark);
-  border-color: var(--color-gold);
-  box-shadow: 0 0 15px var(--color-gold-glow);
-}
-
-.pagination-arrow:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.pagination-arrow:focus-visible {
-  outline: 3px solid var(--color-gold);
-  outline-offset: 2px;
-}
-
-.pagination-info {
-  font-family: var(--font-display);
-  font-size: 1.25rem;
-  letter-spacing: 2px;
-  color: var(--color-cream);
-  min-width: 140px;
-  text-align: center;
-}
-
 @media (max-width: 768px) {
   .blog-grid {
     grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 600px) {
-  .pagination-info {
-    font-size: 1rem;
-    min-width: 120px;
-  }
-
-  .pagination-arrow {
-    width: 44px;
-    height: 44px;
-    font-size: 1.5rem;
   }
 }

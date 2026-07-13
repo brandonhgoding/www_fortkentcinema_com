@@ -56,7 +56,7 @@
           <div class="coming-poster-multi">
             {% for f in movie.films %}
             {% if f.poster %}
-            <img src="{{ f.poster }}" alt="{{ f.title }} poster" class="coming-poster-img coming-poster-img--multi" />
+            <img src="{{ f.poster }}" alt="{{ f.title }} poster" class="coming-poster-img coming-poster-img--multi" loading="lazy" decoding="async" />
             {% else %}
             <div class="coming-poster-placeholder coming-poster-placeholder--multi">
               <span class="coming-poster-icon" role="img" aria-label="Movie poster placeholder">&#127916;</span>
@@ -65,7 +65,7 @@
             {% endfor %}
           </div>
           {% elif movie.poster %}
-          <img src="{{ movie.poster }}" alt="{{ movie.title }} poster" class="coming-poster-img" />
+          <img src="{{ movie.poster }}" alt="{{ movie.title }} poster" class="coming-poster-img" loading="lazy" decoding="async" />
           {% else %}
           <div class="coming-poster-placeholder">
             <span class="coming-poster-icon" role="img" aria-label="Movie poster placeholder">&#127916;</span>

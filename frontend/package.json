@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "vite build",
+    "build": "npm run build:js && npm run build:css",
+    "build:js": "vite build",
+    "build:css": "esbuild styles/main.css --bundle --minify --external:*.woff2 --outfile=../static/css/bundle.css",
     "test": "vitest run"
   },
   "dependencies": {
@@ -14,6 +16,7 @@
   "devDependencies": {
     "vite": "^7.2.4",
     "vitest": "^2.1.9",
-    "jsdom": "^25.0.1"
+    "jsdom": "^25.0.1",
+    "esbuild": "^0.28.1"
   }
 }

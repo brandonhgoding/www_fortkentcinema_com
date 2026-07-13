@@ -14,10 +14,6 @@ ended up orphaned. Page 1 keeps the bare /blog/ canonical so we don't mint a
 {% endcomment %}
 {% block canonical %}{{ request.scheme }}://{{ request.get_host }}{{ request.path }}{% if page_obj.number > 1 %}?page={{ page_obj.number }}{% endif %}{% endblock %}
 
-{% block extra_css %}
-  <link rel="stylesheet" href="{% static 'css/BlogListPage.css' %}" />
-  <link rel="stylesheet" href="{% static 'css/BlogCard.css' %}" />
-{% endblock %}
 
 {% block content %}
 <div class="blog-list-page">
