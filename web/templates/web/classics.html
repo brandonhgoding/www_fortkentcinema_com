@@ -1,10 +1,16 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Classic Movie Night — Fort Kent Cinema{% endblock %}
-{% block description %}Classic Movie Night at Fort Kent Cinema — curated classic films on the big screen. Just $5 admission, free for members.{% endblock %}
-{% block og_title %}Classic Movie Night — Fort Kent Cinema{% endblock %}
-{% block og_description %}Classic Movie Night at Fort Kent Cinema — curated classic films on the big screen. Just $5 admission, free for members.{% endblock %}
+{% comment %}
+Name the film that's actually scheduled — the page renders it, but the title used
+to be static, so "<classic film> fort kent" had nothing to match. Falls back to
+the generic title when nothing is on the schedule.
+{% endcomment %}
+{% block title %}{% if classics.next_screening %}{{ classics.next_screening.title }} — Classic Movie Night | Fort Kent Cinema{% else %}Classic Movie Night — Fort Kent Cinema{% endif %}{% endblock %}
+{% block description %}{% if classics.next_screening %}{{ classics.next_screening.title }} screens {{ classics.next_screening.display_date }} at Fort Kent Cinema. Classic Movie Night — $5 admission, free for members.{% else %}Classic Movie Night at Fort Kent Cinema — curated classic films on the big screen. Just $5 admission, free for members.{% endif %}{% endblock %}
+{% block og_title %}{% if classics.next_screening %}{{ classics.next_screening.title }} — Classic Movie Night{% else %}Classic Movie Night — Fort Kent Cinema{% endif %}{% endblock %}
+{% block og_description %}{% if classics.next_screening %}{{ classics.next_screening.title }} screens {{ classics.next_screening.display_date }} at Fort Kent Cinema. $5 admission, free for members.{% else %}Classic Movie Night at Fort Kent Cinema — curated classic films on the big screen. Just $5 admission, free for members.{% endif %}{% endblock %}
+{% block og_image %}{% if classics.next_screening.poster %}{{ classics.next_screening.poster }}{% else %}{{ block.super }}{% endif %}{% endblock %}
 
 
 {% block content %}

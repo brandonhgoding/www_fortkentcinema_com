@@ -3,6 +3,7 @@ import datetime
 import json
 
 from django.http import Http404
+from django.utils import timezone
 from django.views.generic import DetailView, TemplateView
 
 from blog.models import BlogPost
@@ -110,18 +111,37 @@ def _initial_calendar_month(coming_soon):
 
 class CalendarMonthView(TemplateView):
     """HTMX fragment: the ComingSoon calendar for a single month, with prev/next
-    month navigation. `month` is 0-based (matches get_calendar_month / api.js)."""
+    month navigation. `month` is 0-based (matches get_calendar_month / api.js).
+
+    This is a bare fragment — no <html>, no <head> — so a <meta name="robots">
+    is impossible; the X-Robots-Tag header below is the only way to keep it out
+    of the index. `nofollow` is the part that matters: the fragment carries
+    prev/next links, and the year range used to be MINYEAR..MAXYEAR, so a crawler
+    could walk roughly 120,000 URLs of thin content. CALENDAR_YEAR_RANGE bounds it
+    for real, because the trap shouldn't depend on a crawler honouring a header.
+    """
 
     template_name = "partials/calendar_month.html"
+
+    # Nobody browses a cinema calendar three years out. Anything further is a
+    # crawler, not a customer.
+    CALENDAR_YEAR_RANGE = 2
+
+    def render_to_response(self, context, **response_kwargs):
+        response = super().render_to_response(context, **response_kwargs)
+        response["X-Robots-Tag"] = "noindex, nofollow"
+        return response
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         year = int(kwargs["year"])
         month = int(kwargs["month"])  # 0-based
 
-        if not (0 <= month <= 11) or not (
-            datetime.MINYEAR <= year <= datetime.MAXYEAR
-        ):
+        this_year = timezone.localdate().year
+        earliest = this_year - self.CALENDAR_YEAR_RANGE
+        latest = this_year + self.CALENDAR_YEAR_RANGE
+
+        if not (0 <= month <= 11) or not (earliest <= year <= latest):
             raise Http404("Invalid calendar month")
 
         cal_month = month + 1  # 1-based for date/calendar math

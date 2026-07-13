@@ -140,9 +140,20 @@ class ComingSoonTests(TestCase):
 
 
 class CalendarTests(TestCase):
+    """These used to use year 2999. The view now bounds the year to +/-2 of today
+    (see CalendarMonthView.CALENDAR_YEAR_RANGE) because the old MINYEAR..MAXYEAR
+    range let a crawler walk ~120,000 URLs via the fragment's prev/next links.
+    A far-future year is now a 404 — correctly — so these use the current year."""
+
+    @property
+    def year(self):
+        from django.utils import timezone
+
+        return timezone.localdate().year
+
     @mock.patch("web.views.get_calendar_month", return_value={})
     def test_calendar_fragment_200(self, _m):
-        resp = self.client.get(reverse("calendar_month", args=[2999, 4]))
+        resp = self.client.get(reverse("calendar_month", args=[self.year, 4]))
         self.assertEqual(resp.status_code, 200)
         self.assertTemplateUsed(resp, "partials/calendar_month.html")
         self.assertIn("coming-calendar", resp.content.decode())
@@ -151,23 +162,25 @@ class CalendarTests(TestCase):
     def test_calendar_fragment_renders_movies_and_nav(self, m):
         m.return_value = {4: [{"id": "300", "title": "Wicked",
                                "poster": "w.jpg", "youtube_id": "y"}]}
-        html = self.client.get(reverse("calendar_month", args=[2999, 4])).content.decode()
-        self.assertIn("MAY 2999", html)                       # month_label
+        y = self.year
+        html = self.client.get(reverse("calendar_month", args=[y, 4])).content.decode()
+        self.assertIn(f"MAY {y}", html)                        # month_label
         self.assertIn("Wicked", html)                          # a day's movie
         self.assertIn("coming-calendar-cell--has-movie", html)
         # Next-month nav wraps 0-based month 4 -> 5 (June), same year.
-        self.assertIn(reverse("calendar_month", args=[2999, 5]), html)
+        self.assertIn(reverse("calendar_month", args=[y, 5]), html)
         # Prev-month nav 4 -> 3 (April), same year.
-        self.assertIn(reverse("calendar_month", args=[2999, 3]), html)
+        self.assertIn(reverse("calendar_month", args=[y, 3]), html)
 
     @mock.patch("web.views.get_calendar_month", return_value={})
     def test_calendar_prev_next_wraps_year(self, _m):
+        y = self.year
         # January (0-based month 0) prev is December of the previous year.
-        html = self.client.get(reverse("calendar_month", args=[2999, 0])).content.decode()
-        self.assertIn(reverse("calendar_month", args=[2998, 11]), html)
+        html = self.client.get(reverse("calendar_month", args=[y, 0])).content.decode()
+        self.assertIn(reverse("calendar_month", args=[y - 1, 11]), html)
         # December (month 11) next is January of the next year.
-        html2 = self.client.get(reverse("calendar_month", args=[2999, 11])).content.decode()
-        self.assertIn(reverse("calendar_month", args=[3000, 0]), html2)
+        html2 = self.client.get(reverse("calendar_month", args=[y, 11])).content.decode()
+        self.assertIn(reverse("calendar_month", args=[y + 1, 0]), html2)
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_now_showing", return_value=[])
