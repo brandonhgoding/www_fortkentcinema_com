@@ -103,7 +103,9 @@
                       />
                     {% endif %}
                     <div class="classic-movie-page__featured-info">
-                      <h3 class="classic-movie-page__featured-title">{{ movie.title }}</h3>
+                      <h3 class="classic-movie-page__featured-title">
+                        {% if movie.slug %}<a href="{% url 'movie_detail' movie.slug %}" class="movie-title-link">{{ movie.title }}</a>{% else %}{{ movie.title }}{% endif %}
+                      </h3>
                       <p class="classic-movie-page__featured-meta">
                         {{ movie.rating }}{% if movie.rating and movie.runtime %} &middot; {% endif %}{{ movie.runtime }}
                       </p>
@@ -161,7 +163,9 @@
               {% comment %} Expanded detail area below the grid — one block per movie, toggled via Alpine {% endcomment %}
               {% for movie in classics.upcoming %}
                 <div class="classic-movie-page__card-expanded" x-show="expanded === '{{ movie.id|escapejs }}-{{ movie.date|escapejs }}'">
-                  <h3 class="classic-movie-page__card-expanded-title">{{ movie.title }}</h3>
+                  <h3 class="classic-movie-page__card-expanded-title">
+                    {% if movie.slug %}<a href="{% url 'movie_detail' movie.slug %}" class="movie-title-link">{{ movie.title }}</a>{% else %}{{ movie.title }}{% endif %}
+                  </h3>
                   <p class="classic-movie-page__card-expanded-meta">
                     {{ movie.rating }}{% if movie.rating and movie.runtime %} &middot; {% endif %}{{ movie.runtime }}
                   </p>

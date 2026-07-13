@@ -82,7 +82,9 @@
         </div>
         <div class="coming-movie-info">
           <p class="coming-movie-date">{{ movie.release_date|upper }}</p>
-          <h3 class="coming-movie-title">{{ movie.title }}</h3>
+          <h3 class="coming-movie-title">
+            {% if movie.slug %}<a href="{% url 'movie_detail' movie.slug %}" class="movie-title-link">{{ movie.title }}</a>{% else %}{{ movie.title }}{% endif %}
+          </h3>
           <p class="coming-movie-genre">{{ movie.genre }}</p>
         </div>
       </article>

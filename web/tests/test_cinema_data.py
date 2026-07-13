@@ -124,7 +124,11 @@ class ComingSoonTests(TestCase):
         self.assertEqual(m["poster"], "http://p/a.jpg")
         self.assertEqual(m["description"], "a-syn")
         self.assertEqual(m["youtube_id"], "yta")
-        self.assertEqual(m["films"], [{"id": self.a.id, "title": "Alpha", "poster": "http://p/a.jpg"}])
+        # `slug` carries the link target for the /movies/<slug> page.
+        self.assertEqual(
+            m["films"],
+            [{"id": self.a.id, "title": "Alpha", "slug": self.a.slug, "poster": "http://p/a.jpg"}],
+        )
         self.assertEqual(m["start_date"], (self.today + datetime.timedelta(days=3)).isoformat())
 
     def test_classic_excluded(self) -> None:

@@ -48,9 +48,13 @@ class ShowtimeAdmin(admin.ModelAdmin):
 
 @admin.register(Film)
 class FilmAdmin(admin.ModelAdmin):
-    list_display = ("title", "rating", "runtime_minutes", "created_at")
-    search_fields = ("title", "tmdb_id", "imdb_id")
+    list_display = ("title", "rating", "runtime_minutes", "review", "created_at")
+    search_fields = ("title", "tmdb_id", "imdb_id", "slug")
     list_filter = ("rating",)
+    prepopulated_fields = {"slug": ("title",)}
+    # Link a film to our own review of it. `manage.py link_film_reviews` handles
+    # the obvious "A Review of <Film>" matches; this is for the rest.
+    autocomplete_fields = ("review",)
 
 
 @admin.register(Screen)

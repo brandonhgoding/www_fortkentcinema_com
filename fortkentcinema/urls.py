@@ -14,9 +14,13 @@ from django.urls import include, path
 from django.views.generic import TemplateView
 
 from web.redirects import legacy_urlpatterns
-from web.sitemaps import BlogPostSitemap, StaticViewSitemap
+from web.sitemaps import BlogPostSitemap, FilmSitemap, StaticViewSitemap
 
-sitemaps = {"static": StaticViewSitemap, "posts": BlogPostSitemap}
+sitemaps = {
+    "static": StaticViewSitemap,
+    "posts": BlogPostSitemap,
+    "films": FilmSitemap,
+}
 
 urlpatterns = [
     path("admin/", admin.site.urls),
