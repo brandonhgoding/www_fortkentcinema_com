@@ -23,6 +23,13 @@ DEBUG = config("DEBUG", default=False, cast=bool)
 ENABLE_CDN = config("ENABLE_CDN", default=False, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv())
 
+# Analytics. Empty by default *on purpose*: the gtag snippet only renders when
+# this is set, so local dev, tests and staging send nothing. It was hardcoded in
+# base.html, which meant every `runserver` polluted production analytics — not
+# something we can live with now that we make decisions on this data.
+# Production sets GA4_MEASUREMENT_ID=G-S2PR27SWGD in .env.
+GA4_MEASUREMENT_ID = config("GA4_MEASUREMENT_ID", default="")
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",

@@ -55,9 +55,11 @@ class BaseChromeTests(TestCase):
         self.assertIn('"@type": "MovieTheater"', html)
         self.assertIn("13 Hall Street", html)
 
-    def test_google_analytics_present(self):
+    def test_google_analytics_absent_without_measurement_id(self):
+        """The ID moved to GA4_MEASUREMENT_ID; it is unset outside production so
+        dev and test traffic stay out of the analytics. See test_analytics.py."""
         html = self.client.get(reverse("home")).content.decode()
-        self.assertIn("G-S2PR27SWGD", html)
+        self.assertNotIn("googletagmanager.com", html)
 
     def test_chrome_elements_present(self):
         html = self.client.get(reverse("home")).content.decode()

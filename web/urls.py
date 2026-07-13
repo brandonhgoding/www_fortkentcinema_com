@@ -8,6 +8,7 @@ from .views import (
     MembershipView,
     MovieDetailView,
     RentalsView,
+    ThanksView,
 )
 
 urlpatterns = [
@@ -16,6 +17,9 @@ urlpatterns = [
     path("rentals/", RentalsView.as_view(), name="rentals"),
     # path("about/", AboutView.as_view(), name="about"),  # About page temporarily hidden — re-enable this + the AboutView import to restore /about
     path("classics/", ClassicsView.as_view(), name="classics"),
+    # Square redirects here after a successful payment. noindex, unlinked,
+    # and deliberately absent from the sitemap.
+    path("thanks", ThanksView.as_view(), name="thanks"),
     # No trailing slash, matching /blog/<slug>: detail pages are slugless-suffix,
     # section pages (/classics/, /membership/) keep theirs.
     path("movies/<slug:slug>", MovieDetailView.as_view(), name="movie_detail"),

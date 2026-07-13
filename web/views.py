@@ -187,6 +187,36 @@ class ClassicsView(TemplateView):
         return ctx
 
 
+class ThanksView(TemplateView):
+    """/thanks?tier=<slug> — where Square redirects after a payment succeeds.
+
+    This is the only place a `purchase` event with real money is fired. An
+    outbound click on "Join" is intent, not revenue: someone who clicks through
+    and then abandons the Square checkout has not paid us, and attaching a value
+    to that click would make GA4 report sales that never happened.
+
+    The value is looked up server-side from MEMBERSHIP by slug and is never read
+    from the query string, so it can't be forged by editing the URL.
+
+    An unknown or missing tier (gift cards, whose amount is variable, redirect
+    here without one) renders a generic thank-you and fires nothing at all —
+    better than a garbage event.
+
+    Known limitation: this trusts the redirect. Someone visiting /thanks?tier=x
+    directly would fire a purchase event. Verifying properly means a Square
+    webhook and server-side payment validation, which is more machinery than a
+    two-screen cinema needs. The page is noindex and linked from nowhere.
+    """
+
+    template_name = "web/thanks.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        slug = self.request.GET.get("tier", "")
+        ctx["tier"] = next((t for t in MEMBERSHIP if t["slug"] == slug), None)
+        return ctx
+
+
 class MovieDetailView(DetailView):
     """/movies/<slug>.
 
