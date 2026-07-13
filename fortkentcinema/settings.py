@@ -144,6 +144,11 @@ STORAGES = {
     },
 }
 
+# Static assets are content-hashed by CompressedManifestStaticFilesStorage, so a
+# changed file gets a new URL and can never be served stale. That makes them safe
+# to cache indefinitely — including the self-hosted fonts. Was 30 days by default.
+WHITENOISE_MAX_AGE = 31536000  # 1 year
+
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 

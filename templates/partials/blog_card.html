@@ -9,6 +9,7 @@
   <div class="blog-card-image">
     {% if post.header_image %}
     <img
+      loading="lazy" decoding="async"
       src="{{ post.header_image.url }}"
       alt="{{ post.title }}"
       class="blog-card-img"

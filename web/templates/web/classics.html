@@ -6,9 +6,6 @@
 {% block og_title %}Classic Movie Night — Fort Kent Cinema{% endblock %}
 {% block og_description %}Classic Movie Night at Fort Kent Cinema — curated classic films on the big screen. Just $5 admission, free for members.{% endblock %}
 
-{% block extra_css %}
-  <link rel="stylesheet" href="{% static 'css/ClassicMoviePage.css' %}" />
-{% endblock %}
 
 {% block content %}
   <div class="classic-movie-page">
@@ -100,6 +97,7 @@
                         class="classic-movie-page__featured-poster"
                         src="{{ movie.poster }}"
                         alt="{{ movie.title }} poster"
+                        fetchpriority="high"
                       />
                     {% endif %}
                     <div class="classic-movie-page__featured-info">
@@ -153,6 +151,7 @@
                         class="classic-movie-page__card-poster"
                         src="{{ movie.poster }}"
                         alt="{{ movie.title }} poster"
+                        loading="lazy" decoding="async"
                       />
                     {% endif %}
                     <p class="classic-movie-page__card-title">{{ movie.title }}</p>

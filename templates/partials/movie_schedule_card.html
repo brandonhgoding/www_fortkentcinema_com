@@ -15,6 +15,7 @@
       <img
         src="{{ movie.poster }}"
         alt="{{ movie.title }} poster"
+        loading="lazy" decoding="async"
         class="schedule-card__thumb-img"
         onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
       />

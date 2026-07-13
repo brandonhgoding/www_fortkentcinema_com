@@ -12,9 +12,6 @@ not the TMDB blurb — the local intent is what we can actually win.
 {% block og_type %}video.movie{% endblock %}
 {% block og_image %}{% if film.poster_url %}{{ film.poster_url }}{% else %}{{ block.super }}{% endif %}{% endblock %}
 
-{% block extra_css %}
-  <link rel="stylesheet" href="{% static 'css/MoviePage.css' %}" />
-{% endblock %}
 
 {% block extra_head %}{% include "partials/movie_jsonld.html" %}{% endblock %}
 
@@ -30,7 +27,7 @@ not the TMDB blurb — the local intent is what we can actually win.
     <div class="movie-page-head">
       <div class="movie-page-poster">
         {% if film.poster_url %}
-          <img src="{{ film.poster_url }}" alt="{{ film.title }} poster" width="500" height="750" class="movie-page-poster-img" />
+          <img src="{{ film.poster_url }}" alt="{{ film.title }} poster" width="500" height="750" class="movie-page-poster-img" fetchpriority="high" />
         {% else %}
           <div class="poster-placeholder" role="img" aria-label="Movie poster placeholder">
             <div class="poster-placeholder-icon">🎬</div>
