@@ -100,6 +100,36 @@ class OgImageTests(TestCase):
             self.assertEqual(im.size, (1200, 630))
 
 
+class FaviconTests(TestCase):
+    def test_apple_touch_icon_is_a_png_not_an_svg(self):
+        """iOS does not support SVG for apple-touch-icon. Pointing it at
+        favicon.svg gave iPhone home-screen bookmarks a blank icon."""
+        html = self.client.get(reverse("home")).content.decode()
+        tag = re.search(r'<link[^>]+rel="apple-touch-icon"[^>]*>', html).group(0)
+        self.assertIn(".png", tag)
+        self.assertNotIn(".svg", tag)
+        self.assertIn('sizes="180x180"', tag)
+
+    def test_apple_touch_icon_is_180x180_square_and_opaque(self):
+        """iOS masks the icon itself, so it must be full-bleed and have no alpha —
+        transparent corners get filled with black."""
+        from pathlib import Path
+
+        from django.conf import settings
+        from PIL import Image
+
+        path = Path(settings.BASE_DIR) / "static" / "img" / "apple-touch-icon.png"
+        with Image.open(path) as im:
+            self.assertEqual(im.size, (180, 180))
+            self.assertEqual(im.mode, "RGB", "must be opaque — no alpha channel")
+
+    def test_png_favicon_fallbacks_exist(self):
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertIn('sizes="32x32"', html)
+        self.assertIn('sizes="16x16"', html)
+        self.assertIn('type="image/svg+xml"', html)  # modern browsers still get the SVG
+
+
 class BlogPostingSchemaTests(TestCase):
     @classmethod
     def setUpTestData(cls):

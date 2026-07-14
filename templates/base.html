@@ -34,8 +34,18 @@
     <meta name="ICBM" content="47.2586, -68.5894" />
     {% endblock %}
 
+    {% comment %}
+    apple-touch-icon MUST be a PNG — iOS does not support SVG here, and pointing
+    it at favicon.svg gave iPhone home-screen bookmarks a blank icon. It is also
+    full-bleed square and opaque on purpose: iOS applies its own squircle mask,
+    so rounded corners would just be transparent gaps that iOS fills with black.
+
+    All four are generated from the same design; keep them in sync.
+    {% endcomment %}
     <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}" />
-    <link rel="apple-touch-icon" href="{% static 'img/favicon.svg' %}" />
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon-32.png' %}" />
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'img/favicon-16.png' %}" />
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'img/apple-touch-icon.png' %}" />
 
     {% comment %}
     Posters are served from these hosts. Warming the connection early saves the
