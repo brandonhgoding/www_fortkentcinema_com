@@ -256,15 +256,26 @@ class FilmSlugTests(TestCase):
 
 
 class LinkFilmReviewsCommandTests(TestCase):
+    """Fixtures mirror PRODUCTION, which the first version of this command did not.
+
+    A post's `title` is an editorial headline — the film's name is in the
+    `subtitle`, wrapped in typographic quotes. Matching on `title` (which the
+    first cut did) finds nothing, and silently: the command reported "linked 0"
+    and looked like it had simply found no matches.
+    """
+
     @classmethod
     def setUpTestData(cls):
         author = BlogAuthor.objects.create(first_name="Brandon", last_name="Goding")
         cat = BlogCategory.objects.create(name="Reviews")
         cls.film = Film.objects.create(title="Project Hail Mary")
         cls.other = Film.objects.create(title="Unreviewed Film")
+
+        # Real shape: headline title, film name in a smart-quoted subtitle.
+        # slug derives from subtitle -> "a-review-of-project-hail-mary".
         cls.review = BlogPost.objects.create(
-            title="A Review of Project Hail Mary",
-            subtitle="A review of Project Hail Mary",
+            title="Connecting The Dots",
+            subtitle="A Review of “Project Hail Mary”",
             author=author,
             category=cat,
             post_date=datetime.date(2026, 3, 23),
@@ -278,6 +289,12 @@ class LinkFilmReviewsCommandTests(TestCase):
             post_date=datetime.date(2025, 8, 10),
             content="...",
         )
+
+    def test_fixture_matches_production_shape(self):
+        """Guard the guard: if the slug stops deriving from the subtitle, the
+        command's whole premise breaks and these tests must fail loudly."""
+        self.assertEqual(self.review.slug, "a-review-of-project-hail-mary")
+        self.assertNotIn("review", self.review.title.lower())
 
     def run_command(self, *args):
         from io import StringIO
