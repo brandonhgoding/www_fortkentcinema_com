@@ -218,14 +218,18 @@ class MovieStructuredDataTests(MoviePageFixture):
 
     def test_screening_event_per_upcoming_showtime_and_none_for_past(self):
         """Advertising a screening that already happened is wrong."""
+        from web.services.cinema_data import CINEMA_TZ
+
         html = self.client.get(f"/movies/{self.showing.slug}").content.decode()
         events = movie_jsonld(html)["subjectOf"]
         self.assertEqual(len(events), 1)  # one future showtime; the past one excluded
         self.assertEqual(events[0]["@type"], "ScreeningEvent")
-        self.assertEqual(
-            events[0]["startDate"][:10],
-            (timezone.localtime() + datetime.timedelta(days=1)).date().isoformat(),
-        )
+
+        # Derive the expectation from the showtime itself. Comparing against
+        # `localtime() + 1 day` was a flake: the fixture offsets from UTC now, so
+        # near midnight Eastern the two disagree by a day.
+        expected = self.future_showtime.starts_at.astimezone(CINEMA_TZ).date().isoformat()
+        self.assertEqual(events[0]["startDate"][:10], expected)
         self.assertEqual(events[0]["location"]["@type"], "MovieTheater")
 
     def test_archive_film_emits_movie_with_no_screening_events(self):

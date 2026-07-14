@@ -154,7 +154,22 @@ STORAGES = {
 WHITENOISE_MAX_AGE = 31536000  # 1 year
 
 MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+
+# MEDIA_ROOT must point at the SAME directory nginx serves /media/ from, and it
+# must live OUTSIDE the release directory.
+#
+# It used to be `BASE_DIR / "media"` — inside the release. Each deploy rsyncs the
+# repo into a fresh releases/<ts>/ dir, so an uploaded file was stranded in the
+# previous release and nginx (which reads from the shared dir) 404'd it the
+# moment it was uploaded. Ansible has a task that symlinks release/media ->
+# shared/media, but it is guarded by
+#     when: app.media_root is search(app.dest ~ '/shared/')
+# and the www app's media_root points at the *other* app's shared dir, so the
+# guard silently skipped and no symlink was ever made.
+#
+# Reading it from the environment makes the path explicit and removes the symlink
+# from the picture entirely. Production sets MEDIA_ROOT to the shared media dir.
+MEDIA_ROOT = Path(config("MEDIA_ROOT", default=str(BASE_DIR / "media")))
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
