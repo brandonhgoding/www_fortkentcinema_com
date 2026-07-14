@@ -108,17 +108,17 @@
     </script>
 
     {% comment %}
-    Only renders when GA4_MEASUREMENT_ID is set, i.e. production. The ID used to
+    Only renders when GA_MEASUREMENT_ID is set, i.e. production. The ID used to
     be hardcoded here, so every local `runserver` sent hits to production
     analytics.
     {% endcomment %}
-    {% if ga4_measurement_id %}
-    <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga4_measurement_id }}"></script>
+    {% if ga_measurement_id %}
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga_measurement_id }}"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-      gtag('config', '{{ ga4_measurement_id }}');
+      gtag('config', '{{ ga_measurement_id }}');
     </script>
     {% endif %}
 

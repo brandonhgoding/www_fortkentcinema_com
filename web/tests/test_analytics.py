@@ -29,13 +29,13 @@ class GA4SnippetTests(TestCase):
         html = self.client.get("/").content.decode()
         self.assertNotIn("googletagmanager.com", html)
 
-    @override_settings(GA4_MEASUREMENT_ID="G-TESTID123")
+    @override_settings(GA_MEASUREMENT_ID="G-TESTID123")
     def test_gtag_rendered_with_configured_id(self):
         html = self.client.get("/").content.decode()
         self.assertIn("googletagmanager.com/gtag/js?id=G-TESTID123", html)
         self.assertIn("gtag('config', 'G-TESTID123')", html)
 
-    @override_settings(GA4_MEASUREMENT_ID="G-TESTID123")
+    @override_settings(GA_MEASUREMENT_ID="G-TESTID123")
     def test_hardcoded_id_is_gone(self):
         """It used to be baked into base.html."""
         html = self.client.get("/").content.decode()

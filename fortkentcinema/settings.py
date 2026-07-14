@@ -27,8 +27,12 @@ ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv())
 # this is set, so local dev, tests and staging send nothing. It was hardcoded in
 # base.html, which meant every `runserver` polluted production analytics — not
 # something we can live with now that we make decisions on this data.
-# Production sets GA4_MEASUREMENT_ID=G-S2PR27SWGD in .env.
-GA4_MEASUREMENT_ID = config("GA4_MEASUREMENT_ID", default="")
+#
+# The name must match what ansible already deploys — see the fortkentcinema
+# env_vars block in group_vars/webservers.yml, which has set
+# `GA_MEASUREMENT_ID: G-S2PR27SWGD` all along. Reading a differently-named var
+# silently disables analytics, which is exactly what happened.
+GA_MEASUREMENT_ID = config("GA_MEASUREMENT_ID", default="")
 
 INSTALLED_APPS = [
     "django.contrib.admin",

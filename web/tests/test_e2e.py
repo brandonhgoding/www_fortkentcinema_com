@@ -195,7 +195,7 @@ class AnalyticsClickE2E(SeleniumTestCase):
     The vitest suite exercises analytics.js in isolation; this proves the module
     actually loads on the page and the data-track attributes are wired to it.
 
-    gtag is stubbed to capture calls, because GA4_MEASUREMENT_ID is unset in
+    gtag is stubbed to capture calls, because GA_MEASUREMENT_ID is unset in
     tests (so the real gtag never loads) — and because a test has no business
     sending hits to production analytics.
     """
