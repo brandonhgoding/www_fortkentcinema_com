@@ -7,5 +7,5 @@ def site_config(request):
     return {
         "site_config": SITE_CONFIG,
         # Empty outside production — that's what keeps dev traffic out of GA4.
-        "ga4_measurement_id": settings.GA4_MEASUREMENT_ID,
+        "ga_measurement_id": settings.GA_MEASUREMENT_ID,
     }
