@@ -704,3 +704,129 @@ def find_free_slot(
             if (screen.id, when) not in taken:
                 return screen, when
     raise RuntimeError(f"No free showtime slot for {day} across {len(screens)} screens")
+
+
+def _parse(d: str) -> date:
+    return datetime.strptime(d, "%Y-%m-%d").date()
+
+
+class Command(BaseCommand):
+    help = "Backfill past films (embedded Square data) into cinema tables for the calendar."
+
+    def add_arguments(self, parser) -> None:
+        parser.add_argument(
+            "--dry-run", action="store_true",
+            help="Look up TMDB matches but write nothing to the database.",
+        )
+        parser.add_argument(
+            "--sleep", type=float, default=1.0,
+            help="Seconds to pause between TMDB lookups (default 1.0).",
+        )
+
+    def handle(self, *args, **options) -> None:
+        dry_run: bool = options["dry_run"]
+        sleep_s: float = options["sleep"]
+
+        screens = list(Screen.objects.order_by("id"))
+        if not screens:
+            raise CommandError("No screens configured; create screens before backfilling.")
+
+        taken: set[tuple[int, datetime]] = set(
+            Showtime.objects.values_list("screen_id", "starts_at")
+        )
+        service = TMDBService()
+
+        created = skipped = title_only = showtimes_made = 0
+        title_only_names: list[str] = []
+
+        for index, entry in enumerate(FILMS):
+            title = entry["title"]
+
+            # 1. Cheap skip: an existing film with this title/slug that already runs.
+            slug = slugify(title)
+            if Film.objects.filter(
+                Q(title__iexact=title) | Q(slug=slug), engagements__isnull=False
+            ).exists():
+                self.stdout.write(f"SKIP     {title} (already has engagements)")
+                skipped += 1
+                continue
+
+            # 2. Resolve via TMDB.
+            results = service.search_films(title)
+            time.sleep(sleep_s)
+
+            if results:
+                top = results[0]
+                self.stdout.write(
+                    f"MATCH    {title} -> {top.get('title')} "
+                    f"({(top.get('release_date') or '????')[:4]}) tmdb:{top.get('tmdb_id')}"
+                )
+                if dry_run:
+                    existing = Film.objects.filter(tmdb_id=str(top["tmdb_id"])).first()
+                    if existing and existing.engagements.exists():
+                        self.stdout.write(f"SKIP     {title} (already has engagements)")
+                        skipped += 1
+                    else:
+                        created += 1
+                    continue
+                film = import_film_from_tmdb(int(top["tmdb_id"]), service=service)
+                if film.engagements.exists():
+                    self.stdout.write(f"SKIP     {title} (already has engagements)")
+                    skipped += 1
+                    continue
+            else:
+                self.stdout.write(f"NO-TMDB  {title} (creating title-only)")
+                title_only += 1
+                title_only_names.append(title)
+                if dry_run:
+                    continue
+                film = Film.objects.create(title=title)
+
+            # 4/5. Engagement + conflict-free showtimes.
+            start, end = _parse(entry["startDate"]), _parse(entry["endDate"])
+            kind = engagement_kind(entry)
+
+            slots = []
+            for day in daterange(start, end):
+                screen, when = find_free_slot(taken, day, screens, index)
+                taken.add((screen.id, when))
+                slots.append((screen, when))
+
+            note = (entry.get("notes") or "").strip()
+            eng_notes = "Backfilled from Square sales data"
+            if note:
+                eng_notes = f"{note}\n{eng_notes}"
+
+            with transaction.atomic():
+                engagement = Engagement.objects.create(
+                    screen=slots[0][0] if slots else screens[0],
+                    start_date=start,
+                    end_date=end,
+                    kind=kind,
+                    status="CONFIRMED",
+                    show_in_main_listings=Engagement.default_visibility_for(kind),
+                    notes=eng_notes,
+                    admissions=entry.get("ticketsSold"),
+                )
+                EngagementFilm.objects.create(engagement=engagement, film=film, position=1)
+                for screen, when in slots:
+                    try:
+                        Showtime.objects.create(engagement=engagement, screen=screen, starts_at=when)
+                        showtimes_made += 1
+                    except IntegrityError:
+                        # Backstop only; find_free_slot should prevent this.
+                        continue
+
+            self.stdout.write(self.style.SUCCESS(f"CREATED  {title} ({start} -> {end}, {len(slots)} showtimes)"))
+            if results:
+                created += 1
+
+        verb = "Would create" if dry_run else "Created"
+        self.stdout.write(self.style.SUCCESS(
+            f"\n{verb}: {created}  Skipped: {skipped}  "
+            f"Title-only: {title_only}  Showtimes: {showtimes_made}"
+        ))
+        if title_only_names:
+            self.stdout.write("\nTitle-only films to enrich by hand in admin:")
+            for name in title_only_names:
+                self.stdout.write(f"  - {name}")
