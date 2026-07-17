@@ -168,8 +168,41 @@ class BackfillHandleTests(TestCase):
         svc.search_films.assert_called_once()  # still looks up to preview the match
 
     def test_title_only_film_rolled_back_on_failure(self) -> None:
+        # A mid-transaction failure rolls back the title-only Film, and the run
+        # keeps going rather than aborting the whole command.
         svc = self._mock_service(search_results=[])  # forces title-only path
-        with mock.patch.object(cmd, "find_free_slot", side_effect=RuntimeError("boom")):
-            with self.assertRaises(RuntimeError):
-                self._run([_entry(title="Doomed Run")], svc)
+        with mock.patch.object(cmd.Engagement.objects, "create", side_effect=RuntimeError("boom")):
+            self._run([_entry(title="Doomed Run")], svc)  # does not raise
         self.assertEqual(Film.objects.filter(title="Doomed Run").count(), 0)
+
+    def test_one_failed_entry_does_not_abort_run(self) -> None:
+        # The first entry blows up; the second must still be backfilled instead of
+        # the whole command dying on the first bad film.
+        svc = self._mock_service()
+
+        def search(title, *a, **k):
+            tmdb = 111 if title == "Bad Movie" else 555
+            return [{"tmdb_id": tmdb, "title": title, "release_date": "2024-06-01"}]
+
+        def details(tmdb_id, *a, **k):
+            return {**TMDB_DETAILS, "tmdb_id": tmdb_id, "imdb_id": f"tt{tmdb_id}"}
+
+        svc.search_films.side_effect = search
+        svc.get_film_details.side_effect = details
+
+        real_slot = cmd.find_free_slot
+
+        def flaky_slot(taken, day, screens, index):
+            if index == 0:  # index is the FILMS position -> only the first entry fails
+                raise RuntimeError("boom")
+            return real_slot(taken, day, screens, index)
+
+        with mock.patch.object(cmd, "find_free_slot", side_effect=flaky_slot):
+            self._run([_entry(title="Bad Movie"), _entry(title="Good Movie")], svc)
+
+        # Good entry fully processed despite the first one failing.
+        good = Film.objects.get(tmdb_id="555")
+        self.assertEqual(good.engagements.count(), 1)
+        self.assertEqual(Showtime.objects.count(), 3)
+        # Bad entry left no engagement behind.
+        self.assertFalse(Engagement.objects.filter(films__tmdb_id="111").exists())

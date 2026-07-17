@@ -736,104 +736,120 @@ class Command(BaseCommand):
         )
         service = TMDBService()
 
-        created = skipped = title_only = showtimes_made = 0
+        created = skipped = title_only = showtimes_made = failed = 0
         title_only_names: list[str] = []
+        failed_names: list[str] = []
 
         for index, entry in enumerate(FILMS):
-            title = entry["title"]
+            title = entry.get("title", "?")
 
-            # 1. Cheap skip: an existing film with this title/slug that already runs.
-            slug = slugify(title)
-            if Film.objects.filter(
-                Q(title__iexact=title) | Q(slug=slug), engagements__isnull=False
-            ).exists():
-                self.stdout.write(f"SKIP     {title} (already has engagements)")
-                skipped += 1
-                continue
-
-            # 2. Resolve via TMDB.
-            results = service.search_films(title)
-            time.sleep(sleep_s)
-
-            if results:
-                top = results[0]
-                self.stdout.write(
-                    f"MATCH    {title} -> {top.get('title')} "
-                    f"({(top.get('release_date') or '????')[:4]}) tmdb:{top.get('tmdb_id')}"
-                )
-                if dry_run:
-                    existing = Film.objects.filter(tmdb_id=str(top["tmdb_id"])).first()
-                    if existing and existing.engagements.exists():
-                        self.stdout.write(f"SKIP     {title} (already has engagements)")
-                        skipped += 1
-                    else:
-                        created += 1
-                    continue
-                film = import_film_from_tmdb(int(top["tmdb_id"]), service=service)
-                # If a second dataset entry ever resolves to this same tmdb_id (e.g. a
-                # distinct Square title for the same movie, or a re-release), only the
-                # first entry backfills here; this one is silently skipped. No such
-                # duplicate exists in the current 90-entry dataset.
-                if film.engagements.exists():
+            # Each entry is isolated: any unexpected failure (a bad TMDB payload, a
+            # unique-constraint clash, a slot exhaustion) is logged and counted, and
+            # the run moves on rather than aborting the whole backfill. Per-entry DB
+            # writes live inside transaction.atomic() below, so a mid-write failure
+            # rolls that entry back cleanly before we continue.
+            try:
+                # 1. Cheap skip: an existing film with this title/slug that already runs.
+                slug = slugify(title)
+                if Film.objects.filter(
+                    Q(title__iexact=title) | Q(slug=slug), engagements__isnull=False
+                ).exists():
                     self.stdout.write(f"SKIP     {title} (already has engagements)")
                     skipped += 1
                     continue
-            else:
-                self.stdout.write(f"NO-TMDB  {title} (creating title-only)")
-                title_only += 1
-                title_only_names.append(title)
-                if dry_run:
-                    continue
-                film = None
 
-            # 4/5. Engagement + conflict-free showtimes.
-            start, end = _parse(entry["startDate"]), _parse(entry["endDate"])
-            kind = engagement_kind(entry)
+                # 2. Resolve via TMDB.
+                results = service.search_films(title)
+                time.sleep(sleep_s)
 
-            slots = []
-            for day in daterange(start, end):
-                screen, when = find_free_slot(taken, day, screens, index)
-                taken.add((screen.id, when))
-                slots.append((screen, when))
-
-            note = (entry.get("notes") or "").strip()
-            eng_notes = "Backfilled from Square sales data"
-            if note:
-                eng_notes = f"{note}\n{eng_notes}"
-
-            with transaction.atomic():
-                if film is None:
-                    film = Film.objects.create(title=title)
-                engagement = Engagement.objects.create(
-                    screen=slots[0][0] if slots else screens[0],
-                    start_date=start,
-                    end_date=end,
-                    kind=kind,
-                    status="CONFIRMED",
-                    show_in_main_listings=Engagement.default_visibility_for(kind),
-                    notes=eng_notes,
-                    admissions=entry.get("ticketsSold"),
-                )
-                EngagementFilm.objects.create(engagement=engagement, film=film, position=1)
-                for screen, when in slots:
-                    try:
-                        with transaction.atomic():
-                            Showtime.objects.create(engagement=engagement, screen=screen, starts_at=when)
-                        showtimes_made += 1
-                    except IntegrityError:
-                        # Savepoint rollback: skip only this colliding showtime.
-                        # find_free_slot should already prevent collisions.
+                if results:
+                    top = results[0]
+                    self.stdout.write(
+                        f"MATCH    {title} -> {top.get('title')} "
+                        f"({(top.get('release_date') or '????')[:4]}) tmdb:{top.get('tmdb_id')}"
+                    )
+                    if dry_run:
+                        existing = Film.objects.filter(tmdb_id=str(top["tmdb_id"])).first()
+                        if existing and existing.engagements.exists():
+                            self.stdout.write(f"SKIP     {title} (already has engagements)")
+                            skipped += 1
+                        else:
+                            created += 1
                         continue
+                    film = import_film_from_tmdb(int(top["tmdb_id"]), service=service)
+                    # If a second dataset entry ever resolves to this same tmdb_id (e.g. a
+                    # distinct Square title for the same movie, or a re-release), only the
+                    # first entry backfills here; this one is silently skipped. No such
+                    # duplicate exists in the current 90-entry dataset.
+                    if film.engagements.exists():
+                        self.stdout.write(f"SKIP     {title} (already has engagements)")
+                        skipped += 1
+                        continue
+                else:
+                    self.stdout.write(f"NO-TMDB  {title} (creating title-only)")
+                    title_only += 1
+                    title_only_names.append(title)
+                    if dry_run:
+                        continue
+                    film = None
 
-            self.stdout.write(self.style.SUCCESS(f"CREATED  {title} ({start} -> {end}, {len(slots)} showtimes)"))
-            if results:
-                created += 1
+                # 4/5. Engagement + conflict-free showtimes.
+                start, end = _parse(entry["startDate"]), _parse(entry["endDate"])
+                kind = engagement_kind(entry)
+
+                slots = []
+                for day in daterange(start, end):
+                    screen, when = find_free_slot(taken, day, screens, index)
+                    taken.add((screen.id, when))
+                    slots.append((screen, when))
+
+                note = (entry.get("notes") or "").strip()
+                eng_notes = "Backfilled from Square sales data"
+                if note:
+                    eng_notes = f"{note}\n{eng_notes}"
+
+                with transaction.atomic():
+                    if film is None:
+                        film = Film.objects.create(title=title)
+                    engagement = Engagement.objects.create(
+                        screen=slots[0][0] if slots else screens[0],
+                        start_date=start,
+                        end_date=end,
+                        kind=kind,
+                        status="CONFIRMED",
+                        show_in_main_listings=Engagement.default_visibility_for(kind),
+                        notes=eng_notes,
+                        admissions=entry.get("ticketsSold"),
+                    )
+                    EngagementFilm.objects.create(engagement=engagement, film=film, position=1)
+                    for screen, when in slots:
+                        try:
+                            with transaction.atomic():
+                                Showtime.objects.create(engagement=engagement, screen=screen, starts_at=when)
+                            showtimes_made += 1
+                        except IntegrityError:
+                            # Savepoint rollback: skip only this colliding showtime.
+                            # find_free_slot should already prevent collisions.
+                            continue
+
+                self.stdout.write(self.style.SUCCESS(f"CREATED  {title} ({start} -> {end}, {len(slots)} showtimes)"))
+                if results:
+                    created += 1
+            except Exception as exc:
+                failed += 1
+                failed_names.append(title)
+                self.stderr.write(self.style.ERROR(f"FAILED   {title}: {exc!r}"))
+                continue
 
         verb = "Would create" if dry_run else "Created"
         self.stdout.write(self.style.SUCCESS(
             f"\n{verb}: {created}  Skipped: {skipped}  "
-            f"Title-only: {title_only}  Showtimes: {showtimes_made}"
+            f"Title-only: {title_only}  Showtimes: {showtimes_made}  Failed: {failed}"
         ))
+        if failed_names:
+            self.stdout.write(self.style.WARNING("\nEntries that failed and were skipped:"))
+            for name in failed_names:
+                self.stdout.write(f"  - {name}")
         if title_only_names:
             self.stdout.write("\nTitle-only films to enrich by hand in admin:")
             for name in title_only_names:
