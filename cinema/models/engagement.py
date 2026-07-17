@@ -59,6 +59,12 @@ class Engagement(models.Model):
     )
 
     notes = models.TextField(blank=True)
+    admissions = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Total tickets sold for this run (from Square sales data). "
+        "Admin-only; not shown publicly.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

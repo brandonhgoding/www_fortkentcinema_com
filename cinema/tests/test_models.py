@@ -121,3 +121,16 @@ class ShowtimeTestCase(TestCase):
         outside = Showtime.objects.create(engagement=self.eng, starts_at=self._dt(9, 19))
         self.assertFalse(inside.is_outside_engagement_range)
         self.assertTrue(outside.is_outside_engagement_range)
+
+
+class EngagementAdmissionsTests(TestCase):
+    def test_admissions_defaults_to_none_and_stores_count(self) -> None:
+        screen = Screen.objects.create(name="The Century", capacity=1)
+        eng = Engagement.objects.create(
+            screen=screen, start_date=datetime.date(2024, 1, 1), end_date=datetime.date(2024, 1, 3)
+        )
+        self.assertIsNone(eng.admissions)  # unknown by default
+        eng.admissions = 472
+        eng.save()
+        eng.refresh_from_db()
+        self.assertEqual(eng.admissions, 472)

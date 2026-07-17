@@ -25,6 +25,7 @@ class EngagementAdmin(admin.ModelAdmin):
         "start_date",
         "end_date",
         "status",
+        "admissions",
         "presentation_format",
     )
     list_filter = ("status", "presentation_format")
