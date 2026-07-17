@@ -29,3 +29,16 @@ class ImportFilmFromTMDBTests(TestCase):
         self.assertEqual(film.pk, existing.pk)
         svc.get_film_details.assert_not_called()  # no fetch when reusing
         self.assertEqual(Film.objects.filter(tmdb_id="42").count(), 1)
+
+    def test_reuses_existing_by_imdb_id(self) -> None:
+        # A film with this imdb_id already exists but under a different (here, no)
+        # tmdb_id, so the tmdb_id lookup misses it. Creating anew would violate the
+        # imdb_id unique constraint, so we must reuse the existing row instead.
+        existing = Film.objects.create(title="Old", imdb_id="tt42")
+        svc = mock.Mock()
+        svc.get_film_details.return_value = DETAILS
+        film = import_film_from_tmdb(42, service=svc)
+        self.assertEqual(film.pk, existing.pk)
+        self.assertEqual(Film.objects.filter(imdb_id="tt42").count(), 1)  # no duplicate
+        film.refresh_from_db()
+        self.assertEqual(film.tmdb_id, "42")  # tmdb_id backfilled onto the existing row
