@@ -679,3 +679,28 @@ def daterange(start: date, end: date) -> Iterator[date]:
     while day <= end:
         yield day
         day += timedelta(days=1)
+
+
+def find_free_slot(
+    taken: set[tuple[int, datetime]],
+    day: date,
+    screens: list[Screen],
+    preferred_index: int,
+) -> tuple[Screen, datetime]:
+    """First free (screen, datetime) for `day`, respecting unique(screen, starts_at).
+
+    Tries the preferred hour on every screen before moving to the next hour, so
+    concurrent runs spread across both screens at 3pm before anything slides later.
+    `taken` holds (screen_id, aware_datetime) pairs already in use; equal instants
+    compare equal across time zones, so preloaded UTC values match local candidates.
+    """
+    ordered = (
+        screens[preferred_index % len(screens) :]
+        + screens[: preferred_index % len(screens)]
+    )
+    for hour in SHOWTIME_HOURS:
+        when = timezone.make_aware(datetime(day.year, day.month, day.day, hour, 0))
+        for screen in ordered:
+            if (screen.id, when) not in taken:
+                return screen, when
+    raise RuntimeError(f"No free showtime slot for {day} across {len(screens)} screens")
