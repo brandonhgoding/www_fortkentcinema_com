@@ -270,14 +270,113 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-### Task 3: `handle()` orchestration — skip / create / title-only / dry-run
+### Task 3: `Engagement.admissions` field, migration, and admin display
+
+**Files:**
+- Modify: `cinema/models/engagement.py`
+- Create: `cinema/migrations/0006_engagement_admissions.py` (generated)
+- Modify: `cinema/admin.py`
+- Test: `cinema/tests/test_models.py`
+
+**Interfaces:**
+- Produces: `Engagement.admissions: PositiveIntegerField(null=True, blank=True)` — total tickets sold for the run (from Square `ticketsSold`). Null when unknown. Task 4's `handle()` sets it from each entry's `ticketsSold`.
+
+**Context:** We captured attendance while we had the Square data. `admissions`
+lives on `Engagement` (per-run), not `Film` — a film can have multiple runs.
+It is **admin-only**: shown in the Django admin, never on a public page.
+
+- [ ] **Step 1: Write the failing test**
+
+Add to `cinema/tests/test_models.py` (a new test method in the existing Engagement test area; if unsure where, add a new `class EngagementAdmissionsTests(TestCase)` at the end of the file):
+
+```python
+from datetime import date
+
+from cinema.models import Engagement, Screen
+from django.test import TestCase
+
+
+class EngagementAdmissionsTests(TestCase):
+    def test_admissions_defaults_to_none_and_stores_count(self) -> None:
+        screen = Screen.objects.create(name="The Century", capacity=1)
+        eng = Engagement.objects.create(
+            screen=screen, start_date=date(2024, 1, 1), end_date=date(2024, 1, 3)
+        )
+        self.assertIsNone(eng.admissions)  # unknown by default
+        eng.admissions = 472
+        eng.save()
+        eng.refresh_from_db()
+        self.assertEqual(eng.admissions, 472)
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `.venv/bin/python manage.py test cinema.tests.test_models.EngagementAdmissionsTests -v 2`
+Expected: FAIL — `AttributeError`/`FieldError` on `admissions` (field does not exist yet).
+
+- [ ] **Step 3: Add the field to the model**
+
+In `cinema/models/engagement.py`, add the field alongside `notes` (near line 61):
+
+```python
+    admissions = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Total tickets sold for this run (from Square sales data). "
+        "Admin-only; not shown publicly.",
+    )
+```
+
+- [ ] **Step 4: Generate the migration**
+
+Run: `.venv/bin/python manage.py makemigrations cinema`
+Expected: creates `cinema/migrations/0006_engagement_admissions.py` adding one field. Confirm the file name/number is `0006_…` (0005 is the latest existing).
+
+- [ ] **Step 5: Show it in the admin**
+
+In `cinema/admin.py`, add `"admissions"` to `EngagementAdmin.list_display` (after `"status"`):
+
+```python
+    list_display = (
+        "display_title",
+        "screen",
+        "start_date",
+        "end_date",
+        "status",
+        "admissions",
+        "presentation_format",
+    )
+```
+
+- [ ] **Step 6: Run test to verify it passes**
+
+Run: `.venv/bin/python manage.py test cinema.tests.test_models.EngagementAdmissionsTests -v 2`
+Expected: PASS.
+
+- [ ] **Step 7: Run the whole cinema suite (catches migration issues)**
+
+Run: `.venv/bin/python manage.py test cinema -v 1`
+Expected: all pass.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add cinema/models/engagement.py cinema/migrations/0006_engagement_admissions.py cinema/admin.py cinema/tests/test_models.py
+git commit -m "feat(cinema): Engagement.admissions field (admin-only) for backfilled attendance
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
+```
+
+---
+
+### Task 4: `handle()` orchestration — skip / create / title-only / dry-run
 
 **Files:**
 - Modify: `cinema/management/commands/backfill_past_films.py`
 - Test: `cinema/tests/test_backfill_past_films.py`
 
 **Interfaces:**
-- Consumes: `FILMS`, `engagement_kind`, `daterange`, `find_free_slot`, `import_film_from_tmdb`, `TMDBService`, `Film`, `Engagement`, `EngagementFilm`, `Showtime`, `Screen`.
+- Consumes: `FILMS`, `engagement_kind`, `daterange`, `find_free_slot`, `import_film_from_tmdb`, `TMDBService`, `Film`, `Engagement` (incl. the `admissions` field from Task 3), `EngagementFilm`, `Showtime`, `Screen`.
 - Produces: a `Command(BaseCommand)` class runnable via `call_command("backfill_past_films", dry_run=…, sleep=…)`.
 
 - [ ] **Step 1: Write the failing integration tests**
@@ -329,12 +428,13 @@ class BackfillHandleTests(TestCase):
 
     def test_creates_film_engagement_and_showtimes(self) -> None:
         svc = self._mock_service()
-        self._run([_entry()], svc)
+        self._run([_entry(ticketsSold=472)], svc)
         film = Film.objects.get(tmdb_id="555")
         eng = Engagement.objects.get()
         self.assertEqual(eng.status, "CONFIRMED")
         self.assertEqual(eng.kind, Engagement.Kind.REGULAR)
         self.assertTrue(eng.show_in_main_listings)
+        self.assertEqual(eng.admissions, 472)  # ticketsSold captured
         self.assertEqual(list(eng.films.all()), [film])
         self.assertEqual(Showtime.objects.count(), 3)  # one per date
         for st in Showtime.objects.all():
@@ -508,6 +608,7 @@ class Command(BaseCommand):
                     status="CONFIRMED",
                     show_in_main_listings=Engagement.default_visibility_for(kind),
                     notes=eng_notes,
+                    admissions=entry.get("ticketsSold"),
                 )
                 EngagementFilm.objects.create(engagement=engagement, film=film, position=1)
                 for screen, when in slots:
@@ -554,7 +655,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-### Task 4: Local dry-run smoke test against the real dataset
+### Task 5: Local dry-run smoke test against the real dataset
 
 **Files:** none (verification only).
 
@@ -581,17 +682,18 @@ This is an eyeball check, not an assertion — the command already handles all o
 
 **Spec coverage:**
 - Embedded data, no `--file` → Task 1 (`FILMS`). ✓
-- `--dry-run` / `--sleep` (default 1.0) → Task 3 `add_arguments`. ✓
-- Cheap skip check before TMDB → Task 3 step 3 (title/slug + `engagements__isnull=False`). ✓
-- TMDB resolve via `import_film_from_tmdb`, re-check engagements → Task 3. ✓
-- Title-only fallback + summary list → Task 3 (`title_only_names`). ✓
-- Kind mapping (REGULAR / CLASSIC / SPECIAL_EVENT) + `default_visibility_for` → Task 1 helper + Task 3. ✓
-- `status=CONFIRMED`, backfill note marker → Task 3. ✓
-- Conflict-free 3pm placement respecting `unique(screen, starts_at)`, preloaded taken set, IntegrityError backstop → Task 2 + Task 3. ✓
+- `--dry-run` / `--sleep` (default 1.0) → Task 4 `add_arguments`. ✓
+- Cheap skip check before TMDB → Task 4 step 3 (title/slug + `engagements__isnull=False`). ✓
+- TMDB resolve via `import_film_from_tmdb`, re-check engagements → Task 4. ✓
+- Title-only fallback + summary list → Task 4 (`title_only_names`). ✓
+- Kind mapping (REGULAR / CLASSIC / SPECIAL_EVENT) + `default_visibility_for` → Task 1 helper + Task 4. ✓
+- `status=CONFIRMED`, backfill note marker → Task 4. ✓
+- `Engagement.admissions` field (admin-only) + populated from `ticketsSold` → Task 3 (field/migration/admin) + Task 4 (`admissions=entry.get("ticketsSold")`), verified by `test_creates_film_engagement_and_showtimes`. ✓
+- Conflict-free 3pm placement respecting `unique(screen, starts_at)`, preloaded taken set, IntegrityError backstop → Task 2 + Task 4. ✓
 - Idempotency → covered by skip check; verified by `test_skips_film_with_existing_engagement`. ✓
-- Output lines + summary → Task 3. ✓
-- Tests 1–6 from spec → Task 1/2/3 test methods map 1:1 (skip, create+showtimes, title-only, conflict, kind, dry-run). ✓
+- Output lines + summary → Task 4. ✓
+- Tests 1–6 from spec → Task 1/2/4 test methods map 1:1 (skip, create+showtimes, title-only, conflict, kind, dry-run). ✓
 
-**Placeholder scan:** The only intentional marker is the `# FILMS = [...]` comment in Task 1, which Step 1/Step 2 fill deterministically from the source JSON via the given one-liner — reproducible, not a TODO. Task 3 Step 3 flags and then removes its own scaffolding assignment lines. No other placeholders.
+**Placeholder scan:** The only intentional marker is the `# FILMS = [...]` comment in Task 1, which Step 1/Step 2 fill deterministically from the source JSON via the given one-liner — reproducible, not a TODO. No other placeholders.
 
-**Type consistency:** `find_free_slot(taken, day, screens, preferred_index)` signature identical in Task 2 definition and Task 3 call site. `engagement_kind(entry)` returns `Engagement.Kind` values used directly as `kind=`. `daterange(start, end)` yields `date`. `taken` is `set[tuple[int, datetime]]` throughout. `import_film_from_tmdb(int(tmdb_id), service=service)` matches the existing `cinema/services.py` signature.
+**Type consistency:** `find_free_slot(taken, day, screens, preferred_index)` signature identical in Task 2 definition and Task 4 call site. `engagement_kind(entry)` returns `Engagement.Kind` values used directly as `kind=`. `daterange(start, end)` yields `date`. `taken` is `set[tuple[int, datetime]]` throughout. `import_film_from_tmdb(int(tmdb_id), service=service)` matches the existing `cinema/services.py` signature. `Engagement.admissions` is a nullable `PositiveIntegerField` set from `entry.get("ticketsSold")` (an int in every dataset entry).

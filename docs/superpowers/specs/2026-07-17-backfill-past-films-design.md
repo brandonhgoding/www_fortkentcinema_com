@@ -23,8 +23,14 @@ The 90-film dataset (from `fort_kent_cinema_films.json`) is **embedded as a Pyth
 literal** in the command module — no external file, so it can be run directly on
 prod (`python manage.py backfill_past_films`) with nothing to upload.
 
-Out of scope: importing ticket counts / `daysWithSales` (we don't model those),
-picking exact real screens/times (we don't have that data), backfilling anything
+We also capture each run's `ticketsSold` count into a new
+`Engagement.admissions` field (populated during the backfill) so total
+admissions per film are available later. **Admin-only for now** — surfaced in
+the Django admin, not on any public page; whether to display it publicly is a
+separate decision once the real numbers are visible.
+
+Out of scope: importing `daysWithSales`, picking exact real screens/times (we
+don't have that data), any public display of admissions, backfilling anything
 other than calendar-visibility showtimes.
 
 ## Invocation

@@ -1,0 +1,840 @@
+"""Backfill past films from Square sales data into cinema tables.
+
+Two years of runs (title + type + start/end date) are embedded below as FILMS.
+For each run we ensure a Film exists (enriched from TMDB where possible), create a
+CONFIRMED Engagement spanning the dates, and add a 3pm showtime for every calendar
+date in the run so the film appears on the public calendar.
+
+Idempotent: a film that already has an engagement is skipped, so re-running never
+duplicates. Safe to run on prod: `python manage.py backfill_past_films`.
+Use --dry-run first to preview TMDB matches without writing.
+"""
+
+import time
+from collections.abc import Iterator
+from datetime import date, datetime, timedelta
+
+from cinema.models import Engagement, EngagementFilm, Film, Screen, Showtime
+from cinema.services import import_film_from_tmdb
+from cinema.tmdb.services import TMDBService
+from django.core.management.base import BaseCommand, CommandError
+from django.db import IntegrityError, transaction
+from django.db.models import Q
+from django.utils import timezone
+from django.utils.text import slugify
+
+# Preferred showtime is 3pm local; fall back to later hours only when both
+# screens are already booked at an earlier hour that day.
+SHOWTIME_HOURS = [15, 16, 17, 18, 19, 20, 21, 22]
+
+FILMS = [{'daysWithSales': 24,
+  'endDate': '2024-07-25',
+  'notes': '',
+  'startDate': '2024-06-18',
+  'ticketsSold': 472,
+  'title': 'Despicable Me 4',
+  'type': 'Film'},
+ {'daysWithSales': 13,
+  'endDate': '2024-07-11',
+  'notes': '',
+  'startDate': '2024-06-26',
+  'ticketsSold': 123,
+  'title': 'A Quiet Place: Day One',
+  'type': 'Film'},
+ {'daysWithSales': 14,
+  'endDate': '2024-09-01',
+  'notes': '',
+  'startDate': '2024-07-12',
+  'ticketsSold': 256,
+  'title': 'Inside Out 2',
+  'type': 'Film'},
+ {'daysWithSales': 17,
+  'endDate': '2024-08-15',
+  'notes': '',
+  'startDate': '2024-07-25',
+  'ticketsSold': 383,
+  'title': 'Deadpool & Wolverine',
+  'type': 'Film'},
+ {'daysWithSales': 11,
+  'endDate': '2024-08-07',
+  'notes': '',
+  'startDate': '2024-07-26',
+  'ticketsSold': 187,
+  'title': 'Twisters',
+  'type': 'Film'},
+ {'daysWithSales': 11,
+  'endDate': '2024-08-22',
+  'notes': '',
+  'startDate': '2024-08-10',
+  'ticketsSold': 238,
+  'title': 'It Ends With Us',
+  'type': 'Film'},
+ {'daysWithSales': 10,
+  'endDate': '2024-08-29',
+  'notes': '',
+  'startDate': '2024-08-16',
+  'ticketsSold': 88,
+  'title': 'Harold and the Purple Crayon',
+  'type': 'Film'},
+ {'daysWithSales': 5,
+  'endDate': '2024-08-29',
+  'notes': '',
+  'startDate': '2024-08-23',
+  'ticketsSold': 23,
+  'title': 'Dune: Part Two',
+  'type': 'Film'},
+ {'daysWithSales': 10,
+  'endDate': '2024-09-10',
+  'notes': '',
+  'startDate': '2024-08-30',
+  'ticketsSold': 63,
+  'title': 'Alien: Romulus',
+  'type': 'Film'},
+ {'daysWithSales': 12,
+  'endDate': '2024-09-19',
+  'notes': '',
+  'startDate': '2024-09-06',
+  'ticketsSold': 197,
+  'title': 'Beetlejuice Beetlejuice',
+  'type': 'Film'},
+ {'daysWithSales': 3,
+  'endDate': '2024-09-19',
+  'notes': '',
+  'startDate': '2024-09-13',
+  'ticketsSold': 12,
+  'title': 'The Critic',
+  'type': 'Film'},
+ {'daysWithSales': 17,
+  'endDate': '2024-10-13',
+  'notes': '',
+  'startDate': '2024-09-20',
+  'ticketsSold': 139,
+  'title': 'Transformers One',
+  'type': 'Film'},
+ {'daysWithSales': 15,
+  'endDate': '2024-10-17',
+  'notes': '',
+  'startDate': '2024-09-27',
+  'ticketsSold': 271,
+  'title': 'The Wild Robot',
+  'type': 'Film'},
+ {'daysWithSales': 5,
+  'endDate': '2024-10-31',
+  'notes': '',
+  'startDate': '2024-10-18',
+  'ticketsSold': 36,
+  'title': 'Smile 2',
+  'type': 'Film'},
+ {'daysWithSales': 4,
+  'endDate': '2024-10-25',
+  'notes': 'Classic re-release',
+  'startDate': '2024-10-18',
+  'ticketsSold': 25,
+  'title': 'The Shining',
+  'type': 'Special screening'},
+ {'daysWithSales': 16,
+  'endDate': '2024-11-22',
+  'notes': '',
+  'startDate': '2024-10-26',
+  'ticketsSold': 221,
+  'title': 'Venom: The Last Dance',
+  'type': 'Film'},
+ {'daysWithSales': 14,
+  'endDate': '2024-11-22',
+  'notes': '',
+  'startDate': '2024-11-01',
+  'ticketsSold': 919,
+  'title': 'Lost on a Mountain in Maine',
+  'type': 'Film'},
+ {'daysWithSales': 4,
+  'endDate': '2024-11-29',
+  'notes': '',
+  'startDate': '2024-11-22',
+  'ticketsSold': 149,
+  'title': 'Red One',
+  'type': 'Film'},
+ {'daysWithSales': 14,
+  'endDate': '2024-12-19',
+  'notes': '',
+  'startDate': '2024-11-22',
+  'ticketsSold': 309,
+  'title': 'Wicked',
+  'type': 'Film'},
+ {'daysWithSales': 12,
+  'endDate': '2024-12-19',
+  'notes': '',
+  'startDate': '2024-11-29',
+  'ticketsSold': 390,
+  'title': 'Moana 2',
+  'type': 'Film'},
+ {'daysWithSales': 16,
+  'endDate': '2025-01-17',
+  'notes': '',
+  'startDate': '2024-12-20',
+  'ticketsSold': 202,
+  'title': 'Mufasa: The Lion King',
+  'type': 'Film'},
+ {'daysWithSales': 11,
+  'endDate': '2025-01-05',
+  'notes': '',
+  'startDate': '2024-12-20',
+  'ticketsSold': 185,
+  'title': 'Sonic the Hedgehog 3',
+  'type': 'Film'},
+ {'daysWithSales': 12,
+  'endDate': '2025-02-09',
+  'notes': '',
+  'startDate': '2025-01-18',
+  'ticketsSold': 161,
+  'title': 'Autumn and the Black Jaguar',
+  'type': 'Film'},
+ {'daysWithSales': 8,
+  'endDate': '2025-02-08',
+  'notes': '',
+  'startDate': '2025-01-19',
+  'ticketsSold': 44,
+  'title': 'Bonhoeffer',
+  'type': 'Film'},
+ {'daysWithSales': 8,
+  'endDate': '2025-03-21',
+  'notes': '',
+  'startDate': '2025-02-15',
+  'ticketsSold': 89,
+  'title': 'Captain America: Brave New World',
+  'type': 'Film'},
+ {'daysWithSales': 7,
+  'endDate': '2025-04-03',
+  'notes': '',
+  'startDate': '2025-02-15',
+  'ticketsSold': 93,
+  'title': 'Dog Man',
+  'type': 'Film'},
+ {'daysWithSales': 19,
+  'endDate': '2025-05-18',
+  'notes': "Square typo 'Show White'",
+  'startDate': '2025-03-22',
+  'ticketsSold': 252,
+  'title': 'Snow White',
+  'type': 'Film'},
+ {'daysWithSales': 21,
+  'endDate': '2025-05-16',
+  'notes': '',
+  'startDate': '2025-04-04',
+  'ticketsSold': 579,
+  'title': 'A Minecraft Movie',
+  'type': 'Film'},
+ {'daysWithSales': 11,
+  'endDate': '2025-06-12',
+  'notes': '',
+  'startDate': '2025-05-23',
+  'ticketsSold': 407,
+  'title': 'Lilo & Stitch',
+  'type': 'Film'},
+ {'daysWithSales': 8,
+  'endDate': '2025-06-05',
+  'notes': '',
+  'startDate': '2025-05-23',
+  'ticketsSold': 131,
+  'title': 'Mission: Impossible - The Final Reckoning',
+  'type': 'Film'},
+ {'daysWithSales': 6,
+  'endDate': '2025-06-15',
+  'notes': '',
+  'startDate': '2025-06-06',
+  'ticketsSold': 42,
+  'title': 'Karate Kid: Legends',
+  'type': 'Film'},
+ {'daysWithSales': 12,
+  'endDate': '2025-06-29',
+  'notes': '',
+  'startDate': '2025-06-13',
+  'ticketsSold': 234,
+  'title': 'How to Train Your Dragon',
+  'type': 'Film'},
+ {'daysWithSales': 11,
+  'endDate': '2025-07-10',
+  'notes': '',
+  'startDate': '2025-06-20',
+  'ticketsSold': 127,
+  'title': 'Elio',
+  'type': 'Film'},
+ {'daysWithSales': 17,
+  'endDate': '2025-07-24',
+  'notes': '',
+  'startDate': '2025-07-02',
+  'ticketsSold': 229,
+  'title': 'Jurassic World: Rebirth',
+  'type': 'Film'},
+ {'daysWithSales': 14,
+  'endDate': '2025-07-30',
+  'notes': '',
+  'startDate': '2025-07-11',
+  'ticketsSold': 189,
+  'title': 'Superman',
+  'type': 'Film'},
+ {'daysWithSales': 14,
+  'endDate': '2025-08-14',
+  'notes': '',
+  'startDate': '2025-07-25',
+  'ticketsSold': 163,
+  'title': 'The Fantastic Four: First Steps',
+  'type': 'Film'},
+ {'daysWithSales': 9,
+  'endDate': '2025-08-14',
+  'notes': '',
+  'startDate': '2025-08-01',
+  'ticketsSold': 81,
+  'title': 'The Naked Gun',
+  'type': 'Film'},
+ {'daysWithSales': 9,
+  'endDate': '2025-08-28',
+  'notes': '',
+  'startDate': '2025-08-15',
+  'ticketsSold': 58,
+  'title': 'Sketch',
+  'type': 'Film'},
+ {'daysWithSales': 8,
+  'endDate': '2025-08-28',
+  'notes': '',
+  'startDate': '2025-08-15',
+  'ticketsSold': 70,
+  'title': 'Weapons',
+  'type': 'Film'},
+ {'daysWithSales': 4,
+  'endDate': '2025-09-04',
+  'notes': '',
+  'startDate': '2025-08-29',
+  'ticketsSold': 40,
+  'title': 'I Know What You Did Last Summer',
+  'type': 'Film'},
+ {'daysWithSales': 5,
+  'endDate': '2025-09-07',
+  'notes': '',
+  'startDate': '2025-08-29',
+  'ticketsSold': 13,
+  'title': 'The Toxic Avenger',
+  'type': 'Film'},
+ {'daysWithSales': 5,
+  'endDate': '2025-09-14',
+  'notes': '',
+  'startDate': '2025-09-05',
+  'ticketsSold': 85,
+  'title': 'The Conjuring: Last Rites',
+  'type': 'Film'},
+ {'daysWithSales': 9,
+  'endDate': '2025-09-25',
+  'notes': '',
+  'startDate': '2025-09-12',
+  'ticketsSold': 54,
+  'title': 'Downton Abbey: The Grand Finale',
+  'type': 'Film'},
+ {'daysWithSales': 7,
+  'endDate': '2025-09-27',
+  'notes': '',
+  'startDate': '2025-09-19',
+  'ticketsSold': 33,
+  'title': 'The Senior',
+  'type': 'Film'},
+ {'daysWithSales': 6,
+  'endDate': '2025-10-05',
+  'notes': 'Event screening',
+  'startDate': '2025-09-23',
+  'ticketsSold': 47,
+  'title': 'Taylor Swift: Release Party of a Showgirl',
+  'type': 'Special screening'},
+ {'daysWithSales': 3,
+  'endDate': '2025-10-05',
+  'notes': '',
+  'startDate': '2025-09-26',
+  'ticketsSold': 20,
+  'title': "Gabby's Dollhouse: The Movie",
+  'type': 'Film'},
+ {'daysWithSales': 7,
+  'endDate': '2025-10-23',
+  'notes': '',
+  'startDate': '2025-10-10',
+  'ticketsSold': 51,
+  'title': 'Roofman',
+  'type': 'Film'},
+ {'daysWithSales': 6,
+  'endDate': '2025-10-19',
+  'notes': '',
+  'startDate': '2025-10-10',
+  'ticketsSold': 43,
+  'title': 'Tron: Ares',
+  'type': 'Film'},
+ {'daysWithSales': 4,
+  'endDate': '2025-10-30',
+  'notes': 'Classic re-release',
+  'startDate': '2025-10-24',
+  'ticketsSold': 26,
+  'title': 'Casper',
+  'type': 'Special screening'},
+ {'daysWithSales': 8,
+  'endDate': '2025-11-06',
+  'notes': "Includes presale mislabeled 'Regretting Us'",
+  'startDate': '2025-10-24',
+  'ticketsSold': 118,
+  'title': 'Regretting You',
+  'type': 'Film'},
+ {'daysWithSales': 1,
+  'endDate': '2025-10-25',
+  'notes': 'Interactive event screening',
+  'startDate': '2025-10-25',
+  'ticketsSold': 39,
+  'title': 'The Rocky Horror Picture Show',
+  'type': 'Special screening'},
+ {'daysWithSales': 4,
+  'endDate': '2025-11-04',
+  'notes': 'Special one-night event',
+  'startDate': '2025-10-26',
+  'ticketsSold': 49,
+  'title': 'Quintuplets (Nov 4)',
+  'type': 'Special screening'},
+ {'daysWithSales': 2,
+  'endDate': '2025-11-01',
+  'notes': 'Halloween classic',
+  'startDate': '2025-10-31',
+  'ticketsSold': 15,
+  'title': 'The Texas Chain Saw Massacre',
+  'type': 'Special screening'},
+ {'daysWithSales': 21,
+  'endDate': '2025-12-11',
+  'notes': '',
+  'startDate': '2025-11-02',
+  'ticketsSold': 211,
+  'title': 'Wicked: For Good',
+  'type': 'Film'},
+ {'daysWithSales': 4,
+  'endDate': '2025-11-09',
+  'notes': '',
+  'startDate': '2025-11-06',
+  'ticketsSold': 22,
+  'title': 'Truth & Treason',
+  'type': 'Film'},
+ {'daysWithSales': 5,
+  'endDate': '2025-11-20',
+  'notes': '',
+  'startDate': '2025-11-08',
+  'ticketsSold': 37,
+  'title': 'Predator: Badlands',
+  'type': 'Film'},
+ {'daysWithSales': 10,
+  'endDate': '2025-11-30',
+  'notes': '',
+  'startDate': '2025-11-14',
+  'ticketsSold': 56,
+  'title': 'The Running Man',
+  'type': 'Film'},
+ {'daysWithSales': 7,
+  'endDate': '2025-12-14',
+  'notes': '',
+  'startDate': '2025-12-05',
+  'ticketsSold': 57,
+  'title': "Five Nights at Freddy's 2",
+  'type': 'Film'},
+ {'daysWithSales': 7,
+  'endDate': '2026-01-01',
+  'notes': '',
+  'startDate': '2025-12-14',
+  'ticketsSold': 102,
+  'title': 'David',
+  'type': 'Film'},
+ {'daysWithSales': 13,
+  'endDate': '2026-01-15',
+  'notes': '',
+  'startDate': '2025-12-19',
+  'ticketsSold': 138,
+  'title': 'Avatar: Fire and Ash',
+  'type': 'Film'},
+ {'daysWithSales': 6,
+  'endDate': '2026-01-10',
+  'notes': '',
+  'startDate': '2026-01-02',
+  'ticketsSold': 60,
+  'title': 'The SpongeBob Movie: Search for SquarePants',
+  'type': 'Film'},
+ {'daysWithSales': 11,
+  'endDate': '2026-02-06',
+  'notes': '',
+  'startDate': '2026-01-16',
+  'ticketsSold': 149,
+  'title': 'The Housemaid',
+  'type': 'Film'},
+ {'daysWithSales': 4,
+  'endDate': '2026-01-24',
+  'notes': '',
+  'startDate': '2026-01-17',
+  'ticketsSold': 22,
+  'title': '28 Years Later: The Bone Temple',
+  'type': 'Film'},
+ {'daysWithSales': 8,
+  'endDate': '2026-02-08',
+  'notes': '',
+  'startDate': '2026-01-29',
+  'ticketsSold': 73,
+  'title': 'Iron Lung',
+  'type': 'Film'},
+ {'daysWithSales': 6,
+  'endDate': '2026-02-12',
+  'notes': '',
+  'startDate': '2026-01-31',
+  'ticketsSold': 35,
+  'title': 'Send Help',
+  'type': 'Film'},
+ {'daysWithSales': 7,
+  'endDate': '2026-02-19',
+  'notes': '',
+  'startDate': '2026-02-06',
+  'ticketsSold': 34,
+  'title': 'Solo Mio',
+  'type': 'Film'},
+ {'daysWithSales': 3,
+  'endDate': '2026-02-15',
+  'notes': 'Classic re-release',
+  'startDate': '2026-02-13',
+  'ticketsSold': 8,
+  'title': 'Notting Hill',
+  'type': 'Special screening'},
+ {'daysWithSales': 12,
+  'endDate': '2026-03-05',
+  'notes': '',
+  'startDate': '2026-02-19',
+  'ticketsSold': 66,
+  'title': 'I Can Only Imagine 2',
+  'type': 'Film'},
+ {'daysWithSales': 3,
+  'endDate': '2026-02-22',
+  'notes': 'Classic re-release',
+  'startDate': '2026-02-20',
+  'ticketsSold': 38,
+  'title': 'The Goonies',
+  'type': 'Special screening'},
+ {'daysWithSales': 9,
+  'endDate': '2026-03-12',
+  'notes': '',
+  'startDate': '2026-02-26',
+  'ticketsSold': 105,
+  'title': 'Scream 7',
+  'type': 'Film'},
+ {'daysWithSales': 8,
+  'endDate': '2026-03-18',
+  'notes': '',
+  'startDate': '2026-03-06',
+  'ticketsSold': 96,
+  'title': 'Hoppers',
+  'type': 'Film'},
+ {'daysWithSales': 13,
+  'endDate': '2026-03-29',
+  'notes': '',
+  'startDate': '2026-03-13',
+  'ticketsSold': 199,
+  'title': 'Reminders of Him',
+  'type': 'Film'},
+ {'daysWithSales': 10,
+  'endDate': '2026-04-02',
+  'notes': '',
+  'startDate': '2026-03-20',
+  'ticketsSold': 158,
+  'title': 'Project Hail Mary',
+  'type': 'Film'},
+ {'daysWithSales': 15,
+  'endDate': '2026-04-23',
+  'notes': '',
+  'startDate': '2026-04-01',
+  'ticketsSold': 327,
+  'title': 'The Super Mario Galaxy Movie',
+  'type': 'Film'},
+ {'daysWithSales': 5,
+  'endDate': '2026-04-16',
+  'notes': '',
+  'startDate': '2026-04-04',
+  'ticketsSold': 21,
+  'title': 'The Drama',
+  'type': 'Film'},
+ {'daysWithSales': 7,
+  'endDate': '2026-04-26',
+  'notes': 'Classic re-release',
+  'startDate': '2026-04-17',
+  'ticketsSold': 41,
+  'title': 'The Mummy',
+  'type': 'Special screening'},
+ {'daysWithSales': 2,
+  'endDate': '2026-05-12',
+  'notes': 'Classic/cult screening',
+  'startDate': '2026-04-20',
+  'ticketsSold': 10,
+  'title': 'Reefer Madness',
+  'type': 'Special screening'},
+ {'daysWithSales': 9,
+  'endDate': '2026-05-07',
+  'notes': '',
+  'startDate': '2026-04-25',
+  'ticketsSold': 77,
+  'title': 'Michael',
+  'type': 'Film'},
+ {'daysWithSales': 13,
+  'endDate': '2026-05-20',
+  'notes': '',
+  'startDate': '2026-05-01',
+  'ticketsSold': 90,
+  'title': 'The Devil Wears Prada 2',
+  'type': 'Film'},
+ {'daysWithSales': 6,
+  'endDate': '2026-05-17',
+  'notes': '',
+  'startDate': '2026-05-08',
+  'ticketsSold': 44,
+  'title': 'The Sheep Detectives',
+  'type': 'Film'},
+ {'daysWithSales': 4,
+  'endDate': '2026-06-23',
+  'notes': 'Generic classic-movie nights',
+  'startDate': '2026-05-12',
+  'ticketsSold': 32,
+  'title': 'Classic Movie (various)',
+  'type': 'Special screening'},
+ {'daysWithSales': 6,
+  'endDate': '2026-05-30',
+  'notes': '',
+  'startDate': '2026-05-22',
+  'ticketsSold': 49,
+  'title': 'Passenger',
+  'type': 'Film'},
+ {'daysWithSales': 12,
+  'endDate': '2026-06-07',
+  'notes': 'Re-release',
+  'startDate': '2026-05-22',
+  'ticketsSold': 77,
+  'title': 'Star Wars',
+  'type': 'Special screening'},
+ {'daysWithSales': 7,
+  'endDate': '2026-06-18',
+  'notes': '',
+  'startDate': '2026-06-05',
+  'ticketsSold': 38,
+  'title': 'Masters of the Universe',
+  'type': 'Film'},
+ {'daysWithSales': 4,
+  'endDate': '2026-06-16',
+  'notes': 'Special screening',
+  'startDate': '2026-06-10',
+  'ticketsSold': 28,
+  'title': 'The Amazing Digital Circus: The Last Act',
+  'type': 'Special screening'},
+ {'daysWithSales': 11,
+  'endDate': '2026-06-27',
+  'notes': '',
+  'startDate': '2026-06-12',
+  'ticketsSold': 84,
+  'title': 'Disclosure Day',
+  'type': 'Film'},
+ {'daysWithSales': 13,
+  'endDate': '2026-07-09',
+  'notes': '',
+  'startDate': '2026-06-19',
+  'ticketsSold': 201,
+  'title': 'Toy Story 5',
+  'type': 'Film'},
+ {'daysWithSales': 11,
+  'endDate': '2026-07-16',
+  'notes': '',
+  'startDate': '2026-07-01',
+  'ticketsSold': 178,
+  'title': 'Minions & Monsters',
+  'type': 'Film'},
+ {'daysWithSales': 4,
+  'endDate': '2026-07-07',
+  'notes': '',
+  'startDate': '2026-07-03',
+  'ticketsSold': 23,
+  'title': 'Young Washington',
+  'type': 'Film'},
+ {'daysWithSales': 5,
+  'endDate': '2026-07-16',
+  'notes': '',
+  'startDate': '2026-07-10',
+  'ticketsSold': 77,
+  'title': 'Moana (Live Action)',
+  'type': 'Film'}]
+
+
+def engagement_kind(entry: dict) -> str:
+    """Map a dataset entry to an Engagement kind.
+
+    Regular films -> REGULAR. "Special screening" entries -> SPECIAL_EVENT when
+    the note mentions an event, otherwise CLASSIC (re-releases).
+    """
+    if entry["type"] == "Film":
+        return Engagement.Kind.REGULAR
+    notes = (entry.get("notes") or "").lower()
+    if "event" in notes:
+        return Engagement.Kind.SPECIAL_EVENT
+    return Engagement.Kind.CLASSIC
+
+
+def daterange(start: date, end: date) -> Iterator[date]:
+    """Yield every date from start to end inclusive."""
+    day = start
+    while day <= end:
+        yield day
+        day += timedelta(days=1)
+
+
+def find_free_slot(
+    taken: set[tuple[int, datetime]],
+    day: date,
+    screens: list[Screen],
+    preferred_index: int,
+) -> tuple[Screen, datetime]:
+    """First free (screen, datetime) for `day`, respecting unique(screen, starts_at).
+
+    Tries the preferred hour on every screen before moving to the next hour, so
+    concurrent runs spread across both screens at 3pm before anything slides later.
+    `taken` holds (screen_id, aware_datetime) pairs already in use; equal instants
+    compare equal across time zones, so preloaded UTC values match local candidates.
+    """
+    ordered = (
+        screens[preferred_index % len(screens) :]
+        + screens[: preferred_index % len(screens)]
+    )
+    for hour in SHOWTIME_HOURS:
+        when = timezone.make_aware(datetime(day.year, day.month, day.day, hour, 0))
+        for screen in ordered:
+            if (screen.id, when) not in taken:
+                return screen, when
+    raise RuntimeError(f"No free showtime slot for {day} across {len(screens)} screens")
+
+
+def _parse(d: str) -> date:
+    return datetime.strptime(d, "%Y-%m-%d").date()
+
+
+class Command(BaseCommand):
+    help = "Backfill past films (embedded Square data) into cinema tables for the calendar."
+
+    def add_arguments(self, parser) -> None:
+        parser.add_argument(
+            "--dry-run", action="store_true",
+            help="Look up TMDB matches but write nothing to the database.",
+        )
+        parser.add_argument(
+            "--sleep", type=float, default=1.0,
+            help="Seconds to pause between TMDB lookups (default 1.0).",
+        )
+
+    def handle(self, *args, **options) -> None:
+        dry_run: bool = options["dry_run"]
+        sleep_s: float = options["sleep"]
+
+        screens = list(Screen.objects.order_by("id"))
+        if not screens:
+            raise CommandError("No screens configured; create screens before backfilling.")
+
+        taken: set[tuple[int, datetime]] = set(
+            Showtime.objects.values_list("screen_id", "starts_at")
+        )
+        service = TMDBService()
+
+        created = skipped = title_only = showtimes_made = 0
+        title_only_names: list[str] = []
+
+        for index, entry in enumerate(FILMS):
+            title = entry["title"]
+
+            # 1. Cheap skip: an existing film with this title/slug that already runs.
+            slug = slugify(title)
+            if Film.objects.filter(
+                Q(title__iexact=title) | Q(slug=slug), engagements__isnull=False
+            ).exists():
+                self.stdout.write(f"SKIP     {title} (already has engagements)")
+                skipped += 1
+                continue
+
+            # 2. Resolve via TMDB.
+            results = service.search_films(title)
+            time.sleep(sleep_s)
+
+            if results:
+                top = results[0]
+                self.stdout.write(
+                    f"MATCH    {title} -> {top.get('title')} "
+                    f"({(top.get('release_date') or '????')[:4]}) tmdb:{top.get('tmdb_id')}"
+                )
+                if dry_run:
+                    existing = Film.objects.filter(tmdb_id=str(top["tmdb_id"])).first()
+                    if existing and existing.engagements.exists():
+                        self.stdout.write(f"SKIP     {title} (already has engagements)")
+                        skipped += 1
+                    else:
+                        created += 1
+                    continue
+                film = import_film_from_tmdb(int(top["tmdb_id"]), service=service)
+                # If a second dataset entry ever resolves to this same tmdb_id (e.g. a
+                # distinct Square title for the same movie, or a re-release), only the
+                # first entry backfills here; this one is silently skipped. No such
+                # duplicate exists in the current 90-entry dataset.
+                if film.engagements.exists():
+                    self.stdout.write(f"SKIP     {title} (already has engagements)")
+                    skipped += 1
+                    continue
+            else:
+                self.stdout.write(f"NO-TMDB  {title} (creating title-only)")
+                title_only += 1
+                title_only_names.append(title)
+                if dry_run:
+                    continue
+                film = None
+
+            # 4/5. Engagement + conflict-free showtimes.
+            start, end = _parse(entry["startDate"]), _parse(entry["endDate"])
+            kind = engagement_kind(entry)
+
+            slots = []
+            for day in daterange(start, end):
+                screen, when = find_free_slot(taken, day, screens, index)
+                taken.add((screen.id, when))
+                slots.append((screen, when))
+
+            note = (entry.get("notes") or "").strip()
+            eng_notes = "Backfilled from Square sales data"
+            if note:
+                eng_notes = f"{note}\n{eng_notes}"
+
+            with transaction.atomic():
+                if film is None:
+                    film = Film.objects.create(title=title)
+                engagement = Engagement.objects.create(
+                    screen=slots[0][0] if slots else screens[0],
+                    start_date=start,
+                    end_date=end,
+                    kind=kind,
+                    status="CONFIRMED",
+                    show_in_main_listings=Engagement.default_visibility_for(kind),
+                    notes=eng_notes,
+                    admissions=entry.get("ticketsSold"),
+                )
+                EngagementFilm.objects.create(engagement=engagement, film=film, position=1)
+                for screen, when in slots:
+                    try:
+                        with transaction.atomic():
+                            Showtime.objects.create(engagement=engagement, screen=screen, starts_at=when)
+                        showtimes_made += 1
+                    except IntegrityError:
+                        # Savepoint rollback: skip only this colliding showtime.
+                        # find_free_slot should already prevent collisions.
+                        continue
+
+            self.stdout.write(self.style.SUCCESS(f"CREATED  {title} ({start} -> {end}, {len(slots)} showtimes)"))
+            if results:
+                created += 1
+
+        verb = "Would create" if dry_run else "Created"
+        self.stdout.write(self.style.SUCCESS(
+            f"\n{verb}: {created}  Skipped: {skipped}  "
+            f"Title-only: {title_only}  Showtimes: {showtimes_made}"
+        ))
+        if title_only_names:
+            self.stdout.write("\nTitle-only films to enrich by hand in admin:")
+            for name in title_only_names:
+                self.stdout.write(f"  - {name}")
