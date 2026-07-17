@@ -1,3 +1,4 @@
+import io
 from datetime import date, datetime
 from unittest import mock
 
@@ -97,7 +98,7 @@ class BackfillHandleTests(TestCase):
         with mock.patch.object(cmd, "FILMS", films), \
              mock.patch.object(cmd, "TMDBService", return_value=svc), \
              mock.patch.object(cmd.time, "sleep"):
-            call_command("backfill_past_films", **opts)
+            call_command("backfill_past_films", stdout=io.StringIO(), **opts)
 
     def test_creates_film_engagement_and_showtimes(self) -> None:
         svc = self._mock_service()
@@ -141,10 +142,6 @@ class BackfillHandleTests(TestCase):
         svc = self._mock_service()
         one = _entry(title="Film One")
         two = _entry(title="Film Two")
-        two_svc = self._mock_service(
-            search_results=[{"tmdb_id": 777, "title": "Film Two", "release_date": "2024-06-01"}],
-            details={**TMDB_DETAILS, "tmdb_id": 777, "imdb_id": "tt777", "title": "Film Two"},
-        )
         # first film -> tmdb 555, second -> 777; same dates, must not clash
         def search(title, *a, **k):
             return ([{"tmdb_id": 777, "title": "Film Two", "release_date": "2024-06-01"}]
@@ -169,3 +166,10 @@ class BackfillHandleTests(TestCase):
         self.assertEqual(Engagement.objects.count(), 0)
         self.assertEqual(Showtime.objects.count(), 0)
         svc.search_films.assert_called_once()  # still looks up to preview the match
+
+    def test_title_only_film_rolled_back_on_failure(self) -> None:
+        svc = self._mock_service(search_results=[])  # forces title-only path
+        with mock.patch.object(cmd, "find_free_slot", side_effect=RuntimeError("boom")):
+            with self.assertRaises(RuntimeError):
+                self._run([_entry(title="Doomed Run")], svc)
+        self.assertEqual(Film.objects.filter(title="Doomed Run").count(), 0)

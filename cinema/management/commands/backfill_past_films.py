@@ -780,7 +780,7 @@ class Command(BaseCommand):
                 title_only_names.append(title)
                 if dry_run:
                     continue
-                film = Film.objects.create(title=title)
+                film = None
 
             # 4/5. Engagement + conflict-free showtimes.
             start, end = _parse(entry["startDate"]), _parse(entry["endDate"])
@@ -798,6 +798,8 @@ class Command(BaseCommand):
                 eng_notes = f"{note}\n{eng_notes}"
 
             with transaction.atomic():
+                if film is None:
+                    film = Film.objects.create(title=title)
                 engagement = Engagement.objects.create(
                     screen=slots[0][0] if slots else screens[0],
                     start_date=start,
