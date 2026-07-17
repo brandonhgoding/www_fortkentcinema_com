@@ -770,6 +770,10 @@ class Command(BaseCommand):
                         created += 1
                     continue
                 film = import_film_from_tmdb(int(top["tmdb_id"]), service=service)
+                # If a second dataset entry ever resolves to this same tmdb_id (e.g. a
+                # distinct Square title for the same movie, or a re-release), only the
+                # first entry backfills here; this one is silently skipped. No such
+                # duplicate exists in the current 90-entry dataset.
                 if film.engagements.exists():
                     self.stdout.write(f"SKIP     {title} (already has engagements)")
                     skipped += 1
@@ -813,10 +817,12 @@ class Command(BaseCommand):
                 EngagementFilm.objects.create(engagement=engagement, film=film, position=1)
                 for screen, when in slots:
                     try:
-                        Showtime.objects.create(engagement=engagement, screen=screen, starts_at=when)
+                        with transaction.atomic():
+                            Showtime.objects.create(engagement=engagement, screen=screen, starts_at=when)
                         showtimes_made += 1
                     except IntegrityError:
-                        # Backstop only; find_free_slot should prevent this.
+                        # Savepoint rollback: skip only this colliding showtime.
+                        # find_free_slot should already prevent collisions.
                         continue
 
             self.stdout.write(self.style.SUCCESS(f"CREATED  {title} ({start} -> {end}, {len(slots)} showtimes)"))
