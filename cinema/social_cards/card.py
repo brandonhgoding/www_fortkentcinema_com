@@ -106,7 +106,7 @@ def resolve_artwork(
         posters = [film.poster_url for film in films[:2] if film.poster_url]
         if len(posters) == 2:
             return tuple(Artwork(url, CENTRE_CROP) for url in posters)
-    for film in films:
+    for film in films[:2]:
         art = _single_artwork(film, platform)
         if art is not None:
             return (art,)

@@ -155,6 +155,14 @@ class ResolveArtworkTests(TestCase):
             ),
         )
 
+    def test_three_films_first_two_no_artwork_ignores_third(self) -> None:
+        # First two have no artwork, third does — should return empty
+        # (contract: only use first two films)
+        a = make_film("A")
+        b = make_film("B")
+        c = make_film("C", poster_url="https://img/c.jpg")
+        self.assertEqual(resolve_artwork([a, b, c], FACEBOOK), ())
+
 
 class CardDataTests(TestCase):
     def setUp(self) -> None:
