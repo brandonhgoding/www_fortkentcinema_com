@@ -39,18 +39,26 @@ def upsize_tmdb_url(url: str) -> str:
 
 def _download(url: str) -> bytes | None:
     try:
-        response = requests.get(url, timeout=TIMEOUT_SECONDS)
-        response.raise_for_status()
+        with requests.get(
+            url, timeout=TIMEOUT_SECONDS, stream=True
+        ) as response:
+            response.raise_for_status()
+            data = BytesIO()
+            total_size = 0
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:  # filter out keep-alive new chunks
+                    total_size += len(chunk)
+                    if total_size > MAX_BYTES:
+                        logger.warning(
+                            "social card artwork too large (%d bytes): %s",
+                            total_size, url
+                        )
+                        return None
+                    data.write(chunk)
+            return data.getvalue()
     except requests.RequestException:
         logger.warning("social card artwork fetch failed: %s", url)
         return None
-    content = response.content
-    if len(content) > MAX_BYTES:
-        logger.warning(
-            "social card artwork too large (%d bytes): %s", len(content), url
-        )
-        return None
-    return content
 
 
 def _decode(data: bytes) -> Image.Image | None:

@@ -25,6 +25,19 @@ class FakeResponse:
         if self.status_code >= 400:
             raise requests.HTTPError(f"status {self.status_code}")
 
+    def iter_content(self, chunk_size: int = 8192) -> object:
+        """Iterate over response content in chunks."""
+        for i in range(0, len(self.content), chunk_size):
+            yield self.content[i : i + chunk_size]
+
+    def __enter__(self) -> "FakeResponse":
+        return self
+
+    def __exit__(
+        self, exc_type: object, exc_val: object, exc_tb: object
+    ) -> None:
+        pass
+
 
 class UpsizeTests(TestCase):
     def test_w500_becomes_original(self) -> None:
