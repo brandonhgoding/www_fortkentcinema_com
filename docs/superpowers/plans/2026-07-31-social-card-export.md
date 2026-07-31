@@ -1530,8 +1530,11 @@ git commit -m "feat(cinema): background, marquee, tree, and artwork primitives"
 - Consumes: `theme`, `card` (`CardData`, `Artwork`, `FACEBOOK`, `INSTAGRAM`, `BADGE_SLUGS`), `posters.fetch_artwork`, all of `draw`.
 - Produces:
   - `layouts.render(card_data: CardData, platform: str, images: Sequence[tuple[Image.Image, float]]) -> bytes`
-  - `social_cards.render_card(engagement, platform, badge=None, today=None) -> bytes`
+  - `social_cards.render_card(engagement, platform, badge=None, today=None) -> tuple[bytes, str]` — returns `(png_bytes, filename)`
   - `social_cards.card_filename(card_data: CardData, platform: str) -> str`
+
+`render_card` returns the filename alongside the bytes so callers never rebuild
+`CardData` just to name the download.
 
 `render()` takes already-fetched images so that layout code never touches the
 network and is trivially testable. Each entry pairs an image with its crop bias.
@@ -1649,13 +1652,14 @@ class EntryPointTests(TestCase):
         with mock.patch(
             "cinema.social_cards.fetch_artwork", return_value=an_image()
         ) as fetch:
-            png = render_card(self.eng, FACEBOOK, today=JULY_1)
+            png, filename = render_card(self.eng, FACEBOOK, today=JULY_1)
         fetch.assert_called_once_with("https://image.tmdb.org/t/p/w500/d.jpg")
         self.assertEqual(open_png(png).size, (1200, 630))
+        self.assertEqual(filename, "fkc-dune-now-playing-facebook.png")
 
     def test_render_card_survives_a_failed_fetch(self) -> None:
         with mock.patch("cinema.social_cards.fetch_artwork", return_value=None):
-            png = render_card(self.eng, INSTAGRAM, today=JULY_1)
+            png, _ = render_card(self.eng, INSTAGRAM, today=JULY_1)
         self.assertEqual(open_png(png).size, (1080, 1080))
 
     def test_filename_uses_hyphenated_badge(self) -> None:
@@ -1910,15 +1914,19 @@ def render_card(
     platform: str,
     badge: str | None = None,
     today: datetime.date | None = None,
-) -> bytes:
-    """Render a social card for `engagement`. Never raises on artwork failure."""
+) -> tuple[bytes, str]:
+    """Render a social card for `engagement`, with its download filename.
+
+    Returns both so callers never rebuild CardData just to name the file.
+    Never raises on artwork failure — a card without art still renders.
+    """
     data = CardData.from_engagement(engagement, platform, badge, today)
     images = []
     for artwork in data.artwork:
         image = fetch_artwork(artwork.url)
         if image is not None:
             images.append((image, artwork.crop_bias))
-    return render(data, platform, images)
+    return render(data, platform, images), card_filename(data, platform)
 ```
 
 The tests patch `cinema.social_cards.fetch_artwork`, which is why it is imported
@@ -2116,13 +2124,7 @@ Expected: FAIL — `NoReverseMatch: Reverse for 'engagement_social_card' not fou
 In `dashboard/views.py`, add to the imports at the top:
 
 ```python
-from cinema.social_cards import (
-    BADGE_BY_PARAM,
-    PLATFORMS,
-    CardData,
-    card_filename,
-    render_card,
-)
+from cinema.social_cards import BADGE_BY_PARAM, PLATFORMS, render_card
 from django.http import HttpResponseBadRequest
 ```
 
@@ -2146,10 +2148,7 @@ class EngagementSocialCardView(StaffRequiredMixin, View):
             pk=pk,
         )
         badge = BADGE_BY_PARAM.get(request.GET.get("badge", ""))
-        png = render_card(engagement, platform, badge)
-
-        data = CardData.from_engagement(engagement, platform, badge)
-        filename = card_filename(data, platform)
+        png, filename = render_card(engagement, platform, badge)
         disposition = "attachment" if "download" in request.GET else "inline"
 
         response = HttpResponse(png, content_type="image/png")
@@ -2297,8 +2296,6 @@ from cinema.social_cards import (
     INSTAGRAM,
     PARAM_BY_BADGE,
     PLATFORMS,
-    CardData,
-    card_filename,
     default_badge,
     render_card,
 )
