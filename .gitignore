@@ -143,3 +143,6 @@ original_images/
 
 static_collected/
 staticfiles/
+
+# Superpowers brainstorming session files
+.superpowers/
