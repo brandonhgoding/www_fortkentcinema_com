@@ -19,6 +19,11 @@ urlpatterns = [
     path("engagements/<int:pk>/edit", views.EngagementEditView.as_view(), name="engagement_edit"),
     path("engagements/<int:pk>/delete", views.EngagementDeleteView.as_view(), name="engagement_delete"),
     path("engagements/<int:pk>/status", views.EngagementStatusView.as_view(), name="engagement_status"),
+    path(
+        "engagements/<int:pk>/social/<slug:platform>.png",
+        views.EngagementSocialCardView.as_view(),
+        name="engagement_social_card",
+    ),
     path("engagements/<int:eng_pk>/showtimes/new", views.ShowtimeCreateView.as_view(), name="showtime_create"),
     path("engagements/<int:eng_pk>/showtimes/bulk", views.ShowtimeBulkView.as_view(), name="showtime_bulk"),
     path("showtimes/<int:pk>/edit", views.ShowtimeEditView.as_view(), name="showtime_edit"),
