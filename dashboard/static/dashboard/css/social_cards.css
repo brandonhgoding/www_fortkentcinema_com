@@ -29,7 +29,7 @@
   max-width: 420px;
   aspect-ratio: 1 / 1;
   border-radius: 6px;
-  border: 1px solid rgba(13, 13, 13, 0.12);
+  border: 1px solid var(--border-light);
   background: var(--surface-secondary);
   object-fit: cover;
 }
