@@ -24,6 +24,10 @@ TREE = (5, 7, 12)
 
 FACEBOOK_SIZE = (1200, 630)
 INSTAGRAM_SIZE = (1080, 1080)
+# Facebook Page cover photo. 1640x624 is the recommended upload size; it
+# displays around 820x312 on desktop. Mobile shows a narrower slice, so the
+# outer edges get cropped — see BANNER_SAFE_INSET in layouts.py.
+FACEBOOK_BANNER_SIZE = (1640, 624)
 
 # Text glow: a tight cream halo over a wide gold bloom.
 GLOW_TIGHT_RADIUS = 10

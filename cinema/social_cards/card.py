@@ -18,7 +18,11 @@ from cinema.models import Engagement, Film
 
 FACEBOOK = "facebook"
 INSTAGRAM = "instagram"
-PLATFORMS = (FACEBOOK, INSTAGRAM)
+# Facebook Page cover photo — a much wider crop than a feed post, with its own
+# layout. Artwork selection follows FACEBOOK (its art panel is portrait-ish),
+# so only INSTAGRAM needs special-casing in _single_artwork.
+FACEBOOK_BANNER = "facebook-banner"
+PLATFORMS = (FACEBOOK, INSTAGRAM, FACEBOOK_BANNER)
 
 BADGE_NOW_PLAYING = "NOW PLAYING"
 BADGE_COMING_SOON = "COMING SOON"

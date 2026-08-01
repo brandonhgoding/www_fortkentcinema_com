@@ -57,6 +57,20 @@ class SocialCardViewTests(TestCase):
         response = self.client.get(self.url("facebook"))
         self.assertEqual(Image.open(BytesIO(response.content)).size, (1200, 630))
 
+    def test_facebook_banner_dimensions(self) -> None:
+        response = self.client.get(self.url("facebook-banner"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Image.open(BytesIO(response.content)).size, (1640, 624))
+
+    def test_facebook_banner_download_filename(self) -> None:
+        response = self.client.get(
+            self.url("facebook-banner", download="1")
+        )
+        self.assertIn(
+            'filename="fkc-dune-now-playing-facebook-banner.png"',
+            response["Content-Disposition"],
+        )
+
     def test_served_inline_by_default(self) -> None:
         response = self.client.get(self.url())
         self.assertIn("inline", response["Content-Disposition"])
@@ -148,7 +162,7 @@ class SocialPanelTests(TestCase):
             datetime.date(2026, 7, 1), datetime.date(2026, 7, 7)
         )
         html = self.detail_html(eng)
-        for platform in ("facebook", "instagram"):
+        for platform in ("facebook", "instagram", "facebook-banner"):
             self.assertIn(
                 reverse(
                     "dashboard:engagement_social_card", args=[eng.pk, platform]

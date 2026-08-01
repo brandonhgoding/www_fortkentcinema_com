@@ -12,6 +12,7 @@ from cinema.social_cards.card import (
     BADGE_COMING_SOON,
     BADGE_NOW_PLAYING,
     FACEBOOK,
+    FACEBOOK_BANNER,
     INSTAGRAM,
     CardData,
 )
@@ -167,6 +168,80 @@ class RenderTests(TestCase):
     def test_rendering_is_deterministic(self) -> None:
         first = layouts.render(a_card(), FACEBOOK, [(an_image(), 0.5)])
         second = layouts.render(a_card(), FACEBOOK, [(an_image(), 0.5)])
+        self.assertEqual(first, second)
+
+
+class FacebookBannerTests(TestCase):
+    """The Page cover photo.
+
+    A cover is cropped by two things a feed post isn't: mobile shows a
+    narrower slice than desktop, and the Page's profile picture covers the
+    bottom-left. Everything that must be read has to survive both.
+    """
+
+    def _render(self, **over: object) -> Image.Image:
+        png = layouts.render(
+            a_card(**over), FACEBOOK_BANNER, [(an_image(), 0.5)]
+        )
+        return open_png(png).convert("RGB")
+
+    def _text_ink_bounds(
+        self, image: Image.Image
+    ) -> tuple[int, int, int, int]:
+        """Bounding box of cream/gold text ink, excluding the artwork panel."""
+        px = image.load()
+        xs, ys = [], []
+        for y in range(image.size[1]):
+            for x in range(0, layouts.BANNER_ART_LEFT - 40):
+                r, g, b = px[x, y]
+                is_cream = r > 200 and g > 190 and b > 150
+                is_gold = r > 180 and g > 140 and b < 140
+                if is_cream or is_gold:
+                    xs.append(x)
+                    ys.append(y)
+        return min(xs), min(ys), max(xs), max(ys)
+
+    def test_dimensions(self) -> None:
+        self.assertEqual(self._render().size, (1640, 624))
+
+    def test_renders_without_artwork(self) -> None:
+        png = layouts.render(a_card(), FACEBOOK_BANNER, [])
+        self.assertEqual(open_png(png).size, (1640, 624))
+
+    def test_text_stays_inside_the_mobile_safe_area(self) -> None:
+        left, _, right, _ = self._text_ink_bounds(self._render())
+        width = 1640
+        self.assertGreaterEqual(left, layouts.BANNER_SAFE_INSET)
+        self.assertLessEqual(right, width - layouts.BANNER_SAFE_INSET)
+
+    def test_text_clears_the_profile_picture_corner(self) -> None:
+        """Nothing readable may sit in the bottom-left, where the Page's
+        profile picture is overlaid on desktop."""
+        image = self._render()
+        px = image.load()
+        for y in range(624 - 200, 624):
+            for x in range(0, layouts.BANNER_TEXT_X):
+                r, g, b = px[x, y]
+                self.assertFalse(
+                    r > 200 and g > 190 and b > 150,
+                    f"text ink at ({x}, {y}) is under the profile picture",
+                )
+
+    def test_url_line_is_well_clear_of_the_bottom_edge(self) -> None:
+        """The whole reason this layout exists: on a 1200x630 feed card the
+        URL sat in a bottom strip, which a cover crop eats entirely."""
+        _, _, _, bottom = self._text_ink_bounds(self._render())
+        clearance = 624 - bottom
+        self.assertGreater(clearance, 100)
+
+    def test_a_long_headline_does_not_push_the_url_off(self) -> None:
+        long_title = "THE ASSASSINATION OF JESSE JAMES BY THE COWARD ROBERT FORD"
+        _, _, _, bottom = self._text_ink_bounds(self._render(headline=long_title))
+        self.assertGreater(624 - bottom, 100)
+
+    def test_rendering_is_deterministic(self) -> None:
+        first = layouts.render(a_card(), FACEBOOK_BANNER, [(an_image(), 0.5)])
+        second = layouts.render(a_card(), FACEBOOK_BANNER, [(an_image(), 0.5)])
         self.assertEqual(first, second)
 
 

@@ -13,6 +13,7 @@ from cinema.showtimes_overlap import (
 from cinema.social_cards import (
     BADGE_BY_PARAM,
     FACEBOOK,
+    FACEBOOK_BANNER,
     INSTAGRAM,
     PARAM_BY_BADGE,
     PLATFORMS,
@@ -287,6 +288,10 @@ class EngagementDetailView(StaffRequiredMixin, TemplateView):
         )
         ctx["social_instagram_url"] = reverse(
             "dashboard:engagement_social_card", args=[engagement.pk, INSTAGRAM]
+        )
+        ctx["social_banner_url"] = reverse(
+            "dashboard:engagement_social_card",
+            args=[engagement.pk, FACEBOOK_BANNER],
         )
         return ctx
 

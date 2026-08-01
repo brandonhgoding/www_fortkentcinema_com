@@ -12,7 +12,7 @@ from io import BytesIO
 from PIL import Image, ImageFont
 
 from . import draw, theme
-from .card import FACEBOOK, INSTAGRAM, CardData
+from .card import FACEBOOK, FACEBOOK_BANNER, INSTAGRAM, CardData
 
 ArtworkImages = Sequence[tuple[Image.Image, float]]
 
@@ -54,6 +54,32 @@ INSTAGRAM_TEXT_TO_FOOTER_GAP = 32
 # the text ink, roughly 4-5% of each canvas's height.
 FACEBOOK_FOOTER_HEIGHT = 76
 INSTAGRAM_FOOTER_HEIGHT = 108
+
+# --- Facebook Page cover geometry -------------------------------------------
+# A cover photo is cropped by two things a feed post isn't, and both shape
+# this layout:
+#
+#   1. Mobile shows a narrower slice than desktop, so roughly the outer tenth
+#      of each side can disappear. Nothing that must be read goes outside
+#      BANNER_SAFE_INSET.
+#   2. The Page's profile picture overlaps the bottom-left corner on desktop.
+#      BANNER_TEXT_X starts the text column clear of it, and the block is
+#      kept well above the bottom edge.
+#
+# Consequently the cover has NO bottom footer strip — the URL line is the last
+# item in the text column instead. A full-bleed bottom band is exactly what
+# the profile picture and the Page name sit on top of.
+BANNER_SAFE_INSET = 170
+BANNER_TEXT_X = 420
+BANNER_TEXT_WIDTH = 600
+BANNER_ART_LEFT = 1120
+BANNER_BULBS_X = 1090
+BANNER_BADGE_TOP = 66
+BANNER_HEADLINE_TOP = 148
+BANNER_HEADLINE_BOX_HEIGHT = 210
+BANNER_DATE_GAP = 20
+BANNER_WORDMARK_GAP = 10
+BANNER_URL_GAP = 16
 
 
 def _clamp_lines(
@@ -178,6 +204,76 @@ def _render_facebook(data: CardData, images: ArtworkImages) -> Image.Image:
     return base
 
 
+def _render_facebook_banner(
+    data: CardData, images: ArtworkImages
+) -> Image.Image:
+    """Facebook Page cover photo.
+
+    Same furniture as the feed card, rearranged for a 2.6:1 crop: the text
+    column sits right of the profile-picture zone, and the URL line rides at
+    the bottom of that column rather than in a full-bleed footer band.
+    """
+    width, height = theme.FACEBOOK_BANNER_SIZE
+    base = draw.make_background((width, height))
+
+    art_box = (BANNER_ART_LEFT, 0, width, height)
+    _draw_artwork_area(base, art_box, images)
+    draw.fade_edge(base, art_box, "left", theme.INK)
+
+    draw.draw_trees(base, band_height=86)
+    draw.draw_bulbs(
+        base, (BANNER_BULBS_X, 22), (BANNER_BULBS_X, height - 22),
+        count=9, radius=6,
+    )
+
+    draw.draw_outlined_badge(
+        base,
+        data.badge,
+        theme.load_font(theme.FONT_MEDIUM, 24),
+        (BANNER_TEXT_X, BANNER_BADGE_TOP),
+        theme.GOLD,
+    )
+
+    lines, headline_font = draw.fit_text(
+        data.headline, theme.FONT_BOLD,
+        box_width=BANNER_TEXT_WIDTH, box_height=BANNER_HEADLINE_BOX_HEIGHT,
+        max_size=68, min_size=32,
+    )
+    lines = _clamp_lines(
+        lines, headline_font, HEADLINE_SPACING, BANNER_HEADLINE_BOX_HEIGHT
+    )
+    headline_height = len(lines) * draw.line_height(
+        headline_font, HEADLINE_SPACING
+    )
+    # Right edge lightly padded — it borders the bulb column at
+    # BANNER_BULBS_X. Generous elsewhere so the glow keeps its falloff.
+    headline_clip_box = (
+        BANNER_TEXT_X - HEADLINE_GLOW_MARGIN,
+        BANNER_HEADLINE_TOP - HEADLINE_GLOW_MARGIN,
+        BANNER_TEXT_X + BANNER_TEXT_WIDTH + HEADLINE_RIGHT_MARGIN_FACEBOOK,
+        BANNER_HEADLINE_TOP + headline_height + HEADLINE_GLOW_MARGIN,
+    )
+    y = draw.draw_glow_text(
+        base, lines, headline_font,
+        (BANNER_TEXT_X, BANNER_HEADLINE_TOP), HEADLINE_SPACING,
+        theme.CREAM, theme.GOLD, clip_box=headline_clip_box,
+    )
+
+    y = draw.draw_plain_text(
+        base, data.date_line, theme.load_font(theme.FONT_MEDIUM, 26),
+        (BANNER_TEXT_X, y + BANNER_DATE_GAP), theme.GOLD,
+    )
+    y = draw.draw_plain_text(
+        base, data.wordmark, theme.load_font(theme.FONT_BOLD, 24),
+        (BANNER_TEXT_X, y + BANNER_WORDMARK_GAP), theme.GOLD,
+    )
+    draw.draw_plain_text(
+        base, data.footer, theme.load_font(theme.FONT_MEDIUM, 18),
+        (BANNER_TEXT_X, y + BANNER_URL_GAP), theme.CREAM,
+    )
+    return base
+
+
 def _render_instagram(data: CardData, images: ArtworkImages) -> Image.Image:
     width, height = theme.INSTAGRAM_SIZE
     base = draw.make_background((width, height))
@@ -264,6 +360,8 @@ def render(
         canvas = _render_facebook(card_data, images)
     elif platform == INSTAGRAM:
         canvas = _render_instagram(card_data, images)
+    elif platform == FACEBOOK_BANNER:
+        canvas = _render_facebook_banner(card_data, images)
     else:
         raise ValueError(f"unknown platform: {platform}")
     buffer = BytesIO()
