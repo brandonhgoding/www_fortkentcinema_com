@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import math
 
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
 from . import theme
 
@@ -78,6 +78,14 @@ def _tint(layer: Image.Image, color: RGB, strength: float) -> Image.Image:
     return tinted
 
 
+def _clip_to_box(layer: Image.Image, box: Box) -> Image.Image:
+    """Zero out a layer's alpha outside `box`, in place. Returns `layer`."""
+    mask = Image.new("L", layer.size, 0)
+    ImageDraw.Draw(mask).rectangle(box, fill=255)
+    layer.putalpha(ImageChops.multiply(layer.getchannel("A"), mask))
+    return layer
+
+
 def draw_glow_text(
     base: Image.Image,
     lines: list[str],
@@ -86,12 +94,19 @@ def draw_glow_text(
     line_spacing: float,
     body_color: RGB,
     accent_color: RGB,
+    clip_box: Box | None = None,
 ) -> int:
     """Draw glowing text; return the y coordinate just below the last line.
 
     When the block wraps to two or more lines the final line takes
     `accent_color`, matching the template's cream-headline-with-gold-last-line
     treatment. A single line is drawn entirely in `body_color`.
+
+    `clip_box`, if given, hard-bounds every pixel drawn (text and glow alike)
+    to that rectangle. Callers that size `lines` to fit a box should still
+    pass it: `fit_text` deliberately allows overflow at its size floor rather
+    than render nothing, and an unbreakable word wider than the box would
+    otherwise bleed past it uncontained.
     """
     x, y = origin
     step = line_height(font, line_spacing)
@@ -112,6 +127,10 @@ def draw_glow_text(
         theme.CREAM,
         theme.GLOW_TIGHT_STRENGTH,
     )
+    if clip_box is not None:
+        wide = _clip_to_box(wide, clip_box)
+        tight = _clip_to_box(tight, clip_box)
+        layer = _clip_to_box(layer, clip_box)
     base.alpha_composite(wide)
     base.alpha_composite(tight)
     base.alpha_composite(layer)
@@ -299,16 +318,24 @@ def draw_outlined_badge(
     color: RGB,
     padding: tuple[int, int] = (24, 12),
     border: int = 3,
+    scrim_color: RGB | None = None,
+    scrim_alpha: int = 120,
 ) -> None:
-    """The template's CATEGORY box: text in a thin outlined rectangle."""
+    """The template's CATEGORY box: text in a thin outlined rectangle.
+
+    `scrim_color`, if given, fills the box with a translucent rectangle
+    first — for a badge sitting over bright artwork, where gold-on-gold (or
+    gold-on-pale-sky) would otherwise be hard to read.
+    """
     x, y = origin
     pad_x, pad_y = padding
     text_width = font.getlength(text)
     text_height = font.size
+    box = [x, y, x + round(text_width) + pad_x * 2, y + text_height + pad_y * 2]
+    if scrim_color is not None:
+        scrim = Image.new("RGBA", base.size, (0, 0, 0, 0))
+        ImageDraw.Draw(scrim).rectangle(box, fill=scrim_color + (scrim_alpha,))
+        base.alpha_composite(scrim)
     pen = ImageDraw.Draw(base)
-    pen.rectangle(
-        [x, y, x + round(text_width) + pad_x * 2, y + text_height + pad_y * 2],
-        outline=color + (255,),
-        width=border,
-    )
+    pen.rectangle(box, outline=color + (255,), width=border)
     pen.text((x + pad_x, y + pad_y), text, font=font, fill=color + (255,))

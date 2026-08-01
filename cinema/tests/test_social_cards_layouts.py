@@ -40,6 +40,24 @@ def open_png(data: bytes) -> Image.Image:
     return Image.open(BytesIO(data))
 
 
+def bottom_bright_row(
+    image: Image.Image,
+    x_start: int,
+    x_end: int,
+    y_start: int,
+    y_end: int,
+    threshold: int = 300,
+) -> int | None:
+    """Scanning upward from `y_end`, the first row with a non-background
+    pixel in [x_start, x_end). Used to locate the bottom of a text block
+    without hard-coding font metrics."""
+    for y in range(y_end, y_start, -1):
+        for x in range(x_start, x_end, 4):
+            if sum(image.getpixel((x, y))) > threshold:
+                return y
+    return None
+
+
 class RenderTests(TestCase):
     def test_facebook_dimensions(self) -> None:
         png = layouts.render(a_card(), FACEBOOK, [(an_image(), 0.5)])
@@ -78,6 +96,69 @@ class RenderTests(TestCase):
             a_card(headline="A" * 120), FACEBOOK, [(an_image(), 0.5)]
         )
         self.assertEqual(open_png(png).size, (1200, 630))
+
+    def test_an_unbreakable_headline_does_not_bleed_into_the_artwork(
+        self,
+    ) -> None:
+        # "A" * 120 does not wrap (wrap_lines keeps an unbreakable word
+        # whole), so at Facebook's tuned box this would render as a single
+        # line thousands of pixels wide without a hard clip. Confirm a probe
+        # deep inside the artwork panel is unaffected by the headline at all.
+        art_color = (200, 40, 40)
+        baseline = layouts.render(
+            a_card(), FACEBOOK, [(an_image(art_color), 0.5)]
+        )
+        overflow = layouts.render(
+            a_card(headline="A" * 120), FACEBOOK, [(an_image(art_color), 0.5)]
+        )
+        # Deep inside the artwork panel, right of the seam, at the row the
+        # single unbreakable "line" of As is drawn on.
+        probe = (1100, 190)
+        self.assertEqual(
+            open_png(baseline).convert("RGB").getpixel(probe),
+            open_png(overflow).convert("RGB").getpixel(probe),
+        )
+
+    def test_a_headline_with_many_wrapped_lines_does_not_bleed_into_the_footer(
+        self,
+    ) -> None:
+        # Many short unbreakable words wrap to an unbounded number of lines
+        # once fit_text bottoms out at min_size. Without a cap on line count,
+        # the block (and the date line/wordmark placed below it) would run
+        # down through the footer strip.
+        control = layouts.render(a_card(), FACEBOOK, [])
+        many_lines = layouts.render(
+            a_card(headline=" ".join(["ABCDEFGHIJKLMNOPQRST"] * 15)),
+            FACEBOOK,
+            [],
+        )
+        probe = (100, 600)  # inside the footer strip, left of its centred text
+        self.assertEqual(
+            open_png(control).convert("RGB").getpixel(probe),
+            open_png(many_lines).convert("RGB").getpixel(probe),
+        )
+
+    def test_instagram_text_block_stays_a_fixed_gap_above_the_footer(
+        self,
+    ) -> None:
+        # The lower text block is bottom-anchored above the footer, so its
+        # position must not depend on how many lines the headline wrapped
+        # to — otherwise a short headline leaves a dead gap above the
+        # footer while a long one crowds it.
+        footer_top = 1080 - 52  # must match _render_instagram's footer height
+        short = layouts.render(a_card(headline="DUNE"), INSTAGRAM, [])
+        long = layouts.render(
+            a_card(headline=" ".join(["GALAXYWORD"] * 30)), INSTAGRAM, []
+        )
+        row_short = bottom_bright_row(
+            open_png(short).convert("RGB"), 56, 500, footer_top - 150, footer_top - 1
+        )
+        row_long = bottom_bright_row(
+            open_png(long).convert("RGB"), 56, 500, footer_top - 150, footer_top - 1
+        )
+        self.assertIsNotNone(row_short)
+        self.assertIsNotNone(row_long)
+        self.assertEqual(row_short, row_long)
 
     def test_unknown_platform_raises(self) -> None:
         with self.assertRaises(ValueError):

@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from io import BytesIO
 
-from PIL import Image
+from PIL import Image, ImageFont
 
 from . import draw, theme
 from .card import FACEBOOK, INSTAGRAM, CardData
@@ -19,6 +19,38 @@ ArtworkImages = Sequence[tuple[Image.Image, float]]
 PANEL_GAP = 8
 FOOTER_STRIP_ALPHA = 150
 HEADLINE_SPACING = 0.98
+
+# Generous slack around a clipped headline's glow so the halo fades out
+# naturally instead of being cut off flat. The one edge that must stay tight
+# is whichever edge borders the artwork/bulb column — see the per-platform
+# clip boxes below.
+HEADLINE_GLOW_MARGIN = 40
+
+# Instagram's lower text block (headline + date + wordmark) is bottom-anchored
+# above the footer rather than pinned to a fixed top, so it doesn't leave a
+# dead gap when the headline wraps to fewer lines than the geometry was tuned
+# for. These are the fixed gaps within that block.
+INSTAGRAM_HEADLINE_TO_DATE_GAP = 22
+INSTAGRAM_DATE_TO_WORDMARK_GAP = 10
+INSTAGRAM_TEXT_TO_FOOTER_GAP = 32
+
+
+def _clamp_lines(
+    lines: list[str],
+    font: ImageFont.FreeTypeFont,
+    line_spacing: float,
+    box_height: int,
+) -> list[str]:
+    """Bound how many lines actually get laid out.
+
+    `fit_text` deliberately allows the block to overflow `box_height` once it
+    hits `min_size` — a title that long is a signal to shorten it, not a
+    reason to render nothing. But layouts.py places fixed elements below the
+    headline, so an unbounded line count would push them off the canvas.
+    Always keeps at least one line.
+    """
+    max_lines = max(1, box_height // draw.line_height(font, line_spacing))
+    return lines[:max_lines]
 
 
 def _draw_footer_strip(
@@ -85,13 +117,29 @@ def _render_facebook(data: CardData, images: ArtworkImages) -> Image.Image:
         theme.GOLD,
     )
 
+    headline_x = 64
+    headline_top = 160
+    headline_box_width = 580
+    headline_box_height = 220
     lines, headline_font = draw.fit_text(
         data.headline, theme.FONT_BOLD,
-        box_width=580, box_height=220, max_size=76, min_size=36,
+        box_width=headline_box_width, box_height=headline_box_height,
+        max_size=76, min_size=36,
+    )
+    lines = _clamp_lines(lines, headline_font, HEADLINE_SPACING, headline_box_height)
+    headline_height = len(lines) * draw.line_height(headline_font, HEADLINE_SPACING)
+    # Tight on the right — that edge borders the bulb column and artwork
+    # panel at x=672/700. Generous everywhere else so the glow keeps its
+    # natural falloff.
+    headline_clip_box = (
+        headline_x - HEADLINE_GLOW_MARGIN,
+        headline_top - HEADLINE_GLOW_MARGIN,
+        headline_x + headline_box_width,
+        headline_top + headline_height + HEADLINE_GLOW_MARGIN,
     )
     y = draw.draw_glow_text(
-        base, lines, headline_font, (64, 160), HEADLINE_SPACING,
-        theme.CREAM, theme.GOLD,
+        base, lines, headline_font, (headline_x, headline_top), HEADLINE_SPACING,
+        theme.CREAM, theme.GOLD, clip_box=headline_clip_box,
     )
 
     y = draw.draw_plain_text(
@@ -127,27 +175,61 @@ def _render_instagram(data: CardData, images: ArtworkImages) -> Image.Image:
         theme.load_font(theme.FONT_MEDIUM, 28),
         (56, 44),
         theme.GOLD,
+        scrim_color=theme.INK,
     )
 
+    headline_x = 56
+    headline_box_width = 968
+    headline_box_height = 190
     lines, headline_font = draw.fit_text(
         data.headline, theme.FONT_BOLD,
-        box_width=968, box_height=190, max_size=76, min_size=36,
+        box_width=headline_box_width, box_height=headline_box_height,
+        max_size=76, min_size=36,
+    )
+    lines = _clamp_lines(lines, headline_font, HEADLINE_SPACING, headline_box_height)
+
+    date_font = theme.load_font(theme.FONT_MEDIUM, 28)
+    wordmark_font = theme.load_font(theme.FONT_BOLD, 28)
+    headline_height = len(lines) * draw.line_height(headline_font, HEADLINE_SPACING)
+    date_height = draw.line_height(date_font, 1.0)
+    wordmark_height = draw.line_height(wordmark_font, 1.0)
+    block_height = (
+        headline_height
+        + INSTAGRAM_HEADLINE_TO_DATE_GAP
+        + date_height
+        + INSTAGRAM_DATE_TO_WORDMARK_GAP
+        + wordmark_height
+    )
+
+    # Bottom-anchored: a fixed gap above the footer regardless of how many
+    # lines the headline wrapped to, so a short headline doesn't leave a
+    # dead gap and a tall one still clears the bulb seam (block_height is
+    # bounded — headline_height can't exceed headline_box_height).
+    footer_height = 52
+    footer_top = height - footer_height
+    headline_top = footer_top - INSTAGRAM_TEXT_TO_FOOTER_GAP - block_height
+
+    headline_clip_box = (
+        headline_x - HEADLINE_GLOW_MARGIN,
+        headline_top - HEADLINE_GLOW_MARGIN,
+        headline_x + headline_box_width,
+        headline_top + headline_height + HEADLINE_GLOW_MARGIN,
     )
     y = draw.draw_glow_text(
-        base, lines, headline_font, (56, 630), HEADLINE_SPACING,
-        theme.CREAM, theme.GOLD,
+        base, lines, headline_font, (headline_x, headline_top), HEADLINE_SPACING,
+        theme.CREAM, theme.GOLD, clip_box=headline_clip_box,
     )
 
     y = draw.draw_plain_text(
-        base, data.date_line, theme.load_font(theme.FONT_MEDIUM, 28),
-        (56, y + 22), theme.GOLD,
+        base, data.date_line, date_font,
+        (headline_x, y + INSTAGRAM_HEADLINE_TO_DATE_GAP), theme.GOLD,
     )
     draw.draw_plain_text(
-        base, data.wordmark, theme.load_font(theme.FONT_BOLD, 28),
-        (56, y + 10), theme.GOLD,
+        base, data.wordmark, wordmark_font,
+        (headline_x, y + INSTAGRAM_DATE_TO_WORDMARK_GAP), theme.GOLD,
     )
 
-    _draw_footer_strip(base, data.footer, height=52, font_size=20)
+    _draw_footer_strip(base, data.footer, height=footer_height, font_size=20)
     return base
 
 
