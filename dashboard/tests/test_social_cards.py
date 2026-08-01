@@ -107,3 +107,80 @@ class SocialCardViewTests(TestCase):
         self.client.logout()
         self.client.login(username="u", password="pw12345")
         self.assertEqual(self.client.get(self.url()).status_code, 403)
+
+
+class SocialPanelTests(TestCase):
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+        self.screen = Screen.objects.create(name="Screen 1", capacity=100)
+        self.film = Film.objects.create(title="Dune")
+
+    def make_eng(self, start: datetime.date, end: datetime.date) -> Engagement:
+        eng = Engagement.objects.create(
+            screen=self.screen, start_date=start, end_date=end
+        )
+        EngagementFilm.objects.create(engagement=eng, film=self.film, position=1)
+        return eng
+
+    def detail_html(self, eng: Engagement) -> str:
+        return self.client.get(
+            reverse("dashboard:engagement_detail", args=[eng.pk])
+        ).content.decode()
+
+    def test_panel_is_rendered(self) -> None:
+        eng = self.make_eng(
+            datetime.date(2026, 7, 1), datetime.date(2026, 7, 7)
+        )
+        html = self.detail_html(eng)
+        self.assertIn("Social Images", html)
+        self.assertIn("Coming Soon", html)
+        self.assertIn("Now Playing", html)
+
+    def test_panel_links_to_both_platforms(self) -> None:
+        eng = self.make_eng(
+            datetime.date(2026, 7, 1), datetime.date(2026, 7, 7)
+        )
+        html = self.detail_html(eng)
+        for platform in ("facebook", "instagram"):
+            self.assertIn(
+                reverse(
+                    "dashboard:engagement_social_card", args=[eng.pk, platform]
+                ),
+                html,
+            )
+
+    def test_future_run_defaults_to_coming_soon(self) -> None:
+        today = datetime.date.today()
+        eng = self.make_eng(
+            today + datetime.timedelta(days=30),
+            today + datetime.timedelta(days=37),
+        )
+        response = self.client.get(
+            reverse("dashboard:engagement_detail", args=[eng.pk])
+        )
+        self.assertEqual(response.context["social_default_badge"], "coming_soon")
+
+    def test_current_run_defaults_to_now_playing(self) -> None:
+        today = datetime.date.today()
+        eng = self.make_eng(
+            today - datetime.timedelta(days=2),
+            today + datetime.timedelta(days=2),
+        )
+        response = self.client.get(
+            reverse("dashboard:engagement_detail", args=[eng.pk])
+        )
+        self.assertEqual(response.context["social_default_badge"], "now_playing")
+
+
+class SocialCardCssTests(TestCase):
+    def test_stylesheet_exists(self) -> None:
+        from pathlib import Path
+
+        from django.conf import settings
+
+        path = (
+            Path(settings.BASE_DIR)
+            / "dashboard/static/dashboard/css/social_cards.css"
+        )
+        self.assertIn(".socialPreview", path.read_text())

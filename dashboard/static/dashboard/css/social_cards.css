@@ -1,0 +1,48 @@
+/* Social Images panel on the engagement detail page. */
+
+.socialCards {
+  margin-bottom: 1.5rem;
+}
+
+.badgeToggle {
+  display: flex;
+  gap: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.badgeOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.badgeOption input {
+  accent-color: var(--brass);
+}
+
+.socialPreview {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  aspect-ratio: 1 / 1;
+  border-radius: 6px;
+  border: 1px solid rgba(13, 13, 13, 0.12);
+  background: var(--surface-secondary);
+  object-fit: cover;
+}
+
+.socialActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.socialHint {
+  margin: 0.75rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--text-tertiary);
+}

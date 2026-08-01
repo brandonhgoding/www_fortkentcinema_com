@@ -10,7 +10,15 @@ from cinema.showtimes_overlap import (
     check_overlap_against_existing,
     format_overlap_error,
 )
-from cinema.social_cards import BADGE_BY_PARAM, PLATFORMS, render_card
+from cinema.social_cards import (
+    BADGE_BY_PARAM,
+    FACEBOOK,
+    INSTAGRAM,
+    PARAM_BY_BADGE,
+    PLATFORMS,
+    default_badge,
+    render_card,
+)
 from cinema.tmdb import TMDBAPIError
 from cinema.tmdb.services import TMDBService
 from django.db import transaction
@@ -273,6 +281,13 @@ class EngagementDetailView(StaffRequiredMixin, TemplateView):
             "DRAFT": "statusDraft", "CONFIRMED": "statusConfirmed",
             "CANCELLED": "statusCancelled", "ENDED": "statusEnded",
         }
+        ctx["social_default_badge"] = PARAM_BY_BADGE[default_badge(engagement)]
+        ctx["social_facebook_url"] = reverse(
+            "dashboard:engagement_social_card", args=[engagement.pk, FACEBOOK]
+        )
+        ctx["social_instagram_url"] = reverse(
+            "dashboard:engagement_social_card", args=[engagement.pk, INSTAGRAM]
+        )
         return ctx
 
 

@@ -1,0 +1,36 @@
+<div class="card socialCards" x-data="{ badge: '{{ social_default_badge }}' }">
+  <h2 class="cardTitle">Social Images</h2>
+
+  <div class="badgeToggle" role="radiogroup" aria-label="Card headline">
+    <label class="badgeOption">
+      <input type="radio" name="social-badge" value="coming_soon" x-model="badge" />
+      <span>Coming Soon</span>
+    </label>
+    <label class="badgeOption">
+      <input type="radio" name="social-badge" value="now_playing" x-model="badge" />
+      <span>Now Playing</span>
+    </label>
+  </div>
+
+  <img
+    class="socialPreview"
+    :src="'{{ social_instagram_url }}?badge=' + badge"
+    alt="Instagram preview for {{ engagement.display_title }}"
+  />
+
+  <div class="socialActions">
+    <a class="btn-primary"
+       :href="'{{ social_facebook_url }}?badge=' + badge + '&download=1'">
+      Download for Facebook
+    </a>
+    <a class="btn-primary"
+       :href="'{{ social_instagram_url }}?badge=' + badge + '&download=1'">
+      Download for Instagram
+    </a>
+  </div>
+
+  <p class="socialHint">
+    Facebook is 1200&times;630, Instagram is 1080&times;1080. The preview shows
+    the Instagram square.
+  </p>
+</div>

@@ -1,7 +1,7 @@
 {% extends "dashboard/base_dashboard.html" %}
 {% load static dashboard_extras %}
 {% block title %}{{ engagement.display_title }} · LeprinceOS{% endblock %}
-{% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/engagement_detail.css' %}" />{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/engagement_detail.css' %}" /><link rel="stylesheet" href="{% static 'dashboard/css/social_cards.css' %}" />{% endblock %}
 {% block content %}
 <div class="page">
   <div class="header">
@@ -53,6 +53,8 @@
       </div>
     </div>
   </div>
+
+  {% include "dashboard/_social_cards.html" %}
 
   <section class="showtimesSection">
     {% include "dashboard/_showtime_section.html" %}
