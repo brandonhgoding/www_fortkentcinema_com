@@ -12,10 +12,16 @@ import re
 from io import BytesIO
 
 import requests
-from django.core.cache import cache
+from django.core.cache import caches
 from PIL import Image
 
 logger = logging.getLogger(__name__)
+
+# Own alias (see fortkentcinema/settings.py CACHES) rather than the default
+# cache: entries here are raw artwork bytes up to MAX_BYTES each, which
+# would otherwise share the default alias's eviction budget with the rest
+# of the app.
+cache = caches["social_cards"]
 
 TIMEOUT_SECONDS = 8
 MAX_BYTES = 5 * 1024 * 1024
@@ -24,7 +30,7 @@ CACHE_TTL_SECONDS = 60 * 60 * 24
 CACHE_PREFIX = "social-card-art:"
 
 _TMDB_SIZE_RE = re.compile(
-    r"(https?://image\.tmdb\.org/t/p/)(w\d+|h\d+|original)(/)"
+    r"^(https?://image\.tmdb\.org/t/p/)(w\d+|h\d+|original)(/)"
 )
 
 
@@ -38,10 +44,18 @@ def upsize_tmdb_url(url: str) -> str:
 
 
 def _download(url: str) -> bytes | None:
+    if not url.startswith("https://"):
+        logger.warning("social card artwork url is not https: %s", url)
+        return None
     try:
         with requests.get(
-            url, timeout=TIMEOUT_SECONDS, stream=True
+            url, timeout=TIMEOUT_SECONDS, stream=True, allow_redirects=False
         ) as response:
+            if 300 <= response.status_code < 400:
+                logger.warning(
+                    "social card artwork url redirected: %s", url
+                )
+                return None
             response.raise_for_status()
             data = BytesIO()
             total_size = 0

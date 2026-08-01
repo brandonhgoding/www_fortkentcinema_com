@@ -205,7 +205,20 @@ CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
         "LOCATION": "fkc-local",
-    }
+    },
+    # Dedicated alias for social-card artwork bytes (cinema/social_cards/posters.py).
+    # Entries can be up to MAX_BYTES (5 MB) each, so this needs its own small
+    # cap rather than sharing the default alias's MAX_ENTRIES=300 (worst case
+    # ~1.5 GB/worker) — both to bound worst-case memory and so a poster burst
+    # can't evict unrelated cache entries. 64 entries comfortably covers the
+    # distinct posters in play across current/upcoming engagements at once,
+    # with a bounded worst case of 64 * 5 MB = 320 MB/worker if every one
+    # happened to be maximum size (real TMDB posters run well under that).
+    "social_cards": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "fkc-social-cards",
+        "OPTIONS": {"MAX_ENTRIES": 64},
+    },
 }
 
 REST_FRAMEWORK = {

@@ -2,11 +2,13 @@ from io import BytesIO
 from unittest import mock
 
 import requests
-from django.core.cache import cache
+from django.core.cache import caches
 from django.test import TestCase
 from PIL import Image
 
 from cinema.social_cards import posters
+
+cache = caches["social_cards"]
 
 
 def png_bytes(width: int = 40, height: int = 60) -> bytes:
@@ -58,6 +60,14 @@ class UpsizeTests(TestCase):
 
     def test_empty_string(self) -> None:
         self.assertEqual(posters.upsize_tmdb_url(""), "")
+
+    def test_tmdb_pattern_embedded_in_query_string_is_not_rewritten(
+        self,
+    ) -> None:
+        # The pattern must be anchored: unanchored, this would rewrite the
+        # embedded TMDB URL mid-query-string, mangling an unrelated URL.
+        url = "https://example.com/?u=https://image.tmdb.org/t/p/w500/x.jpg"
+        self.assertEqual(posters.upsize_tmdb_url(url), url)
 
 
 class FetchArtworkTests(TestCase):
@@ -141,3 +151,20 @@ class FetchArtworkTests(TestCase):
             posters.fetch_artwork("https://img/a.png")
             posters.fetch_artwork("https://img/a.png")
         self.assertEqual(get.call_count, 2)
+
+    def test_redirects_are_not_followed_and_return_none(self) -> None:
+        with mock.patch.object(
+            posters.requests, "get", return_value=FakeResponse(b"", 302)
+        ) as get:
+            self.assertIsNone(posters.fetch_artwork("https://img/a.png"))
+        self.assertFalse(get.call_args.kwargs.get("allow_redirects", True))
+
+    def test_non_https_url_returns_none_without_a_request(self) -> None:
+        with mock.patch.object(posters.requests, "get") as get:
+            self.assertIsNone(posters.fetch_artwork("http://img/a.png"))
+        get.assert_not_called()
+
+    def test_file_scheme_url_returns_none_without_a_request(self) -> None:
+        with mock.patch.object(posters.requests, "get") as get:
+            self.assertIsNone(posters.fetch_artwork("file:///etc/passwd"))
+        get.assert_not_called()

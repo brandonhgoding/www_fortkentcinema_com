@@ -617,4 +617,7 @@ class EngagementSocialCardView(StaffRequiredMixin, View):
         response["Content-Disposition"] = (
             f'{disposition}; filename="{filename}"'
         )
+        # Must always reflect the current state of the engagement — never
+        # let a browser heuristic-cache it or a shared proxy store it.
+        response["Cache-Control"] = "no-store"
         return response

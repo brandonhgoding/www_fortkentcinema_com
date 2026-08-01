@@ -61,6 +61,12 @@ class SocialCardViewTests(TestCase):
         response = self.client.get(self.url())
         self.assertIn("inline", response["Content-Disposition"])
 
+    def test_response_is_never_cached(self) -> None:
+        # The rendered PNG must always reflect the current state of the
+        # engagement — no browser heuristic caching, no shared-proxy storage.
+        response = self.client.get(self.url())
+        self.assertEqual(response["Cache-Control"], "no-store")
+
     def test_download_param_forces_an_attachment(self) -> None:
         response = self.client.get(self.url("instagram", download="1"))
         self.assertIn("attachment", response["Content-Disposition"])

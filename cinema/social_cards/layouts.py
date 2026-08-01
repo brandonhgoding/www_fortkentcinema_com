@@ -26,6 +26,16 @@ HEADLINE_SPACING = 0.98
 # clip boxes below.
 HEADLINE_GLOW_MARGIN = 40
 
+# The right edge still needs *some* padding even though it borders artwork
+# or bulbs: `fit_text` maximises font size, so the widest line routinely
+# lands at 95-99% of the box width, putting the wide gold glow
+# (GLOW_WIDE_RADIUS) right on a flush clip edge — a visible vertical seam.
+# Facebook's is small because the bulb column sits close by (x=666);
+# Instagram's can be as generous as the other edges because nothing sits to
+# the headline's right but solid background.
+HEADLINE_RIGHT_MARGIN_FACEBOOK = 16
+HEADLINE_RIGHT_MARGIN_INSTAGRAM = HEADLINE_GLOW_MARGIN
+
 # Instagram's lower text block (headline + date + wordmark) is bottom-anchored
 # above the footer rather than pinned to a fixed top, so it doesn't leave a
 # dead gap when the headline wraps to fewer lines than the geometry was tuned
@@ -128,13 +138,13 @@ def _render_facebook(data: CardData, images: ArtworkImages) -> Image.Image:
     )
     lines = _clamp_lines(lines, headline_font, HEADLINE_SPACING, headline_box_height)
     headline_height = len(lines) * draw.line_height(headline_font, HEADLINE_SPACING)
-    # Tight on the right — that edge borders the bulb column and artwork
-    # panel at x=672/700. Generous everywhere else so the glow keeps its
-    # natural falloff.
+    # Only lightly padded on the right — that edge borders the bulb column
+    # and artwork panel at x=672/700, so it can't take the full glow margin.
+    # Generous everywhere else so the glow keeps its natural falloff.
     headline_clip_box = (
         headline_x - HEADLINE_GLOW_MARGIN,
         headline_top - HEADLINE_GLOW_MARGIN,
-        headline_x + headline_box_width,
+        headline_x + headline_box_width + HEADLINE_RIGHT_MARGIN_FACEBOOK,
         headline_top + headline_height + HEADLINE_GLOW_MARGIN,
     )
     y = draw.draw_glow_text(
@@ -212,7 +222,7 @@ def _render_instagram(data: CardData, images: ArtworkImages) -> Image.Image:
     headline_clip_box = (
         headline_x - HEADLINE_GLOW_MARGIN,
         headline_top - HEADLINE_GLOW_MARGIN,
-        headline_x + headline_box_width,
+        headline_x + headline_box_width + HEADLINE_RIGHT_MARGIN_INSTAGRAM,
         headline_top + headline_height + HEADLINE_GLOW_MARGIN,
     )
     y = draw.draw_glow_text(
