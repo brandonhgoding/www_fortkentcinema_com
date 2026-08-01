@@ -44,6 +44,17 @@ INSTAGRAM_HEADLINE_TO_DATE_GAP = 22
 INSTAGRAM_DATE_TO_WORDMARK_GAP = 10
 INSTAGRAM_TEXT_TO_FOOTER_GAP = 32
 
+# Footer band heights. `_draw_footer_strip` centres its text vertically in
+# a band that is always full-bleed to the canvas's bottom edge, so the
+# band height directly controls how much clear space sits below the text
+# ink. Both platforms crop toward centre in feed/story/mobile placements,
+# and that crop reaches this footer first — it needs a real safe-area
+# margin below it, not just enough room to avoid clipping in the source
+# PNG. Tuned for ~28px (Facebook) / ~43px (Instagram) of clearance below
+# the text ink, roughly 4-5% of each canvas's height.
+FACEBOOK_FOOTER_HEIGHT = 76
+INSTAGRAM_FOOTER_HEIGHT = 108
+
 
 def _clamp_lines(
     lines: list[str],
@@ -161,7 +172,9 @@ def _render_facebook(data: CardData, images: ArtworkImages) -> Image.Image:
         (64, y + 12), theme.GOLD,
     )
 
-    _draw_footer_strip(base, data.footer, height=44, font_size=18)
+    _draw_footer_strip(
+        base, data.footer, height=FACEBOOK_FOOTER_HEIGHT, font_size=18
+    )
     return base
 
 
@@ -215,7 +228,7 @@ def _render_instagram(data: CardData, images: ArtworkImages) -> Image.Image:
     # lines the headline wrapped to, so a short headline doesn't leave a
     # dead gap and a tall one still clears the bulb seam (block_height is
     # bounded — headline_height can't exceed headline_box_height).
-    footer_height = 52
+    footer_height = INSTAGRAM_FOOTER_HEIGHT
     footer_top = height - footer_height
     headline_top = footer_top - INSTAGRAM_TEXT_TO_FOOTER_GAP - block_height
 
