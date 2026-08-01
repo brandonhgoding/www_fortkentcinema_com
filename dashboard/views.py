@@ -585,7 +585,7 @@ class EngagementSocialCardView(StaffRequiredMixin, View):
     attachment for the download buttons.
     """
 
-    def get(self, request: object, pk: int, platform: str) -> HttpResponse:
+    def get(self, request, pk: int, platform: str) -> HttpResponse:
         if platform not in PLATFORMS:
             return HttpResponseBadRequest("Unknown platform")
         engagement = get_object_or_404(
