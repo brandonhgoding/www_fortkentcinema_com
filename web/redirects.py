@@ -43,6 +43,13 @@ legacy_urlpatterns = [
         RedirectView.as_view(url="/", permanent=True),
         name="legacy_archive_index",
     ),
+    # Classic Movie Night was discontinued 2026-08-14 and /classics/ removed.
+    # The page carried its own ranking history, so it redirects rather than 404s.
+    re_path(
+        r"^classics/?$",
+        RedirectView.as_view(url="/", permanent=True),
+        name="legacy_classics",
+    ),
     # No modern contact page; address and phone are in the homepage footer.
     re_path(
         r"^contact-fort-kent-cinema/?$",

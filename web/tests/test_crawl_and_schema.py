@@ -182,34 +182,3 @@ class FaqSchemaTests(TestCase):
             # The rendered page escapes apostrophes (&#x27;), the JSON-LD doesn't.
             self.assertIn(escape(q["acceptedAnswer"]["text"]), html)
             self.assertIn(escape(q["name"]), html)
-
-
-class ClassicsTitleTests(TestCase):
-    def test_falls_back_when_nothing_scheduled(self):
-        html = self.client.get(reverse("classics")).content.decode()
-        self.assertIn(
-            "<title>Classic Movie Night — Fort Kent Cinema</title>", html
-        )
-
-    def test_names_the_scheduled_film(self):
-        from cinema.models import Engagement, EngagementFilm, Film, Screen, Showtime
-
-        screen = Screen.objects.create(name="Screen 1", capacity=100)
-        film = Film.objects.create(title="Carnival of Souls", poster_url="https://x/p.jpg")
-        today = timezone.localdate()
-        eng = Engagement.objects.create(
-            screen=screen,
-            start_date=today,
-            end_date=today + datetime.timedelta(days=2),
-            status="CONFIRMED",
-            kind="CLASSIC",
-        )
-        EngagementFilm.objects.create(engagement=eng, film=film, position=0)
-        Showtime.objects.create(
-            engagement=eng,
-            screen=screen,
-            starts_at=timezone.now() + datetime.timedelta(days=1),
-        )
-
-        html = self.client.get(reverse("classics")).content.decode()
-        self.assertIn("Carnival of Souls — Classic Movie Night", html)

@@ -113,14 +113,13 @@ def get_calendar_month(year, month):
 
 
 def get_coming_soon():
-    """Confirmed engagements starting tomorrow+, non-CLASSIC, deduped by film
-    set (a double feature is a distinct set)."""
+    """Confirmed engagements starting tomorrow+, deduped by film set (a double
+    feature is a distinct set)."""
     today = timezone.localdate()
     tomorrow = today + datetime.timedelta(days=1)
 
     engagements = (
         Engagement.objects.filter(status="CONFIRMED", start_date__gte=tomorrow)
-        .exclude(kind="CLASSIC")
         .prefetch_related("engagement_films__film")
         .order_by("start_date")
     )
@@ -225,43 +224,3 @@ def _format_date_range(start, end):
     if start.year == end.year:
         return f"{start.strftime('%B %-d')}–{end.strftime('%B %-d, %Y')}"
     return f"{start.strftime('%B %-d, %Y')}–{end.strftime('%B %-d, %Y')}"
-
-
-def get_classic_movie_night():
-    """Confirmed CLASSIC engagements still running or upcoming, expanded into
-    one screening per non-cancelled future showtime, sorted by date. Returns
-    {"next_screening": <dict|None>, "upcoming": [<dict>]}."""
-    today = timezone.localdate()
-    engagements = (
-        Engagement.objects.filter(kind="CLASSIC", status="CONFIRMED", end_date__gte=today)
-        .prefetch_related("engagement_films__film")
-    )
-
-    screenings = []
-    for engagement in engagements:
-        pf = engagement.primary_film
-        title = engagement.display_title or (pf.title if pf else "")
-        for st in engagement.showtimes.filter(is_cancelled=False):
-            local = st.starts_at.astimezone(CINEMA_TZ)
-            if local.date() < today:
-                continue
-            screenings.append(
-                {
-                    "id": str(st.id),
-                    "title": title,
-                    "slug": (pf.slug if pf else "") or "",
-                    "poster": (pf.poster_url if pf else "") or "",
-                    "rating": (pf.rating if pf else "") or "",
-                    "runtime": _format_runtime(pf.runtime_minutes if pf else None),
-                    "synopsis": (pf.synopsis if pf else "") or "",
-                    "youtube_id": (pf.youtube_id if pf else "") or "",
-                    "date": local.date().isoformat(),
-                    "display_date": local.strftime("%A, %B %-d"),
-                }
-            )
-
-    screenings.sort(key=lambda s: s["date"])
-    return {
-        "next_screening": screenings[0] if screenings else None,
-        "upcoming": screenings[1:],
-    }

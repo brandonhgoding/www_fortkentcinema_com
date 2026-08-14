@@ -199,7 +199,7 @@ class InternalLinkingTests(MoviePageFixture):
             for href in hrefs(resp.content.decode()):
                 if href.startswith("/movies/"):
                     seen.add(href)
-                elif href in ("/", "/classics/") and href not in visited:
+                elif href == "/" and href not in visited:
                     to_visit.append(href)
 
         self.assertIn(f"/movies/{self.showing.slug}", seen)

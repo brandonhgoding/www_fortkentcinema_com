@@ -36,7 +36,6 @@
  * layout), so the Django port hides them here instead. */
 @media (max-width: 600px) {
   .hero,
-  .classic-movie-cta,
   .open-mic-cta,
   .gift-card-cta,
   .blog {

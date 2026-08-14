@@ -94,6 +94,16 @@ class LegacyPageRedirectTests(TestCase):
         resp = self.client.get("/archive/")
         self.assertRedirects(resp, "/", status_code=301, target_status_code=200)
 
+    def test_classics_redirects_home(self):
+        """Classic Movie Night was discontinued 2026-08-14. /classics/ carried
+        its own ranking history, so it redirects rather than 404s."""
+        resp = self.client.get("/classics/")
+        self.assertRedirects(resp, "/", status_code=301, target_status_code=200)
+
+    def test_classics_without_trailing_slash_redirects(self):
+        resp = self.client.get("/classics")
+        self.assertRedirects(resp, "/", status_code=301, target_status_code=200)
+
 
 class LegacyRedirectsDoNotShadowLiveRoutesTests(TestCase):
     def test_modern_blog_routes_still_resolve(self):

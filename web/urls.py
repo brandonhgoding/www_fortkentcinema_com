@@ -3,7 +3,6 @@ from django.urls import path
 from .views import (
     # AboutView,  # About page temporarily hidden (re-enable with the /about path below)
     CalendarMonthView,
-    ClassicsView,
     HomeView,
     MembershipView,
     MovieDetailView,
@@ -16,12 +15,11 @@ urlpatterns = [
     path("membership/", MembershipView.as_view(), name="membership"),
     path("rentals/", RentalsView.as_view(), name="rentals"),
     # path("about/", AboutView.as_view(), name="about"),  # About page temporarily hidden — re-enable this + the AboutView import to restore /about
-    path("classics/", ClassicsView.as_view(), name="classics"),
     # Square redirects here after a successful payment. noindex, unlinked,
     # and deliberately absent from the sitemap.
     path("thanks", ThanksView.as_view(), name="thanks"),
     # No trailing slash, matching /blog/<slug>: detail pages are slugless-suffix,
-    # section pages (/classics/, /membership/) keep theirs.
+    # section pages (/membership/, /rentals/) keep theirs.
     path("movies/<slug:slug>", MovieDetailView.as_view(), name="movie_detail"),
     path(
         "calendar/<int:year>/<int:month>/",

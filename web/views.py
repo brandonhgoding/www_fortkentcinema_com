@@ -15,7 +15,6 @@ from web.services.cinema_data import (
     get_now_showing,
     get_coming_soon,
     get_calendar_month,
-    get_classic_movie_night,
     get_film_page,
 )
 from web.services.showtimes import (
@@ -196,15 +195,6 @@ class RentalsView(TemplateView):
 
 class AboutView(TemplateView):
     template_name = "web/about.html"
-
-
-class ClassicsView(TemplateView):
-    template_name = "web/classics.html"
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["classics"] = get_classic_movie_night()
-        return ctx
 
 
 class ThanksView(TemplateView):

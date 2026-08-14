@@ -296,25 +296,6 @@ class AboutPageTests(TestCase):
         self.assertIn("about-page", html)
 
 
-class ClassicsPageTests(TestCase):
-    @mock.patch("web.views.get_classic_movie_night",
-                return_value={"next_screening": None, "upcoming": []})
-    def test_empty_state(self, _m):
-        html = self.client.get(reverse("classics")).content.decode()
-        self.assertIn("CLASSIC MOVIE NIGHT", html)
-        self.assertIn("classic-movie-page__empty", html)   # film-reel empty state
-
-    @mock.patch("web.views.get_classic_movie_night")
-    def test_next_screening(self, m):
-        m.return_value = {"next_screening": {"id": "1", "title": "Casablanca",
-            "poster": "c.jpg", "rating": "PG", "runtime": "1h 42min",
-            "synopsis": "A classic.", "youtube_id": "z", "date": "2999-03-01",
-            "display_date": "Friday, March 1"}, "upcoming": []}
-        html = self.client.get(reverse("classics")).content.decode()
-        self.assertIn("Casablanca", html)
-        self.assertIn("classic-movie-page__featured", html)
-
-
 class SeoTagTests(TestCase):
     def test_default_og_image_is_static_absolute(self):
         html = self.client.get(reverse("home")).content.decode()

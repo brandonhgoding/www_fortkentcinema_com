@@ -32,7 +32,6 @@
 
 /* 4. Components. */
 @import '../../static/css/Hero.css';
-@import '../../static/css/ClassicMovieCTA.css';
 @import '../../static/css/NowShowing.css';
 @import '../../static/css/MovieCard.css';
 @import '../../static/css/MovieScheduleCard.css';
@@ -46,7 +45,6 @@
 /* 5. Pages — last, so a page can override a component. */
 @import '../../static/css/home.css';
 @import '../../static/css/AboutPage.css';
-@import '../../static/css/ClassicMoviePage.css';
 @import '../../static/css/MembershipPage.css';
 @import '../../static/css/MembershipHero.css';
 @import '../../static/css/MembershipBenefits.css';
