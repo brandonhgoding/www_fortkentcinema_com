@@ -50,6 +50,14 @@ legacy_urlpatterns = [
         RedirectView.as_view(url="/", permanent=True),
         name="legacy_classics",
     ),
+    # The membership program was discontinued 2026-08-14 and /membership/
+    # removed. It was a sitemapped section page with its own ranking history,
+    # so it redirects rather than 404s.
+    re_path(
+        r"^membership/?$",
+        RedirectView.as_view(url="/", permanent=True),
+        name="legacy_membership",
+    ),
     # No modern contact page; address and phone are in the homepage footer.
     re_path(
         r"^contact-fort-kent-cinema/?$",

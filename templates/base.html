@@ -6,7 +6,7 @@
 
     {% block meta %}
     <title>{% block title %}Fort Kent Cinema | Maine's Northernmost Picture Show{% endblock %}</title>
-    <meta name="description" content="{% block description %}Fort Kent Cinema - Maine's Northernmost Picture Show. View current showtimes, upcoming movies, buy tickets, and join our Cinema Club membership program. Located at 13 Hall Street, Fort Kent, ME.{% endblock %}" />
+    <meta name="description" content="{% block description %}Fort Kent Cinema - Maine's Northernmost Picture Show. View current showtimes, upcoming movies, and buy tickets. Located at 13 Hall Street, Fort Kent, ME.{% endblock %}" />
     <meta name="author" content="Fort Kent Cinema" />
     <meta name="robots" content="{% block robots %}index, follow{% endblock %}" />
     <meta name="theme-color" content="#0a0a0e" />
@@ -15,7 +15,7 @@
     <meta property="og:type" content="{% block og_type %}website{% endblock %}" />
     <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}" />
     <meta property="og:title" content="{% block og_title %}Fort Kent Cinema | Maine's Northernmost Picture Show{% endblock %}" />
-    <meta property="og:description" content="{% block og_description %}View current showtimes, upcoming movies, and join our Cinema Club membership. Maine's Northernmost Picture Show in Fort Kent.{% endblock %}" />
+    <meta property="og:description" content="{% block og_description %}View current showtimes and upcoming movies. Maine's Northernmost Picture Show in Fort Kent.{% endblock %}" />
     <meta property="og:image" content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/og-image.jpg' %}{% endblock %}" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:site_name" content="Fort Kent Cinema" />
@@ -88,7 +88,7 @@
       "@context": "https://schema.org",
       "@type": "MovieTheater",
       "name": "{{ site_config.cinema.name|escapejs }}",
-      "description": "Maine's Northernmost Picture Show - a community cinema in Fort Kent featuring current movies, special events, and Cinema Club membership.",
+      "description": "Maine's Northernmost Picture Show - a community cinema in Fort Kent featuring current movies and special events.",
       "url": "https://www.fortkentcinema.com",
       "telephone": "{{ site_config.cinema.phone|escapejs }}",
       "address": {

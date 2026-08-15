@@ -8,7 +8,6 @@ from django.views.generic import DetailView, TemplateView
 
 from blog.models import BlogPost
 from cinema.models import Film
-from web.constants import MEMBERSHIP, MEMBERSHIP_FAQ
 from web.services.cinema_data import (
     CINEMA_TZ,
     _format_runtime,
@@ -179,16 +178,6 @@ class CalendarMonthView(TemplateView):
         return ctx
 
 
-class MembershipView(TemplateView):
-    template_name = "web/membership.html"
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["tiers"] = MEMBERSHIP
-        ctx["faqs"] = MEMBERSHIP_FAQ
-        return ctx
-
-
 class RentalsView(TemplateView):
     template_name = "web/rentals.html"
 
@@ -198,33 +187,20 @@ class AboutView(TemplateView):
 
 
 class ThanksView(TemplateView):
-    """/thanks?tier=<slug> — where Square redirects after a payment succeeds.
+    """/thanks — where Square redirects after a payment succeeds.
 
-    This is the only place a `purchase` event with real money is fired. An
-    outbound click on "Join" is intent, not revenue: someone who clicks through
-    and then abandons the Square checkout has not paid us, and attaching a value
-    to that click would make GA4 report sales that never happened.
+    Gift cards are the only thing that lands here now, and their amount is
+    variable, so the page fires no `purchase` event: it renders a generic
+    thank-you. It used to fire one for memberships, priced server-side from
+    MEMBERSHIP by tier slug so the value couldn't be forged from the query
+    string. The membership program was discontinued 2026-08-14 and that branch
+    went with it, which means the site no longer reports revenue to GA4 — by
+    design, not by breakage.
 
-    The value is looked up server-side from MEMBERSHIP by slug and is never read
-    from the query string, so it can't be forged by editing the URL.
-
-    An unknown or missing tier (gift cards, whose amount is variable, redirect
-    here without one) renders a generic thank-you and fires nothing at all —
-    better than a garbage event.
-
-    Known limitation: this trusts the redirect. Someone visiting /thanks?tier=x
-    directly would fire a purchase event. Verifying properly means a Square
-    webhook and server-side payment validation, which is more machinery than a
-    two-screen cinema needs. The page is noindex and linked from nowhere.
+    Still noindex and linked from nowhere.
     """
 
     template_name = "web/thanks.html"
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        slug = self.request.GET.get("tier", "")
-        ctx["tier"] = next((t for t in MEMBERSHIP if t["slug"] == slug), None)
-        return ctx
 
 
 class MovieDetailView(DetailView):

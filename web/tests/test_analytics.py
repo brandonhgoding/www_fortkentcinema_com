@@ -1,20 +1,20 @@
 """Conversion tracking.
 
-GA4 recorded zero key events, so there was no way to tell whether a membership
-was sold, a gift card bought, or the phone rung.
+GA4 recorded zero key events, so there was no way to tell whether a gift card
+was bought or the phone rung.
 
 The load-bearing distinction, and the thing these tests exist to protect: an
-outbound click is INTENT and carries no money; only /thanks — which Square
-redirects to after payment succeeds — fires revenue. Attaching a value to a
-click would make GA4 report sales that never happened.
+outbound click is INTENT and carries no money. Attaching a value to a click
+would make GA4 report sales that never happened. /thanks used to be the one
+place revenue was fired, for memberships; that program was discontinued
+2026-08-14, so nothing on the site fires `purchase` any more and the tests
+below pin that no click has quietly picked up a value in its place.
 """
 
 import re
 
 from django.test import TestCase, override_settings
 from django.urls import reverse
-
-from web.constants import MEMBERSHIP
 
 
 def tracked(html, event):
@@ -43,17 +43,11 @@ class GA4SnippetTests(TestCase):
 
 
 class ClickEventMarkupTests(TestCase):
-    def test_membership_join_buttons_tagged_with_tier(self):
-        html = self.client.get(reverse("membership")).content.decode()
-        hits = tracked(html, "membership_join_click")
-        self.assertEqual(len(hits), len(MEMBERSHIP))
-        for tier in MEMBERSHIP:
-            self.assertIn(f'data-track-tier="{tier["slug"]}"', html)
-
-    def test_membership_click_carries_no_monetary_value(self):
-        """A click is not a purchase. Money belongs on /thanks and nowhere else."""
-        html = self.client.get(reverse("membership")).content.decode()
-        for hit in tracked(html, "membership_join_click"):
+    def test_giftcard_click_carries_no_monetary_value(self):
+        """A click is not a purchase — and a gift card's amount is variable, so
+        there is no value to attach even in principle."""
+        html = self.client.get("/").content.decode()
+        for hit in tracked(html, "giftcard_click"):
             self.assertNotIn("data-track-value", hit)
             self.assertNotIn("data-track-price", hit)
 
@@ -74,35 +68,21 @@ class ClickEventMarkupTests(TestCase):
 
 
 class ThanksPageTests(TestCase):
-    def tier(self, slug):
-        return next(t for t in MEMBERSHIP if t["slug"] == slug)
-
-    def test_known_tier_fires_purchase_with_the_real_price(self):
-        tier = self.tier("cinema-supporter")
-        html = self.client.get("/thanks", {"tier": tier["slug"]}).content.decode()
-        self.assertIn("'purchase'", html)
-        self.assertIn(f"value: {tier['price']}", html)
-        self.assertIn("currency: 'USD'", html)
-
-    def test_value_comes_from_constants_not_the_query_string(self):
-        """Revenue must not be forgeable by editing the URL."""
-        tier = self.tier("individual")
-        html = self.client.get(
-            "/thanks", {"tier": tier["slug"], "value": "99999"}
-        ).content.decode()
-        self.assertIn(f"value: {tier['price']}", html)
-        self.assertNotIn("99999", html)
-
-    def test_unknown_tier_fires_nothing(self):
-        """Better no event than a garbage one."""
-        html = self.client.get("/thanks", {"tier": "not-a-tier"}).content.decode()
-        self.assertEqual(self.client.get("/thanks", {"tier": "x"}).status_code, 200)
-        self.assertNotIn("'purchase'", html)
-
-    def test_missing_tier_fires_nothing(self):
-        """Gift cards have a variable amount, so they land here with no tier."""
+    def test_fires_no_purchase_event(self):
+        """The membership tiers this page priced are gone. Gift cards, the only
+        thing still sold through Square, have a variable amount — there is no
+        value to report, and a fabricated one would be worse than silence."""
         html = self.client.get("/thanks").content.decode()
         self.assertNotIn("'purchase'", html)
+
+    def test_stale_tier_links_still_render(self):
+        """Old Square redirects and bookmarks carry ?tier=<slug>. They must land
+        on a working thank-you, not a 500 or a garbage event."""
+        resp = self.client.get("/thanks", {"tier": "cinema-supporter"})
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode()
+        self.assertNotIn("'purchase'", html)
+        self.assertNotIn("cinema-supporter", html)
 
     def test_page_is_noindex(self):
         html = self.client.get("/thanks").content.decode()

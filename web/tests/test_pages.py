@@ -242,25 +242,6 @@ class BlogTeaserTests(TestCase):
         self.assertIn('class="blog-card-excerpt"', html)
 
 
-class MembershipPageTests(TestCase):
-    def test_membership_200_and_template(self):
-        resp = self.client.get(reverse("membership"))
-        self.assertEqual(resp.status_code, 200)
-        self.assertTemplateUsed(resp, "web/membership.html")
-
-    def test_renders_tiers_and_faq(self):
-        html = self.client.get(reverse("membership")).content.decode()
-        self.assertIn("Silver Screen", html)       # a tier name from MEMBERSHIP
-        self.assertIn("tier-card", html)
-        self.assertIn("membership-faq", html)
-        self.assertIn("How long does a membership last?", html)  # a FAQ question
-        self.assertIn('id="tiers"', html)          # scroll-to anchor target
-
-    def test_membership_meta(self):
-        html = self.client.get(reverse("membership")).content.decode()
-        self.assertIn("Membership", html)
-
-
 class RentalsPageTests(TestCase):
     def test_rentals_200_and_content(self):
         resp = self.client.get(reverse("rentals"))

@@ -15,7 +15,7 @@ class SitemapTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["Content-Type"].split(";")[0], "application/xml")
         body = resp.content.decode()
-        self.assertIn("/membership/", body)
+        self.assertIn("/rentals/", body)
         self.assertIn("/blog/", body)
         self.assertIn(f"/blog/{self.post.slug}", body)
 

@@ -53,9 +53,9 @@ describe('click handling', () => {
   });
 
   it('fires the declared event with its params', () => {
-    const node = el('<a data-track="membership_join_click" data-track-tier="family">Join</a>');
+    const node = el('<a data-track="phone_click" data-track-location="footer">Call</a>');
     handleClick({ target: node }, gtag);
-    expect(gtag).toHaveBeenCalledWith('event', 'membership_join_click', { tier: 'family' });
+    expect(gtag).toHaveBeenCalledWith('event', 'phone_click', { location: 'footer' });
   });
 
   it('fires when a child of the tracked element is clicked', () => {
@@ -72,8 +72,8 @@ describe('click handling', () => {
   });
 
   it('never attaches a monetary value to a click', () => {
-    // The whole point: a click is intent, not revenue. Only /thanks fires money.
-    const node = el('<a data-track="membership_join_click" data-track-tier="family-plus">Join</a>');
+    // The whole point: a click is intent, not revenue.
+    const node = el('<a data-track="giftcard_click" data-track-amount="50">Buy</a>');
     handleClick({ target: node }, gtag);
     const params = gtag.mock.calls[0][2];
     expect(params).not.toHaveProperty('value');

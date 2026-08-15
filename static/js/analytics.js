@@ -2,16 +2,17 @@
  * Conversion tracking.
  *
  * One delegated click listener. Elements declare what they are with data-track
- * attributes; this file has no knowledge of specific tiers, phone numbers or
+ * attributes; this file has no knowledge of specific phone numbers, films or
  * URLs, so adding a tracked element never means editing this file:
  *
- *   <a href="..." data-track="membership_join_click" data-track-tier="family">
+ *   <a href="tel:..." data-track="phone_click" data-track-location="footer">
  *
- * Any `data-track-*` attribute becomes an event parameter (data-track-tier ->
- * `tier`). Nothing here ever attaches a monetary `value`: these are outbound
- * clicks, not purchases, and someone who clicks "Join" and then abandons the
- * Square checkout has not paid us. Revenue is fired only by /thanks, which
- * Square redirects to *after* payment succeeds. See ThanksView in web/views.py.
+ * Any `data-track-*` attribute becomes an event parameter (data-track-location
+ * -> `location`). Nothing here ever attaches a monetary `value`: these are
+ * outbound clicks, not purchases, and someone who clicks through to Square and
+ * then abandons the checkout has not paid us. Since the membership program was
+ * discontinued the site fires no `purchase` event at all — gift cards, the only
+ * thing still sold through Square, have a variable amount.
  *
  * gtag is absent in dev (GA4_MEASUREMENT_ID unset) — every call site tolerates
  * that rather than throwing.

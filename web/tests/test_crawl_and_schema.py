@@ -15,8 +15,6 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from web.constants import MEMBERSHIP_FAQ
-
 
 def jsonld(html, type_):
     for raw in re.findall(
@@ -40,7 +38,7 @@ class CalendarCrawlTrapTests(TestCase):
         self.assertEqual(resp["X-Robots-Tag"], "noindex, nofollow")
 
     def test_real_pages_are_not_noindexed(self):
-        for name in ["home", "membership", "blog_list"]:
+        for name in ["home", "rentals", "blog_list"]:
             resp = self.client.get(reverse(name))
             self.assertNotIn("X-Robots-Tag", resp)
 
@@ -160,25 +158,3 @@ class BlogPostingSchemaTests(TestCase):
         """BlogPost has no updated_at field. Emitting post_date as dateModified
         would tell Google an edited post was last touched the day it went up."""
         self.assertNotIn("dateModified", self.schema())
-
-
-class FaqSchemaTests(TestCase):
-    def schema(self):
-        html = self.client.get(reverse("membership")).content.decode()
-        return jsonld(html, "FAQPage")
-
-    def test_emits_faqpage_with_every_question(self):
-        s = self.schema()
-        self.assertIsNotNone(s, "no FAQPage JSON-LD")
-        self.assertEqual(len(s["mainEntity"]), len(MEMBERSHIP_FAQ))
-
-    def test_answers_match_the_visible_page(self):
-        """Google penalises FAQ markup whose answers aren't on the page."""
-        from django.utils.html import escape
-
-        html = self.client.get(reverse("membership")).content.decode()
-        for q in self.schema()["mainEntity"]:
-            self.assertEqual(q["@type"], "Question")
-            # The rendered page escapes apostrophes (&#x27;), the JSON-LD doesn't.
-            self.assertIn(escape(q["acceptedAnswer"]["text"]), html)
-            self.assertIn(escape(q["name"]), html)

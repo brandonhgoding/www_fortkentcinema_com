@@ -104,6 +104,16 @@ class LegacyPageRedirectTests(TestCase):
         resp = self.client.get("/classics")
         self.assertRedirects(resp, "/", status_code=301, target_status_code=200)
 
+    def test_membership_redirects_home(self):
+        """The membership program was discontinued 2026-08-14. /membership/ was
+        a sitemapped section page with its own ranking history."""
+        resp = self.client.get("/membership/")
+        self.assertRedirects(resp, "/", status_code=301, target_status_code=200)
+
+    def test_membership_without_trailing_slash_redirects(self):
+        resp = self.client.get("/membership")
+        self.assertRedirects(resp, "/", status_code=301, target_status_code=200)
+
 
 class LegacyRedirectsDoNotShadowLiveRoutesTests(TestCase):
     def test_modern_blog_routes_still_resolve(self):
