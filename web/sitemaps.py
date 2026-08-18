@@ -10,7 +10,7 @@ class StaticViewSitemap(Sitemap):
 
     def items(self):
         # "about" temporarily removed while the About page is hidden
-        return ["home", "rentals", "blog_list"]
+        return ["home", "rentals", "blog_list", "event_silents_synced"]
 
     def location(self, name):
         return reverse(name)

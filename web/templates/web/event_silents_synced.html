@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Silents Synced: A Woman of the World × Pearl Jam | Fort Kent Cinema{% endblock %}
+{% block description %}One night only, Tuesday September 1 at 6:30 PM: the 1925 silent film A Woman of the World, synced to Pearl Jam's Vs. and Vitalogy. Fort Kent Cinema, 13 Hall Street.{% endblock %}
+{% block og_title %}Silents Synced: A Woman of the World × Pearl Jam{% endblock %}
+{% block og_description %}A 1925 silent film, rescored to Pearl Jam. One night only at Fort Kent Cinema — Tuesday, September 1 at 6:30 PM.{% endblock %}
+{% block og_type %}article{% endblock %}
+
+{% block extra_head %}
+{% comment %}
+  ScreeningEvent is the only machine-readable trace of this show: it is not
+  booked as a cinema.Engagement, so it emits no Movie schema from
+  partials/movie_jsonld.html and appears in no listing feed. `startDate` must
+  carry its UTC offset — a naive local time is ambiguous to every consumer.
+  No `offers` block: tickets are sold at the door only, and inventing a price
+  or a URL here would be a lie told in a format Google trusts.
+{% endcomment %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ScreeningEvent",
+  "name": "Silents Synced: {{ event.title|escapejs }} × {{ event.artist|escapejs }}",
+  "description": "The 1925 silent film {{ event.title|escapejs }}, synced to {{ event.artist|escapejs }}'s Vs. and Vitalogy.",
+  "url": "{{ request.scheme }}://{{ request.get_host }}{{ request.path }}",
+  "startDate": "{{ event.starts_at|date:'c' }}",
+  "eventStatus": "https://schema.org/EventScheduled",
+  "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+  "workPresented": {
+    "@type": "Movie",
+    "name": "{{ event.title|escapejs }}",
+    "datePublished": "{{ event.year }}",
+    "director": {"@type": "Person", "name": "{{ event.director|escapejs }}"},
+    "actor": [{% for name in event.cast %}{"@type": "Person", "name": "{{ name|escapejs }}"}{% if not forloop.last %}, {% endif %}{% endfor %}]
+    {% if event.youtube_id %},
+    "trailer": {
+      "@type": "VideoObject",
+      "name": "Silents Synced: {{ event.artist|escapejs }} vs. {{ event.title|escapejs }} — Trailer",
+      "embedUrl": "https://www.youtube.com/embed/{{ event.youtube_id|escapejs }}"
+    }
+    {% endif %}
+  },
+  "location": {
+    "@type": "MovieTheater",
+    "name": "{{ site_config.cinema.name|escapejs }}",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "{{ site_config.cinema.address.street|escapejs }}",
+      "addressLocality": "{{ site_config.cinema.address.city|escapejs }}",
+      "addressRegion": "{{ site_config.cinema.address.state|escapejs }}",
+      "postalCode": "{{ site_config.cinema.address.zip|escapejs }}",
+      "addressCountry": "US"
+    }
+  }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+  <div class="event-page">
+    <div class="event-container">
+
+      <a href="/" class="event-back">&larr; Back to Home</a>
+
+      {% comment %}
+        The hero is a silent-film intertitle: double gold rule, centered caps,
+        the way a 1925 print announced itself. Everything else on the page is
+        quiet so this card carries the identity.
+      {% endcomment %}
+      <header class="event-hero">
+        <p class="event-eyebrow">Silents Synced</p>
+
+        <div class="event-card">
+          <h1 class="event-card-title">{{ event.title }}</h1>
+          <p class="event-card-year">{{ event.year }}</p>
+        </div>
+
+        {% comment %}
+          The sync seam. Two artifacts sixty-eight years apart, joined — which
+          is the entire event, so it gets to be the one structural device here.
+        {% endcomment %}
+        <div class="event-sync">
+          <div class="event-sync-side">
+            <p class="event-sync-label">The picture</p>
+            <p class="event-sync-value">{{ event.title }}</p>
+            <p class="event-sync-meta">{{ event.year }} &middot; silent</p>
+          </div>
+          <div class="event-sync-mark" aria-hidden="true">
+            <span class="event-sync-x">&times;</span>
+          </div>
+          <div class="event-sync-side">
+            <p class="event-sync-label">The soundtrack</p>
+            <p class="event-sync-value">{{ event.artist }}</p>
+            <p class="event-sync-meta">
+              {% for album in event.albums %}<em>{{ album.title }}</em> {{ album.year }}{% if not forloop.last %} &middot; {% endif %}{% endfor %}
+            </p>
+          </div>
+        </div>
+
+        <p class="event-when">
+          <span class="event-when-date">{{ event.starts_at|date:"l, F j" }}</span>
+          <span class="event-when-sep">&bull;</span>
+          <span class="event-when-time">{{ event.starts_at|date:"g:i A" }}</span>
+        </p>
+        <p class="event-when-note">One night only</p>
+      </header>
+
+      {% comment %}
+        Trailer facade. The iframe's src stays empty until `playing` flips, so
+        the page makes no request to YouTube unless someone asks for the
+        trailer — the same deferral the trailer modals in partials/coming_soon
+        .html and partials/now_showing.html use, minus the modal. Alpine is
+        already loaded globally; [x-cloak] is defined in static/css/home.css,
+        which despite its name ships in the sitewide bundle.
+      {% endcomment %}
+      {% if event.youtube_id %}
+      <div class="event-trailer" x-data="{ playing: false }">
+        <button
+          type="button"
+          class="event-trailer-launch"
+          x-show="!playing"
+          @click="playing = true"
+        >
+          <span class="event-trailer-play" aria-hidden="true">&#9654;</span>
+          <span class="event-trailer-label">Watch the trailer</span>
+        </button>
+        <div class="event-trailer-player" x-cloak x-show="playing">
+          <iframe
+            :src="playing ? 'https://www.youtube-nocookie.com/embed/{{ event.youtube_id|escapejs }}?autoplay=1&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3' : ''"
+            title="Silents Synced: {{ event.artist }} vs. {{ event.title }} trailer"
+            allow="autoplay; encrypted-media"
+            allowfullscreen
+          ></iframe>
+        </div>
+        {% comment %}
+          Always-visible escape hatch. A YouTube embed can refuse to play inside
+          someone else's iframe for reasons we do not control — an uploader
+          restriction, a referring-domain rule, a regional block — and the
+          in-frame failure is a dead grey box with no way out. This link means
+          the trailer is always one click away even when the player is not.
+        {% endcomment %}
+        <a
+          class="event-trailer-fallback"
+          href="https://www.youtube.com/watch?v={{ event.youtube_id }}"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-track="trailer_play"
+          data-track-location="event_silents_synced"
+        >Watch on YouTube &#8599;</a>
+      </div>
+      {% endif %}
+
+      {% include "partials/ornament_divider.html" %}
+
+      <section class="event-section">
+        <h2 class="section-title">THE PITCH</h2>
+        <p class="event-lead">
+          Play a silent film. Play a rock record. Start them at the same moment and the
+          two stop being separate things.
+        </p>
+        <p class="event-body">
+          That is Silents Synced, a touring series from Josh Frank of Austin&rsquo;s Blue
+          Starlite drive-in. Frank matches a forgotten silent picture to an album that
+          turns out to have been arguing with it all along, then screens the two together.
+          Earlier pairings put <em>Nosferatu</em> against Radiohead&rsquo;s <em>Kid A</em>
+          and <em>Amnesiac</em>, and Buster Keaton&rsquo;s <em>Sherlock Jr.</em> against
+          R.E.M.&rsquo;s <em>Monster</em>.
+        </p>
+        <p class="event-body">
+          For the third installment he took a 1925 picture about a countess who refuses to
+          behave, and handed it to {{ event.artist }}.
+        </p>
+        <blockquote class="event-quote">
+          <p>She&rsquo;s punk rock before punk even existed.</p>
+          <cite>Josh Frank, creator of Silents Synced</cite>
+        </blockquote>
+        <p class="event-body">
+          Frank has said the pairing arrived on a single line: <em>&ldquo;The moment I
+          rewatched this film, I remembered the lyrics of &lsquo;Animal&rsquo; &mdash;
+          &lsquo;I&rsquo;d rather be with an animal&rsquo; &mdash; it just fit.&rdquo;</em>
+        </p>
+      </section>
+
+      {% include "partials/ornament_divider.html" %}
+
+      <section class="event-section">
+        <h2 class="section-title">THE PICTURE</h2>
+        <p class="event-body">
+          <em>{{ event.title }}</em> turns one hundred this year. Pola Negri plays a
+          European countess who lands in a small Midwestern town with a blunt manner, a
+          sharp tongue, and a tattoo on her arm &mdash; and scandalizes the place simply by
+          declining to be made smaller by it. Frank&rsquo;s reading of her is the reason the
+          record fits.
+        </p>
+
+        <dl class="event-facts">
+          <div class="event-fact">
+            <dt>Released</dt>
+            <dd>{{ event.year }}</dd>
+          </div>
+          <div class="event-fact">
+            <dt>Director</dt>
+            <dd>{{ event.director }}</dd>
+          </div>
+          <div class="event-fact">
+            <dt>Starring</dt>
+            <dd>{{ event.cast|join:", " }}</dd>
+          </div>
+          <div class="event-fact">
+            <dt>Runtime</dt>
+            <dd>{{ event.runtime }}</dd>
+          </div>
+          <div class="event-fact">
+            <dt>Rating</dt>
+            <dd>{{ event.rating }}</dd>
+          </div>
+          <div class="event-fact">
+            <dt>Rescored by</dt>
+            <dd>{{ event.remixed_by }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      {% include "partials/ornament_divider.html" %}
+
+      <section class="event-section">
+        <h2 class="section-title">WHAT THEY SAY</h2>
+        <div class="event-endorsements">
+          <blockquote class="event-quote event-quote--compact">
+            <p>What a great and unlikely way of presenting great art.</p>
+            <cite>Bertis Downs, R.E.M.</cite>
+          </blockquote>
+          <blockquote class="event-quote event-quote--compact">
+            <p>There is something strangely appealing about syncing modern music to an old
+              silent film.</p>
+            <cite>Pete Smolin, They Might Be Giants</cite>
+          </blockquote>
+        </div>
+      </section>
+
+      {% include "partials/ornament_divider.html" %}
+
+      <section class="event-section event-section--plan">
+        <h2 class="section-title">PLAN YOUR NIGHT</h2>
+        <dl class="event-facts">
+          <div class="event-fact">
+            <dt>Date</dt>
+            <dd>{{ event.starts_at|date:"l, F j, Y" }}</dd>
+          </div>
+          <div class="event-fact">
+            <dt>Showtime</dt>
+            <dd>{{ event.starts_at|date:"g:i A" }}</dd>
+          </div>
+          {% if event.doors %}
+          <div class="event-fact">
+            <dt>Doors</dt>
+            <dd>{{ event.doors }}</dd>
+          </div>
+          {% endif %}
+          {% if event.admission %}
+          <div class="event-fact">
+            <dt>Admission</dt>
+            <dd>{{ event.admission }}</dd>
+          </div>
+          {% endif %}
+          <div class="event-fact">
+            <dt>Where</dt>
+            <dd>
+              {{ site_config.cinema.address.street }},
+              {{ site_config.cinema.address.city }}, {{ site_config.cinema.address.state }}
+            </dd>
+          </div>
+        </dl>
+        <p class="event-body event-body--tickets">
+          Tickets are sold at the door. Call
+          <a href="tel:{{ site_config.cinema.phone|cut:' '|cut:'('|cut:')'|cut:'-' }}" class="event-phone"
+             data-track="phone_click" data-track-location="event_silents_synced">{{ site_config.cinema.phone }}</a>
+          with questions.
+        </p>
+      </section>
+
+    </div>
+  </div>
+{% endblock %}

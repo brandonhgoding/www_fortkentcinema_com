@@ -38,7 +38,7 @@ class CalendarCrawlTrapTests(TestCase):
         self.assertEqual(resp["X-Robots-Tag"], "noindex, nofollow")
 
     def test_real_pages_are_not_noindexed(self):
-        for name in ["home", "rentals", "blog_list"]:
+        for name in ["home", "rentals", "blog_list", "event_silents_synced"]:
             resp = self.client.get(reverse(name))
             self.assertNotIn("X-Robots-Tag", resp)
 

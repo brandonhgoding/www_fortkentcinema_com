@@ -8,6 +8,7 @@ from django.views.generic import DetailView, TemplateView
 
 from blog.models import BlogPost
 from cinema.models import Film
+from web.constants import EVENT_SILENTS_SYNCED
 from web.services.cinema_data import (
     CINEMA_TZ,
     _format_runtime,
@@ -41,8 +42,12 @@ class HomeView(TemplateView):
         ctx["initial_year"] = initial_year
         ctx["initial_month"] = initial_month
 
-        # Home blog teaser: latest 3 posts, deterministically ordered.
-        ctx["recent_posts"] = BlogPost.objects.select_related("author", "category").order_by("-post_date", "-id")[:3]
+        # Special-event CTA. Renders only while the show is still ahead of us,
+        # so the banner retires itself the night it plays.
+        ctx["silents_synced"] = silents_synced_event()
+
+        # Home blog teaser: latest 2 posts, deterministically ordered.
+        ctx["recent_posts"] = BlogPost.objects.select_related("author", "category").order_by("-post_date", "-id")[:2]
 
         # Hero marquee bulbs: 17 across top/bottom, 5 down each side (Hero.jsx).
         ctx["hero_top_bulbs"] = range(17)
@@ -87,6 +92,18 @@ class HomeView(TemplateView):
         )
 
         return ctx
+
+
+def silents_synced_event():
+    """The Silents Synced event constants plus `is_upcoming`.
+
+    Shared by the event page and the homepage CTA so the two can never disagree
+    about whether the show has happened. `is_upcoming` flips at showtime, which
+    is what lets the CTA expire without a code change.
+    """
+    event = dict(EVENT_SILENTS_SYNCED)
+    event["is_upcoming"] = timezone.now() < event["starts_at"]
+    return event
 
 
 def _initial_calendar_month(coming_soon):
@@ -180,6 +197,27 @@ class CalendarMonthView(TemplateView):
 
 class RentalsView(TemplateView):
     template_name = "web/rentals.html"
+
+
+class SilentsSyncedEventView(TemplateView):
+    """/events/silents-synced-a-woman-of-the-world.
+
+    A hand-authored page for a one-night special event. The pairing — a 1925
+    silent rescored to Pearl Jam — is the entire pitch, and the generic
+    /movies/<slug> layout has nowhere to put it.
+
+    The page outlives the screening: it keeps its own ranking history and its
+    own inbound links, so it becomes an archive rather than a 404. Only the
+    homepage CTA expires. If it is ever retired, it must 301 — see
+    web/redirects.py.
+    """
+
+    template_name = "web/event_silents_synced.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["event"] = silents_synced_event()
+        return ctx
 
 
 class AboutView(TemplateView):
