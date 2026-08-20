@@ -1,0 +1,49 @@
+{% comment %}
+  The unvoted ballot. One choice, one submit — single-choice by design.
+  Posts to vote_cast; HTMX swaps #vote-panel, and without JavaScript the
+  same form does a plain POST and gets redirected back to /vote.
+{% endcomment %}
+<form
+  class="vote-ballot"
+  method="post"
+  action="{% url 'vote_cast' %}"
+  hx-post="{% url 'vote_cast' %}"
+  hx-target="#vote-panel"
+  hx-swap="outerHTML"
+>
+  {% csrf_token %}
+  <fieldset class="vote-ballot__fieldset">
+    <legend class="vote-ballot__legend">Pick one</legend>
+    {% for option in options %}
+      <label class="vote-option" for="option-{{ option.pk }}">
+        <input
+          class="vote-option__input"
+          type="radio"
+          name="option"
+          id="option-{{ option.pk }}"
+          value="{{ option.pk }}"
+          required
+        />
+        {% if option.film.poster_url %}
+          <img
+            class="vote-option__poster"
+            src="{{ option.film.poster_url }}"
+            alt=""
+            loading="lazy"
+            width="160"
+            height="240"
+          />
+        {% endif %}
+        <span class="vote-option__body">
+          <span class="vote-option__title">{{ option.film.title }}</span>
+          {% if option.description %}
+            <span class="vote-option__blurb">{{ option.description }}</span>
+          {% endif %}
+        </span>
+      </label>
+    {% endfor %}
+  </fieldset>
+  <button type="submit" class="vote-ballot__submit" data-track="vote_cast">
+    Cast my vote
+  </button>
+</form>

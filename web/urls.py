@@ -8,6 +8,9 @@ from .views import (
     RentalsView,
     SilentsSyncedEventView,
     ThanksView,
+    VoteArchiveView,
+    VoteCastView,
+    VoteView,
 )
 
 urlpatterns = [
@@ -17,6 +20,11 @@ urlpatterns = [
     # Square redirects here after a successful payment. noindex, unlinked,
     # and deliberately absent from the sitemap.
     path("thanks", ThanksView.as_view(), name="thanks"),
+    # /vote/cast and /vote/subscribe must precede /vote/<slug>, or "cast"
+    # would be matched as a poll slug.
+    path("vote", VoteView.as_view(), name="vote"),
+    path("vote/cast", VoteCastView.as_view(), name="vote_cast"),
+    path("vote/<slug:slug>", VoteArchiveView.as_view(), name="vote_archive"),
     # No trailing slash, matching /blog/<slug>: detail pages are slugless-suffix,
     # section pages (/rentals/) keep theirs.
     path("movies/<slug:slug>", MovieDetailView.as_view(), name="movie_detail"),

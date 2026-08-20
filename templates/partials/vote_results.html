@@ -1,0 +1,20 @@
+{% comment %}
+  Tallies. Rendered only when show_results is true — a poll can hide running
+  results until it closes, which stops an early leader snowballing.
+{% endcomment %}
+<ol class="vote-results">
+  {% for row in tallies %}
+    <li class="vote-results__row {% if row.option == voted_option %}vote-results__row--mine{% endif %}">
+      <span class="vote-results__title">{{ row.option.film.title }}</span>
+      <span class="vote-results__bar" aria-hidden="true">
+        <span class="vote-results__fill" style="width: {{ row.percent }}%"></span>
+      </span>
+      <span class="vote-results__count">
+        {{ row.percent }}% &middot; {{ row.count }} vote{{ row.count|pluralize }}
+      </span>
+    </li>
+  {% endfor %}
+</ol>
+<p class="vote-results__total">
+  {{ poll.total_votes }} vote{{ poll.total_votes|pluralize }} so far
+</p>

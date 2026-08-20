@@ -2,12 +2,16 @@ import calendar
 import datetime
 import json
 
-from django.http import Http404
+from django.conf import settings
+from django.http import Http404, HttpResponseBadRequest
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views import View
 from django.views.generic import DetailView, TemplateView
 
 from blog.models import BlogPost
-from cinema.models import Film
+from cinema import voting as vote_engine
+from cinema.models import Film, Poll, PollStatus
 from web.constants import EVENT_SILENTS_SYNCED
 from web.services.cinema_data import (
     CINEMA_TZ,
@@ -22,6 +26,7 @@ from web.services.showtimes import (
     format_showtime_date,
     upcoming_dates,
 )
+from web.services import voting as vote_service
 
 
 class HomeView(TemplateView):
@@ -279,3 +284,115 @@ class MovieDetailView(DetailView):
         ctx["runtime_iso"] = f"PT{film.runtime_minutes}M" if film.runtime_minutes else ""
         ctx["now_showing"] = get_now_showing()
         return ctx
+
+
+def _vote_context(request, poll=None, message=""):
+    """Shared context for every rendering of the vote panel."""
+    voter_key = vote_engine.voter_key_from(request) or request.vote_key
+    ctx = vote_service.resolve_vote_page(voter_key=voter_key, poll=poll)
+    ctx["message"] = message
+    return ctx
+
+
+def _with_voter_cookie(response, request):
+    """Set the voter cookie when the browser does not already carry one.
+
+    httpOnly: nothing in the page needs to read it, and it is the only thing
+    standing between one browser and a second vote.
+    """
+    if not vote_engine.voter_key_from(request):
+        response.set_cookie(
+            vote_engine.VOTER_COOKIE,
+            request.vote_key,
+            max_age=vote_engine.VOTER_COOKIE_MAX_AGE,
+            httponly=True,
+            samesite="Lax",
+            secure=not settings.DEBUG,
+        )
+    return response
+
+
+class VoteView(View):
+    """/vote — the canonical, stable URL for the current round.
+
+    This is the link pasted into Facebook, so it must stay valid across every
+    round. Past rounds move to /vote/<slug>; see VoteArchiveView.
+    """
+
+    def get(self, request):
+        request.vote_key = (
+            vote_engine.voter_key_from(request) or vote_engine.new_voter_key()
+        )
+        ctx = _vote_context(request)
+        response = render(request, "web/vote.html", ctx)
+        return _with_voter_cookie(response, request)
+
+
+class VoteArchiveView(View):
+    """/vote/<slug> — a specific round.
+
+    While a round is open its slug URL redirects to /vote, so exactly one page
+    collects the shares and links.
+    """
+
+    def get(self, request, slug):
+        poll = get_object_or_404(Poll, slug=slug)
+        if poll.status == PollStatus.OPEN:
+            return redirect("vote")
+        if poll.status == PollStatus.DRAFT:
+            raise Http404("No such poll.")
+
+        request.vote_key = (
+            vote_engine.voter_key_from(request) or vote_engine.new_voter_key()
+        )
+        ctx = _vote_context(request, poll=poll)
+        return render(request, "web/vote.html", ctx)
+
+
+class VoteCastView(View):
+    """POST /vote/cast — record one ballot.
+
+    HTMX gets the swapped panel back; a plain form POST is redirected to /vote
+    so a refresh cannot re-submit.
+    """
+
+    def post(self, request):
+        request.vote_key = (
+            vote_engine.voter_key_from(request) or vote_engine.new_voter_key()
+        )
+
+        poll = vote_service.current_poll()
+        option_id = request.POST.get("option")
+        if not option_id:
+            return HttpResponseBadRequest("No option selected.")
+
+        message = ""
+        if poll is None:
+            message = "Voting has closed for this round."
+        else:
+            option = poll.options.filter(pk=option_id).first()
+            if option is None:
+                return HttpResponseBadRequest("Unknown option.")
+            try:
+                vote_engine.cast_vote(
+                    poll,
+                    option,
+                    request.vote_key,
+                    ip=vote_engine.client_ip(request),
+                )
+            except vote_engine.AlreadyVoted:
+                message = "You've already voted in this round."
+            except vote_engine.PollNotOpen:
+                message = "Voting has closed for this round."
+            except vote_engine.IPCapReached:
+                message = "We've had a lot of votes from this connection already."
+            except vote_engine.OptionMismatch:
+                return HttpResponseBadRequest("Unknown option.")
+
+        if request.headers.get("HX-Request"):
+            ctx = _vote_context(request, message=message)
+            response = render(request, "partials/vote_panel.html", ctx)
+            return _with_voter_cookie(response, request)
+
+        response = redirect("vote")
+        return _with_voter_cookie(response, request)

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Vote on Our Next Classic | Fort Kent Cinema{% endblock %}
+{% block description %}You pick what we screen next. Vote on the shortlist for our next classic movie night at Fort Kent Cinema.{% endblock %}
+{% block og_title %}Vote on Our Next Classic | Fort Kent Cinema{% endblock %}
+{% block og_description %}You pick what we screen next. Vote on the shortlist for our next classic movie night.{% endblock %}
+
+{% block content %}
+  <div class="vote-page">
+    <div class="vote-container">
+      <div class="vote-header">
+        <a href="/" class="vote-back">&larr; Back to Home</a>
+        <h1 class="vote-title">
+          {% if poll %}{{ poll.title }}{% else %}You Pick The Picture{% endif %}
+        </h1>
+        {% if poll.blurb %}
+          <p class="vote-subtitle">{{ poll.blurb }}</p>
+        {% else %}
+          <p class="vote-subtitle">You choose what plays on our next classic night.</p>
+        {% endif %}
+      </div>
+
+      {% include "partials/vote_panel.html" %}
+
+      {% if archive %}
+        <section class="vote-archive">
+          <h2 class="vote-archive__title">Past rounds</h2>
+          <ul class="vote-archive__list">
+            {% for past in archive %}
+              <li class="vote-archive__item">
+                <a href="{% url 'vote_archive' slug=past.slug %}">
+                  {{ past.title }}{% if past.winner %} &mdash; {{ past.winner.film.title }} won{% endif %}
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </section>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
