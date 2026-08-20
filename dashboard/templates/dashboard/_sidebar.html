@@ -11,6 +11,8 @@
       <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="4" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 8h6M7 12h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Engagements</a>
     <a href="{% url 'dashboard:screens' %}" class="sidebarLink {% nav_active request 'dashboard:screens' %}" @click="sidebarOpen = false">
       <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="3" width="16" height="11" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M7 17h6M10 14v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Screens</a>
+    <a href="{% url 'dashboard:polls' %}" class="sidebarLink {% nav_active request 'dashboard:polls' %}" @click="sidebarOpen = false">
+      <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 15V9M10 15V5M15 15v-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Polls</a>
   </nav>
   <div class="sidebarUser" data-cy="sidebar-user">
     <div class="sidebarUserInfo">
