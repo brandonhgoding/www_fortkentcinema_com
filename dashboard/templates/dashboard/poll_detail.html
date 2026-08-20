@@ -1,0 +1,44 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% block title %}{{ poll.title }} · LeprinceOS{% endblock %}
+{% block head_extra %}
+  <link rel="stylesheet" href="{% static 'dashboard/css/polls.css' %}" />
+  <link rel="stylesheet" href="{% static 'dashboard/css/film_search_combo.css' %}" />
+{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="header">
+    <div>
+      <h1 class="title">{{ poll.title }}</h1>
+      <p class="subtitle">
+        {{ poll.get_status_display }} &middot; {{ poll.total_votes }} vote{{ poll.total_votes|pluralize }}
+      </p>
+    </div>
+    <a class="secondaryButton" href="{% url 'dashboard:polls' %}">All Polls</a>
+  </div>
+
+  <section>
+    <h2>Ballot</h2>
+    {% include "dashboard/_poll_options.html" %}
+  </section>
+
+  {% if poll.status == "DRAFT" %}
+    <section>
+      <h2>Add a film</h2>
+      {% comment %}
+        Reuses the engagement film picker. The option buttons in
+        _film_options.html dispatch an Alpine `film-selected` event carrying
+        {id, title, poster}, which bubbles to body — that is the contract this
+        hooks, and `js:` hx-vals lifts the id straight off the event detail.
+        Do not rename the event without changing _film_options.html too.
+      {% endcomment %}
+      <div hx-post="{% url 'dashboard:poll_option_add' poll.pk %}"
+           hx-trigger="film-selected from:body"
+           hx-vals='js:{film_id: event.detail.id}'
+           hx-target="#poll-options" hx-swap="outerHTML">
+        {% include "dashboard/_film_search_combo.html" with combo_id="poll-film" %}
+      </div>
+    </section>
+  {% endif %}
+</div>
+{% endblock %}

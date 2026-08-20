@@ -6,7 +6,9 @@
   <tbody>
     {% for poll in polls %}
     <tr>
-      <td>{{ poll.title }}</td>
+      <td>
+        <a href="{% url 'dashboard:poll_detail' poll.pk %}">{{ poll.title }}</a>
+      </td>
       <td><span class="statusBadge">{{ poll.get_status_display }}</span></td>
       <td>{{ poll.options.count }}</td>
       <td>{{ poll.total_votes }}</td>

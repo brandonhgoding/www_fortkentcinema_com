@@ -31,4 +31,20 @@ urlpatterns = [
     path("polls", poll_views.PollListView.as_view(), name="polls"),
     path("polls/new", poll_views.PollCreateView.as_view(), name="poll_create"),
     path("polls/<int:pk>/edit", poll_views.PollEditView.as_view(), name="poll_edit"),
+    path("polls/<int:pk>", poll_views.PollDetailView.as_view(), name="poll_detail"),
+    path(
+        "polls/<int:pk>/options/add",
+        poll_views.PollOptionAddView.as_view(),
+        name="poll_option_add",
+    ),
+    path(
+        "polls/<int:pk>/options/<int:option_pk>/remove",
+        poll_views.PollOptionRemoveView.as_view(),
+        name="poll_option_remove",
+    ),
+    path(
+        "polls/<int:pk>/options/<int:option_pk>/move",
+        poll_views.PollOptionMoveView.as_view(),
+        name="poll_option_move",
+    ),
 ]

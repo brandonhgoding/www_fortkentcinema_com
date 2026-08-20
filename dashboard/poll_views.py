@@ -6,12 +6,12 @@ helpers with this feature.
 
 import json
 
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.views import View
 
-from cinema.models import Poll
+from cinema.models import Film, Poll, PollOption, PollStatus
 
 from .forms import PollForm
 from .mixins import StaffRequiredMixin
@@ -83,3 +83,100 @@ class PollEditView(StaffRequiredMixin, View):
             reverse("dashboard:poll_edit", args=[pk]),
             "Save Changes",
         )
+
+
+def _poll_options_response(request, poll, toast_message: str = "") -> HttpResponse:
+    response = render(
+        request,
+        "dashboard/_poll_options.html",
+        {"poll": poll, "tallies": poll.tallies()},
+    )
+    if toast_message:
+        response["HX-Trigger"] = json.dumps(
+            {"dashboard-toast": {"kind": "success", "message": toast_message}}
+        )
+    return response
+
+
+class PollDetailView(StaffRequiredMixin, View):
+    def get(self, request, pk):
+        poll = get_object_or_404(Poll, pk=pk)
+        return render(
+            request,
+            "dashboard/poll_detail.html",
+            {"poll": poll, "tallies": poll.tallies()},
+        )
+
+
+class PollOptionAddView(StaffRequiredMixin, View):
+    """Add a film to a ballot.
+
+    Refused once voting is open: changing the ballot mid-round would make the
+    votes already cast meaningless.
+    """
+
+    def post(self, request, pk):
+        poll = get_object_or_404(Poll, pk=pk)
+        if poll.status != PollStatus.DRAFT:
+            return HttpResponse(
+                "The ballot is locked once a round leaves draft.", status=409
+            )
+
+        film = Film.objects.filter(pk=request.POST.get("film_id")).first()
+        if film is None:
+            return HttpResponseBadRequest("Unknown film.")
+
+        if not poll.options.filter(film=film).exists():
+            highest = poll.options.count()
+            PollOption.objects.create(poll=poll, film=film, sort_order=highest + 1)
+
+        return _poll_options_response(request, poll, f"Added {film.title}")
+
+
+class PollOptionRemoveView(StaffRequiredMixin, View):
+    def post(self, request, pk, option_pk):
+        poll = get_object_or_404(Poll, pk=pk)
+        if poll.status != PollStatus.DRAFT:
+            return HttpResponse(
+                "The ballot is locked once a round leaves draft.", status=409
+            )
+        poll.options.filter(pk=option_pk).delete()
+        return _poll_options_response(request, poll, "Removed from ballot")
+
+
+class PollOptionMoveView(StaffRequiredMixin, View):
+    """Reorder the ballot by swapping an option with its neighbour.
+
+    Ballot order is what visitors see top to bottom, so it is worth
+    controlling. Locked once voting opens, like the rest of the ballot.
+    """
+
+    def post(self, request, pk, option_pk):
+        poll = get_object_or_404(Poll, pk=pk)
+        if poll.status != PollStatus.DRAFT:
+            return HttpResponse(
+                "The ballot is locked once a round leaves draft.", status=409
+            )
+
+        direction = request.POST.get("direction")
+        if direction not in ("up", "down"):
+            return HttpResponseBadRequest("Direction must be 'up' or 'down'.")
+
+        options = list(poll.options.all())
+        index = next(
+            (i for i, opt in enumerate(options) if opt.pk == option_pk), None
+        )
+        if index is None:
+            return HttpResponseBadRequest("Unknown option.")
+
+        target = index - 1 if direction == "up" else index + 1
+        if 0 <= target < len(options):
+            options[index], options[target] = options[target], options[index]
+            # Renumber the whole ballot: sort_order values arrive from adds and
+            # earlier swaps, so a bare pairwise swap can leave duplicates.
+            for position, option in enumerate(options, start=1):
+                if option.sort_order != position:
+                    option.sort_order = position
+                    option.save(update_fields=["sort_order"])
+
+        return _poll_options_response(request, poll)
