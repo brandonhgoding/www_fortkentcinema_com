@@ -11,7 +11,7 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.views import View
 
-from cinema.models import Film, Poll, PollOption, PollStatus
+from cinema.models import Engagement, Film, Poll, PollOption, PollStatus
 
 from .forms import PollForm
 from .mixins import StaffRequiredMixin
@@ -180,3 +180,92 @@ class PollOptionMoveView(StaffRequiredMixin, View):
                     option.save(update_fields=["sort_order"])
 
         return _poll_options_response(request, poll)
+
+
+_ALLOWED_STATUSES = {
+    PollStatus.DRAFT,
+    PollStatus.OPEN,
+    PollStatus.CLOSED,
+    PollStatus.ANNOUNCED,
+}
+
+
+def _poll_status_response(request, poll, toast_message: str = "") -> HttpResponse:
+    response = render(request, "dashboard/_poll_status.html", {"poll": poll})
+    if toast_message:
+        response["HX-Trigger"] = json.dumps(
+            {"dashboard-toast": {"kind": "success", "message": toast_message}}
+        )
+    return response
+
+
+class PollStatusView(StaffRequiredMixin, View):
+    """Move a round through draft -> open -> closed.
+
+    Refuses a second open poll with a plain message rather than letting the
+    database constraint surface as a 500: the public page assumes exactly one
+    live round, so this is a mistake worth naming.
+    """
+
+    def post(self, request, pk):
+        poll = get_object_or_404(Poll, pk=pk)
+        status = request.POST.get("status")
+        if status not in _ALLOWED_STATUSES:
+            return HttpResponseBadRequest("Unknown status.")
+
+        if status == PollStatus.OPEN:
+            if not poll.options.exists():
+                return HttpResponse(
+                    "Add films to the ballot before opening the round.", status=409
+                )
+            others = Poll.objects.filter(status=PollStatus.OPEN).exclude(pk=poll.pk)
+            if others.exists():
+                return HttpResponse(
+                    f"“{others.first().title}” is already open. Close it first.",
+                    status=409,
+                )
+
+        poll.status = status
+        poll.save(update_fields=["status"])
+        return _poll_status_response(request, poll, f"Poll {status.lower()}")
+
+
+class PollAnnounceView(StaffRequiredMixin, View):
+    """Name the winner and, once booked, attach the engagement.
+
+    The engagement link is what turns the public results page from
+    "Casablanca won" into "Casablanca won, here are the showtimes".
+    """
+
+    def get(self, request, pk):
+        poll = get_object_or_404(Poll, pk=pk)
+        return render(
+            request,
+            "dashboard/_poll_announce.html",
+            {
+                "poll": poll,
+                "tallies": poll.tallies(by_rank=True),
+                "engagements": Engagement.objects.order_by("-start_date")[:20],
+            },
+        )
+
+    def post(self, request, pk):
+        poll = get_object_or_404(Poll, pk=pk)
+        if poll.status == PollStatus.OPEN:
+            return HttpResponse(
+                "Close the round before announcing a winner.", status=409
+            )
+
+        winner = poll.options.filter(pk=request.POST.get("winner")).first()
+        if winner is None:
+            return HttpResponseBadRequest("Unknown option.")
+
+        poll.winner = winner
+        poll.status = PollStatus.ANNOUNCED
+
+        engagement_id = request.POST.get("engagement")
+        if engagement_id:
+            poll.engagement = Engagement.objects.filter(pk=engagement_id).first()
+
+        poll.save(update_fields=["winner", "status", "engagement"])
+        return _poll_status_response(request, poll, "Winner announced")

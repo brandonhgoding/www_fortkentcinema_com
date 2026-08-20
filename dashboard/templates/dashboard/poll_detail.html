@@ -17,6 +17,8 @@
     <a class="secondaryButton" href="{% url 'dashboard:polls' %}">All Polls</a>
   </div>
 
+  {% include "dashboard/_poll_status.html" %}
+
   <section>
     <h2>Ballot</h2>
     {% include "dashboard/_poll_options.html" %}

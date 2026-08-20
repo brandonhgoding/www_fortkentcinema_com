@@ -47,4 +47,14 @@ urlpatterns = [
         poll_views.PollOptionMoveView.as_view(),
         name="poll_option_move",
     ),
+    path(
+        "polls/<int:pk>/status",
+        poll_views.PollStatusView.as_view(),
+        name="poll_status",
+    ),
+    path(
+        "polls/<int:pk>/announce",
+        poll_views.PollAnnounceView.as_view(),
+        name="poll_announce",
+    ),
 ]
