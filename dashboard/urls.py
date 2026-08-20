@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import poll_views, views
+from . import poll_views, subscriber_views, views
 
 app_name = "dashboard"
 
@@ -56,5 +56,15 @@ urlpatterns = [
         "polls/<int:pk>/announce",
         poll_views.PollAnnounceView.as_view(),
         name="poll_announce",
+    ),
+    path(
+        "subscribers",
+        subscriber_views.SubscriberListView.as_view(),
+        name="subscribers",
+    ),
+    path(
+        "subscribers/export.csv",
+        subscriber_views.SubscriberExportView.as_view(),
+        name="subscribers_export",
     ),
 ]
