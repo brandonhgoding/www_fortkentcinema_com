@@ -1,0 +1,87 @@
+import uuid
+from typing import ClassVar
+
+from django.db import models
+from django.utils import timezone
+
+
+class SubscriberStatus(models.TextChoices):
+    ACTIVE = "ACTIVE", "Active"
+    UNSUBSCRIBED = "UNSUBSCRIBED", "Unsubscribed"
+
+
+class SubscriberManager(models.Manager):
+    def record(
+        self, email: str, source: str, ip: str | None = None
+    ) -> tuple["Subscriber", bool]:
+        """Idempotently record an opt-in.
+
+        Returns (subscriber, created). An address that has previously
+        unsubscribed is returned untouched — a later signup must never
+        silently re-add someone who opted out.
+        """
+        email = (email or "").strip().lower()
+        if not email:
+            raise ValueError("email is required")
+
+        existing = self.filter(email=email).first()
+        if existing is not None:
+            return existing, False
+
+        return self.create(email=email, source=source, consent_ip=ip), True
+
+    def active(self) -> models.QuerySet["Subscriber"]:
+        return self.filter(status=SubscriberStatus.ACTIVE)
+
+
+class Subscriber(models.Model):
+    """A person who asked to hear from us.
+
+    Deliberately generic: nothing here references films or polls. `source` is
+    only a label, so the next feature that needs an email list reuses this
+    model rather than growing its own.
+    """
+
+    objects: ClassVar[SubscriberManager] = SubscriberManager()
+
+    email = models.EmailField(unique=True)
+    status = models.CharField(
+        max_length=20,
+        choices=SubscriberStatus.choices,
+        default=SubscriberStatus.ACTIVE,
+    )
+    source = models.CharField(
+        max_length=32,
+        help_text="Where the opt-in happened, e.g. 'poll_vote'.",
+    )
+
+    # Consent record. Kept because CAN-SPAM compliance means being able to
+    # show when and from where someone opted in.
+    consent_at = models.DateTimeField(auto_now_add=True)
+    consent_ip = models.GenericIPAddressField(null=True, blank=True)
+
+    # Generated from the first row even though nothing sends mail yet.
+    # Retrofitting tokens onto an existing list is a migration worth avoiding.
+    unsubscribe_token = models.UUIDField(
+        default=uuid.uuid4, unique=True, editable=False
+    )
+    unsubscribed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-consent_at"]
+        verbose_name = "Subscriber"
+        verbose_name_plural = "Subscribers"
+
+    def __str__(self) -> str:
+        return self.email
+
+    def save(self, *args, **kwargs) -> None:
+        self.email = (self.email or "").strip().lower()
+        super().save(*args, **kwargs)
+
+    def unsubscribe(self) -> None:
+        if self.status == SubscriberStatus.UNSUBSCRIBED:
+            return
+        self.status = SubscriberStatus.UNSUBSCRIBED
+        self.unsubscribed_at = timezone.now()
+        self.save(update_fields=["status", "unsubscribed_at"])

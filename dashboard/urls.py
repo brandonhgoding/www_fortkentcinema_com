@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import poll_views, subscriber_views, views
 
 app_name = "dashboard"
 
@@ -28,4 +28,43 @@ urlpatterns = [
     path("engagements/<int:eng_pk>/showtimes/bulk", views.ShowtimeBulkView.as_view(), name="showtime_bulk"),
     path("showtimes/<int:pk>/edit", views.ShowtimeEditView.as_view(), name="showtime_edit"),
     path("showtimes/<int:pk>/delete", views.ShowtimeDeleteView.as_view(), name="showtime_delete"),
+    path("polls", poll_views.PollListView.as_view(), name="polls"),
+    path("polls/new", poll_views.PollCreateView.as_view(), name="poll_create"),
+    path("polls/<int:pk>/edit", poll_views.PollEditView.as_view(), name="poll_edit"),
+    path("polls/<int:pk>", poll_views.PollDetailView.as_view(), name="poll_detail"),
+    path(
+        "polls/<int:pk>/options/add",
+        poll_views.PollOptionAddView.as_view(),
+        name="poll_option_add",
+    ),
+    path(
+        "polls/<int:pk>/options/<int:option_pk>/remove",
+        poll_views.PollOptionRemoveView.as_view(),
+        name="poll_option_remove",
+    ),
+    path(
+        "polls/<int:pk>/options/<int:option_pk>/move",
+        poll_views.PollOptionMoveView.as_view(),
+        name="poll_option_move",
+    ),
+    path(
+        "polls/<int:pk>/status",
+        poll_views.PollStatusView.as_view(),
+        name="poll_status",
+    ),
+    path(
+        "polls/<int:pk>/announce",
+        poll_views.PollAnnounceView.as_view(),
+        name="poll_announce",
+    ),
+    path(
+        "subscribers",
+        subscriber_views.SubscriberListView.as_view(),
+        name="subscribers",
+    ),
+    path(
+        "subscribers/export.csv",
+        subscriber_views.SubscriberExportView.as_view(),
+        name="subscribers_export",
+    ),
 ]

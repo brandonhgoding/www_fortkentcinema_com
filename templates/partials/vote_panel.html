@@ -1,0 +1,58 @@
+{% comment %}
+  The whole swappable region. HTMX replaces this element outerHTML, so the id
+  must live on the outermost node or the second swap has nothing to target.
+{% endcomment %}
+<div id="vote-panel" class="vote-panel">
+  {% if message %}
+    <p class="vote-panel__message" role="status">{{ message }}</p>
+  {% endif %}
+
+  {% if state == "ballot" %}
+    {% include "partials/vote_ballot.html" %}
+
+  {% elif state == "voted" %}
+    <p class="vote-panel__thanks">
+      Thanks — your vote for
+      <strong>{{ voted_option.film.title }}</strong> is in.
+    </p>
+    {% if show_results %}
+      {% include "partials/vote_results.html" %}
+    {% else %}
+      <p class="vote-panel__hidden-results">
+        Results stay under wraps until voting closes.
+      </p>
+    {% endif %}
+    {% include "partials/vote_email_capture.html" %}
+
+  {% elif state == "closed" %}
+    <p class="vote-panel__closed">
+      Voting has closed for this round — we're booking the winner now.
+    </p>
+    {% if show_results %}{% include "partials/vote_results.html" %}{% endif %}
+
+  {% elif state == "announced" %}
+    <div class="vote-panel__winner">
+      <p class="vote-panel__winner-eyebrow">The winner</p>
+      <h2 class="vote-panel__winner-title">{{ poll.winner.film.title }}</h2>
+      {% if poll.engagement %}
+        <p class="vote-panel__winner-dates">
+          Playing {{ poll.engagement.start_date|date:"F j" }}&ndash;{{ poll.engagement.end_date|date:"F j" }}
+        </p>
+        {% if poll.winner.film.slug %}
+          <a class="vote-panel__winner-link" href="{{ poll.winner.film.get_absolute_url }}">
+            Showtimes and details &rarr;
+          </a>
+        {% endif %}
+      {% else %}
+        <p class="vote-panel__winner-dates">Dates coming soon.</p>
+      {% endif %}
+    </div>
+    {% if show_results %}{% include "partials/vote_results.html" %}{% endif %}
+
+  {% else %}
+    <p class="vote-panel__idle">
+      No vote is running right now. Check back soon &mdash; or
+      <a href="{% url 'blog_list' %}">read what we've been up to</a>.
+    </p>
+  {% endif %}
+</div>

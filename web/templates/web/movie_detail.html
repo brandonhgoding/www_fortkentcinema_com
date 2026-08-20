@@ -39,6 +39,13 @@ not the TMDB blurb — the local intent is what we can actually win.
         {% if is_now_showing %}<span class="movie-page-badge">NOW SHOWING</span>{% endif %}
         <h1 class="movie-page-title">{{ film.title }}</h1>
 
+        {% if on_ballot %}
+          <a class="movie-ballot-link" href="{% url 'vote' %}"
+             data-track="vote_cta_click" data-track-location="movie_page">
+            On the ballot this round &mdash; vote for it &rarr;
+          </a>
+        {% endif %}
+
         <div class="movie-page-meta">
           {% if film.rating %}<span class="movie-page-rating">{{ film.rating }}</span>{% endif %}
           {% if runtime_display %}<span class="movie-page-runtime">{{ runtime_display }}</span>{% endif %}

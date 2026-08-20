@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "web.apps.WebConfig",
     "dashboard.apps.DashboardConfig",
     "cinema.apps.CinemaConfig",
+    "audience.apps.AudienceConfig",
     "rest_framework",
     "corsheaders",
 ]

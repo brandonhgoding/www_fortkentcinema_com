@@ -1,0 +1,47 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% block title %}Subscribers · LeprinceOS{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/polls.css' %}" />{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="header">
+    <div>
+      <h1 class="title">Subscribers</h1>
+      <p class="subtitle">
+        {{ active_count }} active address{{ active_count|pluralize:"es" }}.
+        {% comment %}
+          Nothing here sends mail. Export, then send from Square Marketing —
+          which already carries the domain's sending reputation.
+        {% endcomment %}
+        Export and send from Square Marketing.
+      </p>
+    </div>
+    <a class="primaryButton" href="{% url 'dashboard:subscribers_export' %}">
+      Export CSV
+    </a>
+  </div>
+
+  {% if subscribers %}
+    <table class="table">
+      <thead>
+        <tr><th>Email</th><th>Status</th><th>Source</th><th>Joined</th></tr>
+      </thead>
+      <tbody>
+        {% for sub in subscribers %}
+        <tr>
+          <td>{{ sub.email }}</td>
+          <td><span class="statusBadge">{{ sub.get_status_display }}</span></td>
+          <td>{{ sub.source }}</td>
+          <td>{{ sub.consent_at|date:"M j, Y" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="empty-state">
+      <h2>No Subscribers Yet</h2>
+      <p>Addresses arrive when people vote and ask to hear what won.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

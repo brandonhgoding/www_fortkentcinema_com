@@ -1,0 +1,32 @@
+{% comment %}
+  Winner defaults to the current leader — tallies arrive sorted by rank, so
+  the first row is it — but staff can override.
+
+  `checked` sits on the same line as `value` deliberately: a line break
+  between them renders whitespace into the attribute pair.
+{% endcomment %}
+<form hx-post="{% url 'dashboard:poll_announce' poll.pk %}"
+      hx-target="#poll-status" hx-swap="outerHTML"
+      @htmx:after-request="drawerOpen = false">
+  {% csrf_token %}
+  <h2>Announce the winner</h2>
+  {% for row in tallies %}
+    <label>
+      <input type="radio" name="winner" value="{{ row.option.pk }}"{% if forloop.first %} checked{% endif %} />
+      {{ row.option.film.title }} &mdash; {{ row.count }} vote{{ row.count|pluralize }}
+    </label>
+  {% endfor %}
+
+  <label for="announce-engagement">Booked engagement (optional)</label>
+  <select name="engagement" id="announce-engagement" class="input">
+    <option value="">Not booked yet</option>
+    {% for engagement in engagements %}
+      <option value="{{ engagement.pk }}"
+              {% if poll.engagement_id == engagement.pk %}selected{% endif %}>
+        {{ engagement }}
+      </option>
+    {% endfor %}
+  </select>
+
+  <button type="submit" class="primaryButton">Announce</button>
+</form>

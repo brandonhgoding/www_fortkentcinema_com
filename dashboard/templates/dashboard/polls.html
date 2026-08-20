@@ -1,0 +1,18 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% block title %}Polls · LeprinceOS{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/polls.css' %}" />{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="header">
+    <div>
+      <h1 class="title">Polls</h1>
+      <p class="subtitle">Let the audience pick what plays next.</p>
+    </div>
+    <button class="primaryButton" hx-get="{% url 'dashboard:poll_create' %}"
+            hx-target="#drawer-content" hx-swap="innerHTML"
+            @click="drawerOpen = true">New Poll</button>
+  </div>
+  {% include "dashboard/_poll_list.html" %}
+</div>
+{% endblock %}

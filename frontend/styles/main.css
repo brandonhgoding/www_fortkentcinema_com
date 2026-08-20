@@ -39,6 +39,7 @@
 @import '../../static/css/OpenMicCTA.css';
 @import '../../static/css/ComingSoon.css';
 @import '../../static/css/GiftCardCTA.css';
+@import '../../static/css/VoteCTA.css';
 @import '../../static/css/Blog.css';
 @import '../../static/css/BlogCard.css';
 
@@ -50,3 +51,4 @@
 @import '../../static/css/PrivateRentalsPage.css';
 @import '../../static/css/BlogListPage.css';
 @import '../../static/css/BlogDetailPage.css';
+@import '../../static/css/VotePage.css';

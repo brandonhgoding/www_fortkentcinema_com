@@ -1,0 +1,6 @@
+<form hx-post="{{ action_url }}" hx-target="#poll-list" hx-swap="outerHTML"
+      @htmx:after-request="drawerOpen = false">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit" class="primaryButton">{{ submit_label }}</button>
+</form>
