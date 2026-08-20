@@ -3,12 +3,15 @@ import datetime
 import json
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.http import Http404, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views import View
 from django.views.generic import DetailView, TemplateView
 
+from audience.models import Subscriber
 from blog.models import BlogPost
 from cinema import voting as vote_engine
 from cinema.models import Film, Poll, PollStatus
@@ -396,3 +399,38 @@ class VoteCastView(View):
 
         response = redirect("vote")
         return _with_voter_cookie(response, request)
+
+
+class VoteSubscribeView(View):
+    """POST /vote/subscribe — the ask that follows a vote.
+
+    Deliberately says only that we'll let them know what won. Nothing here
+    promises a cadence, because nothing in this project sends mail yet; the
+    list is exported from the dashboard and sent by hand.
+    """
+
+    SOURCE = "poll_vote"
+
+    def post(self, request):
+        # Honeypot. A real person never fills this in; bots fill everything.
+        if request.POST.get("website"):
+            return render(
+                request, "partials/vote_email_capture.html", {"subscribed": True}
+            )
+
+        email = (request.POST.get("email") or "").strip()
+        try:
+            validate_email(email)
+        except ValidationError:
+            return render(
+                request,
+                "partials/vote_email_capture.html",
+                {"error": "That doesn't look like a valid email address."},
+            )
+
+        Subscriber.objects.record(
+            email, source=self.SOURCE, ip=vote_engine.client_ip(request)
+        )
+        return render(
+            request, "partials/vote_email_capture.html", {"subscribed": True}
+        )

@@ -1,0 +1,50 @@
+{% comment %}
+  The ask, shown only after someone has voted — peak intent, and no form
+  standing between a visitor and their vote.
+
+  The copy promises exactly what a manual send from Square can deliver: that
+  we'll tell them what won. It must never say "newsletter" or imply a
+  schedule; nothing in this project sends mail yet.
+{% endcomment %}
+<div id="vote-email" class="vote-email">
+  {% if subscribed %}
+    <p class="vote-email__done" role="status">
+      Got it &mdash; we'll let you know what won and when it's playing.
+    </p>
+  {% else %}
+    <form
+      class="vote-email__form"
+      method="post"
+      action="{% url 'vote_subscribe' %}"
+      hx-post="{% url 'vote_subscribe' %}"
+      hx-target="#vote-email"
+      hx-swap="outerHTML"
+    >
+      {% csrf_token %}
+      <label class="vote-email__label" for="vote-email-input">
+        Want us to let you know what won and when it's playing?
+      </label>
+      <div class="vote-email__row">
+        <input
+          class="vote-email__input"
+          type="email"
+          name="email"
+          id="vote-email-input"
+          placeholder="you@example.com"
+          autocomplete="email"
+          required
+        />
+        <button type="submit" class="vote-email__submit">Let me know</button>
+      </div>
+      {% comment %} Honeypot: hidden from people, irresistible to bots. {% endcomment %}
+      <div class="vote-email__hp" aria-hidden="true">
+        <label for="vote-email-website">Website</label>
+        <input type="text" name="website" id="vote-email-website" tabindex="-1"
+               autocomplete="off" />
+      </div>
+      {% if error %}
+        <p class="vote-email__error" role="alert">{{ error }}</p>
+      {% endif %}
+    </form>
+  {% endif %}
+</div>

@@ -10,6 +10,7 @@ from .views import (
     ThanksView,
     VoteArchiveView,
     VoteCastView,
+    VoteSubscribeView,
     VoteView,
 )
 
@@ -24,6 +25,7 @@ urlpatterns = [
     # would be matched as a poll slug.
     path("vote", VoteView.as_view(), name="vote"),
     path("vote/cast", VoteCastView.as_view(), name="vote_cast"),
+    path("vote/subscribe", VoteSubscribeView.as_view(), name="vote_subscribe"),
     path("vote/<slug:slug>", VoteArchiveView.as_view(), name="vote_archive"),
     # No trailing slash, matching /blog/<slug>: detail pages are slugless-suffix,
     # section pages (/rentals/) keep theirs.
