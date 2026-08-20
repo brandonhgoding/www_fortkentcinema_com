@@ -1,0 +1,117 @@
+"""Resolves what the /vote page should show.
+
+Five states, all of which must render: no poll, an unvoted ballot, a cast
+ballot, a closed round awaiting a decision, and an announced winner. This
+lives here rather than in the view so each state is unit-testable without
+going through HTTP, matching the cinema_data / showtimes convention.
+"""
+
+from django.db.models import QuerySet
+
+from cinema.models import Poll, PollStatus
+from cinema.voting import existing_vote
+
+STATE_NO_POLL = "no_poll"
+STATE_BALLOT = "ballot"
+STATE_VOTED = "voted"
+STATE_CLOSED = "closed"
+STATE_ANNOUNCED = "announced"
+
+_DECIDED = (PollStatus.CLOSED, PollStatus.ANNOUNCED)
+
+
+def current_poll() -> Poll | None:
+    """The single open poll, if there is one. At most one can exist."""
+    return (
+        Poll.objects.filter(status=PollStatus.OPEN)
+        .select_related("winner", "engagement")
+        .first()
+    )
+
+
+def latest_decided_poll() -> Poll | None:
+    """The most recent round that has finished voting.
+
+    Announced rounds outrank merely-closed ones, so a freshly closed round
+    does not bury the winner people are still looking for.
+    """
+    announced = (
+        Poll.objects.filter(status=PollStatus.ANNOUNCED)
+        .select_related("winner", "winner__film", "engagement")
+        .first()
+    )
+    if announced is not None:
+        return announced
+    return (
+        Poll.objects.filter(status=PollStatus.CLOSED)
+        .select_related("winner", "winner__film", "engagement")
+        .first()
+    )
+
+
+def archived_polls() -> QuerySet:
+    """Past rounds, newest first. There is no separate archive index page —
+    /vote lists these and each links to its own /vote/<slug>."""
+    return Poll.objects.filter(status__in=_DECIDED).select_related(
+        "winner", "winner__film"
+    )
+
+
+def resolve_vote_page(voter_key: str | None, poll: Poll | None = None) -> dict:
+    """Build the context for /vote or /vote/<slug>.
+
+    `poll` pins the page to a specific round (the archive view). Without it,
+    the open poll wins, falling back to the most recent decided round.
+    """
+    if poll is None:
+        poll = current_poll() or latest_decided_poll()
+
+    archive = archived_polls()
+    if poll is not None:
+        archive = archive.exclude(pk=poll.pk)
+
+    ctx = {
+        "state": STATE_NO_POLL,
+        "poll": poll,
+        "options": [],
+        "tallies": [],
+        "show_results": False,
+        "voted_option": None,
+        "archive": archive,
+    }
+
+    if poll is None:
+        return ctx
+
+    ctx["options"] = list(poll.options.select_related("film"))
+
+    if poll.status == PollStatus.ANNOUNCED:
+        ctx["state"] = STATE_ANNOUNCED
+        ctx["show_results"] = True
+        ctx["tallies"] = poll.tallies(by_rank=True)
+        return ctx
+
+    if poll.status == PollStatus.CLOSED:
+        ctx["state"] = STATE_CLOSED
+        ctx["show_results"] = poll.results_visible
+        if poll.results_visible:
+            ctx["tallies"] = poll.tallies(by_rank=True)
+        return ctx
+
+    if poll.status != PollStatus.OPEN:
+        # A draft round is not public. Treat it as no poll at all.
+        ctx["poll"] = None
+        ctx["options"] = []
+        return ctx
+
+    vote = existing_vote(poll, voter_key)
+    if vote is None:
+        ctx["state"] = STATE_BALLOT
+        return ctx
+
+    ctx["state"] = STATE_VOTED
+    ctx["voted_option"] = vote.option
+    ctx["show_results"] = poll.results_visible
+    if poll.results_visible:
+        ctx["tallies"] = poll.tallies(by_rank=True)
+    return ctx
