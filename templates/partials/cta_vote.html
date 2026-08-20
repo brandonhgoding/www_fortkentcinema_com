@@ -1,0 +1,29 @@
+{% comment %}
+  Homepage CTA for an open vote. `vote_poll` comes from HomeView and is None
+  unless a poll is OPEN, so this banner retires itself the moment the round
+  closes — no follow-up commit required. Same self-expiring shape as
+  cta_silents_synced.html.
+{% endcomment %}
+{% if vote_poll %}
+<a
+  href="{% url 'vote' %}"
+  class="vote-cta"
+  data-track="vote_cta_click"
+  data-track-location="home"
+>
+  <span class="vote-cta__eyebrow">You pick the picture</span>
+  <span class="vote-cta__title">{{ vote_poll.title }}</span>
+  <span class="vote-cta__detail">
+    {{ vote_poll.options.count }} film{{ vote_poll.options.count|pluralize }} on the ballot
+    {% if vote_poll.closes_at %}
+      &middot; voting closes {{ vote_poll.closes_at|date:"F j" }}
+    {% endif %}
+  </span>
+  <span class="vote-cta__link">Cast your vote &rarr;</span>
+</a>
+{% comment %}
+  Trailing divider inside the guard, matching cta_silents_synced.html —
+  without it, removing the CTA leaves two dividers stacked together.
+{% endcomment %}
+{% include "partials/ornament_divider.html" %}
+{% endif %}

@@ -1,0 +1,285 @@
+/* /vote — ballot, results, and the email ask. */
+.vote-page {
+  padding: 2rem 1rem 4rem;
+}
+
+.vote-container {
+  max-width: 56rem;
+  margin: 0 auto;
+}
+
+.vote-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.vote-back {
+  display: inline-block;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-gold, #c9a227);
+  text-decoration: none;
+}
+
+.vote-title {
+  font-size: clamp(1.8rem, 6vw, 3rem);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.vote-subtitle {
+  margin-top: 0.5rem;
+  opacity: 0.85;
+}
+
+/* Ballot */
+.vote-ballot__fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 40rem) {
+  .vote-ballot__fieldset {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.vote-ballot__legend {
+  font-size: 0.8rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-gold, #c9a227);
+  margin-bottom: 0.5rem;
+}
+
+.vote-option {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+  padding: 0.85rem;
+  border: 1px solid rgba(243, 233, 210, 0.25);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease;
+}
+
+.vote-option:hover,
+.vote-option:focus-within {
+  border-color: var(--color-gold, #c9a227);
+  background: rgba(201, 162, 39, 0.08);
+}
+
+.vote-option__poster {
+  width: 64px;
+  height: auto;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.vote-option__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.vote-option__title {
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.vote-option__blurb {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.vote-ballot__submit {
+  display: block;
+  margin: 1.5rem auto 0;
+  padding: 0.75rem 2rem;
+  font-size: 0.9rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #14100c;
+  background: var(--color-gold, #c9a227);
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Results */
+.vote-results {
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.vote-results__row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.25rem;
+}
+
+.vote-results__row--mine .vote-results__title {
+  color: var(--color-gold, #c9a227);
+}
+
+.vote-results__bar {
+  display: block;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(243, 233, 210, 0.15);
+  overflow: hidden;
+}
+
+.vote-results__fill {
+  display: block;
+  height: 100%;
+  background: var(--color-gold, #c9a227);
+}
+
+.vote-results__count {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.vote-results__total {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  opacity: 0.7;
+  text-align: center;
+}
+
+/* Panel states */
+.vote-panel__message,
+.vote-panel__thanks,
+.vote-panel__closed,
+.vote-panel__idle,
+.vote-panel__hidden-results {
+  text-align: center;
+  margin: 0 0 1rem;
+}
+
+.vote-panel__winner {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  border: 2px solid var(--color-gold, #c9a227);
+  border-radius: 6px;
+}
+
+.vote-panel__winner-eyebrow {
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-gold, #c9a227);
+  margin: 0;
+}
+
+.vote-panel__winner-title {
+  font-size: clamp(1.5rem, 5vw, 2.4rem);
+  text-transform: uppercase;
+  margin: 0.35rem 0;
+}
+
+.vote-panel__winner-link {
+  color: var(--color-gold, #c9a227);
+}
+
+/* Email ask */
+.vote-email {
+  margin-top: 2rem;
+  padding: 1.25rem;
+  border-top: 1px solid rgba(243, 233, 210, 0.2);
+  text-align: center;
+}
+
+.vote-email__label {
+  display: block;
+  margin-bottom: 0.6rem;
+  font-size: 0.95rem;
+}
+
+.vote-email__row {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.vote-email__input {
+  padding: 0.6rem 0.75rem;
+  min-width: 16rem;
+  border-radius: 4px;
+  border: 1px solid rgba(243, 233, 210, 0.35);
+  background: rgba(0, 0, 0, 0.25);
+  color: inherit;
+}
+
+.vote-email__submit {
+  padding: 0.6rem 1.25rem;
+  border: 0;
+  border-radius: 4px;
+  background: var(--color-gold, #c9a227);
+  color: #14100c;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.vote-email__error {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #e2725b;
+}
+
+/* Honeypot: off-screen rather than display:none, which some bots detect. */
+.vote-email__hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* Archive */
+.vote-archive {
+  margin-top: 3rem;
+  text-align: center;
+}
+
+.vote-archive__title {
+  font-size: 1rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-gold, #c9a227);
+}
+
+.vote-archive__list {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.vote-archive__item a {
+  color: inherit;
+  opacity: 0.85;
+}
+
+/* Movie-page ballot link */
+.movie-ballot-link {
+  display: inline-block;
+  margin: 0.75rem 0;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-gold, #c9a227);
+}

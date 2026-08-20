@@ -14,12 +14,18 @@ from django.urls import include, path
 from django.views.generic import TemplateView
 
 from web.redirects import legacy_urlpatterns
-from web.sitemaps import BlogPostSitemap, FilmSitemap, StaticViewSitemap
+from web.sitemaps import (
+    BlogPostSitemap,
+    FilmSitemap,
+    PollSitemap,
+    StaticViewSitemap,
+)
 
 sitemaps = {
     "static": StaticViewSitemap,
     "posts": BlogPostSitemap,
     "films": FilmSitemap,
+    "polls": PollSitemap,
 }
 
 urlpatterns = [

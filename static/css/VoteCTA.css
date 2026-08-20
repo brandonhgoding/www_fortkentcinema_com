@@ -1,0 +1,50 @@
+/* Homepage vote CTA. Shares the marquee vocabulary of EventCTA.css but reads
+   as an invitation rather than an announcement — this one asks for an action. */
+.vote-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 1.5rem 1.25rem;
+  margin: 0 auto;
+  max-width: 46rem;
+  text-align: center;
+  text-decoration: none;
+  color: var(--color-cream, #f3e9d2);
+  border: 2px solid var(--color-gold, #c9a227);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.vote-cta:hover,
+.vote-cta:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 0 18px rgba(201, 162, 39, 0.35);
+}
+
+.vote-cta__eyebrow {
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-gold, #c9a227);
+}
+
+.vote-cta__title {
+  font-size: clamp(1.4rem, 4vw, 2rem);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.vote-cta__detail {
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
+.vote-cta__link {
+  margin-top: 0.4rem;
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-gold, #c9a227);
+}

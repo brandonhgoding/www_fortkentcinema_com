@@ -54,6 +54,10 @@ class HomeView(TemplateView):
         # so the banner retires itself the night it plays.
         ctx["silents_synced"] = silents_synced_event()
 
+        # Self-expiring vote CTA: None unless a poll is OPEN, so the banner
+        # retires itself when the round closes.
+        ctx["vote_poll"] = vote_service.current_poll()
+
         # Home blog teaser: latest 2 posts, deterministically ordered.
         ctx["recent_posts"] = BlogPost.objects.select_related("author", "category").order_by("-post_date", "-id")[:2]
 
@@ -286,6 +290,14 @@ class MovieDetailView(DetailView):
         # ISO-8601 duration for schema.org Movie.duration (120 -> PT120M).
         ctx["runtime_iso"] = f"PT{film.runtime_minutes}M" if film.runtime_minutes else ""
         ctx["now_showing"] = get_now_showing()
+        # Internal linking: push crawlers (and people) between the movie
+        # pages and /vote while this film is up for a vote.
+        open_poll = vote_service.current_poll()
+        ctx["on_ballot"] = (
+            open_poll
+            if open_poll and open_poll.options.filter(film=film).exists()
+            else None
+        )
         return ctx
 
 
