@@ -4,6 +4,7 @@ from .views import (
     # AboutView,  # About page temporarily hidden (re-enable with the /about path below)
     CalendarMonthView,
     HomeView,
+    MembershipView,
     MovieDetailView,
     RentalsView,
     SilentsSyncedEventView,
@@ -16,6 +17,7 @@ from .views import (
 
 urlpatterns = [
     path("", HomeView.as_view(), name="home"),
+    path("membership/", MembershipView.as_view(), name="membership"),
     path("rentals/", RentalsView.as_view(), name="rentals"),
     # path("about/", AboutView.as_view(), name="about"),  # About page temporarily hidden — re-enable this + the AboutView import to restore /about
     # Square redirects here after a successful payment. noindex, unlinked,
@@ -28,7 +30,7 @@ urlpatterns = [
     path("vote/subscribe", VoteSubscribeView.as_view(), name="vote_subscribe"),
     path("vote/<slug:slug>", VoteArchiveView.as_view(), name="vote_archive"),
     # No trailing slash, matching /blog/<slug>: detail pages are slugless-suffix,
-    # section pages (/rentals/) keep theirs.
+    # section pages (/membership/, /rentals/) keep theirs.
     path("movies/<slug:slug>", MovieDetailView.as_view(), name="movie_detail"),
     # One-off special event. Same slugless-suffix convention as /movies/<slug>;
     # the /events/ prefix is there so the next one doesn't need a new top-level

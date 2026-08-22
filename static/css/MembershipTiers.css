@@ -1,0 +1,79 @@
+/* ============================================
+   MEMBERSHIP TIERS — Section
+============================================ */
+.membership-tiers {
+  padding: var(--spacing-2xl) var(--spacing-md);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.membership-tiers__header {
+  text-align: center;
+  margin-bottom: var(--spacing-2xl);
+}
+
+.membership-tiers__eyebrow {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  margin: 0 0 var(--spacing-xs);
+  opacity: 0.9;
+}
+
+.membership-tiers__title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3rem);
+  letter-spacing: 8px;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  text-shadow: 0 0 12px var(--neon-gold-far);
+  margin: 0;
+  position: relative;
+  display: inline-block;
+}
+
+.membership-tiers__title::before,
+.membership-tiers__title::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 60px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-gold), transparent);
+}
+
+.membership-tiers__title::before {
+  right: calc(100% + 20px);
+}
+
+.membership-tiers__title::after {
+  left: calc(100% + 20px);
+}
+
+.membership-tiers__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-lg);
+  align-items: stretch;
+}
+
+.membership-tiers__loading,
+.membership-tiers__error {
+  text-align: center;
+  padding: var(--spacing-2xl);
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  font-style: italic;
+  color: var(--color-cream-muted);
+}
+
+.membership-tiers__error {
+  color: var(--color-gold-light);
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  border-radius: var(--radius-md);
+  background: rgba(20, 20, 26, 0.5);
+  max-width: 520px;
+  margin: 0 auto;
+}

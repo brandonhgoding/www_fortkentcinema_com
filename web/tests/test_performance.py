@@ -34,7 +34,7 @@ class SingleStylesheetTests(TestCase):
         """15 render-blocking stylesheets cost ~1,680ms. Adding a per-page
         <link> back would silently undo this — add it to
         frontend/styles/main.css instead."""
-        for name in ["home", "rentals", "blog_list", "event_silents_synced"]:
+        for name in ["home", "membership", "rentals", "blog_list", "event_silents_synced"]:
             html = self.client.get(reverse(name)).content.decode()
             links = stylesheet_links(html)
             self.assertEqual(
@@ -103,6 +103,7 @@ class BundleTests(TestCase):
             ".movie-card",       # MovieCard.css
             ".coming-",          # ComingSoon.css
             ".gift-card-cta",    # GiftCardCTA.css
+            ".tier-card",        # TierCard.css
             ".event-cta",        # EventCTA.css
             ".event-card",       # EventPage.css
             ".movie-page",       # MoviePage.css

@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Membership — Fort Kent Cinema{% endblock %}
+{% block description %}Become a Fort Kent Cinema member: popcorn discounts, member ticket rates, and supporting Maine's northernmost picture show.{% endblock %}
+{% block og_title %}Membership — Fort Kent Cinema{% endblock %}
+{% block og_description %}Become a Fort Kent Cinema member: popcorn discounts, member ticket rates, and supporting Maine's northernmost picture show.{% endblock %}
+
+{% block extra_head %}
+{% comment %}
+MEMBERSHIP_FAQ (web/constants.py) is already a literal Q&A list rendered further
+down this page. Marking it up costs nothing and is eligible for an FAQ rich
+result. The answers must match the visible page text — Google penalises FAQ
+markup that isn't on the page.
+{% endcomment %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {% for faq in faqs %}{
+      "@type": "Question",
+      "name": "{{ faq.question|escapejs }}",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "{{ faq.answer|escapejs }}"
+      }
+    }{% if not forloop.last %},{% endif %}{% endfor %}
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+  <div class="membership-page">
+    {% comment %}
+      Hero: "View Memberships" is a scroll-to-tiers link (#tiers) instead of
+      the SPA's onClick scrollIntoView handler.
+    {% endcomment %}
+    <section class="membership-hero">
+      <div class="membership-hero__inner">
+        <p class="membership-hero__eyebrow">Fort Kent Cinema · Cinema Supporters</p>
+        <h1 class="membership-hero__title">Become a Member</h1>
+        <span class="membership-hero__rule" aria-hidden="true">
+          <span></span>
+          <span class="membership-hero__diamond"></span>
+          <span></span>
+        </span>
+        <p class="membership-hero__subtitle">
+          Movies, perks, and a hand in keeping the marquee lit.
+        </p>
+        <a href="#tiers" class="btn btn-primary membership-hero__cta">View Memberships</a>
+      </div>
+    </section>
+
+    {% comment %}
+      Benefits: 4 static perk cards transcribed verbatim from
+      MembershipBenefits.jsx's BENEFITS array, including inline SVG icons.
+    {% endcomment %}
+    <section class="membership-benefits">
+      <header class="membership-benefits__header" data-reveal>
+        <p class="membership-benefits__eyebrow">The Perks</p>
+        <h2 class="membership-benefits__title">Why join?</h2>
+      </header>
+      <ul class="membership-benefits__grid">
+        <li class="membership-benefits__item">
+          <span class="membership-benefits__medallion" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+              <path d="M5 8h14l-1.5 12h-11L5 8z" />
+              <path d="M8 8a2 2 0 0 1 4-1 2 2 0 0 1 4 1" />
+              <path d="M9 11v6M12 11v6M15 11v6" />
+            </svg>
+          </span>
+          <h3 class="membership-benefits__heading">Popcorn Discounts</h3>
+          <p class="membership-benefits__text">Show your card. We pop the corn.</p>
+        </li>
+        <li class="membership-benefits__item">
+          <span class="membership-benefits__medallion" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+              <path d="M5 13v7h14v-7" />
+              <rect x="3" y="9" width="18" height="4" rx="1" />
+              <path d="M12 9V5" />
+              <path d="M10 5a2 2 0 0 1 4 0c0 1-1 1.5-2 3-1-1.5-2-2-2-3z" />
+            </svg>
+          </span>
+          <h3 class="membership-benefits__heading">Birthday surprise</h3>
+          <p class="membership-benefits__text">Free popcorn on your birthday</p>
+        </li>
+        <li class="membership-benefits__item">
+          <span class="membership-benefits__medallion" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+              <path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z" />
+            </svg>
+          </span>
+          <h3 class="membership-benefits__heading">Support local cinema</h3>
+          <p class="membership-benefits__text">Your membership keeps the marquee lit.</p>
+        </li>
+      </ul>
+    </section>
+
+    {% comment %}
+      Tiers: loops MEMBERSHIP into partials/tier_card.html. id="tiers" is
+      the scroll target for the hero + final CTA anchor links.
+    {% endcomment %}
+    <section class="membership-tiers" id="tiers">
+      <header class="membership-tiers__header" data-reveal>
+        <p class="membership-tiers__eyebrow">Memberships</p>
+        <h2 class="membership-tiers__title">Choose your tier</h2>
+      </header>
+      <div class="membership-tiers__grid">
+        {% for tier in tiers %}
+          {% include "partials/tier_card.html" %}
+        {% endfor %}
+      </div>
+    </section>
+
+    {% comment %}
+      FAQ: loops MEMBERSHIP_FAQ into dt/dd pairs.
+    {% endcomment %}
+    <section class="membership-faq">
+      <header class="membership-faq__header">
+        <p class="membership-faq__eyebrow">Inquiries</p>
+        <h2 class="membership-faq__title">Frequently asked questions</h2>
+      </header>
+      <dl class="membership-faq__list">
+        {% for faq in faqs %}
+          <div class="membership-faq__item">
+            <dt class="membership-faq__question">
+              <span class="membership-faq__diamond" aria-hidden="true"></span>
+              {{ faq.question }}
+            </dt>
+            <dd class="membership-faq__answer">{{ faq.answer }}</dd>
+          </div>
+        {% endfor %}
+      </dl>
+    </section>
+
+    <section class="membership-page__final-cta">
+      <span class="membership-page__final-cta-rule" aria-hidden="true"></span>
+      <h2>Ready to join?</h2>
+      <p>Pick your tier above and welcome yourself into the picture show.</p>
+      <a href="#tiers" class="btn btn-primary">Choose your tier</a>
+    </section>
+  </div>
+{% endblock %}

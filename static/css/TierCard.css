@@ -1,0 +1,241 @@
+/* ============================================
+   TIER CARD — Patron's Membership Card
+============================================ */
+.tier-card {
+  position: relative;
+  background:
+    linear-gradient(165deg, rgba(26, 26, 34, 0.95) 0%, rgba(10, 10, 14, 0.98) 100%);
+  border: 1px solid var(--color-gold);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xl) var(--spacing-lg) var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  box-shadow:
+    inset 0 0 0 4px var(--color-bg-dark),
+    inset 0 0 0 5px rgba(201, 168, 76, 0.3),
+    0 4px 24px rgba(0, 0, 0, 0.5);
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+  overflow: hidden;
+}
+
+/* Subtle radial gold sheen behind everything */
+.tier-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 60% 30% at 50% 0%,
+    rgba(201, 168, 76, 0.1),
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.tier-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.tier-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    inset 0 0 0 4px var(--color-bg-dark),
+    inset 0 0 0 5px var(--color-gold),
+    0 12px 40px rgba(0, 0, 0, 0.6),
+    0 0 30px var(--neon-gold-far);
+}
+
+/* Featured (family) tier — gilded ribbon */
+.tier-card--featured {
+  border-color: var(--color-gold);
+  box-shadow:
+    inset 0 0 0 4px var(--color-bg-dark),
+    inset 0 0 0 5px var(--color-gold),
+    0 4px 30px rgba(201, 168, 76, 0.25);
+}
+
+.tier-card__ribbon {
+  position: absolute;
+  top: 14px;
+  right: -30px;
+  background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-warm) 100%);
+  color: var(--color-bg-dark);
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  padding: 4px 36px;
+  transform: rotate(35deg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  z-index: 2;
+}
+
+/* Header / identity block */
+.tier-card__header {
+  margin-bottom: var(--spacing-lg);
+}
+
+.tier-card__eyebrow {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  opacity: 0.85;
+  margin: 0 0 var(--spacing-xs);
+}
+
+.tier-card__name {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: var(--color-cream);
+  margin: 0;
+  text-shadow: 0 0 12px rgba(237, 232, 220, 0.15);
+}
+
+.tier-card__rule {
+  display: block;
+  width: 40px;
+  height: 1px;
+  background: var(--color-gold);
+  margin: var(--spacing-sm) auto;
+  position: relative;
+}
+
+.tier-card__rule::before,
+.tier-card__rule::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  background: var(--color-gold);
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.tier-card__rule::before {
+  left: -10px;
+}
+
+.tier-card__rule::after {
+  right: -10px;
+}
+
+.tier-card__price {
+  display: block;
+  margin: var(--spacing-xs) 0;
+  font-family: var(--font-heading);
+  font-size: 3.6rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 1px;
+  color: var(--color-gold);
+  text-shadow: 0 0 24px var(--color-gold-glow);
+}
+
+.tier-card__price::first-letter {
+  font-size: 0.45em;
+  font-weight: 400;
+  vertical-align: 0.85em;
+  margin-right: 0.1em;
+  letter-spacing: 0;
+}
+
+.tier-card__price-period {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-style: italic;
+  color: var(--color-cream-muted);
+  margin: 0;
+}
+
+/* Perks list */
+.tier-card__perks {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--spacing-lg);
+  text-align: left;
+  border-top: 1px solid rgba(201, 168, 76, 0.25);
+  border-bottom: 1px solid rgba(201, 168, 76, 0.25);
+  padding: var(--spacing-md) 0;
+}
+
+.tier-card__perks li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) 0;
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  color: var(--color-cream);
+  line-height: 1.45;
+}
+
+.tier-card__perk-icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-top: 0.1em;
+  color: var(--color-gold);
+  filter: drop-shadow(0 0 4px var(--neon-gold-far));
+}
+
+.tier-card__perk-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.tier-card__perk-text {
+  flex: 1 1 auto;
+}
+
+.tier-card__perk-chip {
+  flex: 0 0 auto;
+  align-self: center;
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  border: 1px solid rgba(201, 168, 76, 0.5);
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: rgba(201, 168, 76, 0.08);
+}
+
+/* CTA */
+.tier-card__cta {
+  margin-top: auto;
+  align-self: stretch;
+  letter-spacing: 4px;
+  font-size: 1rem;
+  padding: 0.85rem 1.5rem;
+}
+
+.tier-card--featured .tier-card__cta {
+  background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-warm) 100%);
+  color: var(--color-bg-dark);
+  border: 1px solid var(--color-gold);
+  box-shadow: 0 4px 15px var(--color-gold-glow);
+}
+
+.tier-card--featured .tier-card__cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px var(--color-gold-glow);
+  background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-warm) 100%);
+  color: var(--color-bg-dark);
+}
+
+/* Family ribbon — mirrored to the top-left so it can coexist with the featured ribbon */
+.tier-card__ribbon--family {
+  right: auto;
+  left: -30px;
+  transform: rotate(-35deg);
+  background: linear-gradient(135deg, var(--color-gold-warm) 0%, var(--color-gold) 100%);
+}
