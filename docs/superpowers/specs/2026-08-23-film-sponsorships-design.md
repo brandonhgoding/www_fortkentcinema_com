@@ -187,6 +187,23 @@ first, safe to re-run on prod.
 
 Idempotent: running it twice changes nothing the second time.
 
+Invocation:
+
+```bash
+.venv/bin/python manage.py import_studio_catalog \
+  --studio universal \
+  --file "/Users/bgoding/Documents/Universal DCP List - Updated 3.4.26.xlsx" \
+  --dry-run
+```
+
+**Dependency gap:** `openpyxl` (3.1.5) is present in the local venv but is **not
+declared in `requirements.txt`** — nothing in the project currently imports it. It
+must be added, or the command dies with `ModuleNotFoundError` on a fresh checkout
+and in production. This is the first real dependency the repo has needed since the
+initial pin set, so it goes in `requirements.txt` under a new `# Spreadsheet import`
+heading rather than into `dev-requirements.txt`: the importer is a production
+management command, not a dev tool.
+
 ### `web/constants.py`
 
 Sponsorship tiers live beside `MEMBERSHIP`, following the same list-of-dicts shape
