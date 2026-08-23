@@ -721,6 +721,18 @@ class ImportStudioCatalogTests(TestCase):
         self.assertIn("95 min", title.variant_note)
         self.assertIn("1958 Theatrical", title.variant_note)
 
+    def test_a_true_duplicate_gets_no_variant_note(self):
+        # Notting Hill is listed twice, identically. There is no second
+        # version to advertise.
+        path = workbook([
+            ["NOTTING HILL", datetime.datetime(1999, 5, 28), "Scope", 5.1,
+             "PG-13", 124, "2K Restoration"],
+            ["NOTTING HILL", datetime.datetime(1999, 5, 28), "Scope", 5.1,
+             "PG-13", 124, "2K Restoration"],
+        ])
+        self.run_import(path)
+        self.assertEqual(StudioTitle.objects.get().variant_note, "")
+
     def test_same_title_different_dates_stay_separate(self):
         path = workbook([
             ["DRACULA", datetime.datetime(1931, 2, 13), "Flat (1.33)", 1,
@@ -1012,11 +1024,22 @@ class Command(BaseCommand):
             others = [row for row in group if row is not primary]
             collapsed += len(others)
 
-            variant_note = ""
-            if others:
-                summaries = [row.summary() for row in others if row.summary()]
-                if summaries:
-                    variant_note = f"Also available: {'; '.join(summaries)}"[:300]
+            # Skip any variant that describes the same thing as the primary.
+            # Notting Hill is listed twice, identically — without this the
+            # page would advertise an "also available" version that is just
+            # the row itself.
+            seen = {primary.summary()}
+            summaries = []
+            for row in others:
+                summary = row.summary()
+                if not summary or summary in seen:
+                    continue
+                seen.add(summary)
+                summaries.append(summary)
+
+            variant_note = (
+                f"Also available: {'; '.join(summaries)}"[:300] if summaries else ""
+            )
 
             _, was_created = StudioTitle.objects.update_or_create(
                 studio=studio,
