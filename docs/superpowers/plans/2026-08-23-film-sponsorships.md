@@ -380,7 +380,9 @@ class StudioTitleTests(TestCase):
         # Dracula (1931) really does ship under two release dates.
         self.make(original_title="DRACULA", release_date=datetime.date(1931, 2, 13))
         self.make(original_title="DRACULA", release_date=datetime.date(1931, 4, 24))
-        self.assertEqual(StudioTitle.objects.filter(original_title="DRACULA").count(), 2)
+        self.assertEqual(
+            StudioTitle.objects.filter(original_title="DRACULA").count(), 2
+        )
 
     def test_film_link_is_optional_and_survives_film_deletion(self):
         film = Film.objects.create(title="The Bad Guys 2")
@@ -1223,7 +1225,8 @@ class SponsorPageTests(TestCase):
         self.assertEqual(titles, ["Jaws", "The Wild Robot"])
 
     def test_pagination_is_fifty_per_page(self):
-        self.assertEqual(self.client.get(reverse("sponsor")).context["paginator"].per_page, 50)
+        response = self.client.get(reverse("sponsor"))
+        self.assertEqual(response.context["paginator"].per_page, 50)
 
     def test_tiers_are_in_context_with_the_agreed_prices(self):
         tiers = self.client.get(reverse("sponsor")).context["tiers"]
@@ -2283,7 +2286,9 @@ Append to `cinema/admin.py` (and add the names to the `from .models import` line
 ```python
 @admin.register(SponsorshipInquiry)
 class SponsorshipInquiryAdmin(admin.ModelAdmin):
-    list_display = ("business_name", "contact_name", "email", "tier", "status", "created_at")
+    list_display = (
+        "business_name", "contact_name", "email", "tier", "status", "created_at",
+    )
     list_filter = ("status", "tier")
     search_fields = ("business_name", "contact_name", "email")
     readonly_fields = ("created_at", "ip")
@@ -2328,7 +2333,10 @@ class SponsorshipInquiryForm(forms.ModelForm):
             required=False,
             label="What you'd like to cover (optional)",
             choices=[("", "Not sure yet")]
-            + [(t["key"], f"{t['name']} — from ${t['price']}") for t in SPONSORSHIP_TIERS],
+            + [
+                (t["key"], f"{t['name']} — from ${t['price']}")
+                for t in SPONSORSHIP_TIERS
+            ],
         )
         self.fields["studio_title"] = forms.ModelChoiceField(
             required=False,
