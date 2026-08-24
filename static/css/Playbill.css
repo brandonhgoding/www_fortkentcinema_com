@@ -8,10 +8,19 @@
  * was black ink on cheap cream stock, and dressing it in the site palette would
  * turn a reproduction into a pastiche.
  *
- * Clean stock, no simulated aging: the sheets are reproductions of what was
- * printed, not props pretending to be the originals. The framed originals in
- * the lobby do that job better than CSS can. Each sheet keeps a slight,
- * per-instance tilt so a row of them does not look mechanically stacked.
+ * Water staining, and nothing else — no paper grain, no foxing, no edge wear.
+ * Two lessons are baked into the stains below and should not be undone:
+ *
+ *   1. NEVER a single concentric radial gradient. A bright middle inside a
+ *      dark ring does not read as water damage, it reads as a bullseye. Each
+ *      bloom is three overlapping OFF-CENTRE ellipses whose union has no
+ *      single centre.
+ *   2. Water wicks in from an edge. Blooms are anchored to the sheet's edges
+ *      and run off them, rather than floating in the middle of the page.
+ *
+ * LEGIBILITY BEATS PATINA: the stains sit behind the text and stay under 0.3
+ * alpha. The titles are content and are becoming links. If a change here
+ * starts fighting the ink, the stain loses.
  */
 
 .playbill {
@@ -60,6 +69,63 @@
     0 1px 0 rgba(0, 0, 0, .25),
     0 18px 38px rgba(0, 0, 0, .55);
   transform: rotate(var(--tilt));
+}
+
+/* Clips the blooms to the paper. Has to be its own box: putting
+ * `overflow: hidden` on the sheet clipped the printed text instead. */
+.playbill__aging {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.playbill__stain {
+  position: absolute;
+  mix-blend-mode: multiply;
+  /* Prime-ish rotations so no two sheets share a silhouette. */
+  transform: rotate(calc(var(--sheet) * 41deg));
+}
+
+/* Wicked in from the bottom-right corner. */
+.playbill__stain--a {
+  right: calc(-20% + var(--sheet) * 5%);
+  bottom: calc(-22% + var(--sheet) * 3%);
+  width: 82%;
+  height: 58%;
+  background:
+    radial-gradient(44% 36% at 36% 44%,
+      rgba(150, 106, 46, .20) 0 58%, rgba(150, 106, 46, .26) 73%,
+      rgba(150, 106, 46, 0) 89%),
+    radial-gradient(32% 48% at 60% 58%,
+      rgba(142, 98, 42, .17) 0 55%, rgba(142, 98, 42, .24) 71%,
+      rgba(142, 98, 42, 0) 88%),
+    radial-gradient(38% 28% at 54% 28%,
+      rgba(158, 112, 52, .14) 0 57%, rgba(158, 112, 52, .20) 73%,
+      rgba(158, 112, 52, 0) 90%);
+}
+
+/* An older, drier mark creeping in from the left edge. */
+.playbill__stain--b {
+  left: calc(-24% + var(--sheet) * 6%);
+  top: calc(-8% + var(--sheet) * 7%);
+  width: 64%;
+  height: 50%;
+  background:
+    radial-gradient(36% 42% at 46% 40%,
+      rgba(130, 88, 38, .16) 0 60%, rgba(130, 88, 38, .21) 75%,
+      rgba(130, 88, 38, 0) 90%),
+    radial-gradient(44% 30% at 58% 60%,
+      rgba(122, 82, 36, .13) 0 56%, rgba(122, 82, 36, .18) 73%,
+      rgba(122, 82, 36, 0) 89%);
+}
+
+/* The printed sheet sits above the staining. */
+.playbill__head,
+.playbill__bill {
+  position: relative;
+  z-index: 1;
 }
 
 /* ---- masthead ----------------------------------------------------------- */
