@@ -54,13 +54,13 @@
             </td>
           </tr>
           {% if inquiry.message %}
-            <tr><td colspan="6" class="muted">{{ inquiry.message }}</td></tr>
+            <tr><td colspan="6" class="text-muted">{{ inquiry.message }}</td></tr>
           {% endif %}
         {% endfor %}
       </tbody>
     </table>
   {% else %}
-    <div class="empty">
+    <div class="empty-state">
       <h2>No Inquiries Yet</h2>
       <p>They'll show up here when a business fills in the form on /sponsor/.</p>
     </div>
