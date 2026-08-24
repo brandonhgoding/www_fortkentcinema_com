@@ -9,13 +9,19 @@ from django.http import Http404, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views import View
-from django.views.generic import DetailView, TemplateView
+from django.views.generic import DetailView, ListView, TemplateView
 
 from audience.models import Subscriber
 from blog.models import BlogPost
 from cinema import voting as vote_engine
-from cinema.models import Film, Poll, PollStatus
-from web.constants import EVENT_SILENTS_SYNCED, MEMBERSHIP, MEMBERSHIP_FAQ
+from cinema.models import Film, Poll, PollStatus, StudioTitle
+from web.constants import (
+    EVENT_SILENTS_SYNCED,
+    MEMBERSHIP,
+    MEMBERSHIP_FAQ,
+    SPONSORSHIP_POPCORN_CAP,
+    SPONSORSHIP_TIERS,
+)
 from web.services.cinema_data import (
     CINEMA_TZ,
     _format_runtime,
@@ -469,3 +475,76 @@ class VoteSubscribeView(View):
         return render(
             request, "partials/vote_email_capture.html", {"subscribed": True}
         )
+
+
+# Whitelist of sort keys. The querystring never reaches order_by directly.
+SPONSOR_SORTS = {
+    "title": "title",
+    "-title": "-title",
+    "year": "release_date",
+    "-year": "-release_date",
+    "runtime": "runtime_minutes",
+    "-runtime": "-runtime_minutes",
+}
+
+
+class SponsorView(ListView):
+    """/sponsor/ — the pitch, the tiers, and what a business can pick from.
+
+    Server-side filtering and pagination rather than a client-side table:
+    1,140 rows is manageable either way, but the catalog grows with every
+    studio added, and this shape survives 5,000 titles without a rewrite.
+    """
+
+    template_name = "web/sponsor.html"
+    context_object_name = "titles"
+    paginate_by = 50
+
+    def get_queryset(self):
+        queryset = StudioTitle.objects.available().select_related("studio")
+
+        query = (self.request.GET.get("q") or "").strip()
+        if query:
+            queryset = queryset.filter(title__icontains=query)
+
+        rating = (self.request.GET.get("rating") or "").strip()
+        if rating:
+            queryset = queryset.filter(mpa_rating=rating)
+
+        decade = (self.request.GET.get("decade") or "").strip()
+        if decade.isdigit():
+            start = int(decade)
+            queryset = queryset.filter(
+                release_date__year__gte=start, release_date__year__lt=start + 10
+            )
+
+        sort = self.request.GET.get("sort") or "title"
+        field = SPONSOR_SORTS.get(sort, "title")
+        # pk breaks ties so pagination stays stable across pages.
+        return queryset.order_by(field, "pk")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        available = StudioTitle.objects.available()
+
+        years = available.exclude(release_date__isnull=True).values_list(
+            "release_date__year", flat=True
+        )
+        ctx.update(
+            {
+                "tiers": SPONSORSHIP_TIERS,
+                "popcorn_cap": SPONSORSHIP_POPCORN_CAP,
+                "total_count": available.count(),
+                "ratings": sorted(
+                    r for r in set(
+                        available.values_list("mpa_rating", flat=True)
+                    ) if r
+                ),
+                "decades": sorted({(year // 10) * 10 for year in years}, reverse=True),
+                "q": self.request.GET.get("q", ""),
+                "selected_rating": self.request.GET.get("rating", ""),
+                "selected_decade": self.request.GET.get("decade", ""),
+                "sort": self.request.GET.get("sort", "title"),
+            }
+        )
+        return ctx

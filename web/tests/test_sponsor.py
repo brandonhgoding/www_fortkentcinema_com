@@ -1,0 +1,120 @@
+import datetime
+
+from cinema.models import Studio, StudioTitle
+from django.test import TestCase
+from django.urls import reverse
+
+
+class SponsorPageTests(TestCase):
+    @classmethod
+    def setUpTestData(cls) -> None:
+        cls.studio = Studio.objects.create(
+            name="Universal Pictures", slug="universal"
+        )
+        cls.wild = StudioTitle.objects.create(
+            studio=cls.studio, original_title="WILD ROBOT, THE",
+            title="The Wild Robot", release_date=datetime.date(2024, 9, 27),
+            mpa_rating="PG", runtime_minutes=102, aspect_ratio="Scope",
+        )
+        cls.jaws = StudioTitle.objects.create(
+            studio=cls.studio, original_title="JAWS", title="Jaws",
+            release_date=datetime.date(1975, 6, 20),
+            mpa_rating="PG", runtime_minutes=124,
+        )
+        cls.hidden = StudioTitle.objects.create(
+            studio=cls.studio, original_title="HIDDEN ONE", title="Hidden One",
+            release_date=datetime.date(2020, 1, 1), is_available=False,
+        )
+
+    def test_page_returns_200_and_uses_templates(self):
+        response = self.client.get(reverse("sponsor"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "base.html")
+        self.assertTemplateUsed(response, "web/sponsor.html")
+
+    def test_no_template_comment_leaks_into_page(self):
+        html = self.client.get(reverse("sponsor")).content.decode()
+        self.assertNotIn("{#", html)
+        self.assertNotIn("{% comment %}", html)
+
+    def test_lists_available_titles_only(self):
+        html = self.client.get(reverse("sponsor")).content.decode()
+        self.assertIn("The Wild Robot", html)
+        self.assertIn("Jaws", html)
+        self.assertNotIn("Hidden One", html)
+
+    def test_inactive_studio_titles_are_hidden(self):
+        # Checked against context, not raw HTML: the page's static worked
+        # example also names "The Wild Robot" (a real, approved sponsorship),
+        # so a whole-page substring scan would false-fail regardless of
+        # whether the queryset actually excludes the inactive studio.
+        self.studio.is_active = False
+        self.studio.save()
+        response = self.client.get(reverse("sponsor"))
+        titles = [t.title for t in response.context["titles"]]
+        self.assertNotIn("The Wild Robot", titles)
+
+    def test_search_filters_by_title(self):
+        response = self.client.get(reverse("sponsor"), {"q": "wild"})
+        titles = [t.title for t in response.context["titles"]]
+        self.assertEqual(titles, ["The Wild Robot"])
+
+    def test_search_is_case_insensitive(self):
+        response = self.client.get(reverse("sponsor"), {"q": "JAWS"})
+        self.assertEqual([t.title for t in response.context["titles"]], ["Jaws"])
+
+    def test_decade_filter(self):
+        response = self.client.get(reverse("sponsor"), {"decade": "1970"})
+        self.assertEqual([t.title for t in response.context["titles"]], ["Jaws"])
+
+    def test_rating_filter(self):
+        response = self.client.get(reverse("sponsor"), {"rating": "PG"})
+        self.assertEqual(len(response.context["titles"]), 2)
+
+    def test_sort_by_year_descending(self):
+        response = self.client.get(reverse("sponsor"), {"sort": "-year"})
+        titles = [t.title for t in response.context["titles"]]
+        self.assertEqual(titles, ["The Wild Robot", "Jaws"])
+
+    def test_unknown_sort_falls_back_to_title(self):
+        # Never interpolate raw querystring into order_by.
+        response = self.client.get(reverse("sponsor"), {"sort": "runtime; DROP TABLE"})
+        self.assertEqual(response.status_code, 200)
+        titles = [t.title for t in response.context["titles"]]
+        self.assertEqual(titles, ["Jaws", "The Wild Robot"])
+
+    def test_pagination_is_fifty_per_page(self):
+        response = self.client.get(reverse("sponsor"))
+        self.assertEqual(response.context["paginator"].per_page, 50)
+
+    def test_tiers_are_in_context_with_the_agreed_prices(self):
+        tiers = self.client.get(reverse("sponsor")).context["tiers"]
+        self.assertEqual([t["price"] for t in tiers], [299, 499, 799])
+
+    def test_page_names_the_real_sponsor_example(self):
+        html = self.client.get(reverse("sponsor")).content.decode()
+        self.assertIn("A.H. Custom Carpentry", html)
+        self.assertIn("The Wild Robot", html)
+
+    def test_full_house_tier_states_the_guest_cap_and_size(self):
+        html = self.client.get(reverse("sponsor")).content.decode()
+        self.assertIn("first 100 guests", html)
+        self.assertIn("Medium", html)
+
+    def test_filter_choices_come_from_available_titles(self):
+        context = self.client.get(reverse("sponsor")).context
+        self.assertIn("PG", context["ratings"])
+        self.assertIn(1970, context["decades"])
+        self.assertIn(2020, context["decades"])
+
+
+class SponsorSitemapTests(TestCase):
+    def test_sponsor_is_in_the_sitemap(self):
+        html = self.client.get("/sitemap.xml").content.decode()
+        self.assertIn("/sponsor/", html)
+
+    def test_sponsor_is_in_the_site_navigation(self):
+        # nav.html loops SITE_CONFIG["navigation"]; the trailing slash matters
+        # because a bare /sponsor would 301 on every click.
+        html = self.client.get("/").content.decode()
+        self.assertIn('href="/sponsor/"', html)

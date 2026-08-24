@@ -8,6 +8,7 @@ from .views import (
     MovieDetailView,
     RentalsView,
     SilentsSyncedEventView,
+    SponsorView,
     ThanksView,
     VoteArchiveView,
     VoteCastView,
@@ -19,6 +20,7 @@ urlpatterns = [
     path("", HomeView.as_view(), name="home"),
     path("membership/", MembershipView.as_view(), name="membership"),
     path("rentals/", RentalsView.as_view(), name="rentals"),
+    path("sponsor/", SponsorView.as_view(), name="sponsor"),
     # path("about/", AboutView.as_view(), name="about"),  # About page temporarily hidden — re-enable this + the AboutView import to restore /about
     # Square redirects here after a successful payment. noindex, unlinked,
     # and deliberately absent from the sitemap.
