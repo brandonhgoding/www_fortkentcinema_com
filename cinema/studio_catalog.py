@@ -10,6 +10,7 @@ These functions are pure so the awkward cases can be tested without a
 spreadsheet or a database.
 """
 
+import datetime
 import re
 
 # Lowercased inside a title, but never as the first or last word, and never
@@ -23,6 +24,10 @@ _SMALL_WORDS = frozenset(
 
 _TRAILING_PAREN = re.compile(r"\s*(\([^()]*\))\s*$")
 _LEADING_INT = re.compile(r"\s*(\d+)")
+
+# ISO first: it is what our own exports write. The slashed forms are what
+# Excel writes when a US-locale sheet is saved as CSV.
+_DATE_FORMATS = ("%Y-%m-%d", "%m/%d/%Y", "%m/%d/%y")
 
 # Studios move the article to a trailing ", THE"/", A"/", AN" — either at the
 # very end ("BAD GUYS 2, THE") or right before a subtitle's colon
@@ -116,5 +121,34 @@ def parse_runtime(value: object) -> tuple[int | None, str]:
     if isinstance(value, int) and not isinstance(value, bool):
         return value, ""
     raw = str(value).strip()
+    # A CSV hands over "104" where openpyxl hands over 104. Keeping the raw
+    # here would make the same list import differently by file format.
+    if raw.isdigit():
+        return int(raw), ""
     match = _LEADING_INT.match(raw)
     return (int(match.group(1)) if match else None), raw
+
+
+def parse_release_date(value: object) -> datetime.date | None:
+    """Return the release date, whatever the file format called it.
+
+    openpyxl types this column for us; a CSV cannot, so the text forms
+    Excel exports have to be read back. Anything else in the column —
+    "TBD", "SUMMER 2026", a blank — is simply no date, the same answer the
+    workbook path gives for an empty cell.
+    """
+    if isinstance(value, datetime.datetime):
+        return value.date()
+    if isinstance(value, datetime.date):
+        return value
+
+    text = clean_cell(value)
+    if not text:
+        return None
+
+    for fmt in _DATE_FORMATS:
+        try:
+            return datetime.datetime.strptime(text, fmt).date()
+        except ValueError:
+            continue
+    return None

@@ -181,3 +181,41 @@ class ImportStudioCatalogTests(TestCase):
             call_command(
                 "import_studio_catalog", studio="universal", file=path
             )
+
+
+def csv_file(*lines: str) -> str:
+    """Write a temp .csv shaped like a studio list; return its path."""
+    path = Path(tempfile.mkdtemp()) / "catalog.csv"
+    path.write_text("\r\n".join((",".join(HEADER), *lines)) + "\r\n")
+    return str(path)
+
+
+class ImportStudioCatalogCsvTests(ImportStudioCatalogTests):
+    """The same command, handed a CSV instead of a workbook."""
+
+    def test_imports_a_csv(self):
+        path = csv_file("NOBODY 2,2025-08-15,Scope,5.1,R,89,")
+
+        output = self.run_import(path)
+
+        title = StudioTitle.objects.get()
+        self.assertEqual(title.title, "Nobody 2")
+        self.assertEqual(title.release_date, datetime.date(2025, 8, 15))
+        self.assertEqual(title.runtime_minutes, 89)
+        self.assertIn("1 created", output)
+
+    def test_csv_ignores_the_sheet_argument(self):
+        path = csv_file("NOBODY 2,2025-08-15,,,,,")
+
+        self.run_import(path, sheet="by DATE")
+
+        self.assertEqual(StudioTitle.objects.count(), 1)
+
+    def test_an_unreadable_extension_is_an_error(self):
+        path = Path(tempfile.mkdtemp()) / "catalog.pdf"
+        path.write_bytes(b"%PDF-")
+
+        with self.assertRaises(CommandError) as caught:
+            self.run_import(str(path))
+
+        self.assertIn(".pdf", str(caught.exception))

@@ -1,4 +1,11 @@
-from cinema.studio_catalog import clean_cell, normalize_title, parse_runtime
+import datetime
+
+from cinema.studio_catalog import (
+    clean_cell,
+    normalize_title,
+    parse_release_date,
+    parse_runtime,
+)
 from django.test import SimpleTestCase
 
 
@@ -118,3 +125,51 @@ class CleanCellTests(SimpleTestCase):
 
     def test_string_is_stripped(self):
         self.assertEqual(clean_cell("  5.1, 7.1, Atmos  "), "5.1, 7.1, Atmos")
+
+
+class ParseReleaseDateTests(SimpleTestCase):
+    """A CSV gives the release column as text; openpyxl gives a datetime."""
+
+    def test_datetime_becomes_a_date(self):
+        self.assertEqual(
+            parse_release_date(datetime.datetime(2025, 8, 1, 0, 0)),
+            datetime.date(2025, 8, 1),
+        )
+
+    def test_date_passes_through(self):
+        self.assertEqual(
+            parse_release_date(datetime.date(2025, 8, 1)), datetime.date(2025, 8, 1)
+        )
+
+    def test_iso_string(self):
+        self.assertEqual(parse_release_date("2025-08-01"), datetime.date(2025, 8, 1))
+
+    def test_us_slashed_string(self):
+        # What Excel writes out of a US-locale sheet, zero-padded or not.
+        self.assertEqual(parse_release_date("8/1/2025"), datetime.date(2025, 8, 1))
+        self.assertEqual(parse_release_date("08/01/2025"), datetime.date(2025, 8, 1))
+
+    def test_blank_and_none_are_no_date(self):
+        self.assertIsNone(parse_release_date(""))
+        self.assertIsNone(parse_release_date("   "))
+        self.assertIsNone(parse_release_date(None))
+
+    def test_unparseable_string_is_no_date(self):
+        # Studio lists carry "TBD" and "SUMMER 2026" in this column.
+        self.assertIsNone(parse_release_date("TBD"))
+        self.assertIsNone(parse_release_date("SUMMER 2026"))
+
+
+class ParseRuntimeFromTextTests(SimpleTestCase):
+    """CSV hands every runtime over as a string, xlsx as an int.
+
+    The same list imported both ways must produce the same row, so a plain
+    numeric string keeps no raw — otherwise `runtime_raw` would read "104"
+    for a CSV import and "" for the workbook it came from.
+    """
+
+    def test_plain_numeric_string_keeps_no_raw(self):
+        self.assertEqual(parse_runtime("104"), (104, ""))
+
+    def test_padded_numeric_string_keeps_no_raw(self):
+        self.assertEqual(parse_runtime("  104  "), (104, ""))
