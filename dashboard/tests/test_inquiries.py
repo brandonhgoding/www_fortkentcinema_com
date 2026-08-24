@@ -25,6 +25,18 @@ class InquiryListTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "A.H. Custom Carpentry")
 
+    def test_tier_renders_as_its_display_label(self):
+        # SponsorshipInquiry.tier has no `choices` of its own, so this must
+        # not silently fall back to the raw slug ("full_house").
+        SponsorshipInquiry.objects.create(
+            business_name="Full House Co", contact_name="C",
+            email="c@example.com", tier="full_house",
+        )
+        self.client.force_login(self.staff)
+        response = self.client.get(reverse("dashboard:inquiries"))
+        self.assertContains(response, "Full House")
+        self.assertNotContains(response, "full_house")
+
     def test_new_count_in_context(self):
         self.client.force_login(self.staff)
         response = self.client.get(reverse("dashboard:inquiries"))

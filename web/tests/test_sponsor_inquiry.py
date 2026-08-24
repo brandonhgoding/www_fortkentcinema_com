@@ -91,6 +91,15 @@ class SponsorInquiryTests(TestCase):
         )
         self.assertContains(response, "A.H. Custom Carpentry")
 
+    def test_overlength_message_is_rejected(self):
+        # `message` is an unbounded model TextField written by an anonymous
+        # POST; the form must cap it so one request can't stash megabytes.
+        response = self.client.post(
+            reverse("sponsor_inquire"), self.payload(message="x" * 2001)
+        )
+        self.assertEqual(SponsorshipInquiry.objects.count(), 0)
+        self.assertContains(response, "2,000 characters")
+
     def test_honeypot_silently_succeeds_without_creating_a_row(self):
         response = self.client.post(
             reverse("sponsor_inquire"), self.payload(website="http://spam.example")

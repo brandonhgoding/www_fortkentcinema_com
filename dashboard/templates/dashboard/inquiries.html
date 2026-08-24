@@ -1,5 +1,5 @@
 {% extends "dashboard/base_dashboard.html" %}
-{% load static %}
+{% load static dashboard_extras %}
 {% block title %}Sponsorship Inquiries · LeprinceOS{% endblock %}
 {% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/polls.css' %}" />{% endblock %}
 {% block content %}
@@ -40,7 +40,7 @@
               {% if inquiry.phone %}<br />{{ inquiry.phone }}{% endif %}
             </td>
             <td>{{ inquiry.studio_title.title|default:"—" }}</td>
-            <td>{{ inquiry.get_tier_display|default:inquiry.tier|default:"—" }}</td>
+            <td>{{ tier_labels|get_item:inquiry.tier|default:"—" }}</td>
             <td>{{ inquiry.created_at|date:"M j, Y" }}</td>
             <td>
               <form method="post" action="{% url 'dashboard:inquiry_status' inquiry.pk %}">

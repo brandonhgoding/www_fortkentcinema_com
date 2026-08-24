@@ -15,16 +15,14 @@ class SponsorshipInquiryForm(forms.ModelForm):
             "business_name", "contact_name", "email", "phone",
             "tier", "studio_title", "message",
         ]
-        widgets = {
-            "message": forms.Textarea(attrs={"rows": 4}),
-        }
         labels = {
             "business_name": "Business or organization",
             "contact_name": "Your name",
         }
-        # `tier` and `studio_title` are rebuilt in __init__ below, so their
-        # labels are set there rather than here — setting them twice would
-        # invite the two copies to drift apart.
+        # `tier`, `studio_title` and `message` are rebuilt in __init__ below
+        # (message to add a max_length with no model migration), so their
+        # labels/widgets are set there rather than here — setting them twice
+        # would invite the two copies to drift apart.
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -44,7 +42,17 @@ class SponsorshipInquiryForm(forms.ModelForm):
             empty_label="Not sure yet",
         )
         self.fields["phone"].required = False
-        self.fields["message"].required = False
+        # `message` is an unbounded TextField on the model, written by an
+        # anonymous POST. Cap it here at the form level (no model migration)
+        # so a single request can't stash megabytes in one row.
+        self.fields["message"] = forms.CharField(
+            required=False,
+            max_length=2000,
+            widget=forms.Textarea(attrs={"rows": 4}),
+            error_messages={
+                "max_length": "Please keep this under 2,000 characters.",
+            },
+        )
 
     @property
     def is_bot(self) -> bool:

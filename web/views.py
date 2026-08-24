@@ -514,7 +514,7 @@ class SponsorView(ListView):
             queryset = queryset.filter(mpa_rating=rating)
 
         decade = (self.request.GET.get("decade") or "").strip()
-        if decade.isdigit():
+        if decade.isascii() and decade.isdigit():
             start = int(decade)
             queryset = queryset.filter(
                 release_date__year__gte=start, release_date__year__lt=start + 10

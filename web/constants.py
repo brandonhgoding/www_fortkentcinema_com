@@ -254,3 +254,9 @@ SPONSORSHIP_TIERS = [
         ],
     },
 ]
+
+# tier key -> display name, for surfaces that only have the key (e.g. a
+# SponsorshipInquiry.tier value on the dashboard). SponsorshipInquiry.tier
+# has no `choices` of its own — cinema doesn't import web — so this is the
+# one place the mapping lives.
+SPONSORSHIP_TIER_LABELS = {t["key"]: t["name"] for t in SPONSORSHIP_TIERS}

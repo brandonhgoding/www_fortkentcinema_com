@@ -76,6 +76,14 @@ class SponsorPageTests(TestCase):
         response = self.client.get(reverse("sponsor"), {"decade": "1970"})
         self.assertEqual([t.title for t in response.context["titles"]], ["Jaws"])
 
+    def test_decade_with_unicode_digit_is_ignored_not_500(self):
+        # str.isdigit() is True for '²' but int('²') raises ValueError; the
+        # filter must be ignored rather than 500ing on a mangled querystring.
+        response = self.client.get(reverse("sponsor"), {"decade": "²"})
+        self.assertEqual(response.status_code, 200)
+        titles = [t.title for t in response.context["titles"]]
+        self.assertEqual(titles, ["Jaws", "The Wild Robot"])
+
     def test_rating_filter(self):
         response = self.client.get(reverse("sponsor"), {"rating": "PG"})
         self.assertEqual(len(response.context["titles"]), 2)

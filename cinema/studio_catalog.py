@@ -12,8 +12,6 @@ spreadsheet or a database.
 
 import re
 
-_ARTICLES = ("THE", "A", "AN")
-
 # Lowercased inside a title, but never as the first or last word, and never
 # straight after a colon.
 _SMALL_WORDS = frozenset(
@@ -25,6 +23,13 @@ _SMALL_WORDS = frozenset(
 
 _TRAILING_PAREN = re.compile(r"\s*(\([^()]*\))\s*$")
 _LEADING_INT = re.compile(r"\s*(\d+)")
+
+# Studios move the article to a trailing ", THE"/", A"/", AN" — either at the
+# very end ("BAD GUYS 2, THE") or right before a subtitle's colon
+# ("LOST WORLD, THE: JURASSIC PARK"). The lookahead keeps this from firing on
+# a mid-title comma-article, e.g. "20,000 LEAGUES UNDER THE SEA" or
+# "HONEY, DON'T!", where ", THE"/", A"/", AN" is not the whole remainder.
+_TRAILING_ARTICLE = re.compile(r"^(.*?),\s*(THE|A|AN)(?=$|:)(.*)$", re.IGNORECASE)
 
 
 def clean_cell(value: object) -> str:
@@ -84,11 +89,9 @@ def normalize_title(raw: object) -> str:
         paren = match.group(1)
         text = text[: match.start()].strip()
 
-    for article in _ARTICLES:
-        suffix = f", {article}"
-        if text.upper().endswith(suffix):
-            text = f"{article} {text[: -len(suffix)].strip()}"
-            break
+    match = _TRAILING_ARTICLE.match(text)
+    if match:
+        text = f"{match.group(2)} {match.group(1).strip()}{match.group(3)}"
 
     result = _titlecase(text)
 

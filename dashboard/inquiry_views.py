@@ -7,6 +7,7 @@ NEW count on the dashboard home is how a lead reaches a human.
 from cinema.models import InquiryStatus, SponsorshipInquiry
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
+from web.constants import SPONSORSHIP_TIER_LABELS
 
 from .mixins import StaffRequiredMixin
 
@@ -29,6 +30,7 @@ class InquiryListView(StaffRequiredMixin, View):
                 ).count(),
                 "statuses": InquiryStatus.choices,
                 "selected_status": status,
+                "tier_labels": SPONSORSHIP_TIER_LABELS,
             },
         )
 

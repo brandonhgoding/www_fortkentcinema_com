@@ -8,6 +8,32 @@ class NormalizeTitleTests(SimpleTestCase):
         self.assertEqual(normalize_title("MAN WHO LAUGHS, THE"), "The Man Who Laughs")
         self.assertEqual(normalize_title("355, THE"), "The 355")
 
+    def test_moves_article_before_a_subtitle_colon(self):
+        self.assertEqual(
+            normalize_title("PURGE, THE: ANARCHY"), "The Purge: Anarchy"
+        )
+        self.assertEqual(
+            normalize_title("CROODS, THE: A NEW AGE"), "The Croods: A New Age"
+        )
+        self.assertEqual(
+            normalize_title("AMERICAN TAIL, AN: FIEVEL GOES WEST"),
+            "An American Tail: Fievel Goes West",
+        )
+        self.assertEqual(
+            normalize_title("LOST WORLD, THE: JURASSIC PARK"),
+            "The Lost World: Jurassic Park",
+        )
+
+    def test_mid_title_comma_article_is_not_moved(self):
+        # Regression guard: ", THE"/", A"/", AN" only means "moved article"
+        # when it is the whole remainder (end of string, or immediately
+        # before a subtitle colon) — not whenever it appears mid-title.
+        self.assertEqual(normalize_title("HONEY, DON'T!"), "Honey, Don't!")
+        self.assertEqual(
+            normalize_title("20,000 LEAGUES UNDER THE SEA"),
+            "20,000 Leagues Under the Sea",
+        )
+
     def test_keeps_small_words_lowercase_inside_title(self):
         self.assertEqual(
             normalize_title("SECRET LIFE OF PETS, THE"),
