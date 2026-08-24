@@ -20,6 +20,9 @@ SITE_CONFIG = {
         "weekend": {"days": "Friday - Sunday", "open": "2:00 PM", "close": "10:00 PM"},
     },
     "social": {"facebook": "https://facebook.com/fortkentcinema"},
+    # Items with "children" render as a dropdown; everything else is a plain
+    # link. Four primary items is the ceiling — the nav collapses to a
+    # hamburger at 768px, and a fifth was what strained the 768-900px range.
     "navigation": [
         {"label": "Now Showing", "href": "#now-showing"},
         {"label": "Coming Soon", "href": "#coming-soon"},
@@ -27,10 +30,21 @@ SITE_CONFIG = {
         # a bare /blog costs a 301 on every click and every crawl.
         {"label": "Membership", "href": "/membership/"},
         {"label": "Rentals", "href": "/rentals/"},
-        {"label": "Sponsor", "href": "/sponsor/"},
-        {"label": "History", "href": "/history/"},
-        # {"label": "About", "href": "/about/"},  # About page temporarily hidden
-        {"label": "Blog", "href": "/blog/"},
+        {
+            "label": "More",
+            # No "href": this opens a menu, it is not a destination.
+            "children": [
+                {"label": "Sponsor", "href": "/sponsor/"},
+                {"label": "History", "href": "/history/"},
+                # About page temporarily hidden:
+                # {"label": "About", "href": "/about/"},
+                {"label": "Blog", "href": "/blog/"},
+                # Bare, unlike the section pages above — urls.py defines
+                # path("vote", ...) without a slash. APPEND_SLASH only adds
+                # slashes, so /vote/ is a hard 404, not a recoverable 301.
+                {"label": "Film Vote", "href": "/vote"},
+            ],
+        },
     ],
 }
 

@@ -128,6 +128,95 @@
   outline-offset: 2px;
 }
 
+/* ---------------------------------------------------------------------------
+   "More" dropdown
+
+   The menu is shown by toggling .nav-dropdown-menu--open, not Alpine's x-show.
+   x-show writes an inline display:none, and the <=768px block below has to
+   force the menu open so its children flatten into the hamburger list.
+   Inline styles would win over that media query; a class does not.
+   --------------------------------------------------------------------------- */
+.nav-dropdown {
+  position: relative;
+}
+
+.nav-dropdown-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  gap: 0.5rem;
+  /* Inherits .nav-link for type, colour and the 44px hit target. */
+}
+
+.nav-dropdown-caret {
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid currentColor;
+  transition: transform var(--transition-fast);
+}
+
+.nav-dropdown-toggle[aria-expanded='true'] {
+  color: var(--color-gold);
+}
+
+.nav-dropdown-toggle[aria-expanded='true'] .nav-dropdown-caret {
+  transform: rotate(180deg);
+}
+
+.nav-dropdown-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  min-width: 180px;
+  flex-direction: column;
+  gap: 0;
+  list-style: none;
+  padding: var(--spacing-xs) 0;
+  /* Same surface as the mobile panel, so the two read as one material. */
+  background: linear-gradient(180deg, rgba(8, 8, 12, 0.98) 0%, rgba(8, 8, 12, 0.95) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(201, 168, 76, 0.15);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.nav-dropdown-menu--open {
+  display: flex;
+}
+
+/* Hovering the parent opens it too — pointer users should not need a click. */
+@media (hover: hover) {
+  .nav-dropdown:hover .nav-dropdown-menu {
+    display: flex;
+  }
+}
+
+.nav-dropdown-menu li {
+  width: 100%;
+}
+
+.nav-dropdown-link {
+  display: block;
+  width: 100%;
+  padding: 0.5rem var(--spacing-sm);
+  font-size: 0.9rem;
+  letter-spacing: 1.5px;
+}
+
+.nav-dropdown-link:hover {
+  background: rgba(201, 168, 76, 0.08);
+}
+
+/* The sliding gold underline belongs to the top row; inside the panel it
+   would animate across the full menu width and read as a glitch. */
+.nav-dropdown-link::after {
+  display: none;
+}
+
 /* Mobile responsiveness */
 @media (max-width: 900px) {
   .nav-links {
@@ -182,5 +271,30 @@
 
   .nav-link::after {
     display: none;
+  }
+
+  /* Flatten the dropdown: the whole nav is already behind the hamburger, so
+     a second tap to reach Sponsor/History/Blog/Vote buys nothing. */
+  .nav-dropdown-toggle {
+    display: none;
+  }
+
+  .nav-dropdown-menu,
+  .nav-dropdown:hover .nav-dropdown-menu {
+    display: flex;
+    position: static;
+    min-width: 0;
+    padding: 0;
+    background: none;
+    backdrop-filter: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .nav-dropdown-link {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-size: 1rem;
+    letter-spacing: 2px;
   }
 }
