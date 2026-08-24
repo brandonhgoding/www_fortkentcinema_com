@@ -13,13 +13,41 @@
     </button>
     <ul class="nav-links" :class="{ 'nav-links--open': open }">
       {% for item in site_config.navigation %}
-        <li>
-          {% if item.href|slice:":1" == "/" %}
-            <a href="{{ item.href }}" class="nav-link" @click="open = false">{{ item.label }}</a>
-          {% else %}
-            <a href="{% if request.path == '/' %}{{ item.href }}{% else %}/{{ item.href }}{% endif %}" class="nav-link" @click="open = false">{{ item.label }}</a>
-          {% endif %}
-        </li>
+        {% if item.children %}
+          {% comment %}
+          The submenu toggles a CLASS, not x-show. x-show writes an inline
+          display:none, which the <=768px media query could not override —
+          and on mobile the children have to flatten into the hamburger list.
+          {% endcomment %}
+          <li
+            class="nav-dropdown"
+            x-data="{ sub: false }"
+            @click.outside="sub = false"
+            @keydown.escape.window="sub = false"
+          >
+            <button
+              type="button"
+              class="nav-link nav-dropdown-toggle"
+              @click="sub = !sub"
+              :aria-expanded="sub"
+              aria-haspopup="true"
+            >
+              {{ item.label }}
+              <span class="nav-dropdown-caret" aria-hidden="true"></span>
+            </button>
+            <ul class="nav-dropdown-menu" :class="{ 'nav-dropdown-menu--open': sub }">
+              {% for child in item.children %}
+                <li>
+                  {% include "partials/nav_link.html" with item=child link_class="nav-link nav-dropdown-link" %}
+                </li>
+              {% endfor %}
+            </ul>
+          </li>
+        {% else %}
+          <li>
+            {% include "partials/nav_link.html" with item=item %}
+          </li>
+        {% endif %}
       {% endfor %}
     </ul>
   </div>

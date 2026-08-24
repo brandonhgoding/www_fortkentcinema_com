@@ -1,0 +1,14 @@
+{% comment %}
+Renders one nav anchor. Shared by the top-level loop and the dropdown so the
+anchor-vs-path logic lives in one place.
+
+Homepage anchors (#now-showing) only resolve on "/", so from any other page
+they need a leading slash to send the visitor home first.
+
+Expects: item (label, href).
+{% endcomment %}
+{% if item.href|slice:":1" == "/" %}
+  <a href="{{ item.href }}" class="{{ link_class|default:'nav-link' }}" @click="open = false">{{ item.label }}</a>
+{% else %}
+  <a href="{% if request.path == '/' %}{{ item.href }}{% else %}/{{ item.href }}{% endif %}" class="{{ link_class|default:'nav-link' }}" @click="open = false">{{ item.label }}</a>
+{% endif %}
