@@ -46,6 +46,12 @@
    * them carrying dead space. NOT a fixed height, and the sheet no longer
    * clips: at narrow widths titles wrap more and it simply grows. */
   min-height: 43rem;
+  /* The bill stretches to fill whatever height is left over, so a sheet with
+   * fewer printed lines gets roomier rows rather than a slab of blank paper
+   * at the bottom. The originals were set the same way — the printer spaced
+   * the week to fill the sheet, he did not leave a margin under Saturday. */
+  display: flex;
+  flex-direction: column;
   padding: var(--spacing-lg) var(--spacing-md) var(--spacing-md);
   color: var(--ink);
   background:
@@ -110,6 +116,10 @@
 
 .playbill__bill {
   width: 100%;
+  /* flex:1 claims the leftover height; height:100% makes the table actually
+   * distribute it across the six rows instead of sitting at content height. */
+  flex: 1;
+  height: 100%;
   border-collapse: collapse;
   font-family: 'Oswald', 'Arial Narrow', sans-serif;
 }
