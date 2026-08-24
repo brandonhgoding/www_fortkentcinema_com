@@ -556,13 +556,6 @@ class SponsorView(ListView):
         return ctx
 
 
-def _client_ip(request) -> str | None:
-    forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    return request.META.get("REMOTE_ADDR")
-
-
 class SponsorInquiryView(SponsorView):
     """POST /sponsor/inquire.
 
@@ -591,7 +584,7 @@ class SponsorInquiryView(SponsorView):
 
         if form.is_valid():
             inquiry = form.save(commit=False)
-            inquiry.ip = _client_ip(request)
+            inquiry.ip = vote_engine.client_ip(request)
             inquiry.save()
             return redirect(sent_url)
 

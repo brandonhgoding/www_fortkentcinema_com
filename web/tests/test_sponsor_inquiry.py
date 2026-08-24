@@ -106,6 +106,20 @@ class SponsorInquiryTests(TestCase):
         )
         self.assertEqual(SponsorshipInquiry.objects.get().ip, "203.0.113.9")
 
+    def test_malformed_forwarded_header_does_not_500(self):
+        # A public, unauthenticated endpoint must not trust X-Forwarded-For
+        # enough to crash on it: the value goes straight to a
+        # GenericIPAddressField, which Postgres's `inet` column rejects
+        # outright at INSERT time if it isn't a real address.
+        response = self.client.post(
+            reverse("sponsor_inquire"),
+            self.payload(),
+            HTTP_X_FORWARDED_FOR="not-an-ip",
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("sent=1", response["Location"])
+        self.assertIsNone(SponsorshipInquiry.objects.get().ip)
+
     def test_get_redirects_to_the_page(self):
         response = self.client.get(reverse("sponsor_inquire"))
         self.assertRedirects(response, reverse("sponsor"))

@@ -14,6 +14,8 @@ import hashlib
 import uuid
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_ipv46_address
 from django.db import IntegrityError, transaction
 
 from .models import PollStatus, Vote
@@ -55,10 +57,30 @@ def hash_ip(ip: str | None) -> str:
 
 
 def client_ip(request) -> str | None:
+    """Best-effort client address, for audit trails only.
+
+    The leftmost X-Forwarded-For hop is supplied by the client and is
+    therefore trivially spoofable — this value must never be used as a
+    security control, only recorded as an informational record of who
+    said they were connecting. Anything that isn't a well-formed IP
+    address (spoofed nonsense included) is discarded rather than
+    returned: production's Postgres `inet` columns reject non-IP text
+    outright, and a 500 from a public, unauthenticated form is worse
+    than a blank audit field.
+    """
     forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
     if forwarded:
-        return forwarded.split(",")[0].strip() or None
-    return request.META.get("REMOTE_ADDR") or None
+        candidate = forwarded.split(",")[0].strip()
+    else:
+        candidate = request.META.get("REMOTE_ADDR") or ""
+
+    if not candidate:
+        return None
+    try:
+        validate_ipv46_address(candidate)
+    except ValidationError:
+        return None
+    return candidate
 
 
 def new_voter_key() -> str:
