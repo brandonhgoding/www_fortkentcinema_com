@@ -42,7 +42,10 @@
   padding: var(--spacing-lg) var(--spacing-md) var(--spacing-md);
   color: var(--ink);
   background:
-    radial-gradient(115% 85% at 18% 8%, #f6edd6 0%, #f0e3c6 42%, #e7d6ae 100%);
+    /* uneven yellowing — cheap 1931 stock did not age evenly */
+    radial-gradient(70% 55% at 88% 92%, #d9c091 0%, rgba(217, 192, 145, 0) 60%),
+    radial-gradient(60% 50% at 6% 4%, #f8f1dd 0%, rgba(248, 241, 221, 0) 55%),
+    linear-gradient(158deg, #f4ebd3 0%, #eee0c0 46%, #e2cfa4 100%);
   box-shadow:
     0 1px 0 rgba(0, 0, 0, .25),
     0 18px 38px rgba(0, 0, 0, .55);
@@ -57,46 +60,94 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  opacity: .16;
+  opacity: .26;
   mix-blend-mode: multiply;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
 }
 
-/* Water damage. Two soft blooms rather than one, offset by --sheet so each
- * playbill is stained differently; blur softens the gradient's edge into
- * something closer to a tide line. */
+/* Water damage and discoloration.
+ *
+ * Two lessons learned the hard way here, both worth keeping:
+ *
+ * 1. NO `filter: blur()`. Combining a filter with mix-blend-mode is flaky —
+ *    the filter establishes its own stacking context and the blend stops
+ *    reliably reaching the paper behind it. Softness comes from the gradient
+ *    stops instead, which is more predictable and cheaper to composite.
+ * 2. The blooms have to sit ON the sheet. First attempt pushed them out to
+ *    -10%/-12%, so only the faint outer falloff touched the paper and the
+ *    whole effect vanished. They now overlap well inside the edge and simply
+ *    run off it, which is also what real damage does.
+ */
 .playbill__stain {
   position: absolute;
   z-index: 0;
   pointer-events: none;
   mix-blend-mode: multiply;
-  filter: blur(12px);
 }
 
+/* Bottom-right bloom with a tide line: the alpha RISES before it falls, which
+ * is the ring of dissolved sizing left where the water stopped. That edge is
+ * what reads as a stain rather than a gradient. */
 .playbill__stain--a {
-  right: calc(-8% + var(--sheet) * 3%);
-  bottom: -10%;
-  width: 72%;
-  height: 46%;
+  right: calc(-6% + var(--sheet) * 4%);
+  bottom: -4%;
+  width: 84%;
+  height: 58%;
   background: radial-gradient(
-    58% 62% at 62% 78%,
-    rgba(146, 100, 44, .34) 0%,
-    rgba(146, 100, 44, .16) 46%,
-    rgba(146, 100, 44, 0) 72%
+    62% 66% at 58% 62%,
+    rgba(150, 104, 44, .40) 0%,
+    rgba(150, 104, 44, .44) 34%,
+    rgba(158, 110, 50, .58) 50%,
+    rgba(158, 110, 50, .26) 61%,
+    rgba(158, 110, 50, .08) 70%,
+    rgba(158, 110, 50, 0) 80%
   );
 }
 
+/* Upper-left: an older, drier mark with no clean edge left. */
 .playbill__stain--b {
-  left: calc(-14% + var(--sheet) * 4%);
-  top: calc(6% + var(--sheet) * 5%);
-  width: 54%;
-  height: 38%;
+  left: calc(-8% + var(--sheet) * 5%);
+  top: calc(2% + var(--sheet) * 4%);
+  width: 66%;
+  height: 48%;
   background: radial-gradient(
-    50% 55% at 40% 40%,
-    rgba(124, 84, 36, .22) 0%,
-    rgba(124, 84, 36, .10) 50%,
-    rgba(124, 84, 36, 0) 74%
+    54% 58% at 46% 44%,
+    rgba(128, 86, 36, .38) 0%,
+    rgba(128, 86, 36, .30) 46%,
+    rgba(140, 96, 42, .14) 62%,
+    rgba(140, 96, 42, 0) 78%
   );
+}
+
+/* Edges take the worst of it: handled corners, damp creeping in from the rim. */
+.playbill__sheet::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  box-shadow:
+    inset 0 0 3.5rem rgba(122, 84, 36, .42),
+    inset 0 0 .9rem rgba(92, 62, 26, .34);
+}
+
+/* Foxing — the rust-coloured specks old paper grows. Radii in rem so they stay
+ * speck-sized rather than scaling with the sheet, and shifted by --sheet so no
+ * two playbills are freckled alike. */
+.playbill__sheet::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  background-image:
+    radial-gradient(circle at calc(20% + var(--sheet) * 7%) 15%, rgba(140, 92, 38, .40) 0, rgba(140, 92, 38, 0) 1.1rem),
+    radial-gradient(circle at calc(82% - var(--sheet) * 5%) 30%, rgba(140, 92, 38, .34) 0, rgba(140, 92, 38, 0) .8rem),
+    radial-gradient(circle at calc(30% + var(--sheet) * 4%) 58%, rgba(152, 100, 44, .30) 0, rgba(152, 100, 44, 0) .7rem),
+    radial-gradient(circle at calc(70% - var(--sheet) * 6%) 84%, rgba(140, 92, 38, .36) 0, rgba(140, 92, 38, 0) .95rem),
+    radial-gradient(circle at calc(52% + var(--sheet) * 3%) 42%, rgba(146, 98, 42, .22) 0, rgba(146, 98, 42, 0) .55rem);
 }
 
 /* Everything below sits above the damage. */
@@ -141,7 +192,12 @@
   text-transform: uppercase;
 }
 
-.playbill__town {
+/* Scoped through .playbill deliberately. This is a <p>, and a host page's
+ * prose rule (`.history-section p`, specificity 0-1-1) outranks a lone class
+ * (0-1-0) — which painted this cream-on-cream the first time round. A shared
+ * partial has to survive whatever page it lands on, so it defends itself here
+ * rather than relying on every host to be careful. */
+.playbill .playbill__town {
   margin: .15rem 0 0;
   font-family: 'Oswald', 'Arial Narrow', sans-serif;
   font-weight: 500;
