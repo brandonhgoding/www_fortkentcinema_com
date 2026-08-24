@@ -136,3 +136,64 @@ class VideoEmbedTests(TestCase):
         # someone commits 26 minutes is the honest framing.
         self.assertIn(FILM_HISTORY_VIDEO["duration"], self.html)
         self.assertIn("exhibit", self.html)
+
+
+class SheetVariationTests(TestCase):
+    """The six sheets are not uniform and the recreation must not flatten them.
+
+    The printer used double quotes some weeks and single others, left one
+    title unquoted, led one row with the film instead of the star, and dropped
+    the "in" on another. Those are the artifacts; normalising them would make
+    this a stylish approximation rather than a transcription.
+    """
+
+    def setUp(self) -> None:
+        self.html = self.client.get(reverse("history")).content.decode()
+
+    def test_all_six_sheets_are_present(self):
+        self.assertEqual(len(SAVOY_PLAYBILLS), 6)
+        self.assertEqual(
+            self.html.count('class="playbill__sheet"'), len(SAVOY_PLAYBILLS)
+        )
+
+    def test_double_quoted_titles_keep_double_quotes(self):
+        # April 6: "REDUCING". July 8: "L'Enigmatique Monsieur Parkes".
+        self.assertIn("&ldquo;Reducing&rdquo;", self.html)
+        self.assertIn("Enigmatique", self.html)
+
+    def test_single_quoted_titles_keep_single_quotes(self):
+        self.assertIn("&lsquo;Beau Ideal&rsquo;", self.html)
+
+    def test_the_unquoted_title_stays_unquoted(self):
+        # June 24: DADDY LONG LEGS, set without quote marks at all.
+        self.assertIn("Daddy Long Legs", self.html)
+        self.assertNotIn("&lsquo;Daddy Long Legs&rsquo;", self.html)
+
+    def test_the_title_first_row_has_no_star_and_credits_below(self):
+        # April 9: 'Cohens & Kellys in Africa' / With Geo. Sidney & Chas. Murray
+        self.assertIn("Cohens &amp; Kellys in Africa", self.html)
+        self.assertIn("With Geo. Sidney &amp; Chas. Murray", self.html)
+
+    def test_all_talking_appears_only_on_the_april_sheets(self):
+        # The tag vanishes after April 18, 1931 — a real, datable detail the
+        # page draws attention to. If a later transcription adds it to a May
+        # or June sheet, that claim silently becomes false.
+        tagged = [
+            pb["label"] for pb in SAVOY_PLAYBILLS
+            if any(s.get("tag") for s in pb["shows"])
+        ]
+        self.assertEqual(
+            tagged,
+            ["Week of April 6, 1931", "Week of April 13, 1931"],
+        )
+
+    def test_every_film_is_a_1930_or_1931_release_week(self):
+        # The dating argument on the page rests on this: six Monday-start
+        # weeks that all fit 1931.
+        import datetime
+
+        for pb in SAVOY_PLAYBILLS:
+            first = datetime.date.fromisoformat(pb["slug"])
+            self.assertEqual(first.year, 1931)
+            self.assertEqual(first.weekday(), 0, f"{pb['label']} is not a Monday")
+            self.assertEqual(len(pb["shows"]), 6)

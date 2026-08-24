@@ -278,41 +278,210 @@ SPONSORSHIP_TIER_LABELS = {t["key"]: t["name"] for t in SPONSORSHIP_TIERS}
 # a dead link — adding one later is a one-line edit here and nothing else.
 SAVOY_PLAYBILLS = [
     {
+        "slug": "1931-04-06",
+        "theatre": "Savoy",
+        "sub": "Theatre",
+        "town": "Ft. Kent, Me.",
+        "label": "Week of April 6, 1931",
+        "shows": [
+            {
+                "day": "Mon.", "date": "April 6",
+                "star": "Marie Dressler & Polly Moran", "film": "Reducing",
+                "quotes": "double", "tag": "All Talking", "youtube_url": "",
+            },
+            {
+                "day": "Tues.", "date": "April 7", "star": "Richard Cromwell",
+                "film": "Tol'able David", "quotes": "double", "tag": "All Talking",
+                "youtube_url": "",
+            },
+            {
+                "day": "Wed.", "date": "April 8", "star": "Edna Best",
+                "film": "The Escape", "tag": "All Talking", "youtube_url": "",
+            },
+            {
+                "day": "Thur.", "date": "April 9", "star": "",
+                "film": "Cohens & Kellys in Africa",
+                "after": "With Geo. Sidney & Chas. Murray", "tag": "All Talking",
+                "youtube_url": "",
+            },
+            {
+                "day": "Fri.", "date": "April 10", "star": "Lowell Sherman",
+                "film": "The Royal Bed", "quotes": "double", "tag": "All Talking",
+                "youtube_url": "",
+            },
+            {
+                "day": "Sat.", "date": "April 11", "star": "Evelyn Brent",
+                "film": "The Silver Horde", "quotes": "double", "tag": "All Talking",
+                "youtube_url": "",
+            },
+        ],
+    },
+    {
         "slug": "1931-04-13",
         "theatre": "Savoy",
         "sub": "Theatre",
         "town": "Ft. Kent, Me.",
         "label": "Week of April 13, 1931",
-        # The sheet carries no year. Ornstein's caption estimates "circa 1936",
-        # but every film on it was released between December 1930 and February
-        # 1931, and April 13 fell on a Monday in 1931 — so this reads as a
-        # first-run week, not a revival. Stated on the page as an inference,
-        # not as a correction of the published caption.
-        "dated_by_inference": True,
-        "credit": (
-            "Poster courtesy of Chad Pelletier, reproduced in Lisa Ornstein, "
-            "\u201cGoing to the Movies in Fort Kent,\u201d "
-            "The Northern Maine Journal No. 48, April/June 2000."
-        ),
         "shows": [
-            {"day": "Mon.", "date": "April 13", "star": "Wheeler & Woolsey",
-             "film": "Hook, Line & Sinker", "tag": "All Talking",
-             "youtube_url": ""},
-            {"day": "Tues.", "date": "April 14", "star": "Joan Crawford",
-             "film": "Dance Fools Dance", "tag": "All Talking",
-             "youtube_url": ""},
-            {"day": "Wed.", "date": "April 15", "star": "Norman Foster",
-             "film": "It Pays to Advertise", "tag": "All Talking",
-             "youtube_url": ""},
-            {"day": "Thur.", "date": "April 16", "star": "Lawrence Tibbett",
-             "film": "The Southerner", "tag": "All Talking",
-             "youtube_url": ""},
-            {"day": "Fri.", "date": "April 17", "star": "Ralph Forbes",
-             "film": "Beau Ideal", "tag": "All Talking",
-             "youtube_url": ""},
-            {"day": "Sat.", "date": "April 18", "star": "Leon Errol",
-             "film": "Finn and Hattie", "tag": "All Talking",
-             "youtube_url": ""},
+            {
+                "day": "Mon.", "date": "April 13", "star": "Wheeler & Woolsey",
+                "film": "Hook, Line & Sinker", "tag": "All Talking", "youtube_url": "",
+            },
+            {
+                "day": "Tues.", "date": "April 14", "star": "Joan Crawford",
+                "film": "Dance Fools Dance", "tag": "All Talking", "youtube_url": "",
+            },
+            {
+                "day": "Wed.", "date": "April 15", "star": "Norman Foster",
+                "film": "It Pays to Advertise", "tag": "All Talking", "youtube_url": "",
+            },
+            {
+                "day": "Thur.", "date": "April 16", "star": "Lawrence Tibbett",
+                "film": "The Southerner", "tag": "All Talking", "youtube_url": "",
+            },
+            {
+                "day": "Fri.", "date": "April 17", "star": "Ralph Forbes",
+                "film": "Beau Ideal", "tag": "All Talking", "youtube_url": "",
+            },
+            {
+                "day": "Sat.", "date": "April 18", "star": "Leon Errol",
+                "film": "Finn and Hattie", "tag": "All Talking", "youtube_url": "",
+            },
+        ],
+    },
+    {
+        "slug": "1931-05-18",
+        "theatre": "Savoy",
+        "sub": "Theatre",
+        "town": "Ft. Kent, Me.",
+        "label": "Week of May 18, 1931",
+        "shows": [
+            {
+                "day": "Mon.", "date": "May 18", "star": "Loretta Young",
+                "film": "Three Girls Lost", "tag": "", "youtube_url": "",
+            },
+            {
+                "day": "Tues.", "date": "May 19", "star": "Dorothy Mackaill",
+                "film": "Kept Husbands", "tag": "", "youtube_url": "",
+            },
+            {
+                "day": "Wed.", "date": "May 20", "star": "Constance Bennett",
+                "film": "The Easiest Way", "tag": "", "youtube_url": "",
+            },
+            {
+                "day": "Thur.", "date": "May 21", "star": "Charlotte Greenwood",
+                "film": "Stepping Out", "tag": "", "youtube_url": "",
+            },
+            {
+                "day": "Fri.", "date": "May 22", "star": "Spencer Tracy",
+                "film": "Six Cylinder Love", "tag": "", "youtube_url": "",
+            },
+            {
+                "day": "Sat.", "date": "May 23", "star": "Jack Holt",
+                "film": "Subway Express", "tag": "", "youtube_url": "",
+            },
+        ],
+    },
+    {
+        "slug": "1931-06-01",
+        "theatre": "Savoy",
+        "sub": "Theatre",
+        "town": "Ft. Kent, Me.",
+        "label": "Week of June 1, 1931",
+        "shows": [
+            {
+                "day": "Mon.", "date": "June 1", "star": "Wm. Powell",
+                "film": "Ladies Man", "tag": "", "youtube_url": "",
+            },
+            {
+                "day": "Tues.", "date": "June 2", "star": "Betty Compson",
+                "film": "The Lady Refuses", "tag": "", "youtube_url": "",
+            },
+            {
+                "day": "Wed.", "date": "June 3", "star": "Elissa Landi",
+                "film": "Always Goodbye", "tag": "", "youtube_url": "",
+            },
+            {
+                "day": "Thur.", "date": "June 4", "star": "Clive Brook",
+                "film": "Tarnished Lady", "tag": "", "youtube_url": "",
+            },
+            {
+                "day": "Fri.", "date": "June 5", "star": "Lois Moran",
+                "film": "Young Sinners", "tag": "", "youtube_url": "",
+            },
+            {
+                "day": "Sat.", "date": "June 6", "star": "Richard Arlen",
+                "film": "Gun Smoke", "tag": "", "youtube_url": "",
+            },
+        ],
+    },
+    {
+        "slug": "1931-06-22",
+        "theatre": "Savoy",
+        "sub": "Theatre",
+        "town": "Ft. Kent, Me.",
+        "label": "Week of June 22, 1931",
+        "shows": [
+            {
+                "day": "Mon.", "date": "June 22", "star": "Warwick Ward",
+                "film": "The Perfect Alibi", "tag": "", "youtube_url": "",
+            },
+            {
+                "day": "Tues.", "date": "June 23", "star": "Warner Oland",
+                "film": "The Black Camel", "tag": "", "youtube_url": "",
+            },
+            {
+                "day": "Wed.", "date": "June 24", "star": "Janet Gaynor",
+                "film": "Daddy Long Legs", "quotes": "none", "tag": "",
+                "youtube_url": "",
+            },
+            {
+                "day": "Thur.", "date": "June 25", "star": "Ramon Novarro",
+                "film": "Daybreak", "tag": "", "youtube_url": "",
+            },
+            {
+                "day": "Fri.", "date": "June 26", "star": "Lowell Sherman",
+                "film": "Bachelor Apartment", "tag": "", "youtube_url": "",
+            },
+            {
+                "day": "Sat.", "date": "June 27", "star": "Bela Lugosi",
+                "film": "Dracula", "tag": "", "youtube_url": "",
+            },
+        ],
+    },
+    {
+        "slug": "1931-07-06",
+        "theatre": "Savoy",
+        "sub": "Theatre",
+        "town": "Ft. Kent, Me.",
+        "label": "Week of July 6, 1931",
+        "shows": [
+            {
+                "day": "Mon.", "date": "July 6", "star": "Joan Bennett",
+                "film": "Hush Money", "tag": "", "youtube_url": "",
+            },
+            {
+                "day": "Tues.", "date": "July 7", "star": "Lupe Velez",
+                "film": "Resurrection", "tag": "", "youtube_url": "",
+            },
+            {
+                "day": "Wed.", "date": "July 8", "star": "Adolphe Menjou",
+                "film": "L'Enigmatique Monsieur Parkes", "quotes": "double", "tag": "",
+                "youtube_url": "",
+            },
+            {
+                "day": "Thur.", "date": "July 9", "star": "Lew Ayres",
+                "film": "Iron Man", "joiner": "", "tag": "", "youtube_url": "",
+            },
+            {
+                "day": "Fri.", "date": "July 10",
+                "star": "Victor McLaglen, Edmund Lowe", "film": "Women of All Nations",
+                "tag": "", "youtube_url": "",
+            },
+            {
+                "day": "Sat.", "date": "July 11", "star": "Jack Oakie",
+                "film": "The Dude Ranch", "tag": "", "youtube_url": "",
+            },
         ],
     },
 ]

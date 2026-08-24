@@ -100,10 +100,27 @@
              @keydown.right.window="i = (i + 1) % n">
       <h2 class="history-section__title">What was playing</h2>
       <p class="history-playbills__lead">
-        The Historical Society keeps a handful of the Savoy&rsquo;s weekly
-        playbills. These are set again here from the originals &mdash; the
-        printer&rsquo;s punctuation, the abbreviations, and the line he ran
-        under every single title that week.
+        Six of the Savoy&rsquo;s weekly playbills survive, covering April to
+        July 1931. They are set again here from the originals &mdash; the
+        printer&rsquo;s punctuation, his inconsistent quote marks, and the
+        weeks he abandoned them altogether.
+      </p>
+      <p class="history-playbills__lead">
+        A different picture every night, six nights a week, changed every
+        Monday. Warner Oland&rsquo;s <em>The Black Camel</em> reached Fort Kent
+        on June&nbsp;23, two days after it opened nationally; Bela Lugosi&rsquo;s
+        <em>Dracula</em> played on a Saturday in June. This was not a town
+        getting films late.
+      </p>
+      <p class="history-playbills__lead">
+        Two things are visible only because all six survive together. Every
+        title in April carries the line <strong>ALL TALKING</strong> &mdash;
+        and not one does from May onward. Somewhere between April&nbsp;18 and
+        May&nbsp;18, 1931, sound stopped being worth advertising in Fort Kent.
+        And on July&nbsp;8 the Savoy ran
+        <em>L&rsquo;&Eacute;nigmatique Monsieur Parkes</em>, a French-language
+        production &mdash; eight years before the parish opened its own theater
+        down the road.
       </p>
 
       <div class="history-playbills__stage">
@@ -127,6 +144,19 @@
                   @click="i = (i + 1) % n" aria-label="Next playbill">&rarr;</button>
         </nav>
       {% endif %}
+
+      {% comment %}
+        The sheets are undated. Ornstein's caption estimates "circa 1936" for
+        the April 13 one; six sheets together make 1931 close to certain, and
+        the page says why rather than just asserting a different year.
+      {% endcomment %}
+      <p class="history-playbills__dating">
+        None of the sheets carries a year. The published caption on one of them
+        estimates 1936. But all six run Monday to Saturday on dates that fit
+        1931, every one of the thirty-six films was released in 1930 or 1931,
+        and several arrived within days of opening nationally &mdash; so these
+        are first-run weeks in 1931, not a revival.
+      </p>
     </section>
 
     <section class="history-section">

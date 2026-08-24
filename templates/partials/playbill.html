@@ -15,9 +15,17 @@
 {% endcomment %}
 <figure class="playbill" style="--sheet: {{ pbindex }};">
   <div class="playbill__sheet">
-    <div class="playbill__grain" aria-hidden="true"></div>
-    <div class="playbill__stain playbill__stain--a" aria-hidden="true"></div>
-    <div class="playbill__stain playbill__stain--b" aria-hidden="true"></div>
+    {% comment %}
+      The damage lives in its own clipped box rather than the sheet clipping
+      itself. The blooms are deliberately positioned to run off the edges, and
+      clipping the SHEET to contain them cut the printed text instead — on
+      every playbill, and worse at narrow widths where titles wrap more.
+    {% endcomment %}
+    <div class="playbill__aging" aria-hidden="true">
+      <div class="playbill__grain"></div>
+      <div class="playbill__stain playbill__stain--a"></div>
+      <div class="playbill__stain playbill__stain--b"></div>
+    </div>
 
     <header class="playbill__head">
       <h3 class="playbill__wordmark">
@@ -40,14 +48,22 @@
               <span class="playbill__daydate">{{ show.date }}</span>
             </th>
             <td class="playbill__show">
-              <span class="playbill__star">{{ show.star }}</span><span class="playbill__in"> in </span>
+              {% comment %}
+                The printer was not consistent and neither is this. Some weeks
+                he set titles in double quotes, some in single, one with none
+                at all; one row leads with the title and credits the players
+                underneath; another drops the "in". Those are the sheets, so
+                they are the markup.
+              {% endcomment %}
+              {% if show.star %}<span class="playbill__star">{{ show.star }}</span>{% if show.joiner != "" %}<span class="playbill__in"> {{ show.joiner|default:"in" }} </span>{% else %} {% endif %}{% endif %}
               {% if show.youtube_url %}
                 <a class="playbill__film playbill__film--linked"
                    href="{{ show.youtube_url }}"
-                   target="_blank" rel="noopener noreferrer">&lsquo;{{ show.film }}&rsquo;</a>
+                   target="_blank" rel="noopener noreferrer">{% if show.quotes == "double" %}&ldquo;{{ show.film }}&rdquo;{% elif show.quotes == "none" %}{{ show.film }}{% else %}&lsquo;{{ show.film }}&rsquo;{% endif %}</a>
               {% else %}
-                <span class="playbill__film">&lsquo;{{ show.film }}&rsquo;</span>
+                <span class="playbill__film">{% if show.quotes == "double" %}&ldquo;{{ show.film }}&rdquo;{% elif show.quotes == "none" %}{{ show.film }}{% else %}&lsquo;{{ show.film }}&rsquo;{% endif %}</span>
               {% endif %}
+              {% if show.after %}<span class="playbill__after">{{ show.after }}</span>{% endif %}
               {% if show.tag %}<span class="playbill__tag">{{ show.tag }}</span>{% endif %}
             </td>
           </tr>
@@ -71,6 +87,6 @@
         year &mdash; so this is very likely a first-run week in April 1931.
       </span>
     {% endif %}
-    <span class="playbill__source">{{ pb.credit }}</span>
+    {% if pb.credit %}<span class="playbill__source">{{ pb.credit }}</span>{% endif %}
   </figcaption>
 </figure>
