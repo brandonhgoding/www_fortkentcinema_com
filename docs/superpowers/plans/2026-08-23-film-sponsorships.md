@@ -3110,12 +3110,38 @@ git commit -m "fix(cinema): backfill placeholder Screen.capacity values"
 ```
 Expected: PASS, zero failures, zero errors. Report the actual counts.
 
-- [ ] **Step 2: Lint the whole project**
+- [ ] **Step 2: Lint**
+
+**Do not run `flake8 .`** — `.flake8` excludes `.git,__pycache__,build,dist,*/migrations/*`
+but **not `.venv`**, so a bare `.` scans the virtualenv and reports ~36,800
+violations that have nothing to do with this project.
+
+This repo also carries a **pre-existing baseline of 274 violations** across its
+app directories (web 47, cinema 39, dashboard 173, blog 14, fortkentcinema 1),
+measured on `main`. Fixing those is out of scope for this branch.
+
+So there are two checks. First, the branch's own files must be clean:
 
 ```bash
-.venv/bin/python -m flake8 .
+git diff --name-only <MERGE_BASE>..HEAD -- '*.py' \
+  | grep -v migrations \
+  | tr '\n' '\0' | xargs -0 .venv/bin/python -m flake8
 ```
-Expected: no output.
+
+Expected: **only pre-existing E501 lines** in `web/constants.py` (membership FAQ
+answers), `web/urls.py` (the About-page comment) and `web/views.py` (a blog
+query and a runtime-ISO line) — all eight of which exist identically on `main`.
+No violation may point at a line this branch wrote.
+
+Second, the app-wide total must not have grown:
+
+```bash
+.venv/bin/python -m flake8 web cinema dashboard blog audience cms fortkentcinema | wc -l
+```
+
+Expected: **274**. A higher number means this branch added violations; find and
+fix them. (`xargs -a` is GNU-only and fails on macOS — use the `tr | xargs -0`
+form above.)
 
 - [ ] **Step 3: Confirm the CSS bundle is current**
 
