@@ -161,12 +161,13 @@
       {% endif %}
     </section>
 
-    {% comment %} The inquiry form is added in Task 5. {% endcomment %}
     <section class="sponsor-inquire" id="inquire">
       <h2 class="sponsor-inquire__title">Interested?</h2>
       <p class="sponsor-inquire__body">
-        Call us at {{ site_config.cinema.phone }} and we'll talk it through.
+        Tell us a bit about your business and we'll take it from there. Nothing
+        is committed by sending this — it just starts the conversation.
       </p>
+      {% include "partials/sponsor_inquiry_form.html" %}
     </section>
 
   </div>

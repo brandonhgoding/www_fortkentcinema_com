@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.http import Http404, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView
@@ -22,6 +23,7 @@ from web.constants import (
     SPONSORSHIP_POPCORN_CAP,
     SPONSORSHIP_TIERS,
 )
+from web.forms import SponsorshipInquiryForm
 from web.services.cinema_data import (
     CINEMA_TZ,
     _format_runtime,
@@ -545,6 +547,54 @@ class SponsorView(ListView):
                 "selected_rating": self.request.GET.get("rating", ""),
                 "selected_decade": self.request.GET.get("decade", ""),
                 "sort": self.request.GET.get("sort", "title"),
+                # A bound form arrives via kwargs when SponsorInquiryView
+                # re-renders after a validation error; otherwise start empty.
+                "form": kwargs.get("form") or SponsorshipInquiryForm(),
+                "sent": self.request.GET.get("sent") == "1",
             }
         )
         return ctx
+
+
+def _client_ip(request) -> str | None:
+    forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.META.get("REMOTE_ADDR")
+
+
+class SponsorInquiryView(SponsorView):
+    """POST /sponsor/inquire.
+
+    Saves the lead and says thank you. It does not email anyone, because
+    nothing in this project can send mail — the dashboard list and the
+    smart-alert count are the delivery mechanism.
+
+    Subclasses SponsorView so a validation error can re-render the whole
+    page with the bound form. The vote page gets away with returning a bare
+    partial because it is driven by htmx; there is no htmx on this page, so
+    a fragment would arrive as an unstyled document with no navigation.
+
+    Success redirects rather than rendering, so a refresh cannot resubmit.
+    """
+
+    def get(self, request, *args, **kwargs):
+        return redirect("sponsor")
+
+    def post(self, request, *args, **kwargs):
+        form = SponsorshipInquiryForm(request.POST)
+        sent_url = f"{reverse('sponsor')}?sent=1#inquire"
+
+        if form.is_bot:
+            # Indistinguishable from success, so a bot learns nothing.
+            return redirect(sent_url)
+
+        if form.is_valid():
+            inquiry = form.save(commit=False)
+            inquiry.ip = _client_ip(request)
+            inquiry.save()
+            return redirect(sent_url)
+
+        # ListView needs object_list populated before get_context_data.
+        self.object_list = self.get_queryset()
+        return self.render_to_response(self.get_context_data(form=form))

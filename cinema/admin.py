@@ -8,6 +8,7 @@ from .models import (
     Film,
     Screen,
     Showtime,
+    SponsorshipInquiry,
     Studio,
     StudioTitle,
 )
@@ -89,3 +90,13 @@ class StudioTitleAdmin(admin.ModelAdmin):
     search_fields = ("title", "original_title")
     autocomplete_fields = ("film",)
     readonly_fields = ("imported_at", "updated_at")
+
+
+@admin.register(SponsorshipInquiry)
+class SponsorshipInquiryAdmin(admin.ModelAdmin):
+    list_display = (
+        "business_name", "contact_name", "email", "tier", "status", "created_at",
+    )
+    list_filter = ("status", "tier")
+    search_fields = ("business_name", "contact_name", "email")
+    readonly_fields = ("created_at", "ip")
