@@ -8,14 +8,10 @@
  * was black ink on cheap cream stock, and dressing it in the site palette would
  * turn a reproduction into a pastiche.
  *
- * All the aging is painted — layered gradients plus one inline SVG noise filter
- * as a data URI. No image files, so nothing new is fetched and the page stays
- * inside the bundled-assets rule.
- *
- * LEGIBILITY BEATS PATINA. The film titles are content and are becoming links,
- * so every stain sits BEHIND the text (the text layers carry z-index: 1) and
- * stays under ~0.35 alpha. If a change here starts fighting the ink, the stain
- * loses.
+ * Clean stock, no simulated aging: the sheets are reproductions of what was
+ * printed, not props pretending to be the originals. The framed originals in
+ * the lobby do that job better than CSS can. Each sheet keeps a slight,
+ * per-instance tilt so a row of them does not look mechanically stacked.
  */
 
 .playbill {
@@ -45,146 +41,19 @@
   position: relative;
   isolation: isolate;
   width: 100%;
-  /* Every sheet the same height regardless of what is printed on it — the
-   * April bills carry an ALL TALKING line under each title and one extra
-   * credit line, so left to themselves they stand taller than the summer
-   * ones and the carousel jumps as you page through. Real playbills came
-   * off the same press on the same stock; extra space just reads as margin. */
-  min-height: 54rem;
+  /* Just clears the tallest sheet's own content (the April bills carry an
+   * ALL TALKING line under every title), so all six match without any of
+   * them carrying dead space. NOT a fixed height, and the sheet no longer
+   * clips: at narrow widths titles wrap more and it simply grows. */
+  min-height: 43rem;
   padding: var(--spacing-lg) var(--spacing-md) var(--spacing-md);
   color: var(--ink);
   background:
-    /* uneven yellowing — cheap 1931 stock did not age evenly */
-    radial-gradient(70% 55% at 88% 92%, #d9c091 0%, rgba(217, 192, 145, 0) 60%),
-    radial-gradient(60% 50% at 6% 4%, #f8f1dd 0%, rgba(248, 241, 221, 0) 55%),
-    linear-gradient(158deg, #f4ebd3 0%, #eee0c0 46%, #e2cfa4 100%);
+    radial-gradient(115% 85% at 18% 8%, #f6edd6 0%, #f0e3c6 42%, #e7d6ae 100%);
   box-shadow:
     0 1px 0 rgba(0, 0, 0, .25),
     0 18px 38px rgba(0, 0, 0, .55);
   transform: rotate(var(--tilt));
-}
-
-/* Clips the damage to the paper's edges. This has to be a separate box: the
- * blooms are positioned to run off the sheet, and putting `overflow: hidden`
- * on the sheet itself clipped the printed text — every playbill lost part of
- * its Saturday row, and narrow screens would have lost more. */
-.playbill__aging {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-/* Paper grain. fractalNoise at a high base frequency reads as tooth in the
- * stock rather than as digital noise. multiply keeps it in the paper instead
- * of hazing over the ink. */
-.playbill__grain {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  opacity: .26;
-  mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
-}
-
-/* Water damage and discoloration.
- *
- * Three rules learned by looking at it rather than by reasoning about it:
- *
- * 1. NO `filter: blur()` — combined with mix-blend-mode the filter makes its
- *    own stacking context and the blend stops reaching the paper. Softness
- *    comes from gradient stops instead.
- * 2. NO single concentric gradient. One radial with a bright middle and a
- *    dark ring around it does not read as a water stain; it reads as a
- *    bullseye. Each bloom is therefore THREE overlapping off-centre ellipses
- *    whose union has no single centre, with a flat plateau of colour and only
- *    a slight lift at the rim where the tide line dried.
- * 3. Each sheet is rotated and offset differently, so the same three ellipses
- *    make a visibly different shape on every playbill.
- */
-.playbill__stain {
-  position: absolute;
-  z-index: 0;
-  pointer-events: none;
-  mix-blend-mode: multiply;
-  /* Prime rotations, so sheets 0-5 never repeat a silhouette. */
-  transform: rotate(calc(var(--sheet) * 37deg));
-}
-
-.playbill__stain--a {
-  right: calc(-16% + var(--sheet) * 6%);
-  bottom: calc(-14% + var(--sheet) * 3%);
-  width: 88%;
-  height: 62%;
-  background:
-    radial-gradient(46% 38% at 34% 42%,
-      rgba(150, 104, 44, .26) 0 58%,
-      rgba(150, 104, 44, .33) 72%,
-      rgba(150, 104, 44, 0) 88%),
-    radial-gradient(34% 50% at 62% 56%,
-      rgba(142, 96, 40, .24) 0 54%,
-      rgba(142, 96, 40, .31) 70%,
-      rgba(142, 96, 40, 0) 87%),
-    radial-gradient(40% 30% at 52% 26%,
-      rgba(156, 110, 50, .20) 0 56%,
-      rgba(156, 110, 50, .26) 72%,
-      rgba(156, 110, 50, 0) 90%);
-}
-
-.playbill__stain--b {
-  left: calc(-18% + var(--sheet) * 7%);
-  top: calc(-6% + var(--sheet) * 6%);
-  width: 70%;
-  height: 54%;
-  background:
-    radial-gradient(38% 44% at 44% 38%,
-      rgba(128, 86, 36, .22) 0 60%,
-      rgba(128, 86, 36, .28) 74%,
-      rgba(128, 86, 36, 0) 89%),
-    radial-gradient(46% 32% at 58% 62%,
-      rgba(120, 80, 34, .18) 0 56%,
-      rgba(120, 80, 34, .24) 72%,
-      rgba(120, 80, 34, 0) 88%);
-}
-
-/* Edges take the worst of it: handled corners, damp creeping in from the rim. */
-.playbill__sheet::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  mix-blend-mode: multiply;
-  box-shadow:
-    inset 0 0 3.5rem rgba(122, 84, 36, .42),
-    inset 0 0 .9rem rgba(92, 62, 26, .34);
-}
-
-/* Foxing — the rust-coloured specks old paper grows. Radii in rem so they stay
- * speck-sized rather than scaling with the sheet, and shifted by --sheet so no
- * two playbills are freckled alike. */
-.playbill__sheet::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  mix-blend-mode: multiply;
-  background-image:
-    radial-gradient(circle at calc(16% + var(--sheet) * 11%) calc(12% + var(--sheet) * 4%), rgba(140, 92, 38, .40) 0, rgba(140, 92, 38, 0) 1.1rem),
-    radial-gradient(circle at calc(84% - var(--sheet) * 9%) calc(28% + var(--sheet) * 6%), rgba(140, 92, 38, .34) 0, rgba(140, 92, 38, 0) .8rem),
-    radial-gradient(circle at calc(26% + var(--sheet) * 8%) calc(56% - var(--sheet) * 3%), rgba(152, 100, 44, .30) 0, rgba(152, 100, 44, 0) .7rem),
-    radial-gradient(circle at calc(74% - var(--sheet) * 7%) calc(82% - var(--sheet) * 5%), rgba(140, 92, 38, .36) 0, rgba(140, 92, 38, 0) .95rem),
-    radial-gradient(circle at calc(52% + var(--sheet) * 3%) 42%, rgba(146, 98, 42, .22) 0, rgba(146, 98, 42, 0) .55rem);
-}
-
-/* Everything below sits above the damage. */
-.playbill__head,
-.playbill__bill {
-  position: relative;
-  z-index: 1;
 }
 
 /* ---- masthead ----------------------------------------------------------- */

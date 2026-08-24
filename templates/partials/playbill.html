@@ -1,13 +1,12 @@
 {% comment %}
   One recreated Savoy playbill. Expects `pb` (an entry from
-  web.constants.SAVOY_PLAYBILLS) and `pbindex` (its 0-based position, used
-  only to vary the staining so six sheets don't look identically ruined).
+  web.constants.SAVOY_PLAYBILLS) and `pbindex` (its 0-based position, which
+  varies the slight tilt so a row of sheets doesn't look mechanically stacked).
 
   This is a real <table>, not a picture of one. The film titles become links
   to YouTube as URLs get filled in, so they have to be selectable, crawlable
-  and reachable by a screen reader. The aging is decoration painted behind
-  the text by CSS; nothing here is an image, which also keeps the page inside
-  the site's bundled-assets rule.
+  and reachable by a screen reader. Nothing here is an image, which also keeps
+  the page inside the site's bundled-assets rule.
 
   Transcribed verbatim from the original sheet — the printer's single quotes,
   the "&", the abbreviated weekdays with their trailing periods. It should
@@ -15,18 +14,6 @@
 {% endcomment %}
 <figure class="playbill" style="--sheet: {{ pbindex }};">
   <div class="playbill__sheet">
-    {% comment %}
-      The damage lives in its own clipped box rather than the sheet clipping
-      itself. The blooms are deliberately positioned to run off the edges, and
-      clipping the SHEET to contain them cut the printed text instead — on
-      every playbill, and worse at narrow widths where titles wrap more.
-    {% endcomment %}
-    <div class="playbill__aging" aria-hidden="true">
-      <div class="playbill__grain"></div>
-      <div class="playbill__stain playbill__stain--a"></div>
-      <div class="playbill__stain playbill__stain--b"></div>
-    </div>
-
     <header class="playbill__head">
       <h3 class="playbill__wordmark">
         <span class="playbill__name">{{ pb.theatre }}</span>
