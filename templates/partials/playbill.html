@@ -1,0 +1,88 @@
+{% comment %}
+  One recreated Savoy playbill. Expects `pb` (an entry from
+  web.constants.SAVOY_PLAYBILLS) and `pbindex` (its 0-based position, which
+  varies the slight tilt so a row of sheets doesn't look mechanically stacked).
+
+  This is a real <table>, not a picture of one. The film titles become links
+  to YouTube as URLs get filled in, so they have to be selectable, crawlable
+  and reachable by a screen reader. Nothing here is an image, which also keeps
+  the page inside the site's bundled-assets rule.
+
+  Transcribed verbatim from the original sheet — the printer's single quotes,
+  the "&", the abbreviated weekdays with their trailing periods. It should
+  read as the object, not as house style.
+{% endcomment %}
+<figure class="playbill" style="--sheet: {{ pbindex }};">
+  <div class="playbill__sheet">
+    {% comment %}
+      Water staining only — no grain, foxing or edge wear. Lives in its own
+      clipped box because the blooms are positioned to run off the paper;
+      clipping the SHEET instead cut the printed text.
+    {% endcomment %}
+    <div class="playbill__aging" aria-hidden="true">
+      <div class="playbill__stain playbill__stain--a"></div>
+      <div class="playbill__stain playbill__stain--b"></div>
+    </div>
+    <header class="playbill__head">
+      <h3 class="playbill__wordmark">
+        <span class="playbill__name">{{ pb.theatre }}</span>
+        <span class="playbill__sub">{{ pb.sub }}</span>
+      </h3>
+      <p class="playbill__town">{{ pb.town }}</p>
+    </header>
+
+    <table class="playbill__bill">
+      <caption class="playbill__caption">
+        {{ pb.theatre }} {{ pb.sub }}, {{ pb.town }} — programme for the
+        {{ pb.label|lower }}
+      </caption>
+      <tbody>
+        {% for show in pb.shows %}
+          <tr>
+            <th scope="row" class="playbill__day">
+              <span class="playbill__dayname">{{ show.day }}</span>
+              <span class="playbill__daydate">{{ show.date }}</span>
+            </th>
+            <td class="playbill__show">
+              {% comment %}
+                The printer was not consistent and neither is this. Some weeks
+                he set titles in double quotes, some in single, one with none
+                at all; one row leads with the title and credits the players
+                underneath; another drops the "in". Those are the sheets, so
+                they are the markup.
+              {% endcomment %}
+              {% if show.star %}<span class="playbill__star">{{ show.star }}</span>{% if show.joiner != "" %}<span class="playbill__in"> {{ show.joiner|default:"in" }} </span>{% else %} {% endif %}{% endif %}
+              {% if show.youtube_url %}
+                <a class="playbill__film playbill__film--linked"
+                   href="{{ show.youtube_url }}"
+                   target="_blank" rel="noopener noreferrer">{% if show.quotes == "double" %}&ldquo;{{ show.film }}&rdquo;{% elif show.quotes == "none" %}{{ show.film }}{% else %}&lsquo;{{ show.film }}&rsquo;{% endif %}</a>
+              {% else %}
+                <span class="playbill__film">{% if show.quotes == "double" %}&ldquo;{{ show.film }}&rdquo;{% elif show.quotes == "none" %}{{ show.film }}{% else %}&lsquo;{{ show.film }}&rsquo;{% endif %}</span>
+              {% endif %}
+              {% if show.after %}<span class="playbill__after">{{ show.after }}</span>{% endif %}
+              {% if show.tag %}<span class="playbill__tag">{{ show.tag }}</span>{% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <figcaption class="playbill__credit">
+    <span class="playbill__label">{{ pb.label }}</span>
+    {% if pb.dated_by_inference %}
+      {% comment %}
+        Said plainly rather than asserted. The sheet is undated; the published
+        caption estimates circa 1936; the films point to 1931. Showing the
+        working is the honest move on a page that is otherwise citing an
+        archivist.
+      {% endcomment %}
+      <span class="playbill__note">
+        The sheet carries no year. Every film on it was released between
+        December 1930 and February 1931, and April 13 fell on a Monday that
+        year &mdash; so this is very likely a first-run week in April 1931.
+      </span>
+    {% endif %}
+    {% if pb.credit %}<span class="playbill__source">{{ pb.credit }}</span>{% endif %}
+  </figcaption>
+</figure>

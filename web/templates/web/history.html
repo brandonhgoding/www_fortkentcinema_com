@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Going to the Movies in Fort Kent | Fort Kent Cinema{% endblock %}
+{% block description %}There has been a screen on the same Fort Kent lot since 1917. The Savoy, the Community Theatre, the drive-in and the Century — a century of moviegoing in Fort Kent, Maine, and how it led to the cinema on Hall Street today.{% endblock %}
+{% block og_title %}Going to the Movies in Fort Kent{% endblock %}
+{% block og_description %}A barn on the Stevens homestead, a projector bolted in around 1917, and a picture house on the same lot ever since.{% endblock %}
+{% block og_type %}article{% endblock %}
+
+{% block content %}
+<div class="history-page">
+  <div class="history-container">
+
+    <header class="history-header">
+      <a href="/" class="history-back">&larr; Back to Home</a>
+      <p class="history-eyebrow">Fort Kent, Maine</p>
+      <h1 class="history-title">Going to the Movies</h1>
+      <p class="history-subtitle">There has been a screen on this lot since 1917.</p>
+    </header>
+
+    {% comment %}
+      Sourcing up front, not buried in a footnote. Nearly everything below
+      comes from one published article by a named archivist; a page about real
+      families in a small town should say so before it starts telling their
+      story, not after.
+    {% endcomment %}
+    <aside class="history-sourcenote">
+      <p>
+        Most of what follows is drawn from <strong>Lisa Ornstein&rsquo;s
+        &ldquo;Going to the Movies in Fort Kent,&rdquo;</strong> published in
+        <em>Echoes: The Northern Maine Journal</em>, No.&nbsp;48, April/June 2000.
+        Ornstein was director of the Acadian Archives&nbsp;/ Archives
+        acadiennes at the University of Maine at Fort Kent. Where something
+        comes from somewhere else &mdash; or where the record disagrees with
+        itself &mdash; this page says so.
+      </p>
+    </aside>
+
+    <section class="history-section">
+      <h2 class="history-section__title">A barn on the Stevens homestead</h2>
+      <p>
+        In 1904 the Fort Kent chapter of the Modern Woodmen of America, a
+        fraternal benefit society, bought the Samuel Stevens homestead and
+        opened up its refurbished barn as a community hall. Woodmen Hall, as
+        everyone called it, did a bit of everything: club gatherings, town
+        meetings, weddings, dances, basketball games, minstrel shows.
+      </p>
+      <p>
+        Around 1917 its owners installed projection equipment and added one
+        more line to the roster &mdash; <strong>The Savoy Theatre</strong>. The
+        first film shown was D.&nbsp;W. Griffith&rsquo;s <em>The Birth of a
+        Nation</em>. That barn stood where the cinema&rsquo;s building and
+        parking lot are today, which means Fort Kent has been watching movies
+        on the same patch of ground for more than a century.
+      </p>
+    </section>
+
+    <section class="history-section">
+      <h2 class="history-section__title">A dime, a folding chair, and a piano</h2>
+      <p>
+        The early Savoy was a make-do operation. For a dime, moviegoers sat on
+        &ldquo;rickety wooden folding chairs placed on the flat main floor or in
+        the balcony,&rdquo; as Ornstein has it, and watched silent pictures
+        while a local pianist played beside the screen. She names three of them:
+        <strong>Mrs.&nbsp;George Bradbury</strong>,
+        <strong>Theresa Michaud</strong> and
+        <strong>Burdina Wheelock</strong>.
+      </p>
+      <p>
+        Ownership churned. The Savoy changed hands in 1920 to Aroostook County
+        Theaters Incorporated of Houlton; by 1928 it belonged to Publix
+        Theatres, a national chain; a few years later to Julia&nbsp;M. Powers
+        and Raymond&nbsp;R. Johnston, who ran houses in Caribou and Fort
+        Fairfield, who in turn joined a Saint John, New Brunswick chain with
+        more than fifty theaters either side of the border. A photograph
+        survives of the building standing in the floodwater of 1923.
+      </p>
+      <p>
+        By the early 1930s it had stopped being a hall that showed films and
+        become a cinema: <strong>533 seats</strong>, a properly raked floor, a
+        different picture six nights a week &mdash; and wired for sound. The
+        Savoy&rsquo;s first talkie was <em>The Jazz Singer</em>.
+      </p>
+    </section>
+
+    {% comment %}
+      The playbill carousel.
+
+      All sheets are rendered; Alpine shows one. x-cloak sits on every sheet
+      after the first, so with JavaScript off you get sheet one rather than a
+      flash of all of them stacked — and the arrows, which would do nothing,
+      never appear. Alpine is already loaded sitewide and [x-cloak] is already
+      defined in the bundle, so this adds no new dependency.
+    {% endcomment %}
+    <section class="history-section history-playbills"
+             x-data="{ i: 0, n: {{ playbills|length }} }"
+             @keydown.left.window="i = (i - 1 + n) % n"
+             @keydown.right.window="i = (i + 1) % n">
+      <h2 class="history-section__title">What was playing</h2>
+      <p class="history-playbills__lead">
+        Six of the Savoy&rsquo;s weekly playbills survive, covering April to
+        July 1931. They are set again here from the originals &mdash; the
+        printer&rsquo;s punctuation, his inconsistent quote marks, and the
+        weeks he abandoned them altogether.
+      </p>
+      <p class="history-playbills__lead">
+        A different picture every night, six nights a week, changed every
+        Monday. Warner Oland&rsquo;s <em>The Black Camel</em> reached Fort Kent
+        on June&nbsp;23, two days after it opened nationally; Bela Lugosi&rsquo;s
+        <em>Dracula</em> played on a Saturday in June. This was not a town
+        getting films late.
+      </p>
+      <p class="history-playbills__lead">
+        Two things are visible only because all six survive together. Every
+        title in April carries the line <strong>ALL TALKING</strong> &mdash;
+        and not one does from May onward. Somewhere between April&nbsp;18 and
+        May&nbsp;18, 1931, sound stopped being worth advertising in Fort Kent.
+        And on July&nbsp;8 the Savoy ran
+        <em>L&rsquo;&Eacute;nigmatique Monsieur Parkes</em>, a French-language
+        production &mdash; eight years before the parish opened its own theater
+        down the road.
+      </p>
+
+      <div class="history-playbills__stage">
+        {% for pb in playbills %}
+          <div class="history-playbills__item"
+               {% if not forloop.first %}x-cloak{% endif %}
+               x-show="i === {{ forloop.counter0 }}">
+            {% include "partials/playbill.html" with pb=pb pbindex=forloop.counter0 %}
+          </div>
+        {% endfor %}
+      </div>
+
+      {% if playbills|length > 1 %}
+        <nav class="history-playbills__nav" x-cloak aria-label="Playbills">
+          <button type="button" class="history-playbills__arrow"
+                  @click="i = (i - 1 + n) % n" aria-label="Previous playbill">&larr;</button>
+          <span class="history-playbills__count" aria-live="polite">
+            <span x-text="i + 1"></span> of <span x-text="n"></span>
+          </span>
+          <button type="button" class="history-playbills__arrow"
+                  @click="i = (i + 1) % n" aria-label="Next playbill">&rarr;</button>
+        </nav>
+      {% endif %}
+
+      {% comment %}
+        The sheets are undated. Ornstein's caption estimates "circa 1936" for
+        the April 13 one; six sheets together make 1931 close to certain, and
+        the page says why rather than just asserting a different year.
+      {% endcomment %}
+      <p class="history-playbills__dating">
+        None of the sheets carries a year. The published caption on one of them
+        estimates 1936. But all six run Monday to Saturday on dates that fit
+        1931, every one of the thirty-six films was released in 1930 or 1931,
+        and several arrived within days of opening nationally &mdash; so these
+        are first-run weeks in 1931, not a revival.
+      </p>
+    </section>
+
+    <section class="history-section">
+      <h2 class="history-section__title">The theater under the convent</h2>
+      <p>
+        Fort Kent&rsquo;s second cinema opened around 1939, and it was a parish
+        project. Led by St.&nbsp;Louis Parish priest
+        <strong>Rev.&nbsp;Aim&eacute; Gigu&egrave;re</strong>, volunteers
+        converted the parish hall in the basement of the convent into a
+        full <strong>325-seat</strong> theater &mdash; ticket booth, raked
+        seating, concession stand and all &mdash; to raise money for building
+        the People&rsquo;s Benevolent Hospital, known today as Northern Maine
+        Medical Center.
+      </p>
+      <p>
+        The <em>Petites s&oelig;urs franciscaines</em> lived upstairs, with their
+        chapel sitting directly above the theater. Sister Gloria Ouellette found
+        evening prayer the hardest hour of the day: the soundtrack came up
+        through the floor distinctly enough to tell one actor&rsquo;s voice from
+        another. For a decade or so, Ingrid Bergman, Jimmy Stewart and Lash
+        La&nbsp;Rue were part of convent life.
+      </p>
+      <p>
+        Doors opened every night of the week, with a matinee on Saturdays.
+        Admission was a dime, and a penny more once the war was on. The bill
+        was mostly Hollywood, with French-language pictures worked in. Delsie
+        Charette remembered French-Canadian classics bringing whole families in
+        from the country. It closed in the early 1950s.
+      </p>
+      <p>
+        The two houses were rivals, and not politely: by the early 1940s the
+        Savoy&rsquo;s owners were working to squeeze the Community out. It
+        ended in 1945, when Ashland native
+        <strong>Charles&nbsp;A.&nbsp;H. Brooks</strong> bought the Savoy and
+        went into partnership with the hospital corporation instead &mdash;
+        handing it half the Savoy&rsquo;s receipts and taking over management
+        of both theaters.
+      </p>
+    </section>
+
+    <section class="history-section">
+      <h2 class="history-section__title">Three hundred and fifty cars</h2>
+      <p>
+        In the summer of 1951 Brooks opened the 240-speaker Fort Kent Drive-In
+        on the Caribou Road, again splitting the takings with the hospital
+        fund. Between the Savoy and the drive-in, ticket receipts raised
+        roughly <strong>$206,000</strong> toward the People&rsquo;s Benevolent
+        Hospital, which opened in 1952. A hospital paid for, a dime at a time,
+        by people going to the pictures.
+      </p>
+      <p>
+        The drive-in outlasted the Community Theatre by decades, run by Brooks,
+        Dick Harvey, Clarence Levesque and Paul Dubois until 1989. Levesque
+        remembered the All-Nighters best &mdash; dusk-to-dawn screenings on
+        summer holiday weekends, 350 to 400 cars in the field.
+      </p>
+    </section>
+
+    <section class="history-section">
+      <h2 class="history-section__title">The Century, and after</h2>
+      <p>
+        The Savoy found its last owners in 1969 &mdash; a local group
+        incorporated as Century Theater, Inc., with
+        <strong>W.&nbsp;J. Ouellette</strong> at its head. They put up a modern
+        building next door, and the old one came down on
+        <strong>December&nbsp;9, 1969</strong>. The new house opened a week
+        later as <strong>the Century</strong>, named for the town&rsquo;s
+        centennial.
+      </p>
+      <p>
+        Jeffrey Plourde bought it in 1988 and ran it as Plourde&rsquo;s Century
+        Theater. It later passed to the Paradis family, who kept it going until
+        2024, when it changed hands again and took its current name:
+        <strong>Fort Kent Cinema</strong>.
+      </p>
+      <p class="history-closer">
+        The two screens are called <strong>the Century</strong> and
+        <strong>the Savoy</strong>.
+      </p>
+    </section>
+
+    {% comment %}
+      Single-source material, fenced off and labelled. The Gem appears in no
+      newspaper, no database, and not in Ornstein — only in the Society's own
+      exhibit, from one poster. That is worth telling and worth flagging.
+    {% endcomment %}
+    <section class="history-section history-open">
+      <h2 class="history-section__title">One name we are not sure about</h2>
+      <p>
+        The Fort Kent Historical Society&rsquo;s centennial exhibit records that
+        before it was the Savoy, the house was called <strong>the Gem</strong>,
+        from about 1917 until 1920 &mdash; and that we only know this because a
+        1918 poster turned up inside a wall.
+      </p>
+      <p>
+        We have not been able to corroborate that anywhere else. Ornstein,
+        writing in 2000, calls the Savoy Fort Kent&rsquo;s first theater and
+        never mentions the Gem &mdash; though she does date the building&rsquo;s
+        first change of ownership to exactly 1920, which fits. If that poster
+        surfaced after she wrote, both accounts can be true. We would rather
+        show you the loose thread than tie it off neatly.
+      </p>
+      <p class="history-open__ask">
+        If you know something about the Gem &mdash; or about any of this
+        &mdash; we would genuinely like to hear from you.
+      </p>
+    </section>
+
+    {% comment %}
+      Trailer-facade pattern, same as partials/now_showing.html and the Silents
+      Synced page: the iframe src stays empty until `playing` flips, so the page
+      makes no request to YouTube unless someone asks. The plain link below it
+      is the escape hatch for when an embed is blocked and shows a dead grey box.
+    {% endcomment %}
+    <section class="history-section history-video" x-data="{ playing: false }">
+      <h2 class="history-section__title">The Society&rsquo;s own telling</h2>
+      <p class="history-video__lead">
+        {{ video.blurb }} It runs {{ video.duration }}, and it is the source for
+        several things on this page that exist nowhere else.
+      </p>
+
+      <div class="history-video__frame">
+        <button type="button" class="history-video__play" x-show="!playing"
+                @click="playing = true"
+                aria-label="Play: {{ video.title }}">
+          <span class="history-video__playicon" aria-hidden="true">&#9654;</span>
+          <span class="history-video__playlabel">
+            {{ video.title }}
+            <small>{{ video.channel }}, {{ video.year }} &middot; {{ video.duration }}</small>
+          </span>
+        </button>
+        <iframe
+          x-show="playing" x-cloak
+          :src="playing ? 'https://www.youtube-nocookie.com/embed/{{ video.youtube_id|escapejs }}?autoplay=1&modestbranding=1&rel=0&iv_load_policy=3' : ''"
+          title="{{ video.title }}"
+          allow="autoplay; encrypted-media"
+          allowfullscreen
+        ></iframe>
+      </div>
+
+      <p class="history-video__fallback">
+        <a href="https://www.youtube.com/watch?v={{ video.youtube_id }}"
+           target="_blank" rel="noopener noreferrer">Watch on YouTube</a>
+      </p>
+    </section>
+
+    <section class="history-section history-sources">
+      <h2 class="history-section__title">Sources &amp; thanks</h2>
+      <ul class="history-sources__list">
+        <li>
+          Lisa Ornstein, &ldquo;Going to the Movies in Fort Kent,&rdquo;
+          <em>Echoes: The Northern Maine Journal</em>, No.&nbsp;48, April/June 2000,
+          pp.&nbsp;39&ndash;41 &mdash; the backbone of this page.
+        </li>
+        <li>
+          &ldquo;{{ video.title }},&rdquo; {{ video.channel }}, {{ video.year }}
+          &mdash; the Fort Kent Historical Society&rsquo;s 2017 centennial exhibit.
+        </li>
+        <li>
+          The six playbills were transcribed from our own photographs of the
+          sheets held by the Fort Kent Historical Society museum; the week of
+          April&nbsp;13 also appears in Ornstein, courtesy of Chad Pelletier.
+          Community Theatre programme courtesy of Laurette Vaillancourt;
+          photographs courtesy of Rose Nadeau and Jeffrey Plourde &mdash; as
+          credited by Ornstein.
+        </li>
+        <li>
+          Named in these accounts, and worth naming again: Mrs.&nbsp;George
+          Bradbury, Theresa Michaud, Burdina Wheelock, Rev.&nbsp;Aim&eacute;
+          Gigu&egrave;re, Sister Gloria Ouellette, Delsie Charette,
+          Charles&nbsp;A.&nbsp;H. Brooks, Clarence Levesque, W.&nbsp;J.
+          Ouellette, Jeffrey Plourde.
+        </li>
+      </ul>
+      <p class="history-sources__note">
+        Corrections are welcome and will be made. If you spot something wrong
+        here, it matters more that it is right than that it is ours.
+      </p>
+    </section>
+
+  </div>
+</div>
+{% endblock %}
