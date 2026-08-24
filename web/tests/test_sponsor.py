@@ -38,8 +38,17 @@ class SponsorPageTests(TestCase):
         self.assertNotIn("{% comment %}", html)
 
     def test_lists_available_titles_only(self):
-        html = self.client.get(reverse("sponsor")).content.decode()
-        self.assertIn("The Wild Robot", html)
+        # "The Wild Robot" cannot be checked via raw HTML: the page's static
+        # worked example names it unconditionally (see
+        # test_inactive_studio_titles_are_hidden below), so that assertion
+        # would pass even if the table rendered empty. Checked via context
+        # instead; "Jaws" and "Hidden One" have no such collision, so those
+        # stay as real HTML assertions proving the table actually renders.
+        response = self.client.get(reverse("sponsor"))
+        titles = [t.title for t in response.context["titles"]]
+        self.assertIn("The Wild Robot", titles)
+
+        html = response.content.decode()
         self.assertIn("Jaws", html)
         self.assertNotIn("Hidden One", html)
 
