@@ -76,13 +76,48 @@ class SponsorPageTests(TestCase):
         response = self.client.get(reverse("sponsor"), {"decade": "1970"})
         self.assertEqual([t.title for t in response.context["titles"]], ["Jaws"])
 
-    def test_decade_with_unicode_digit_is_ignored_not_500(self):
-        # str.isdigit() is True for '²' but int('²') raises ValueError; the
-        # filter must be ignored rather than 500ing on a mangled querystring.
-        response = self.client.get(reverse("sponsor"), {"decade": "²"})
+    def test_decade_never_500s_across_a_swept_input_space(self):
+        # Regression sweep. str.isdigit() is True for Unicode digits that
+        # int() can't always turn into a safe year ('²', '१९७०'), and even a
+        # plain ASCII digit string can be zero, negative-looking, absurdly
+        # long, or simply out of any calendar's range — all of which must
+        # be *ignored*, not 500. Every one of these must return 200.
+        inputs = [
+            "²", "0", "1", "999", "1800", "1970", "2100", "2101", "9999",
+            "10000", "12000", "99999", "9999999999999",
+            "000000000000000000001", "-5", "abc", "", "1970.5",
+            "१९७०",  # Devanagari digits: isdigit() True, isascii() False
+            "9" * 500,
+        ]
+        for decade in inputs:
+            with self.subTest(decade=decade):
+                response = self.client.get(reverse("sponsor"), {"decade": decade})
+                self.assertEqual(response.status_code, 200)
+
+    def test_decade_upper_bound_is_inclusive_and_still_filters(self):
+        # The accepted bound must do more than "not crash" — it must still
+        # filter, so a title sitting right on the upper edge is included.
+        future = StudioTitle.objects.create(
+            studio=self.studio, original_title="FUTURE FILM",
+            title="Future Film", release_date=datetime.date(2105, 1, 1),
+        )
+        response = self.client.get(reverse("sponsor"), {"decade": "2100"})
         self.assertEqual(response.status_code, 200)
         titles = [t.title for t in response.context["titles"]]
-        self.assertEqual(titles, ["Jaws", "The Wild Robot"])
+        self.assertEqual(titles, [future.title])
+
+    def test_decade_one_past_the_upper_bound_is_ignored_not_filtered(self):
+        future = StudioTitle.objects.create(
+            studio=self.studio, original_title="FUTURE FILM",
+            title="Future Film", release_date=datetime.date(2105, 1, 1),
+        )
+        response = self.client.get(reverse("sponsor"), {"decade": "2101"})
+        self.assertEqual(response.status_code, 200)
+        titles = [t.title for t in response.context["titles"]]
+        # Out of range means the param is dropped entirely, not applied —
+        # every available title shows, including the one from 2105.
+        self.assertIn(future.title, titles)
+        self.assertIn("Jaws", titles)
 
     def test_rating_filter(self):
         response = self.client.get(reverse("sponsor"), {"rating": "PG"})

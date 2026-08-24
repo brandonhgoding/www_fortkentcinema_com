@@ -516,9 +516,19 @@ class SponsorView(ListView):
         decade = (self.request.GET.get("decade") or "").strip()
         if decade.isascii() and decade.isdigit():
             start = int(decade)
-            queryset = queryset.filter(
-                release_date__year__gte=start, release_date__year__lt=start + 10
-            )
+            # isdigit() only rules out non-numeric junk; a huge or
+            # out-of-range value (e.g. "9999999999999", "99999", "12000",
+            # "0") still reaches Django's date machinery and raises
+            # OverflowError/ValueError. No StudioTitle predates film itself
+            # (1888) or lands past the next century, so 1800..2100 can't
+            # reject a real decade. 2100 + 10 = 2110 is nowhere near
+            # Python's date.MAXYEAR (9999), so the upper filter edge
+            # (start + 10) can't overflow either.
+            if 1800 <= start <= 2100:
+                queryset = queryset.filter(
+                    release_date__year__gte=start,
+                    release_date__year__lt=start + 10,
+                )
 
         sort = self.request.GET.get("sort") or "title"
         field = SPONSOR_SORTS.get(sort, "title")
