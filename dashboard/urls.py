@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import poll_views, subscriber_views, views
+from . import inquiry_views, poll_views, subscriber_views, views
 
 app_name = "dashboard"
 
@@ -66,5 +66,11 @@ urlpatterns = [
         "subscribers/export.csv",
         subscriber_views.SubscriberExportView.as_view(),
         name="subscribers_export",
+    ),
+    path("inquiries", inquiry_views.InquiryListView.as_view(), name="inquiries"),
+    path(
+        "inquiries/<int:pk>/status",
+        inquiry_views.InquiryStatusView.as_view(),
+        name="inquiry_status",
     ),
 ]

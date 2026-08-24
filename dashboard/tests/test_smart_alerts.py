@@ -64,3 +64,34 @@ class BuildSmartAlertsTests(TestCase):
         make_eng(self.screen, self.film, end=datetime.date(2026, 7, 20))  # confirmed, far end
         alerts = build_smart_alerts(Engagement.objects.all(), 5, self.today)
         self.assertEqual(alerts, [])
+
+
+class InquiryAlertTests(TestCase):
+    def setUp(self) -> None:
+        self.today = datetime.date(2026, 7, 10)
+
+    def test_no_alert_when_there_are_no_new_inquiries(self):
+        ids = [
+            a["id"]
+            for a in build_smart_alerts([], 1, self.today, new_inquiries=0)
+        ]
+        self.assertNotIn("new-sponsorship-inquiries", ids)
+
+    def test_alert_is_singular_for_one(self):
+        alerts = build_smart_alerts([], 1, self.today, new_inquiries=1)
+        message = next(
+            a["message"] for a in alerts if a["id"] == "new-sponsorship-inquiries"
+        )
+        self.assertEqual(message, "You have 1 new sponsorship inquiry")
+
+    def test_alert_is_plural_for_many(self):
+        alerts = build_smart_alerts([], 1, self.today, new_inquiries=3)
+        message = next(
+            a["message"] for a in alerts if a["id"] == "new-sponsorship-inquiries"
+        )
+        self.assertEqual(message, "You have 3 new sponsorship inquiries")
+
+    def test_existing_callers_without_the_argument_still_work(self):
+        # The new parameter has a default, so every existing call site and the
+        # pre-existing tests above keep working unchanged.
+        self.assertEqual(build_smart_alerts([], 1, self.today), [])

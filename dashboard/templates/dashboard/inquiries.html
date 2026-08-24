@@ -1,0 +1,69 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% block title %}Sponsorship Inquiries · LeprinceOS{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/polls.css' %}" />{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="header">
+    <div>
+      <h1 class="title">Sponsorship Inquiries</h1>
+      <p class="subtitle">
+        {{ new_count }} new inquir{{ new_count|pluralize:"y,ies" }} waiting.
+      </p>
+    </div>
+  </div>
+
+  <form method="get" class="filters">
+    <select name="status" onchange="this.form.submit()">
+      <option value="">All statuses</option>
+      {% for value, label in statuses %}
+        <option value="{{ value }}" {% if value == selected_status %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </form>
+
+  {% if inquiries %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Business</th><th>Contact</th><th>Film</th>
+          <th>Tier</th><th>Received</th><th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inquiry in inquiries %}
+          <tr>
+            <td>{{ inquiry.business_name }}</td>
+            <td>
+              {{ inquiry.contact_name }}<br />
+              <a href="mailto:{{ inquiry.email }}">{{ inquiry.email }}</a>
+              {% if inquiry.phone %}<br />{{ inquiry.phone }}{% endif %}
+            </td>
+            <td>{{ inquiry.studio_title.title|default:"—" }}</td>
+            <td>{{ inquiry.get_tier_display|default:inquiry.tier|default:"—" }}</td>
+            <td>{{ inquiry.created_at|date:"M j, Y" }}</td>
+            <td>
+              <form method="post" action="{% url 'dashboard:inquiry_status' inquiry.pk %}">
+                {% csrf_token %}
+                <select name="status" onchange="this.form.submit()">
+                  {% for value, label in statuses %}
+                    <option value="{{ value }}" {% if value == inquiry.status %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </form>
+            </td>
+          </tr>
+          {% if inquiry.message %}
+            <tr><td colspan="6" class="muted">{{ inquiry.message }}</td></tr>
+          {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="empty">
+      <h2>No Inquiries Yet</h2>
+      <p>They'll show up here when a business fills in the form on /sponsor/.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

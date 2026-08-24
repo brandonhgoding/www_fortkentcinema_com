@@ -4,7 +4,8 @@ import datetime
 
 
 def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
-                       today: datetime.date) -> list[dict]:
+                       today: datetime.date,
+                       new_inquiries: int = 0) -> list[dict]:
     """Server-side port of the React useSmartAlerts hook.
 
     engagements: iterable of Engagement (all engagements).
@@ -38,6 +39,13 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
         alerts.append({
             "id": "draft-engagements", "type": "info",
             "message": f"You have {draft_count} draft {unit} waiting to be confirmed",
+        })
+
+    if new_inquiries > 0:
+        unit = "inquiry" if new_inquiries == 1 else "inquiries"
+        alerts.append({
+            "id": "new-sponsorship-inquiries", "type": "info",
+            "message": f"You have {new_inquiries} new sponsorship {unit}",
         })
 
     return alerts
