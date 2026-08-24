@@ -18,8 +18,10 @@ from cinema import voting as vote_engine
 from cinema.models import Film, Poll, PollStatus, StudioTitle
 from web.constants import (
     EVENT_SILENTS_SYNCED,
+    FILM_HISTORY_VIDEO,
     MEMBERSHIP,
     MEMBERSHIP_FAQ,
+    SAVOY_PLAYBILLS,
     SPONSORSHIP_POPCORN_CAP,
     SPONSORSHIP_TIERS,
 )
@@ -601,3 +603,27 @@ class SponsorInquiryView(SponsorView):
         # ListView needs object_list populated before get_context_data.
         self.object_list = self.get_queryset()
         return self.render_to_response(self.get_context_data(form=form))
+
+
+class HistoryView(TemplateView):
+    """/history/ — how Fort Kent has gone to the movies since 1917.
+
+    Hand-authored prose rather than model-driven content: this is one page
+    about one town's history and it is not going to grow rows. The playbills
+    are the exception — they come from web.constants.SAVOY_PLAYBILLS so the
+    owner can add the rest of the Historical Society's sheets without touching
+    the template.
+
+    Sourcing is deliberately visible on the page. Almost everything here comes
+    from a single published article by an archivist, and a page about a real
+    town's real families should show where it got that rather than assert it
+    in its own voice.
+    """
+
+    template_name = "web/history.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["playbills"] = SAVOY_PLAYBILLS
+        ctx["video"] = FILM_HISTORY_VIDEO
+        return ctx

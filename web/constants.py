@@ -28,6 +28,7 @@ SITE_CONFIG = {
         {"label": "Membership", "href": "/membership/"},
         {"label": "Rentals", "href": "/rentals/"},
         {"label": "Sponsor", "href": "/sponsor/"},
+        {"label": "History", "href": "/history/"},
         # {"label": "About", "href": "/about/"},  # About page temporarily hidden
         {"label": "Blog", "href": "/blog/"},
     ],
@@ -260,3 +261,81 @@ SPONSORSHIP_TIERS = [
 # has no `choices` of its own — cinema doesn't import web — so this is the
 # one place the mapping lives.
 SPONSORSHIP_TIER_LABELS = {t["key"]: t["name"] for t in SPONSORSHIP_TIERS}
+
+
+# Recreated Savoy Theatre playbills, transcribed from the originals held by the
+# Fort Kent Historical Society and reproduced in Lisa Ornstein's "Going to the
+# Movies in Fort Kent" (The Northern Maine Journal No. 48, April/June 2000).
+#
+# Transcribed VERBATIM, including the printer's punctuation: single quotes
+# around titles, "&" not "and", the trailing period on abbreviated weekdays.
+# Do not tidy these into house style — the whole point is the sheet as it was
+# set. `tag` is the line the printer ran under every title; in 1931 "All
+# Talking" was a selling point, not a description.
+#
+# `youtube_url` is deliberately blank. The template renders a plain <span>
+# when it is empty and an <a> when it is filled, so an unfilled row is never
+# a dead link — adding one later is a one-line edit here and nothing else.
+SAVOY_PLAYBILLS = [
+    {
+        "slug": "1931-04-13",
+        "theatre": "Savoy",
+        "sub": "Theatre",
+        "town": "Ft. Kent, Me.",
+        "label": "Week of April 13, 1931",
+        # The sheet carries no year. Ornstein's caption estimates "circa 1936",
+        # but every film on it was released between December 1930 and February
+        # 1931, and April 13 fell on a Monday in 1931 — so this reads as a
+        # first-run week, not a revival. Stated on the page as an inference,
+        # not as a correction of the published caption.
+        "dated_by_inference": True,
+        "credit": (
+            "Poster courtesy of Chad Pelletier, reproduced in Lisa Ornstein, "
+            "\u201cGoing to the Movies in Fort Kent,\u201d "
+            "The Northern Maine Journal No. 48, April/June 2000."
+        ),
+        "shows": [
+            {"day": "Mon.", "date": "April 13", "star": "Wheeler & Woolsey",
+             "film": "Hook, Line & Sinker", "tag": "All Talking",
+             "youtube_url": ""},
+            {"day": "Tues.", "date": "April 14", "star": "Joan Crawford",
+             "film": "Dance Fools Dance", "tag": "All Talking",
+             "youtube_url": ""},
+            {"day": "Wed.", "date": "April 15", "star": "Norman Foster",
+             "film": "It Pays to Advertise", "tag": "All Talking",
+             "youtube_url": ""},
+            {"day": "Thur.", "date": "April 16", "star": "Lawrence Tibbett",
+             "film": "The Southerner", "tag": "All Talking",
+             "youtube_url": ""},
+            {"day": "Fri.", "date": "April 17", "star": "Ralph Forbes",
+             "film": "Beau Ideal", "tag": "All Talking",
+             "youtube_url": ""},
+            {"day": "Sat.", "date": "April 18", "star": "Leon Errol",
+             "film": "Finn and Hattie", "tag": "All Talking",
+             "youtube_url": ""},
+        ],
+    },
+]
+
+
+# The Fort Kent Historical Society's own account of this history, recorded by
+# the local public-access station. Embedded on /history/ behind the same
+# click-to-load facade the trailers use, so the page costs nothing until
+# someone actually asks for it.
+#
+# It is not archival film footage — it is a docent walking through the
+# Society's 2017 centennial exhibit — and the page says so, because calling it
+# "archive footage" would set the wrong expectation before someone spends 26
+# minutes on it.
+FILM_HISTORY_VIDEO = {
+    "youtube_id": "sDXlW6nfasw",
+    "title": "History of Fort Kent Movie Theaters",
+    "channel": "WFKT TV 4",
+    "year": 2019,
+    "duration": "26:44",
+    "blurb": (
+        "A Fort Kent Historical Society docent walks through the Society\u2019s "
+        "2017 centennial exhibit \u2014 the photographs, playbills and artifacts "
+        "this page is built from."
+    ),
+}

@@ -15,6 +15,7 @@ class StaticViewSitemap(Sitemap):
             "membership",
             "rentals",
             "sponsor",
+            "history",
             "blog_list",
             "event_silents_synced",
             "vote",

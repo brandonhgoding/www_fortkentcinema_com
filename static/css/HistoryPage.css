@@ -1,0 +1,349 @@
+/* /history/ — Going to the Movies in Fort Kent.
+ *
+ * A reading page. Everything here serves a column of prose: a measure that
+ * tops out around 62 characters, generous leading, and section rhythm on
+ * --spacing-2xl, following PrivateRentalsPage.css for the outer shell.
+ *
+ * The playbill component (Playbill.css, imported earlier in the cascade) owns
+ * the sheets themselves; this file only positions them.
+ */
+
+.history-page {
+  min-height: 100vh;
+  padding: var(--spacing-lg);
+  padding-top: calc(80px + var(--spacing-xl));
+  background: linear-gradient(
+    180deg,
+    var(--color-bg-charcoal) 0%,
+    var(--color-bg-dark) 100%
+  );
+}
+
+.history-container {
+  max-width: 46rem;
+  margin: 0 auto;
+}
+
+/* ---- header ------------------------------------------------------------- */
+
+.history-header {
+  text-align: center;
+  margin-bottom: var(--spacing-2xl);
+}
+
+.history-back {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  letter-spacing: 2px;
+  color: var(--color-gold);
+  text-decoration: none;
+  margin-bottom: var(--spacing-md);
+  transition: all var(--transition-base);
+}
+
+.history-back:hover {
+  color: var(--color-gold-warm);
+  text-shadow: 0 0 10px var(--color-gold-glow);
+}
+
+.history-eyebrow {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--color-brass-light);
+  margin-bottom: var(--spacing-xs);
+}
+
+.history-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 8vw, 3.4rem);
+  letter-spacing: 5px;
+  color: var(--color-gold);
+  text-shadow: 0 0 30px var(--color-gold-glow);
+  margin-bottom: var(--spacing-sm);
+}
+
+.history-subtitle {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-style: italic;
+  color: var(--color-cream-muted);
+}
+
+/* ---- the sourcing note, stated before the story starts ------------------- */
+
+.history-sourcenote {
+  border-left: 3px solid var(--color-brass);
+  background: var(--color-bg-card);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-2xl);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+.history-sourcenote p {
+  font-family: var(--font-body);
+  font-size: 0.98rem;
+  line-height: 1.65;
+  color: var(--color-cream-muted);
+  margin: 0;
+}
+
+.history-sourcenote strong {
+  color: var(--color-cream);
+}
+
+/* ---- prose -------------------------------------------------------------- */
+
+.history-section {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.history-section__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  letter-spacing: 3px;
+  color: var(--color-gold);
+  text-shadow: 0 0 15px var(--color-gold-glow);
+  margin-bottom: var(--spacing-md);
+}
+
+.history-section p {
+  font-family: var(--font-body);
+  font-size: 1.15rem;
+  line-height: 1.75;
+  color: var(--color-cream);
+  margin-bottom: var(--spacing-sm);
+}
+
+.history-section p:last-child {
+  margin-bottom: 0;
+}
+
+.history-section strong {
+  color: var(--color-gold-light);
+  font-weight: 600;
+}
+
+.history-section em {
+  color: var(--color-cream);
+}
+
+/* The one-line payoff at the end of the Century section. */
+.history-closer {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-brass);
+  font-size: 1.25rem !important;
+  font-style: italic;
+}
+
+/* ---- playbills ---------------------------------------------------------- */
+
+.history-playbills__lead {
+  margin-bottom: var(--spacing-lg) !important;
+}
+
+.history-playbills__stage {
+  display: flex;
+  justify-content: center;
+}
+
+.history-playbills__item {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* Stacked when Alpine is absent: without JS every sheet after the first keeps
+ * its x-cloak and stays hidden, so this only ever lays out one at a time. */
+.history-playbills__item + .history-playbills__item {
+  margin-top: var(--spacing-xl);
+}
+
+.history-playbills__nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+}
+
+.history-playbills__arrow {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  line-height: 1;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-gold);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-brass);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.history-playbills__arrow:hover {
+  background: var(--color-bg-charcoal-dark);
+  border-color: var(--color-gold);
+  box-shadow: 0 0 12px var(--color-gold-glow);
+}
+
+.history-playbills__arrow:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+.history-playbills__count {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  letter-spacing: 2px;
+  color: var(--color-cream-muted);
+  min-width: 4.5rem;
+  text-align: center;
+}
+
+/* ---- the open question -------------------------------------------------- */
+
+.history-open {
+  background: var(--color-bg-card);
+  border: 1px dashed var(--color-brass);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+}
+
+.history-open__ask {
+  color: var(--color-gold-light) !important;
+  font-style: italic;
+}
+
+/* ---- video -------------------------------------------------------------- */
+
+.history-video__lead {
+  margin-bottom: var(--spacing-lg) !important;
+}
+
+.history-video__frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  background: var(--color-bg-charcoal-dark);
+  border: 1px solid var(--color-brass);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.history-video__frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.history-video__play {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: var(--color-cream);
+  text-align: center;
+  transition: background var(--transition-fast);
+}
+
+.history-video__play:hover {
+  background: rgba(201, 168, 76, .07);
+}
+
+.history-video__play:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: -4px;
+}
+
+.history-video__playicon {
+  font-size: 2.4rem;
+  line-height: 1;
+  color: var(--color-gold);
+  text-shadow: 0 0 20px var(--color-gold-glow);
+}
+
+.history-video__playlabel {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.history-video__playlabel small {
+  display: block;
+  margin-top: .35rem;
+  font-family: var(--font-body);
+  font-size: .85rem;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--color-cream-muted);
+}
+
+.history-video__fallback {
+  margin-top: var(--spacing-sm);
+  text-align: center;
+  font-size: 0.9rem !important;
+}
+
+.history-video__fallback a {
+  color: var(--color-brass-light);
+}
+
+/* ---- sources ------------------------------------------------------------ */
+
+.history-sources__list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--spacing-md);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--color-cream-muted);
+}
+
+.history-sources__list li {
+  padding-left: 1.25rem;
+  position: relative;
+  margin-bottom: var(--spacing-sm);
+}
+
+.history-sources__list li::before {
+  content: '\25C6';
+  position: absolute;
+  left: 0;
+  top: .35em;
+  font-size: .6rem;
+  color: var(--color-brass-light);
+}
+
+.history-sources__note {
+  font-size: 0.95rem !important;
+  font-style: italic;
+  color: var(--color-brass-light) !important;
+}
+
+@media (max-width: 640px) {
+  .history-title {
+    letter-spacing: 3px;
+  }
+  .history-section p {
+    font-size: 1.05rem;
+  }
+}

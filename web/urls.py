@@ -3,6 +3,7 @@ from django.urls import path
 from .views import (
     # AboutView,  # About page temporarily hidden (re-enable with the /about path below)
     CalendarMonthView,
+    HistoryView,
     HomeView,
     MembershipView,
     MovieDetailView,
@@ -22,6 +23,7 @@ urlpatterns = [
     path("membership/", MembershipView.as_view(), name="membership"),
     path("rentals/", RentalsView.as_view(), name="rentals"),
     path("sponsor/", SponsorView.as_view(), name="sponsor"),
+    path("history/", HistoryView.as_view(), name="history"),
     path("sponsor/inquire", SponsorInquiryView.as_view(), name="sponsor_inquire"),
     # path("about/", AboutView.as_view(), name="about"),  # About page temporarily hidden — re-enable this + the AboutView import to restore /about
     # Square redirects here after a successful payment. noindex, unlinked,

@@ -1,0 +1,307 @@
+/* Recreated Savoy Theatre playbills.
+ *
+ * A COMPONENT, not a page: it belongs in section 4 of frontend/styles/main.css
+ * so the history page can still override it from section 5.
+ *
+ * The sheet is deliberately the one place on this site that is light-on-dark
+ * inverted. Everything else here is champagne gold on charcoal; a 1931 handbill
+ * was black ink on cheap cream stock, and dressing it in the site palette would
+ * turn a reproduction into a pastiche.
+ *
+ * All the aging is painted — layered gradients plus one inline SVG noise filter
+ * as a data URI. No image files, so nothing new is fetched and the page stays
+ * inside the bundled-assets rule.
+ *
+ * LEGIBILITY BEATS PATINA. The film titles are content and are becoming links,
+ * so every stain sits BEHIND the text (the text layers carry z-index: 1) and
+ * stays under ~0.35 alpha. If a change here starts fighting the ink, the stain
+ * loses.
+ */
+
+.playbill {
+  /* Set per-instance from the template loop; drives the tilt and where the
+   * damage falls, so six sheets are not identically ruined. */
+  --sheet: 0;
+  --tilt: calc(var(--sheet) * 0.8deg - 0.8deg);
+  --ink: #17130c;
+  --ink-soft: #4a3f2c;
+
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+/* ---- the sheet ---------------------------------------------------------- */
+
+.playbill__sheet {
+  position: relative;
+  isolation: isolate;
+  width: min(100%, 26rem);
+  padding: var(--spacing-lg) var(--spacing-md) var(--spacing-md);
+  color: var(--ink);
+  background:
+    radial-gradient(115% 85% at 18% 8%, #f6edd6 0%, #f0e3c6 42%, #e7d6ae 100%);
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, .25),
+    0 18px 38px rgba(0, 0, 0, .55);
+  transform: rotate(var(--tilt));
+}
+
+/* Paper grain. fractalNoise at a high base frequency reads as tooth in the
+ * stock rather than as digital noise. multiply keeps it in the paper instead
+ * of hazing over the ink. */
+.playbill__grain {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: .16;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+
+/* Water damage. Two soft blooms rather than one, offset by --sheet so each
+ * playbill is stained differently; blur softens the gradient's edge into
+ * something closer to a tide line. */
+.playbill__stain {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  filter: blur(12px);
+}
+
+.playbill__stain--a {
+  right: calc(-8% + var(--sheet) * 3%);
+  bottom: -10%;
+  width: 72%;
+  height: 46%;
+  background: radial-gradient(
+    58% 62% at 62% 78%,
+    rgba(146, 100, 44, .34) 0%,
+    rgba(146, 100, 44, .16) 46%,
+    rgba(146, 100, 44, 0) 72%
+  );
+}
+
+.playbill__stain--b {
+  left: calc(-14% + var(--sheet) * 4%);
+  top: calc(6% + var(--sheet) * 5%);
+  width: 54%;
+  height: 38%;
+  background: radial-gradient(
+    50% 55% at 40% 40%,
+    rgba(124, 84, 36, .22) 0%,
+    rgba(124, 84, 36, .10) 50%,
+    rgba(124, 84, 36, 0) 74%
+  );
+}
+
+/* Everything below sits above the damage. */
+.playbill__head,
+.playbill__bill {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- masthead ----------------------------------------------------------- */
+
+.playbill__head {
+  text-align: center;
+  border-bottom: 4px solid var(--ink);
+  padding-bottom: var(--spacing-xs);
+  margin-bottom: var(--spacing-sm);
+}
+
+.playbill__wordmark {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: .4em;
+  flex-wrap: wrap;
+}
+
+.playbill__name {
+  font-family: 'Oswald', 'Arial Narrow', sans-serif;
+  font-weight: 700;
+  font-size: clamp(2.6rem, 12vw, 4rem);
+  line-height: .92;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+
+.playbill__sub {
+  font-family: 'Oswald', 'Arial Narrow', sans-serif;
+  font-weight: 500;
+  font-size: clamp(.95rem, 3.4vw, 1.3rem);
+  letter-spacing: .22em;
+  text-transform: uppercase;
+}
+
+.playbill__town {
+  margin: .15rem 0 0;
+  font-family: 'Oswald', 'Arial Narrow', sans-serif;
+  font-weight: 500;
+  font-size: .72rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* ---- the bill ----------------------------------------------------------- */
+
+.playbill__bill {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Oswald', 'Arial Narrow', sans-serif;
+}
+
+/* The table caption is for screen readers only — the visual heading is the
+ * masthead above. Not using a global .sr-only: that utility exists only in the
+ * dashboard's design-system.css, which never loads on a public page. */
+.playbill__caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.playbill__bill tr + tr .playbill__day,
+.playbill__bill tr + tr .playbill__show {
+  border-top: 2px solid var(--ink);
+}
+
+.playbill__day {
+  width: 5.4rem;
+  padding: .5rem .6rem .5rem 0;
+  border-right: 2px solid var(--ink);
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.playbill__dayname {
+  display: block;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.playbill__daydate {
+  display: block;
+  font-weight: 400;
+  font-size: .7rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.playbill__show {
+  padding: .5rem 0 .5rem .7rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.playbill__star {
+  font-weight: 600;
+  font-size: .92rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+/* Lowercase "in" — as set on the original, the one un-shouted word on the sheet. */
+.playbill__in {
+  font-weight: 300;
+  font-size: .82rem;
+  text-transform: lowercase;
+}
+
+.playbill__film {
+  display: block;
+  font-weight: 700;
+  font-size: 1.12rem;
+  line-height: 1.05;
+  letter-spacing: .01em;
+  text-transform: uppercase;
+}
+
+/* A filled-in YouTube link. Marked with an underline so it is discoverable
+ * without a hover, but kept in the sheet's ink rather than turned a web blue. */
+.playbill__film--linked {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(23, 19, 12, .45);
+  transition: text-decoration-color var(--transition-fast);
+}
+
+.playbill__film--linked:hover,
+.playbill__film--linked:focus-visible {
+  text-decoration-color: var(--ink);
+}
+
+.playbill__film--linked:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.playbill__tag {
+  display: block;
+  margin-top: .1rem;
+  font-weight: 500;
+  font-size: .58rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* ---- credit line -------------------------------------------------------- */
+
+.playbill__credit {
+  max-width: 30rem;
+  text-align: center;
+  font-family: var(--font-body);
+  color: var(--color-cream-muted);
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+}
+
+.playbill__label {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+}
+
+.playbill__note {
+  font-size: .92rem;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.playbill__source {
+  font-size: .82rem;
+  line-height: 1.45;
+  color: var(--color-brass-light);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .playbill__sheet {
+    transform: none;
+  }
+  .playbill__film--linked {
+    transition: none;
+  }
+}

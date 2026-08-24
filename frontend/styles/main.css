@@ -43,6 +43,7 @@
 @import '../../static/css/Blog.css';
 @import '../../static/css/BlogCard.css';
 @import '../../static/css/TierCard.css';
+@import '../../static/css/Playbill.css';
 
 /* 5. Pages — last, so a page can override a component. */
 @import '../../static/css/home.css';
@@ -56,6 +57,7 @@
 @import '../../static/css/EventPage.css';
 @import '../../static/css/PrivateRentalsPage.css';
 @import '../../static/css/SponsorPage.css';
+@import '../../static/css/HistoryPage.css';
 @import '../../static/css/BlogListPage.css';
 @import '../../static/css/BlogDetailPage.css';
 @import '../../static/css/VotePage.css';
