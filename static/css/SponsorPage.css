@@ -1,0 +1,477 @@
+/* Sponsor page — the pitch, the tiers, and the bookable catalog.
+ * Structure mirrors PrivateRentalsPage.css: full-height gradient, centred
+ * 1200px container, section rhythm on --spacing-2xl.
+ */
+
+.sponsor-page {
+  min-height: 100vh;
+  padding: var(--spacing-lg);
+  padding-top: calc(80px + var(--spacing-xl));
+  background: linear-gradient(
+    180deg,
+    var(--color-bg-charcoal) 0%,
+    var(--color-bg-dark) 100%
+  );
+}
+
+.sponsor-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Header */
+.sponsor-header {
+  text-align: center;
+  margin-bottom: var(--spacing-2xl);
+}
+
+.sponsor-back {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  letter-spacing: 2px;
+  color: var(--color-gold);
+  text-decoration: none;
+  margin-bottom: var(--spacing-md);
+  transition: all var(--transition-base);
+}
+
+.sponsor-back:hover {
+  color: var(--color-gold-warm);
+  text-shadow: 0 0 10px var(--color-gold-glow);
+}
+
+.sponsor-title {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  letter-spacing: 6px;
+  color: var(--color-gold);
+  text-shadow: 0 0 30px var(--color-gold-glow);
+  margin-bottom: var(--spacing-sm);
+}
+
+.sponsor-subtitle {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  color: var(--color-cream-muted);
+  font-style: italic;
+}
+
+/* Worked example — the part that actually sells */
+.sponsor-example {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-brass);
+  border-radius: 4px;
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.sponsor-example__eyebrow {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--color-brass-light);
+  margin-bottom: var(--spacing-xs);
+}
+
+.sponsor-example__title {
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  color: var(--color-gold);
+  margin-bottom: var(--spacing-md);
+}
+
+.sponsor-example__body {
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: var(--color-cream);
+  margin-bottom: var(--spacing-sm);
+}
+
+/* Tiers */
+.sponsor-tiers {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.sponsor-tiers__header {
+  text-align: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.sponsor-tiers__title {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  letter-spacing: 4px;
+  color: var(--color-gold);
+  text-shadow: 0 0 15px var(--color-gold-glow);
+  margin-bottom: var(--spacing-sm);
+}
+
+.sponsor-tiers__note {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--color-cream-muted);
+  font-style: italic;
+}
+
+.sponsor-tiers__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.sponsor-tier {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-brass);
+  border-radius: 4px;
+  padding: var(--spacing-lg);
+}
+
+.sponsor-tier__eyebrow {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--color-brass-light);
+}
+
+.sponsor-tier__name {
+  font-family: var(--font-heading);
+  font-size: 1.4rem;
+  color: var(--color-cream);
+  margin: var(--spacing-xs) 0 var(--spacing-sm);
+}
+
+.sponsor-tier__price {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  color: var(--color-gold);
+  text-shadow: 0 0 20px var(--color-gold-glow);
+  margin-bottom: var(--spacing-md);
+}
+
+.sponsor-tier__from {
+  font-size: 0.9rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--color-cream-muted);
+  margin-right: var(--spacing-xs);
+}
+
+.sponsor-tier__list {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--color-cream);
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--spacing-lg);
+  flex: 1;
+}
+
+.sponsor-tier__list li {
+  padding-left: 1.25rem;
+  position: relative;
+}
+
+.sponsor-tier__list li::before {
+  content: '◆';
+  position: absolute;
+  left: 0;
+  color: var(--color-brass-light);
+  font-size: 0.7rem;
+  top: 0.4em;
+}
+
+.sponsor-tier__cta {
+  align-self: flex-start;
+}
+
+/* Catalog */
+.sponsor-catalog {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.sponsor-catalog__header {
+  text-align: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.sponsor-catalog__title {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  letter-spacing: 4px;
+  color: var(--color-gold);
+  text-shadow: 0 0 15px var(--color-gold-glow);
+  margin-bottom: var(--spacing-sm);
+}
+
+.sponsor-catalog__note,
+.sponsor-catalog__empty {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--color-cream-muted);
+}
+
+.sponsor-catalog__empty {
+  text-align: center;
+  padding: var(--spacing-xl) 0;
+}
+
+/* Filters */
+.sponsor-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-brass);
+  border-radius: 4px;
+}
+
+.sponsor-filters__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.sponsor-filters__label {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--color-cream-muted);
+}
+
+.sponsor-filters input,
+.sponsor-filters select {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-bg-dark);
+  border: 1px solid var(--color-brass);
+  border-radius: 3px;
+  color: var(--color-cream);
+  min-width: 10rem;
+}
+
+.sponsor-filters input:focus,
+.sponsor-filters select:focus {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 1px;
+}
+
+.sponsor-filters__reset {
+  font-family: var(--font-body);
+  color: var(--color-cream-muted);
+  text-decoration: underline;
+}
+
+/* Table — must scroll inside itself; the page never scrolls sideways. */
+.sponsor-table__scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--color-brass);
+  border-radius: 4px;
+}
+
+.sponsor-table {
+  width: 100%;
+  min-width: 44rem;
+  border-collapse: collapse;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--color-cream);
+}
+
+.sponsor-table th,
+.sponsor-table td {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-burgundy);
+  vertical-align: top;
+}
+
+.sponsor-table thead th {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--color-brass-light);
+  background: var(--color-bg-charcoal-dark);
+  position: sticky;
+  top: 0;
+}
+
+.sponsor-table thead th a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.sponsor-table thead th a:hover {
+  color: var(--color-gold);
+}
+
+.sponsor-table tbody tr:hover {
+  background: var(--color-bg-card);
+}
+
+.sponsor-table__title {
+  font-weight: 600;
+}
+
+.sponsor-table__variant,
+.sponsor-table__format {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--color-cream-muted);
+}
+
+/* Pagination */
+.sponsor-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  font-family: var(--font-body);
+}
+
+.sponsor-pagination a {
+  color: var(--color-gold);
+  text-decoration: none;
+}
+
+.sponsor-pagination a:hover {
+  text-shadow: 0 0 10px var(--color-gold-glow);
+}
+
+.sponsor-pagination__status {
+  color: var(--color-cream-muted);
+  font-size: 0.9rem;
+}
+
+/* Inquiry */
+.sponsor-inquire {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-brass);
+  border-radius: 4px;
+  padding: var(--spacing-xl);
+}
+
+.sponsor-inquire__title {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  letter-spacing: 4px;
+  color: var(--color-gold);
+  margin-bottom: var(--spacing-sm);
+}
+
+.sponsor-inquire__body {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  color: var(--color-cream);
+  margin-bottom: var(--spacing-lg);
+}
+
+@media (max-width: 640px) {
+  .sponsor-title {
+    font-size: 2rem;
+    letter-spacing: 3px;
+  }
+
+  .sponsor-filters__field,
+  .sponsor-filters input,
+  .sponsor-filters select {
+    width: 100%;
+  }
+}
+
+/* Inquiry form */
+.sponsor-inquire__form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--spacing-md);
+  align-items: start;
+}
+
+.sponsor-inquire__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.sponsor-inquire__label {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--color-cream-muted);
+}
+
+.sponsor-inquire__form input,
+.sponsor-inquire__form select,
+.sponsor-inquire__form textarea {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--color-bg-dark);
+  border: 1px solid var(--color-brass);
+  border-radius: 3px;
+  color: var(--color-cream);
+  width: 100%;
+}
+
+.sponsor-inquire__form input:focus,
+.sponsor-inquire__form select:focus,
+.sponsor-inquire__form textarea:focus {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 1px;
+}
+
+.sponsor-inquire__form textarea {
+  resize: vertical;
+}
+
+/* The message field and the submit button span the whole grid. */
+.sponsor-inquire__form label:has(textarea),
+.sponsor-inquire__form button {
+  grid-column: 1 / -1;
+}
+
+.sponsor-inquire__form button {
+  justify-self: start;
+}
+
+.sponsor-inquire__error,
+.sponsor-inquire__field-error {
+  font-family: var(--font-body);
+  color: var(--neon-gold-inner);
+  font-size: 0.9rem;
+}
+
+.sponsor-inquire__error {
+  grid-column: 1 / -1;
+  padding: var(--spacing-sm);
+  border-left: 3px solid var(--color-gold);
+  background: var(--color-bg-dark);
+}
+
+.sponsor-inquire__sent h3 {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  color: var(--color-gold);
+  margin-bottom: var(--spacing-sm);
+}
+
+.sponsor-inquire__sent p {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  color: var(--color-cream);
+}

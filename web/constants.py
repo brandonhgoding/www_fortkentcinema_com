@@ -27,6 +27,7 @@ SITE_CONFIG = {
         # a bare /blog costs a 301 on every click and every crawl.
         {"label": "Membership", "href": "/membership/"},
         {"label": "Rentals", "href": "/rentals/"},
+        {"label": "Sponsor", "href": "/sponsor/"},
         # {"label": "About", "href": "/about/"},  # About page temporarily hidden
         {"label": "Blog", "href": "/blog/"},
     ],
@@ -198,3 +199,64 @@ EVENT_SILENTS_SYNCED = {
     "admission": "$5",
     "doors": "6:00 PM",
 }
+
+# Sponsorship program. A local business underwrites a screening; the tiers
+# stack, each one adding to the one before it.
+#
+# Pricing is derived, not guessed: Universal charges a flat $200 to book a
+# library title, so tier 1 leaves $99 for staff, projection and the promotion
+# we do for the sponsor. Tier 2 adds free public admission — cheap for us,
+# because at ~6 admissions per showtime a free promoted screening fills a room
+# that would otherwise be near-empty rather than displacing ticket sales.
+# Tier 3 adds popcorn: 100 mediums retail at $625, but at a 30-50% concession
+# attach rate the real cost is ~$250 of forgone sales plus ~$60 of materials.
+# See docs/superpowers/specs/2026-08-23-film-sponsorships-design.md.
+SPONSORSHIP_POPCORN_CAP = 100
+
+SPONSORSHIP_TIERS = [
+    {
+        "key": "presenting",
+        "name": "Presenting Sponsor",
+        "eyebrow": "Cover the film",
+        "price": 299,
+        "includes": [
+            "We book the title you pick",
+            "Social media posts in the run-up to the show",
+            "Your name on the marquee",
+            "Your name on screen before the film",
+        ],
+    },
+    {
+        "key": "community",
+        "name": "Community Screening",
+        "eyebrow": "Cover the film and admission",
+        "price": 499,
+        "includes": [
+            "We book the title you pick",
+            "Social media posts in the run-up to the show",
+            "Your name on the marquee",
+            "Your name on screen before the film",
+            "Admission is free for everyone who comes",
+        ],
+    },
+    {
+        "key": "full_house",
+        "name": "Full House",
+        "eyebrow": "Cover the film, admission and popcorn",
+        "price": 799,
+        "includes": [
+            "We book the title you pick",
+            "Social media posts in the run-up to the show",
+            "Your name on the marquee",
+            "Your name on screen before the film",
+            "Admission is free for everyone who comes",
+            "Medium buttered popcorn for the first 100 guests",
+        ],
+    },
+]
+
+# tier key -> display name, for surfaces that only have the key (e.g. a
+# SponsorshipInquiry.tier value on the dashboard). SponsorshipInquiry.tier
+# has no `choices` of its own — cinema doesn't import web — so this is the
+# one place the mapping lives.
+SPONSORSHIP_TIER_LABELS = {t["key"]: t["name"] for t in SPONSORSHIP_TIERS}

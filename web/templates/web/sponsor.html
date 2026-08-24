@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Sponsor a Film | Fort Kent Cinema{% endblock %}
+{% block description %}Put your business behind a movie. Local businesses sponsor screenings at Fort Kent Cinema — cover the film, the admission, even the popcorn, and we tell the whole town who made it happen.{% endblock %}
+{% block og_title %}Sponsor a Film | Fort Kent Cinema{% endblock %}
+{% block og_description %}Local businesses sponsor screenings at Maine's northernmost picture show. Browse what we can book and start a conversation.{% endblock %}
+
+{% block content %}
+<div class="sponsor-page">
+  <div class="sponsor-container">
+
+    <header class="sponsor-header">
+      <a href="/" class="sponsor-back">&larr; Back to Home</a>
+      <h1 class="sponsor-title">SPONSOR A FILM</h1>
+      <p class="sponsor-subtitle">
+        Put your business behind a movie — and we'll tell the whole town who made it happen.
+      </p>
+    </header>
+
+    {% comment %}
+      The worked example does the selling. A named local business is far more
+      persuasive than "Your Business Here", and A.H. Custom Carpentry approved
+      being named.
+    {% endcomment %}
+    <section class="sponsor-example">
+      <p class="sponsor-example__eyebrow">Happening this month</p>
+      <h2 class="sponsor-example__title">
+        A.H. Custom Carpentry is sponsoring <em>The Wild Robot</em>
+      </h2>
+      <p class="sponsor-example__body">
+        They're covering the cost of bringing the film to Fort Kent. In return,
+        their name goes out with every post we make about the show, it's on the
+        marquee on Hall Street, and it's on screen before the lights go down.
+        One local business, one movie, a whole town that knows who paid for it.
+      </p>
+      <p class="sponsor-example__body">
+        That's the whole idea. You pick a film, we book it, and the credit is
+        yours.
+      </p>
+    </section>
+
+    <section class="sponsor-tiers" id="tiers">
+      <header class="sponsor-tiers__header">
+        <h2 class="sponsor-tiers__title">What you can cover</h2>
+        <p class="sponsor-tiers__note">
+          Each level builds on the one before it. Prices start here and depend
+          on the title — some films cost us more to book than others.
+        </p>
+      </header>
+      <div class="sponsor-tiers__grid">
+        {% for tier in tiers %}
+          <article class="sponsor-tier">
+            <p class="sponsor-tier__eyebrow">{{ tier.eyebrow }}</p>
+            <h3 class="sponsor-tier__name">{{ tier.name }}</h3>
+            <p class="sponsor-tier__price">
+              <span class="sponsor-tier__from">from</span>${{ tier.price }}
+            </p>
+            <ul class="sponsor-tier__list">
+              {% for item in tier.includes %}
+                <li>{{ item }}</li>
+              {% endfor %}
+            </ul>
+            <a href="#inquire" class="btn btn-primary sponsor-tier__cta">
+              Start a conversation
+            </a>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="sponsor-catalog" id="catalog">
+      <header class="sponsor-catalog__header">
+        <h2 class="sponsor-catalog__title">What we can book</h2>
+        <p class="sponsor-catalog__note">
+          {{ total_count }} titles available from Universal right now. More
+          studios coming. Don't see what you want? Ask anyway — we'll find out.
+        </p>
+      </header>
+
+      <form class="sponsor-filters" method="get" action="{% url 'sponsor' %}">
+        <label class="sponsor-filters__field">
+          <span class="sponsor-filters__label">Search titles</span>
+          <input type="search" name="q" value="{{ q }}" placeholder="Jurassic Park" />
+        </label>
+
+        <label class="sponsor-filters__field">
+          <span class="sponsor-filters__label">Rating</span>
+          <select name="rating">
+            <option value="">Any</option>
+            {% for rating in ratings %}
+              <option value="{{ rating }}" {% if rating == selected_rating %}selected{% endif %}>{{ rating }}</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label class="sponsor-filters__field">
+          <span class="sponsor-filters__label">Decade</span>
+          <select name="decade">
+            <option value="">Any</option>
+            {% for decade in decades %}
+              <option value="{{ decade }}" {% if decade|stringformat:"s" == selected_decade %}selected{% endif %}>{{ decade }}s</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <input type="hidden" name="sort" value="{{ sort }}" />
+        <button type="submit" class="btn btn-primary">Search</button>
+        <a href="{% url 'sponsor' %}" class="sponsor-filters__reset">Clear</a>
+      </form>
+
+      {% if titles %}
+        <div class="sponsor-table__scroll">
+          <table class="sponsor-table">
+            <thead>
+              <tr>
+                <th><a href="{% querystring sort='title' page=None %}">Title</a></th>
+                <th><a href="{% querystring sort='-year' page=None %}">Year</a></th>
+                <th>Rating</th>
+                <th><a href="{% querystring sort='runtime' page=None %}">Runtime</a></th>
+                <th>Format</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for title in titles %}
+                <tr>
+                  <td class="sponsor-table__title">
+                    {{ title.title }}
+                    {% if title.variant_note %}
+                      <span class="sponsor-table__variant">{{ title.variant_note }}</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ title.release_year|default_if_none:"—" }}</td>
+                  <td>{{ title.mpa_rating|default:"—" }}</td>
+                  <td>{{ title.runtime_raw|default:title.runtime_minutes|default:"—" }}</td>
+                  <td class="sponsor-table__format">{{ title.format_summary|default:"—" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        {% if page_obj.has_other_pages %}
+          <nav class="sponsor-pagination">
+            {% if page_obj.has_previous %}
+              <a href="{% querystring page=page_obj.previous_page_number %}">&larr; Previous</a>
+            {% endif %}
+            <span class="sponsor-pagination__status">
+              Page {{ page_obj.number }} of {{ paginator.num_pages }}
+            </span>
+            {% if page_obj.has_next %}
+              <a href="{% querystring page=page_obj.next_page_number %}">Next &rarr;</a>
+            {% endif %}
+          </nav>
+        {% endif %}
+      {% else %}
+        <p class="sponsor-catalog__empty">
+          Nothing matched that. <a href="{% url 'sponsor' %}">Clear the filters</a>
+          and try again.
+        </p>
+      {% endif %}
+    </section>
+
+    <section class="sponsor-inquire" id="inquire">
+      <h2 class="sponsor-inquire__title">Interested?</h2>
+      <p class="sponsor-inquire__body">
+        Tell us a bit about your business and we'll take it from there. Nothing
+        is committed by sending this — it just starts the conversation.
+      </p>
+      {% include "partials/sponsor_inquiry_form.html" %}
+    </section>
+
+  </div>
+</div>
+{% endblock %}

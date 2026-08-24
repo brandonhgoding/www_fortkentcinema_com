@@ -33,6 +33,30 @@ class ClientIPTests(TestCase):
         request = self.factory.get("/vote", REMOTE_ADDR="198.51.100.4")
         self.assertEqual(voting.client_ip(request), "198.51.100.4")
 
+    def test_malformed_forwarded_header_returns_none(self) -> None:
+        # A spoofed/garbage header must never reach an `inet` column, which
+        # rejects non-IP text outright.
+        request = self.factory.get("/vote", HTTP_X_FORWARDED_FOR="not-an-ip")
+        self.assertIsNone(voting.client_ip(request))
+
+    def test_malformed_forwarded_header_does_not_fall_back_to_remote_addr(
+        self,
+    ) -> None:
+        # The header branch is taken and rejected outright — a bad header
+        # does not silently defer to a perfectly good REMOTE_ADDR.
+        request = self.factory.get(
+            "/vote",
+            HTTP_X_FORWARDED_FOR="not-an-ip",
+            REMOTE_ADDR="198.51.100.4",
+        )
+        self.assertIsNone(voting.client_ip(request))
+
+    def test_ipv6_forwarded_address_is_accepted(self) -> None:
+        request = self.factory.get(
+            "/vote", HTTP_X_FORWARDED_FOR="2001:db8::1"
+        )
+        self.assertEqual(voting.client_ip(request), "2001:db8::1")
+
 
 class CastVoteTests(TestCase):
     def setUp(self) -> None:

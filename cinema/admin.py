@@ -2,7 +2,16 @@
 # mypy: disable-error-code="type-arg"
 from django.contrib import admin
 
-from .models import Engagement, EngagementFilm, Film, Screen, Showtime
+from .models import (
+    Engagement,
+    EngagementFilm,
+    Film,
+    Screen,
+    Showtime,
+    SponsorshipInquiry,
+    Studio,
+    StudioTitle,
+)
 
 
 class EngagementFilmInline(admin.TabularInline):
@@ -61,3 +70,33 @@ class FilmAdmin(admin.ModelAdmin):
 @admin.register(Screen)
 class ScreenAdmin(admin.ModelAdmin):
     list_display = ("name", "capacity")
+
+
+@admin.register(Studio)
+class StudioAdmin(admin.ModelAdmin):
+    list_display = ("name", "slug", "is_active", "catalog_updated")
+    list_filter = ("is_active",)
+    prepopulated_fields = {"slug": ("name",)}
+
+
+@admin.register(StudioTitle)
+class StudioTitleAdmin(admin.ModelAdmin):
+    list_display = (
+        "title", "studio", "release_date", "mpa_rating",
+        "runtime_minutes", "is_available",
+    )
+    list_filter = ("studio", "is_available", "mpa_rating")
+    list_editable = ("is_available",)
+    search_fields = ("title", "original_title")
+    autocomplete_fields = ("film",)
+    readonly_fields = ("imported_at", "updated_at")
+
+
+@admin.register(SponsorshipInquiry)
+class SponsorshipInquiryAdmin(admin.ModelAdmin):
+    list_display = (
+        "business_name", "contact_name", "email", "tier", "status", "created_at",
+    )
+    list_filter = ("status", "tier")
+    search_fields = ("business_name", "contact_name", "email")
+    readonly_fields = ("created_at", "ip")

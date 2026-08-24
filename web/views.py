@@ -7,15 +7,23 @@ from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.http import Http404, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views import View
-from django.views.generic import DetailView, TemplateView
+from django.views.generic import DetailView, ListView, TemplateView
 
 from audience.models import Subscriber
 from blog.models import BlogPost
 from cinema import voting as vote_engine
-from cinema.models import Film, Poll, PollStatus
-from web.constants import EVENT_SILENTS_SYNCED, MEMBERSHIP, MEMBERSHIP_FAQ
+from cinema.models import Film, Poll, PollStatus, StudioTitle
+from web.constants import (
+    EVENT_SILENTS_SYNCED,
+    MEMBERSHIP,
+    MEMBERSHIP_FAQ,
+    SPONSORSHIP_POPCORN_CAP,
+    SPONSORSHIP_TIERS,
+)
+from web.forms import SponsorshipInquiryForm
 from web.services.cinema_data import (
     CINEMA_TZ,
     _format_runtime,
@@ -469,3 +477,127 @@ class VoteSubscribeView(View):
         return render(
             request, "partials/vote_email_capture.html", {"subscribed": True}
         )
+
+
+# Whitelist of sort keys. The querystring never reaches order_by directly.
+SPONSOR_SORTS = {
+    "title": "title",
+    "-title": "-title",
+    "year": "release_date",
+    "-year": "-release_date",
+    "runtime": "runtime_minutes",
+    "-runtime": "-runtime_minutes",
+}
+
+
+class SponsorView(ListView):
+    """/sponsor/ — the pitch, the tiers, and what a business can pick from.
+
+    Server-side filtering and pagination rather than a client-side table:
+    1,140 rows is manageable either way, but the catalog grows with every
+    studio added, and this shape survives 5,000 titles without a rewrite.
+    """
+
+    template_name = "web/sponsor.html"
+    context_object_name = "titles"
+    paginate_by = 50
+
+    def get_queryset(self):
+        queryset = StudioTitle.objects.available().select_related("studio")
+
+        query = (self.request.GET.get("q") or "").strip()
+        if query:
+            queryset = queryset.filter(title__icontains=query)
+
+        rating = (self.request.GET.get("rating") or "").strip()
+        if rating:
+            queryset = queryset.filter(mpa_rating=rating)
+
+        decade = (self.request.GET.get("decade") or "").strip()
+        if decade.isascii() and decade.isdigit():
+            start = int(decade)
+            # isdigit() only rules out non-numeric junk; a huge or
+            # out-of-range value (e.g. "9999999999999", "99999", "12000",
+            # "0") still reaches Django's date machinery and raises
+            # OverflowError/ValueError. No StudioTitle predates film itself
+            # (1888) or lands past the next century, so 1800..2100 can't
+            # reject a real decade. 2100 + 10 = 2110 is nowhere near
+            # Python's date.MAXYEAR (9999), so the upper filter edge
+            # (start + 10) can't overflow either.
+            if 1800 <= start <= 2100:
+                queryset = queryset.filter(
+                    release_date__year__gte=start,
+                    release_date__year__lt=start + 10,
+                )
+
+        sort = self.request.GET.get("sort") or "title"
+        field = SPONSOR_SORTS.get(sort, "title")
+        # pk breaks ties so pagination stays stable across pages.
+        return queryset.order_by(field, "pk")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        available = StudioTitle.objects.available()
+
+        years = available.exclude(release_date__isnull=True).values_list(
+            "release_date__year", flat=True
+        )
+        ctx.update(
+            {
+                "tiers": SPONSORSHIP_TIERS,
+                "popcorn_cap": SPONSORSHIP_POPCORN_CAP,
+                "total_count": available.count(),
+                "ratings": sorted(
+                    r for r in set(
+                        available.values_list("mpa_rating", flat=True)
+                    ) if r
+                ),
+                "decades": sorted({(year // 10) * 10 for year in years}, reverse=True),
+                "q": self.request.GET.get("q", ""),
+                "selected_rating": self.request.GET.get("rating", ""),
+                "selected_decade": self.request.GET.get("decade", ""),
+                "sort": self.request.GET.get("sort", "title"),
+                # A bound form arrives via kwargs when SponsorInquiryView
+                # re-renders after a validation error; otherwise start empty.
+                "form": kwargs.get("form") or SponsorshipInquiryForm(),
+                "sent": self.request.GET.get("sent") == "1",
+            }
+        )
+        return ctx
+
+
+class SponsorInquiryView(SponsorView):
+    """POST /sponsor/inquire.
+
+    Saves the lead and says thank you. It does not email anyone, because
+    nothing in this project can send mail — the dashboard list and the
+    smart-alert count are the delivery mechanism.
+
+    Subclasses SponsorView so a validation error can re-render the whole
+    page with the bound form. The vote page gets away with returning a bare
+    partial because it is driven by htmx; there is no htmx on this page, so
+    a fragment would arrive as an unstyled document with no navigation.
+
+    Success redirects rather than rendering, so a refresh cannot resubmit.
+    """
+
+    def get(self, request, *args, **kwargs):
+        return redirect("sponsor")
+
+    def post(self, request, *args, **kwargs):
+        form = SponsorshipInquiryForm(request.POST)
+        sent_url = f"{reverse('sponsor')}?sent=1#inquire"
+
+        if form.is_bot:
+            # Indistinguishable from success, so a bot learns nothing.
+            return redirect(sent_url)
+
+        if form.is_valid():
+            inquiry = form.save(commit=False)
+            inquiry.ip = vote_engine.client_ip(request)
+            inquiry.save()
+            return redirect(sent_url)
+
+        # ListView needs object_list populated before get_context_data.
+        self.object_list = self.get_queryset()
+        return self.render_to_response(self.get_context_data(form=form))

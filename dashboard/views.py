@@ -2,7 +2,15 @@ import datetime
 import json
 from zoneinfo import ZoneInfo
 
-from cinema.models import Engagement, EngagementFilm, Film, Screen, Showtime
+from cinema.models import (
+    Engagement,
+    EngagementFilm,
+    Film,
+    InquiryStatus,
+    Screen,
+    Showtime,
+    SponsorshipInquiry,
+)
 from cinema.services import import_film_from_tmdb
 from cinema.showtimes_overlap import (
     _ProposedShowtime,
@@ -70,7 +78,14 @@ class HomeView(StaffRequiredMixin, TemplateView):
             "screens_count": Screen.objects.count(),
             "today_showtimes": today_showtimes,
             "today_showtimes_count": today_showtimes.count(),
-            "alerts": build_smart_alerts(engagements, tomorrow_count, today),
+            "alerts": build_smart_alerts(
+                engagements,
+                tomorrow_count,
+                today,
+                new_inquiries=SponsorshipInquiry.objects.filter(
+                    status=InquiryStatus.NEW
+                ).count(),
+            ),
             "display_name": user.get_short_name() or user.get_username(),
         })
         return ctx
