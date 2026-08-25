@@ -6,6 +6,13 @@
 {% block og_title %}Going to the Movies in Fort Kent{% endblock %}
 {% block og_description %}A barn on the Stevens homestead, a projector bolted in around 1917, and a picture house on the same lot ever since.{% endblock %}
 {% block og_type %}article{% endblock %}
+{% comment %}
+  The page's own card, instead of the site-wide one. It is a crop of the
+  Savoy's own newspaper masthead — the artwork names the theatre, the street
+  and the town, so the card still says where it is at thumbnail size, with no
+  caption to read.
+{% endcomment %}
+{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/og-history.jpg' %}{% endblock %}
 
 {% block extra_head %}
 {% comment %}
@@ -38,7 +45,7 @@
   },
   "datePublished": "2026-08-23",
   "inLanguage": "en-US",
-  "image": "{{ request.scheme }}://{{ request.get_host }}{% static 'img/og-image.jpg' %}",
+  "image": "{{ request.scheme }}://{{ request.get_host }}{% static 'img/og-history.jpg' %}",
   "author": {
     "@type": "Organization",
     "name": "Fort Kent Cinema"

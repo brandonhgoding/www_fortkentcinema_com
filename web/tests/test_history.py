@@ -343,3 +343,65 @@ class HistoryInternalLinkingTests(TestCase):
     def test_homepage_links_to_history_from_more_than_just_the_nav(self):
         count = hrefs(self.client.get("/").content.decode()).count("/history/")
         self.assertGreaterEqual(count, 3, "nav dropdown is still the only link")
+
+
+class HistorySocialCardTests(TestCase):
+    """The page was og:type=article sharing the homepage's generic card.
+
+    Its own card is a crop of the Savoy's newspaper masthead — the one image
+    on hand that names the theatre, the street and the town in the artwork
+    itself, so it still reads at thumbnail size.
+    """
+
+    # Deliberately NOT under static/img/history/: the unmerged
+    # feat/history-photos branch gitignores *.jpg in that directory, which
+    # would swallow this card the moment it lands.
+    CARD = "img/og-history.jpg"
+
+    def setUp(self) -> None:
+        self.html = self.client.get(reverse("history")).content.decode()
+
+    def _og_image(self):
+        return re.search(
+            r'<meta property="og:image" content="([^"]+)"', self.html
+        ).group(1)
+
+    def test_og_image_is_the_pages_own_card(self):
+        self.assertIn(self.CARD, self._og_image())
+
+    def test_og_image_is_not_the_site_default(self):
+        self.assertNotIn("img/og-image.jpg", self._og_image())
+
+    def test_og_image_is_absolute(self):
+        # Facebook and X both drop a relative og:image on the floor.
+        self.assertTrue(self._og_image().startswith("http"), self._og_image())
+
+    def test_article_jsonld_points_at_the_same_card(self):
+        # Two different images for one page is a mixed signal, and the JSON-LD
+        # copy was the generic one.
+        self.assertIn(self.CARD, block_of_type(self.html, "Article")["image"])
+
+    def test_the_card_file_is_fetchable_and_correctly_sized(self):
+        """A crawler that times out fetching the card shows no preview at all."""
+        from pathlib import Path
+
+        from django.conf import settings
+        from PIL import Image
+
+        path = Path(settings.BASE_DIR) / "static" / self.CARD
+        self.assertTrue(path.exists(), f"{path} is missing")
+        self.assertLess(path.stat().st_size, 300_000)
+        with Image.open(path) as im:
+            self.assertEqual(im.size, (1200, 630))
+
+    def test_the_card_carries_no_exif(self):
+        """It came off an iPhone with GPS on. Publishing that would put the
+        photographer's coordinates in a file anyone can fetch."""
+        from pathlib import Path
+
+        from django.conf import settings
+        from PIL import Image
+
+        path = Path(settings.BASE_DIR) / "static" / self.CARD
+        with Image.open(path) as im:
+            self.assertEqual(len(im.getexif()), 0)
