@@ -6,8 +6,23 @@
 {% block og_title %}Sponsor a Film | Fort Kent Cinema{% endblock %}
 {% block og_description %}Local businesses sponsor screenings at Maine's northernmost picture show. Browse what we can book and start a conversation.{% endblock %}
 
+{% block extra_head %}
+  {% comment %}
+    Marks the document as scripted before anything paints. Every drawer rule
+    in SponsorPage.css hangs off .js, so without this the page renders — and
+    keeps working as — the plain inline form it was before.
+  {% endcomment %}
+  <script>document.documentElement.classList.add("js");</script>
+{% endblock %}
+
 {% block content %}
-<div class="sponsor-page">
+{% comment %}
+  One Alpine scope over the whole page: the table's Sponsor links, the tier
+  cards' buttons and the drawer all talk to the same state. openDrawer reads
+  the data- attributes off whichever control was clicked, so adding a new
+  way in later means adding attributes, not state.
+{% endcomment %}
+<div class="sponsor-page" x-data="sponsorDrawer()" @keydown.escape.window="close()">
   <div class="sponsor-container">
 
     <header class="sponsor-header">
@@ -61,7 +76,9 @@
                 <li>{{ item }}</li>
               {% endfor %}
             </ul>
-            <a href="#inquire" class="btn btn-primary sponsor-tier__cta">
+            <a href="#inquire" class="btn btn-primary sponsor-tier__cta"
+               data-tier="{{ tier.key }}"
+               @click.prevent="openDrawer($el)">
               Start a conversation
             </a>
           </article>
@@ -159,8 +176,31 @@
       </div>
     </section>
 
-    <section class="sponsor-inquire" id="inquire">
-      <h2 class="sponsor-inquire__title">Interested?</h2>
+    {% comment %}
+      This section IS the drawer. Nothing here hides it: the .js class that
+      JavaScript puts on <html> is what turns it into one, so with scripting
+      off it stays the plain inline form at the foot of the page that it has
+      always been. That is also why the form is not duplicated anywhere —
+      two copies would mean two <form>s posting to the same endpoint and a
+      second id_business_name.
+    {% endcomment %}
+    <div class="sponsor-drawer__scrim" :class="{ 'is-open': open }"
+         @click="close()" aria-hidden="true"></div>
+    <section class="sponsor-inquire sponsor-drawer" id="inquire"
+             :class="{ 'is-open': open }"
+             :role="'dialog'" :aria-modal="'true'" :aria-hidden="open ? 'false' : 'true'"
+             aria-labelledby="sponsor-drawer-title"
+             x-ref="drawer" @keydown="trapFocus($event)">
+      <button type="button" class="sponsor-drawer__close" @click="close()"
+              aria-label="Close">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+          <line x1="4" y1="4" x2="20" y2="20" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" />
+          <line x1="20" y1="4" x2="4" y2="20" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" />
+        </svg>
+      </button>
+      <h2 class="sponsor-inquire__title" id="sponsor-drawer-title">Interested?</h2>
       <p class="sponsor-inquire__body">
         Tell us a bit about your business and we'll take it from there. Nothing
         is committed by sending this — it just starts the conversation.
@@ -192,6 +232,97 @@
       }
     }
   });
+
+  // Backs the inquiry drawer. Every way in — a Sponsor link in the table, a
+  // tier card's button — calls openDrawer with the element that was clicked
+  // and lets it read its own data- attributes, so adding another entry point
+  // later means adding attributes, not branching in here.
+  function sponsorDrawer() {
+    return {
+      open: false,
+      filmName: "",
+      showFilmSelect: false,
+      lastTrigger: null,
+
+      openDrawer(el) {
+        this.lastTrigger = el;
+        const field = (name) => this.$refs.drawer.querySelector(`[name="${name}"]`);
+        const id = el.dataset.titleId || "";
+        const tier = el.dataset.tier || "";
+
+        if (id) {
+          const select = field("studio_title");
+          if (select) {
+            select.value = id;
+          }
+          const year = el.dataset.titleYear;
+          this.filmName = year
+            ? `${el.dataset.titleName} (${year})`
+            : el.dataset.titleName;
+          // A film was named, so the long select stays out of the way.
+          this.showFilmSelect = false;
+        } else {
+          // A tier card names no film. Leave any earlier choice alone and
+          // offer the select, since the catalog is not what got them here.
+          this.showFilmSelect = !this.filmName;
+        }
+
+        if (tier) {
+          const tierField = field("tier");
+          if (tierField) {
+            tierField.value = tier;
+          }
+        }
+
+        this.open = true;
+        // Focus what they came to fill in, not the close button.
+        this.$nextTick(() => {
+          const first = this.$refs.drawer.querySelector(
+            'input:not([type="hidden"]), select, textarea'
+          );
+          if (first) {
+            first.focus();
+          }
+        });
+      },
+
+      close() {
+        if (!this.open) {
+          return;
+        }
+        this.open = false;
+        // Back to the row they came from, not the top of the document.
+        if (this.lastTrigger) {
+          this.lastTrigger.focus();
+        }
+      },
+
+      // Keeps Tab inside the drawer while it is open — without this the
+      // focus ring wanders off into the table behind the scrim.
+      trapFocus(event) {
+        if (!this.open || event.key !== "Tab") {
+          return;
+        }
+        const focusable = [
+          ...this.$refs.drawer.querySelectorAll(
+            'a[href], button, input:not([type="hidden"]), select, textarea'
+          ),
+        ].filter((el) => el.offsetParent !== null);
+        if (!focusable.length) {
+          return;
+        }
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      },
+    };
+  }
 
   function syncSponsorFilters(form) {
     const params = new URLSearchParams(

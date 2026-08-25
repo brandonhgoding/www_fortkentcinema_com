@@ -15,8 +15,27 @@
       </p>
     {% endif %}
     {{ form.website }}
+
+    {% comment %}
+      The film picked from the catalog, shown as plain text. The real
+      <select> is still below and is still what the server reads — Alpine
+      only sets its value. Both this block and the select's visibility are
+      driven by the .js class rather than by Alpine, so nothing flashes
+      before Alpine boots and nothing disappears when it never does.
+    {% endcomment %}
+    <div class="sponsor-inquire__film">
+      <span class="sponsor-inquire__label">Film</span>
+      <p class="sponsor-inquire__film-name"
+         x-text="filmName || 'No particular film yet'"></p>
+      <button type="button" class="sponsor-inquire__film-change"
+              x-show="!showFilmSelect" @click="showFilmSelect = true">
+        <span x-text="filmName ? 'Choose a different film' : 'Pick one from the list'"></span>
+      </button>
+    </div>
+
     {% for field in form.visible_fields %}
-      <label class="sponsor-inquire__field">
+      <label class="sponsor-inquire__field{% if field.name == 'studio_title' %} sponsor-inquire__field--film{% endif %}"
+             {% if field.name == 'studio_title' %}:class="{ 'is-open': showFilmSelect }"{% endif %}>
         <span class="sponsor-inquire__label">{{ field.label }}</span>
         {{ field }}
         {% if field.errors %}
