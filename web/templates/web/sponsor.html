@@ -69,7 +69,17 @@
       </div>
     </section>
 
-    <section class="sponsor-catalog" id="catalog">
+    {% comment %}
+      hx-target/hx-swap/hx-indicator sit on the section so the form, the
+      column sorts, and the pagination all inherit them; each control only
+      has to say hx-get. Everything still has a working href/action, so with
+      JavaScript off this degrades to the full page loads it used to do,
+      landing on #catalog instead of the top of the page.
+    {% endcomment %}
+    <section class="sponsor-catalog" id="catalog"
+             hx-target="#sponsor-results"
+             hx-swap="innerHTML"
+             hx-indicator="#sponsor-results">
       <header class="sponsor-catalog__header">
         <h2 class="sponsor-catalog__title">What we can book</h2>
         <p class="sponsor-catalog__note">
@@ -78,7 +88,17 @@
         </p>
       </header>
 
-      <form class="sponsor-filters" method="get" action="{% url 'sponsor' %}">
+      {% comment %}
+        The form is outside #sponsor-results on purpose. HTMX swaps only the
+        results, so this input survives every refresh — re-rendering the form
+        would destroy the search box between keystrokes and drop your focus
+        and caret mid-word.
+      {% endcomment %}
+      <form class="sponsor-filters" id="sponsor-filters"
+            method="get" action="{% url 'sponsor' %}#catalog"
+            hx-get="{% url 'sponsor_catalog' %}"
+            hx-trigger="input changed delay:300ms, change changed, submit"
+            hx-on::after-request="syncSponsorFilters(this)">
         <label class="sponsor-filters__field">
           <span class="sponsor-filters__label">Search titles</span>
           <input type="search" name="q" value="{{ q }}" placeholder="Jurassic Park" />
@@ -104,61 +124,39 @@
           </select>
         </label>
 
-        <input type="hidden" name="sort" value="{{ sort }}" />
-        <button type="submit" class="btn btn-primary">Search</button>
-        <a href="{% url 'sponsor' %}" class="sponsor-filters__reset">Clear</a>
+        {% comment %}
+          The hidden sort field is NOT here. It lives in the results partial
+          and points back at this form with form="sponsor-filters" — see the
+          note there. Rendered here it would go stale the moment you sorted a
+          column, because this form is never re-rendered.
+        {% endcomment %}
+        {% comment %}
+          Live filtering made Search and Clear redundant: the table refreshes
+          as you type and the dropdowns fire the moment they change, so a
+          button that re-runs the search you can already see has nothing left
+          to do.
+
+          They stay here inside <noscript>, which a browser renders only when
+          scripting is off. That is the one case that still needs them — with
+          no JavaScript the dropdowns cannot filter anything by themselves,
+          and there would be no way to reset all three fields at once.
+
+          Enter in the search box still submits either way: a form with a
+          single text field submits implicitly, with or without a button.
+        {% endcomment %}
+        <noscript>
+          <button type="submit" class="btn btn-primary">Search</button>
+          <a href="{% url 'sponsor' %}#catalog" class="sponsor-filters__reset">Clear</a>
+        </noscript>
       </form>
 
-      {% if titles %}
-        <div class="sponsor-table__scroll">
-          <table class="sponsor-table">
-            <thead>
-              <tr>
-                <th><a href="{% querystring sort='title' page=None %}">Title</a></th>
-                <th><a href="{% querystring sort='-year' page=None %}">Year</a></th>
-                <th>Rating</th>
-                <th><a href="{% querystring sort='runtime' page=None %}">Runtime</a></th>
-                <th>Format</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for title in titles %}
-                <tr>
-                  <td class="sponsor-table__title">
-                    {{ title.title }}
-                    {% if title.variant_note %}
-                      <span class="sponsor-table__variant">{{ title.variant_note }}</span>
-                    {% endif %}
-                  </td>
-                  <td>{{ title.release_year|default_if_none:"—" }}</td>
-                  <td>{{ title.mpa_rating|default:"—" }}</td>
-                  <td>{{ title.runtime_raw|default:title.runtime_minutes|default:"—" }}</td>
-                  <td class="sponsor-table__format">{{ title.format_summary|default:"—" }}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-
-        {% if page_obj.has_other_pages %}
-          <nav class="sponsor-pagination">
-            {% if page_obj.has_previous %}
-              <a href="{% querystring page=page_obj.previous_page_number %}">&larr; Previous</a>
-            {% endif %}
-            <span class="sponsor-pagination__status">
-              Page {{ page_obj.number }} of {{ paginator.num_pages }}
-            </span>
-            {% if page_obj.has_next %}
-              <a href="{% querystring page=page_obj.next_page_number %}">Next &rarr;</a>
-            {% endif %}
-          </nav>
-        {% endif %}
-      {% else %}
-        <p class="sponsor-catalog__empty">
-          Nothing matched that. <a href="{% url 'sponsor' %}">Clear the filters</a>
-          and try again.
-        </p>
-      {% endif %}
+      {% comment %}
+        aria-live so a screen reader hears that the table changed under it —
+        with no page load there is no other signal that anything happened.
+      {% endcomment %}
+      <div id="sponsor-results" class="sponsor-results" aria-live="polite">
+        {% include "partials/sponsor_catalog.html" %}
+      </div>
     </section>
 
     <section class="sponsor-inquire" id="inquire">
@@ -172,4 +170,35 @@
 
   </div>
 </div>
+
+<script>
+  // Keeps the address bar in step with the filters while HTMX swaps the
+  // table, so a filtered view is still something you can refresh, bookmark,
+  // or send to someone.
+  //
+  // replaceState, not pushState: typing "jurassic" fires a request per pause,
+  // and pushState would bury the page you arrived from under eight history
+  // entries. The column sorts and the pagination use hx-push-url instead,
+  // because those ARE steps worth pressing Back through.
+  // An untouched filter sends an empty string, and the server echoes it back
+  // into every link it renders — leaving shareable URLs like
+  // "?q=&rating=&decade=&sort=-year&page=2". Drop the empties on the way out
+  // and the pushed URLs stay readable. Scoped to the catalog: HTMX events
+  // bubble, so this only sees requests from inside that section.
+  document.querySelector("#catalog").addEventListener("htmx:configRequest", (event) => {
+    for (const [key, value] of Object.entries(event.detail.parameters)) {
+      if (value === "") {
+        delete event.detail.parameters[key];
+      }
+    }
+  });
+
+  function syncSponsorFilters(form) {
+    const params = new URLSearchParams(
+      [...new FormData(form)].filter(([, value]) => value !== "")
+    );
+    const query = params.toString();
+    history.replaceState(null, "", query ? `?${query}` : location.pathname);
+  }
+</script>
 {% endblock %}

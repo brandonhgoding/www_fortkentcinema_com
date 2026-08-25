@@ -492,17 +492,23 @@ SPONSOR_SORTS = {
 }
 
 
-class SponsorView(ListView):
-    """/sponsor/ — the pitch, the tiers, and what a business can pick from.
+class SponsorCatalogMixin:
+    """The catalog query: filtering, sorting, pagination.
 
-    Server-side filtering and pagination rather than a client-side table:
-    1,140 rows is manageable either way, but the catalog grows with every
-    studio added, and this shape survives 5,000 titles without a rewrite.
+    Shared by the full page and by the htmx fragment so the two cannot
+    drift. If they disagreed, the table you get while typing would differ
+    from the one you get on refresh — and the decade hardening below would
+    have to be right in two places instead of one.
+
+    Server-side rather than a client-side table: the 1,140 available rows
+    are ~266KB of HTML, and the catalog grows with every studio added. This
+    shape survives 5,000 titles without a rewrite.
     """
 
-    template_name = "web/sponsor.html"
     context_object_name = "titles"
-    paginate_by = 50
+    # 25 rows: a screenful you can scan without the table running past
+    # the filters you just used and off the bottom of the page.
+    paginate_by = 25
 
     def get_queryset(self):
         queryset = StudioTitle.objects.available().select_related("studio")
@@ -539,6 +545,21 @@ class SponsorView(ListView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
+        # The catalog partial renders the active sort into a hidden field the
+        # filter form picks up. Both renderings need it: the fragment because
+        # it is the only thing that refreshes that field, the full page
+        # because it is the first thing to set it.
+        ctx["sort"] = self.request.GET.get("sort", "title")
+        return ctx
+
+
+class SponsorView(SponsorCatalogMixin, ListView):
+    """/sponsor/ — the pitch, the tiers, and what a business can pick from."""
+
+    template_name = "web/sponsor.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
         available = StudioTitle.objects.available()
 
         years = available.exclude(release_date__isnull=True).values_list(
@@ -558,7 +579,6 @@ class SponsorView(ListView):
                 "q": self.request.GET.get("q", ""),
                 "selected_rating": self.request.GET.get("rating", ""),
                 "selected_decade": self.request.GET.get("decade", ""),
-                "sort": self.request.GET.get("sort", "title"),
                 # A bound form arrives via kwargs when SponsorInquiryView
                 # re-renders after a validation error; otherwise start empty.
                 "form": kwargs.get("form") or SponsorshipInquiryForm(),
@@ -566,6 +586,32 @@ class SponsorView(ListView):
             }
         )
         return ctx
+
+
+class SponsorCatalogView(SponsorCatalogMixin, ListView):
+    """HTMX fragment: the sponsor catalog's rows, pagination, and empty state.
+
+    Swapped into #sponsor-results when you type in the filters, sort a
+    column, or page — so none of that reloads the page and throws you back
+    to the top of it.
+
+    Deliberately not a subclass of SponsorView: the tiers, the rating and
+    decade choices, the total count, and the inquiry form are all page
+    chrome this fragment never renders, and this endpoint runs on every
+    pause in typing. It shares only the queryset.
+
+    This is a bare fragment — no <html>, no <head> — so a <meta name="robots">
+    is impossible; the X-Robots-Tag header is the only way to keep it out of
+    the index. The full page at /sponsor/ is the indexable one, and it renders
+    the same rows inline, so nothing is hidden from a crawler by living here.
+    """
+
+    template_name = "partials/sponsor_catalog.html"
+
+    def render_to_response(self, context, **response_kwargs):
+        response = super().render_to_response(context, **response_kwargs)
+        response["X-Robots-Tag"] = "noindex, nofollow"
+        return response
 
 
 class SponsorInquiryView(SponsorView):

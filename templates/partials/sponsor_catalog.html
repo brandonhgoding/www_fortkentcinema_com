@@ -1,0 +1,103 @@
+{% comment %}
+Sponsor catalog results: the table, its pagination, and the empty state.
+
+Rendered two ways, and they have to stay identical:
+  - inline by web/sponsor.html on first paint, so the rows are in the HTML
+    for crawlers and for readers with JS off;
+  - alone by SponsorCatalogView, swapped into #sponsor-results by HTMX when
+    you type in the filters, sort a column, or page.
+
+Both go through SponsorCatalogMixin.get_queryset, so there is one query, not
+two that can drift apart.
+
+The filter form deliberately lives OUTSIDE this partial, in sponsor.html. If
+HTMX re-rendered the form, the search input would be destroyed between
+keystrokes and you would lose focus and caret position on every refresh.
+
+Every control here carries both a real href (the no-JS path: a full page load
+that lands on #catalog rather than the top of the page) and hx-get (the no
+reload path). hx-target and hx-swap are inherited from .sponsor-catalog.
+hx-push-url takes an explicit value so the address bar ends up at
+/sponsor/?page=2 — the real page — and never at this fragment's own URL.
+{% endcomment %}
+{% comment %}
+  The sort the reader is actually looking at, handed back to the filter form.
+
+  It lives here, inside the swapped region, so every sort and page refreshes
+  it; and it reaches the form — which sits outside that region — through the
+  HTML `form` attribute, which both a plain submit and HTMX's FormData
+  honour. Rendered inside the form instead, it would still say whatever the
+  sort was when the page first loaded, and sorting by Year and then typing in
+  the search box would quietly throw you back to Title.
+
+  Outside the {% templatetag openblock %} if titles {% templatetag closeblock %}
+  on purpose: an empty result still has a sort, and the next keystroke has to
+  keep it.
+{% endcomment %}
+<input type="hidden" name="sort" value="{{ sort }}" form="sponsor-filters" />
+{% if titles %}
+  <div class="sponsor-table__scroll">
+    <table class="sponsor-table">
+      <thead>
+        <tr>
+          <th>
+            <a href="{% querystring sort='title' page=None %}#catalog"
+               hx-get="{% url 'sponsor_catalog' %}{% querystring sort='title' page=None %}"
+               hx-push-url="{% querystring sort='title' page=None %}">Title</a>
+          </th>
+          <th>
+            <a href="{% querystring sort='-year' page=None %}#catalog"
+               hx-get="{% url 'sponsor_catalog' %}{% querystring sort='-year' page=None %}"
+               hx-push-url="{% querystring sort='-year' page=None %}">Year</a>
+          </th>
+          <th>Rating</th>
+          <th>
+            <a href="{% querystring sort='runtime' page=None %}#catalog"
+               hx-get="{% url 'sponsor_catalog' %}{% querystring sort='runtime' page=None %}"
+               hx-push-url="{% querystring sort='runtime' page=None %}">Runtime</a>
+          </th>
+          <th>Format</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for title in titles %}
+          <tr>
+            <td class="sponsor-table__title">
+              {{ title.title }}
+              {% if title.variant_note %}
+                <span class="sponsor-table__variant">{{ title.variant_note }}</span>
+              {% endif %}
+            </td>
+            <td>{{ title.release_year|default_if_none:"—" }}</td>
+            <td>{{ title.mpa_rating|default:"—" }}</td>
+            <td>{{ title.runtime_raw|default:title.runtime_minutes|default:"—" }}</td>
+            <td class="sponsor-table__format">{{ title.format_summary|default:"—" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if page_obj.has_other_pages %}
+    <nav class="sponsor-pagination">
+      {% if page_obj.has_previous %}
+        <a href="{% querystring page=page_obj.previous_page_number %}#catalog"
+           hx-get="{% url 'sponsor_catalog' %}{% querystring page=page_obj.previous_page_number %}"
+           hx-push-url="{% querystring page=page_obj.previous_page_number %}">&larr; Previous</a>
+      {% endif %}
+      <span class="sponsor-pagination__status">
+        Page {{ page_obj.number }} of {{ paginator.num_pages }}
+      </span>
+      {% if page_obj.has_next %}
+        <a href="{% querystring page=page_obj.next_page_number %}#catalog"
+           hx-get="{% url 'sponsor_catalog' %}{% querystring page=page_obj.next_page_number %}"
+           hx-push-url="{% querystring page=page_obj.next_page_number %}">Next &rarr;</a>
+      {% endif %}
+    </nav>
+  {% endif %}
+{% else %}
+  <p class="sponsor-catalog__empty">
+    Nothing matched that. <a href="{% url 'sponsor' %}#catalog">Clear the filters</a>
+    and try again.
+  </p>
+{% endif %}

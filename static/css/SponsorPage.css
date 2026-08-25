@@ -194,6 +194,9 @@
 /* Catalog */
 .sponsor-catalog {
   margin-bottom: var(--spacing-2xl);
+  /* Searching, sorting, and paging all land on #catalog. The nav is fixed at
+   * 70px, so without this the section heading ends up underneath it. */
+  scroll-margin-top: calc(70px + var(--spacing-lg));
 }
 
 .sponsor-catalog__header {
@@ -274,6 +277,24 @@
 }
 
 /* Table — must scroll inside itself; the page never scrolls sideways. */
+/* Live filtering: the results dim while HTMX fetches the next set of rows.
+ * HTMX puts .htmx-request on the hx-indicator element, which is this one.
+ * Dimming rather than a spinner because the old rows stay readable and the
+ * table does not collapse and reflow on every keystroke. */
+.sponsor-results {
+  transition: opacity var(--transition-fast);
+}
+
+.sponsor-results.htmx-request {
+  opacity: 0.45;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sponsor-results {
+    transition: none;
+  }
+}
+
 .sponsor-table__scroll {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
