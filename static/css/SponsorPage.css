@@ -347,6 +347,32 @@
   font-weight: 600;
 }
 
+.sponsor-table__action {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.sponsor-table__sponsor {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  text-decoration: none;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-brass);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.sponsor-table__sponsor:hover,
+.sponsor-table__sponsor:focus-visible {
+  color: var(--color-bg-dark);
+  background: var(--color-gold);
+  border-color: var(--color-gold);
+}
+
 .sponsor-table__variant,
 .sponsor-table__format {
   display: block;
@@ -379,6 +405,123 @@
 }
 
 /* Inquiry */
+/* Inquiry drawer.
+ * Without JavaScript every rule below is inert and .sponsor-inquire stays the
+ * plain section at the foot of the page that it has always been. The .js
+ * class (set in <head>, before first paint) is the only thing that turns it
+ * into a drawer, which is why none of this is done with x-cloak — that would
+ * hide the form from the very visitors who need it inline. */
+.sponsor-drawer__scrim {
+  display: none;
+}
+
+.js .sponsor-drawer__scrim {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(6, 6, 10, 0.78);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-base);
+}
+
+.js .sponsor-drawer__scrim.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.js .sponsor-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1101;
+  width: min(32rem, 100%);
+  overflow-y: auto;
+  border-radius: 0;
+  border-left: 1px solid var(--color-brass);
+  transform: translateX(100%);
+  transition: transform var(--transition-base);
+}
+
+.js .sponsor-drawer.is-open {
+  transform: translateX(0);
+}
+
+.sponsor-drawer__close {
+  display: none;
+}
+
+.js .sponsor-drawer__close {
+  display: block;
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  padding: var(--spacing-xs);
+  color: var(--color-cream-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.js .sponsor-drawer__close:hover,
+.js .sponsor-drawer__close:focus-visible {
+  color: var(--color-gold);
+}
+
+/* The film carried over from the table. Hidden until JS is running, because
+ * without it the reader picks a film from the select instead. */
+.sponsor-inquire__film {
+  display: none;
+}
+
+.js .sponsor-inquire__film {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.sponsor-inquire__film-name {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  color: var(--color-gold-light);
+}
+
+.sponsor-inquire__film-change {
+  align-self: flex-start;
+  padding: 0;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--color-cream-muted);
+  text-decoration: underline;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.sponsor-inquire__film-change:hover {
+  color: var(--color-gold);
+}
+
+/* The real select. Present for the server and for no-JS; folded away once a
+ * film has been carried over, and brought back by "choose a different film". */
+.js .sponsor-inquire__field--film {
+  display: none;
+}
+
+.js .sponsor-inquire__field--film.is-open {
+  display: flex;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js .sponsor-drawer,
+  .js .sponsor-drawer__scrim {
+    transition: none;
+  }
+}
+
 .sponsor-inquire {
   background: var(--color-bg-card);
   border: 1px solid var(--color-brass);

@@ -57,6 +57,7 @@ hx-push-url takes an explicit value so the address bar ends up at
                hx-push-url="{% querystring sort='runtime' page=None %}">Runtime</a>
           </th>
           <th>Format</th>
+          <th class="sponsor-table__action"><span class="sr-only">Sponsor</span></th>
         </tr>
       </thead>
       <tbody>
@@ -72,6 +73,21 @@ hx-push-url takes an explicit value so the address bar ends up at
             <td>{{ title.mpa_rating|default:"—" }}</td>
             <td>{{ title.runtime_raw|default:title.runtime_minutes|default:"—" }}</td>
             <td class="sponsor-table__format">{{ title.format_summary|default:"—" }}</td>
+            {% comment %}
+              Opens the inquiry drawer with this film already chosen. A real
+              href, not a button: with no JavaScript there is no drawer, so
+              this falls back to jumping at the form the way the tier
+              buttons do. Alpine reads the data- attributes and calls
+              preventDefault.
+            {% endcomment %}
+            <td class="sponsor-table__action">
+              <a href="#inquire"
+                 class="sponsor-table__sponsor"
+                 data-title-id="{{ title.pk }}"
+                 data-title-name="{{ title.title }}"
+                 data-title-year="{{ title.release_year|default_if_none:'' }}"
+                 @click.prevent="openDrawer($el)">Sponsor<span class="sr-only"> {{ title.title }}</span></a>
+            </td>
           </tr>
         {% endfor %}
       </tbody>

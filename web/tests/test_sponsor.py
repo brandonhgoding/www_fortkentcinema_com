@@ -1,6 +1,6 @@
 import datetime
 
-from cinema.models import Studio, StudioTitle
+from cinema.models import SponsorshipInquiry, Studio, StudioTitle
 from django.test import TestCase
 from django.urls import reverse
 
@@ -502,3 +502,101 @@ class SponsorFilterButtonsTests(TestCase):
         visible, _ = self._split()
         for field in ('name="q"', 'name="rating"', 'name="decade"'):
             self.assertIn(field, visible)
+
+
+class SponsorDrawerTests(TestCase):
+    """Pick a film in the table, get the form with that film already chosen.
+
+    Finding a title in a 1,140-row table and then hunting for it again in a
+    1,140-option <select> throws away the work the search just did.
+    """
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        cls.studio = Studio.objects.create(name="Universal", slug="universal")
+        cls.jaws = StudioTitle.objects.create(
+            studio=cls.studio, original_title="JAWS", title="Jaws",
+            release_date=datetime.date(1975, 6, 20), mpa_rating="PG",
+            runtime_minutes=124,
+        )
+        cls.hidden = StudioTitle.objects.create(
+            studio=cls.studio, original_title="HIDDEN", title="Hidden One",
+            release_date=datetime.date(2020, 1, 1), is_available=False,
+        )
+
+    def _page(self):
+        return self.client.get(reverse("sponsor")).content.decode()
+
+    def test_each_row_offers_a_way_to_sponsor_that_film(self):
+        html = self._page()
+        self.assertIn('data-title-id="%d"' % self.jaws.pk, html)
+        self.assertIn('data-title-name="Jaws"', html)
+
+    def test_the_trigger_is_a_real_link_for_visitors_without_javascript(self):
+        # With no JS there is no drawer, so the trigger has to fall back to
+        # jumping at the form the way the tier buttons already do.
+        html = self._page()
+        row = html.split('data-title-id="%d"' % self.jaws.pk, 1)[0]
+        self.assertIn('href="#inquire"', row.rsplit("<a ", 1)[1])
+
+    def test_the_form_is_rendered_exactly_once(self):
+        # Two copies would mean two <form>s posting to the same endpoint and
+        # duplicate ids on every field.
+        html = self._page()
+        self.assertEqual(html.count("sponsor-inquire__form"), 1)
+        self.assertEqual(html.count('id="id_business_name"'), 1)
+
+    def test_the_drawer_is_not_hidden_from_visitors_without_javascript(self):
+        # The drawer is only a drawer once the js class lands on <html>.
+        # Nothing here may hide it on its own, or a no-JS visitor loses the
+        # form altogether.
+        html = self._page()
+        # Just the section's own opening tag — the form inside legitimately
+        # contains a type="hidden" honeypot — and only its plain HTML
+        # attributes. Alpine bindings (:aria-hidden and friends) do nothing
+        # until Alpine runs, which is the very case this is about.
+        opening = html.split('id="inquire"', 1)[1].split(">", 1)[0]
+        plain = " ".join(
+            attr for attr in opening.split()
+            if not attr.startswith((":", "@", "x-"))
+        )
+        self.assertNotIn("x-cloak", plain)
+        self.assertNotIn("hidden", plain)
+        self.assertNotIn("display:none", plain.replace(" ", ""))
+
+    def test_the_real_select_is_still_in_the_form(self):
+        # Alpine sets its value; the server keeps validating it. Dropping it
+        # for a bare hidden input would mean no-JS visitors could not pick a
+        # film at all.
+        html = self._page()
+        self.assertIn('name="studio_title"', html)
+        self.assertIn('value="%d"' % self.jaws.pk, html)
+
+    def test_tier_buttons_carry_their_tier(self):
+        html = self._page()
+        for key in ("presenting", "community", "full_house"):
+            self.assertIn('data-tier="%s"' % key, html)
+
+    def test_an_unavailable_film_is_still_rejected(self):
+        # The chosen film reaches the server through a form control the
+        # reader can edit, so the queryset check has to keep doing its job.
+        response = self.client.post(reverse("sponsor_inquire"), {
+            "business_name": "A.H. Custom Carpentry",
+            "contact_name": "Andrew",
+            "email": "andrew@example.com",
+            "phone": "", "tier": "", "message": "", "website": "",
+            "studio_title": self.hidden.pk,
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["form"].errors.get("studio_title"))
+
+    def test_choosing_a_film_from_the_table_still_saves_it(self):
+        response = self.client.post(reverse("sponsor_inquire"), {
+            "business_name": "A.H. Custom Carpentry",
+            "contact_name": "Andrew",
+            "email": "andrew@example.com",
+            "phone": "", "tier": "full_house", "message": "", "website": "",
+            "studio_title": self.jaws.pk,
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(SponsorshipInquiry.objects.get().studio_title, self.jaws)
