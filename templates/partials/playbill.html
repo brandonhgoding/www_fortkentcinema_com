@@ -24,10 +24,21 @@
       <div class="playbill__stain playbill__stain--b"></div>
     </div>
     <header class="playbill__head">
-      <h3 class="playbill__wordmark">
+      {% comment %}
+        The letterhead is decoration, not structure. As an <h3> it put one
+        identical "Savoy Theatre" into the host page's heading outline per
+        sheet — six of them on /history/, against six real section headings.
+        The <caption> below already names the sheet for a screen reader.
+
+        A <div>, deliberately not a <p>: the host page's prose rule
+        (`.history-section p`, 0-1-1) outranks a lone class (0-1-0) and would
+        paint this cream-on-cream and add a margin — the exact trap
+        .playbill__town is scoped against further down Playbill.css.
+      {% endcomment %}
+      <div class="playbill__wordmark">
         <span class="playbill__name">{{ pb.theatre }}</span>
         <span class="playbill__sub">{{ pb.sub }}</span>
-      </h3>
+      </div>
       <p class="playbill__town">{{ pb.town }}</p>
     </header>
 

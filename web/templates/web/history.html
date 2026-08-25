@@ -7,14 +7,150 @@
 {% block og_description %}A barn on the Stevens homestead, a projector bolted in around 1917, and a picture house on the same lot ever since.{% endblock %}
 {% block og_type %}article{% endblock %}
 
+{% block extra_head %}
+{% comment %}
+  The page declared og:type=article and emitted no structured data at all —
+  blog posts got BlogPosting and movie pages got Movie/ScreeningEvent, and
+  this one was missed.
+
+  Three separate blocks rather than one @graph: each is independently valid,
+  so a mistake in one does not take the other two down with it.
+
+  `datePublished` is the date this page shipped (commit b0f3c76), not a date
+  in the history it tells. There is no `dateModified`: nothing records when
+  the prose was last edited, and post-dating it would be a claim we cannot
+  back — the same reason BlogPosting omits it.
+{% endcomment %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Going to the Movies in Fort Kent",
+  {% comment %}
+    Spelled out rather than reusing {% templatetag openblock %} block description {% templatetag closeblock %} — `block.super` only
+    resolves inside a block of the same name, so it would render empty here.
+  {% endcomment %}
+  "description": "There has been a screen on the same Fort Kent lot since 1917. The Savoy, the Community Theatre, the drive-in and the Century \u2014 a century of moviegoing in Fort Kent, Maine, and how it led to the cinema on Hall Street today.",
+  "url": "{{ request.scheme }}://{{ request.get_host }}{{ request.path }}",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "{{ request.scheme }}://{{ request.get_host }}{{ request.path }}"
+  },
+  "datePublished": "2026-08-23",
+  "inLanguage": "en-US",
+  "image": "{{ request.scheme }}://{{ request.get_host }}{% static 'img/og-image.jpg' %}",
+  "author": {
+    "@type": "Organization",
+    "name": "Fort Kent Cinema"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Fort Kent Cinema",
+    "url": "{{ request.scheme }}://{{ request.get_host }}/"
+  },
+  {% comment %}
+    Machine-readable sourcing. The page shows its citation to readers in two
+    places; this says the same thing to a crawler.
+  {% endcomment %}
+  "citation": {
+    "@type": "Article",
+    "name": "Going to the Movies in Fort Kent",
+    "author": { "@type": "Person", "name": "Lisa Ornstein" },
+    "isPartOf": {
+      "@type": "Periodical",
+      "name": "Echoes: The Northern Maine Journal",
+      "issueNumber": "48"
+    },
+    "datePublished": "2000-04",
+    "pagination": "39-41"
+  },
+  {% comment %}
+    The four houses. Every one of these is a plausible local search and none
+    of them appears in the title, the H1 or the description — `about` is
+    where they stop being prose and become entities.
+  {% endcomment %}
+  "about": [
+    {
+      "@type": "MovieTheater",
+      "name": "Savoy Theatre",
+      "description": "Fort Kent's first cinema, opened about 1917 in the Woodmen Hall barn on the Stevens homestead and demolished in December 1969."
+    },
+    {
+      "@type": "MovieTheater",
+      "name": "Fort Kent Community Theatre",
+      "description": "A 325-seat parish theater built about 1939 in the basement of the convent to raise money for the People's Benevolent Hospital. Closed in the early 1950s."
+    },
+    {
+      "@type": "MovieTheater",
+      "name": "Fort Kent Drive-In",
+      "description": "Opened on the Caribou Road in the summer of 1951 with 240 speakers; ran until 1989."
+    },
+    {
+      "@type": "MovieTheater",
+      "name": "Century Theater",
+      "description": "Built next to the Savoy in 1969 and named for the town's centennial. Trading today as Fort Kent Cinema."
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "{{ request.scheme }}://{{ request.get_host }}/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "History",
+      "item": "{{ request.scheme }}://{{ request.get_host }}{{ request.path }}"
+    }
+  ]
+}
+</script>
+{% comment %}
+  No `uploadDate`: the constant records the year (2019) and nothing finer.
+  Padding it to "2019-01-01" would put a date we invented into structured
+  data. Google will not award a video rich result without it, which is the
+  correct trade — the markup is here to tie the film to this page as an
+  entity, not to win a carousel slot with a made-up date.
+{% endcomment %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  "name": "{{ video.title|escapejs }}",
+  "description": "{{ video.blurb|escapejs }}",
+  "embedUrl": "https://www.youtube-nocookie.com/embed/{{ video.youtube_id|escapejs }}",
+  "url": "https://www.youtube.com/watch?v={{ video.youtube_id|escapejs }}",
+  "thumbnailUrl": "https://i.ytimg.com/vi/{{ video.youtube_id|escapejs }}/hqdefault.jpg",
+  "duration": "{{ video.iso_duration }}",
+  "creator": {
+    "@type": "Organization",
+    "name": "{{ video.channel|escapejs }}"
+  }
+}
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="history-page">
   <div class="history-container">
 
     <header class="history-header">
       <a href="/" class="history-back">&larr; Back to Home</a>
-      <p class="history-eyebrow">Fort Kent, Maine</p>
-      <h1 class="history-title">Going to the Movies</h1>
+      {% comment %}
+        The eyebrow used to read "Fort Kent, Maine". Once the town moved into
+        the H1 — where it belongs, and where the <title> already had it — the
+        eyebrow was repeating it, so it carries the span instead.
+      {% endcomment %}
+      <p class="history-eyebrow">1917 &ndash; today</p>
+      <h1 class="history-title">Going to the Movies in Fort Kent</h1>
       <p class="history-subtitle">There has been a screen on this lot since 1917.</p>
     </header>
 
