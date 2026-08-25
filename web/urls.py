@@ -9,6 +9,7 @@ from .views import (
     MovieDetailView,
     RentalsView,
     SilentsSyncedEventView,
+    SponsorCatalogView,
     SponsorInquiryView,
     SponsorView,
     ThanksView,
@@ -25,6 +26,9 @@ urlpatterns = [
     path("sponsor/", SponsorView.as_view(), name="sponsor"),
     path("history/", HistoryView.as_view(), name="history"),
     path("sponsor/inquire", SponsorInquiryView.as_view(), name="sponsor_inquire"),
+    # HTMX fragment behind the no-reload catalog. noindex/nofollow via
+    # header, and absent from the sitemap: /sponsor/ is the real page.
+    path("sponsor/catalog", SponsorCatalogView.as_view(), name="sponsor_catalog"),
     # path("about/", AboutView.as_view(), name="about"),  # About page temporarily hidden — re-enable this + the AboutView import to restore /about
     # Square redirects here after a successful payment. noindex, unlinked,
     # and deliberately absent from the sitemap.
