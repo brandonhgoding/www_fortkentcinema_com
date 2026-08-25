@@ -1,0 +1,36 @@
+/* Homepage teaser for /history/. Deliberately quieter than the gift-card and
+ * open-mic CTAs above it: those sell something, this one offers a read, and a
+ * third shouting block in the same scroll flattens all three. */
+
+.history-cta {
+  padding: clamp(2.5rem, 6vw, 4rem) 1.5rem;
+  text-align: center;
+}
+
+.history-cta__content {
+  max-width: 46rem;
+  margin: 0 auto;
+}
+
+.history-cta__eyebrow {
+  margin: 0 0 .5rem;
+  font-family: 'Oswald', 'Arial Narrow', sans-serif;
+  font-size: .8rem;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--color-gold, #c9a227);
+}
+
+.history-cta__title {
+  margin: 0 0 1rem;
+  font-family: 'Oswald', 'Arial Narrow', sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+  letter-spacing: .04em;
+}
+
+.history-cta__body {
+  margin: 0 0 1.75rem;
+  font-size: clamp(1rem, 2.4vw, 1.1rem);
+  line-height: 1.65;
+}

@@ -14,9 +14,15 @@
             {{ site_config.cinema.phone }}
           </a>
         </address>
-        {% comment %} About page temporarily hidden — re-enable with the /about route:
-        <a href="/about" class="footer-about-link">About Us</a>
+        {% comment %}
+          This slot held an "About Us" link until the /about route was
+          disabled (see web/urls.py). /history/ takes it over rather than
+          leaving a hole: it was reachable from one place sitewide — the nav's
+          "More" dropdown — and a page nothing links to is a page Google will
+          not index. Restoring /about later means a second link here, not
+          evicting this one.
         {% endcomment %}
+        <a href="/history/" class="footer-about-link">Our History</a>
       </div>
 
       {% comment %}

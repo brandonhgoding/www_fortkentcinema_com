@@ -516,6 +516,9 @@ FILM_HISTORY_VIDEO = {
     "channel": "WFKT TV 4",
     "year": 2019,
     "duration": "26:44",
+    # Same length, in the ISO 8601 form schema.org's VideoObject wants. Kept
+    # beside the human string so the two cannot drift apart.
+    "iso_duration": "PT26M44S",
     "blurb": (
         "A Fort Kent Historical Society docent walks through the Society\u2019s "
         "2017 centennial exhibit \u2014 the photographs, playbills and artifacts "

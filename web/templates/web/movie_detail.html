@@ -112,6 +112,15 @@ not the TMDB blurb — the local intent is what we can actually win.
           {% endif %}
         {% endif %}
         <p class="movie-page-archive-note">It isn't currently on our schedule.</p>
+        {% comment %}
+          Archive state only. A film we are selling tickets to should be
+          selling tickets, not sending the reader off to read local history —
+          so this sits inside the {% templatetag openblock %} else {% templatetag closeblock %}, not below it.
+        {% endcomment %}
+        <p class="movie-page-archive-history">
+          Fort Kent has been watching films on this lot since 1917 &mdash;
+          <a href="/history/">the Savoy, the drive-in and the Century</a>.
+        </p>
       </section>
     {% endif %}
 

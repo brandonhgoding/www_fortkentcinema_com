@@ -137,8 +137,15 @@
   margin-bottom: var(--spacing-sm);
 }
 
-.playbill__wordmark {
+/* Scoped through .playbill for the same reason .playbill__town is, below.
+ * This was an <h3> until the six identical mastheads were found cluttering
+ * /history/'s heading outline; it is a <div> now, which no host prose rule
+ * matches. The `gap` below is unchanged but now computes off the inherited
+ * 18px rather than a heading's UA 1.17em — about 1.2px tighter, and the
+ * point of pinning it here is that a host can no longer move it at all. */
+.playbill .playbill__wordmark {
   margin: 0;
+  font-size: inherit;
   display: flex;
   align-items: baseline;
   justify-content: center;

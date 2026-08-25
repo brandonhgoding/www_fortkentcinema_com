@@ -1,3 +1,6 @@
+import json
+import re
+
 from django.test import TestCase
 from django.urls import reverse
 
@@ -197,3 +200,146 @@ class SheetVariationTests(TestCase):
             self.assertEqual(first.year, 1931)
             self.assertEqual(first.weekday(), 0, f"{pb['label']} is not a Monday")
             self.assertEqual(len(pb["shows"]), 6)
+
+
+def jsonld_blocks(html):
+    return [
+        json.loads(m)
+        for m in re.findall(
+            r'<script type="application/ld\+json">\s*(.*?)\s*</script>', html, re.S
+        )
+    ]
+
+
+def block_of_type(html, wanted):
+    for block in jsonld_blocks(html):
+        if block.get("@type") == wanted:
+            return block
+    return None
+
+
+def headings(html):
+    return [
+        re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", text)).strip()
+        for _, text in re.findall(r"<h([1-6])[^>]*>(.*?)</h\1>", html, re.S)
+    ]
+
+
+def hrefs(html):
+    return re.findall(r'<a[^>]+href="([^"]+)"', html)
+
+
+class HistoryOnPageSeoTests(TestCase):
+    """The two on-page signals a search engine weighs hardest: the H1 and the
+    heading outline. Both were saying the wrong thing."""
+
+    def setUp(self) -> None:
+        self.html = self.client.get(reverse("history")).content.decode()
+
+    def test_h1_names_the_town(self):
+        # "Going to the Movies" alone could be any cinema anywhere. The <title>
+        # already names Fort Kent; the H1 has to agree with it.
+        self.assertEqual(headings(self.html)[0], "Going to the Movies in Fort Kent")
+
+    def test_playbill_wordmarks_are_not_headings(self):
+        # The letterhead on each sheet is decoration, not structure. Marked up
+        # as <h3> it put six identical "Savoy Theatre" entries into the page's
+        # outline, drowning the six real section headings.
+        self.assertNotIn("Savoy Theatre", headings(self.html))
+
+    def test_section_headings_are_the_only_h2s(self):
+        h2s = re.findall(r"<h2[^>]*>(.*?)</h2>", self.html, re.S)
+        self.assertEqual(len(h2s), len(set(h2s)), "duplicate h2 in the outline")
+
+
+class HistoryStructuredDataTests(TestCase):
+    """The page declares og:type=article but emitted no structured data at all.
+
+    Blog posts got BlogPosting and movie pages got Movie/ScreeningEvent; this
+    page — the only long-form original writing on the site — was skipped.
+    """
+
+    def setUp(self) -> None:
+        self.html = self.client.get(reverse("history")).content.decode()
+
+    def test_every_jsonld_block_is_valid_json(self):
+        # A trailing comma from a template {% if %} silently kills the whole
+        # block, and nothing on the page looks broken when it happens.
+        blocks = jsonld_blocks(self.html)
+        self.assertGreaterEqual(len(blocks), 3)
+
+    def test_emits_article_jsonld(self):
+        article = block_of_type(self.html, "Article")
+        self.assertIsNotNone(article, "no Article JSON-LD on the page")
+        self.assertEqual(article["headline"], "Going to the Movies in Fort Kent")
+        self.assertTrue(article["url"].endswith("/history/"))
+        self.assertEqual(article["datePublished"], "2026-08-23")
+        self.assertEqual(article["publisher"]["name"], "Fort Kent Cinema")
+
+    def test_article_cites_the_published_source(self):
+        # The page's whole claim to trust is that it shows its sources. The
+        # machine-readable copy should say so too.
+        citation = block_of_type(self.html, "Article")["citation"]
+        self.assertIn("Ornstein", citation["author"]["name"])
+        self.assertIn("Echoes", citation["isPartOf"]["name"])
+
+    def test_article_names_the_theatres_it_is_about(self):
+        # These are the long-tail queries. They appear nowhere in the title,
+        # H1 or description — `about` is where they become entities.
+        about = block_of_type(self.html, "Article")["about"]
+        names = {thing["name"] for thing in about}
+        self.assertEqual(
+            names,
+            {
+                "Savoy Theatre",
+                "Fort Kent Community Theatre",
+                "Fort Kent Drive-In",
+                "Century Theater",
+            },
+        )
+
+    def test_emits_breadcrumb_trail(self):
+        crumbs = block_of_type(self.html, "BreadcrumbList")
+        self.assertIsNotNone(crumbs, "no BreadcrumbList on the page")
+        items = crumbs["itemListElement"]
+        self.assertEqual([c["name"] for c in items], ["Home", "History"])
+        self.assertEqual([c["position"] for c in items], [1, 2])
+
+    def test_emits_video_object_for_the_society_film(self):
+        video = block_of_type(self.html, "VideoObject")
+        self.assertIsNotNone(video, "no VideoObject for the Society's film")
+        self.assertEqual(video["name"], FILM_HISTORY_VIDEO["title"])
+        self.assertIn(FILM_HISTORY_VIDEO["youtube_id"], video["embedUrl"])
+        self.assertIn(FILM_HISTORY_VIDEO["youtube_id"], video["thumbnailUrl"])
+        self.assertEqual(video["duration"], "PT26M44S")
+
+    def test_video_object_omits_the_upload_date_it_does_not_know(self):
+        # We know the year (2019) and nothing more. Padding that to
+        # "2019-01-01" would tell Google a date we made up — the same reason
+        # BlogPosting omits dateModified.
+        self.assertNotIn("uploadDate", block_of_type(self.html, "VideoObject"))
+
+
+class HistoryInternalLinkingTests(TestCase):
+    """Sitewide, exactly one link pointed here: the nav's "More" dropdown.
+
+    That is the failure mode that kept 77 blog posts out of the index. A page
+    nothing links to is a page Google will not index.
+    """
+
+    def test_footer_links_to_history_from_a_page_that_is_not_home(self):
+        # Scoped to the <footer> on purpose. The nav dropdown renders on every
+        # page too, so an unscoped "/history/ appears somewhere" assertion
+        # passes without the footer link existing at all.
+        html = self.client.get("/rentals/").content.decode()
+        footer = re.search(r"<footer\b.*?</footer>", html, re.S)
+        self.assertIsNotNone(footer, "no footer on the page")
+        self.assertIn("/history/", hrefs(footer.group(0)))
+
+    def test_homepage_body_promotes_the_history_page(self):
+        response = self.client.get("/")
+        self.assertTemplateUsed(response, "partials/cta_history.html")
+
+    def test_homepage_links_to_history_from_more_than_just_the_nav(self):
+        count = hrefs(self.client.get("/").content.decode()).count("/history/")
+        self.assertGreaterEqual(count, 3, "nav dropdown is still the only link")

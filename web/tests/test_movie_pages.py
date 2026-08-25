@@ -204,6 +204,24 @@ class InternalLinkingTests(MoviePageFixture):
 
         self.assertIn(f"/movies/{self.showing.slug}", seen)
 
+    def test_archive_page_links_to_the_history_page(self):
+        """The archive state is where a film's local run belongs in context.
+
+        It also gives /history/ 46 inbound internal links instead of one
+        dropdown entry.
+        """
+        html = self.client.get(f"/movies/{self.archived.slug}").content.decode()
+        archive = re.search(
+            r'<section class="movie-page-archive".*?</section>', html, re.S
+        )
+        self.assertIsNotNone(archive, "no archive section on the page")
+        self.assertIn("/history/", hrefs(archive.group(0)))
+
+    def test_now_showing_page_does_not_push_the_history_link(self):
+        """A film we are actually selling tickets to should sell tickets."""
+        html = self.client.get(f"/movies/{self.showing.slug}").content.decode()
+        self.assertNotIn("movie-page-archive-history", html)
+
 
 class MovieStructuredDataTests(MoviePageFixture):
     def test_emits_movie_jsonld(self):
