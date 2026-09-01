@@ -166,6 +166,33 @@ MEMBERSHIP_FAQ = [
     },
 ]
 
+# The current sponsored screening, or None between them.
+#
+# Everything a banner needs is already in the catalog — title, dates,
+# showtimes, poster, trailer — and web.views.sponsored_screening() reads it
+# from those rows so the homepage and Now Showing cannot disagree. What is
+# NOT in the catalog is who paid: cinema.Engagement has no sponsor field, and
+# SponsorshipInquiry records a business *asking*, not a booking it underwrote.
+# That gap is why this constant exists at all.
+#
+# `film_slug` is the join. It fails safe: no matching film, or a run that has
+# ended, and the banner simply does not render. Note that Film.generate_slug()
+# suffixes collisions, so booking a second copy of a title moves its slug and
+# quietly retires the banner — check here first if it stops appearing.
+#
+# Set to None once the run is over and nothing replaces it.
+SPONSORED_SCREENING = {
+    "film_slug": "the-land-before-time",
+    "sponsor": "AParadis Photography",
+    # The occasion, when there is one. A holiday weekend sells a family
+    # matinee better than the word "sponsored" does. Blank falls back to
+    # "Sponsored screening" in the template.
+    "eyebrow": "Labor Day Weekend",
+    # Confirmed by Brandon 2026-09-01. A price on the homepage is a promise we
+    # have to honour at the door — leave it out rather than guess.
+    "admission": "$4",
+}
+
 # Sponsorship program. A local business underwrites a screening; the tiers
 # stack, each one adding to the one before it.
 #

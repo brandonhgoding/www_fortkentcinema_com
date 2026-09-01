@@ -1,0 +1,55 @@
+{% comment %}
+  Homepage banner for a sponsored screening. `sponsored` comes from
+  web.views.sponsored_screening() and is None unless a sponsored run is on,
+  so this banner retires itself on the booking's last day — no follow-up
+  commit required.
+
+  Everything here except the sponsor's name is read from the Engagement, so
+  moving a showtime in the dashboard moves it here too. Nothing below should
+  restate a date or a time as literal copy; if it needs a fact the catalog
+  does not carry, that fact belongs in SPONSORED_SCREENING alongside the
+  sponsor, not hardcoded into this template.
+
+  Named for the pattern rather than the film — the sponsorship program will
+  produce more of these, and only the constant changes.
+
+  Unlike the other homepage CTAs this one is NOT hidden below 600px; see the
+  note in static/css/SponsoredCTA.css.
+{% endcomment %}
+{% if sponsored %}
+<a
+  href="{{ sponsored.url }}"
+  class="sponsored-cta"
+  data-track="sponsored_cta_click"
+  data-track-location="home"
+>
+  <span class="sponsored-cta__eyebrow">{{ sponsored.eyebrow|default:"Sponsored screening" }}</span>
+  <span class="sponsored-cta__title">{{ sponsored.film.title }}</span>
+
+  <span class="sponsored-cta__schedule">
+    {% for day in sponsored.days %}
+    <span class="sponsored-cta__day">
+      <span class="sponsored-cta__date">{{ day.date|date:"l, F j" }}</span>
+      <span class="sponsored-cta__times">
+        {% for time in day.times %}{{ time }}{% if not forloop.last %} &middot; {% endif %}{% endfor %}
+      </span>
+    </span>
+    {% endfor %}
+  </span>
+
+  {% if sponsored.admission %}
+  <span class="sponsored-cta__pricing">{{ sponsored.admission }} at the door</span>
+  {% endif %}
+
+  <span class="sponsored-cta__sponsor">
+    Sponsored by <strong>{{ sponsored.sponsor }}</strong>
+  </span>
+
+  <span class="sponsored-cta__link">Showtimes &amp; trailer &rarr;</span>
+</a>
+{% comment %}
+  Trailing divider inside the guard, matching cta_vote.html — without it,
+  removing the banner leaves two ornament dividers stacked together.
+{% endcomment %}
+{% include "partials/ornament_divider.html" %}
+{% endif %}

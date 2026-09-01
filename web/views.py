@@ -15,9 +15,17 @@ from django.views.generic import DetailView, ListView, TemplateView
 from audience.models import Subscriber
 from blog.models import BlogPost
 from cinema import voting as vote_engine
-from cinema.models import Film, Poll, PollStatus, StudioTitle
+from cinema.models import (
+    Engagement,
+    EngagementStatus,
+    Film,
+    Poll,
+    PollStatus,
+    StudioTitle,
+)
 from web.constants import (
     FILM_HISTORY_VIDEO,
+    SPONSORED_SCREENING,
     MEMBERSHIP,
     MEMBERSHIP_FAQ,
     SAVOY_PLAYBILLS,
@@ -29,6 +37,7 @@ from web.forms import SponsorshipInquiryForm
 from web.services.cinema_data import (
     CINEMA_TZ,
     _format_runtime,
+    _format_showtime,
     get_now_showing,
     get_coming_soon,
     get_calendar_month,
@@ -59,6 +68,10 @@ class HomeView(TemplateView):
         initial_year, initial_month = _initial_calendar_month(coming_soon)
         ctx["initial_year"] = initial_year
         ctx["initial_month"] = initial_month
+
+        # Sponsored-screening banner. None unless a sponsored run is on, so
+        # the banner retires itself on the booking's last day.
+        ctx["sponsored"] = sponsored_screening()
 
         # Self-expiring vote CTA: None unless a poll is OPEN, so the banner
         # retires itself when the round closes.
@@ -110,6 +123,58 @@ class HomeView(TemplateView):
         )
 
         return ctx
+
+
+def sponsored_screening():
+    """The sponsored run currently on, or None.
+
+    Read from the catalog rather than restated. SPONSORED_SCREENING names the
+    film and the business that paid for it; everything else — title, dates,
+    showtimes, poster, trailer — comes from the Engagement and its Showtime
+    rows. That is what stops this banner and Now Showing from disagreeing, and
+    what lets the booking's own `end_date` retire the banner with no commit.
+
+    Every miss returns None rather than raising: the homepage must not 500
+    because a slug moved or a run was cancelled.
+    """
+    config = SPONSORED_SCREENING
+    if not config:
+        return None
+
+    film = Film.objects.filter(slug=config["film_slug"]).first()
+    if film is None:
+        return None
+
+    engagement = (
+        Engagement.objects.filter(
+            engagement_films__film=film,
+            status=EngagementStatus.CONFIRMED,
+            end_date__gte=timezone.localdate(),
+        )
+        .order_by("start_date")
+        .first()
+    )
+    if engagement is None:
+        return None
+
+    # Grouped in one pass; `showtimes` is ordered by starts_at, so a day is
+    # closed as soon as the next one begins.
+    days: list[dict] = []
+    for showtime in engagement.showtimes.filter(is_cancelled=False):
+        local_date = showtime.starts_at.astimezone(CINEMA_TZ).date()
+        if not days or days[-1]["date"] != local_date:
+            days.append({"date": local_date, "times": []})
+        days[-1]["times"].append(_format_showtime(showtime.starts_at))
+
+    return {
+        "film": film,
+        "engagement": engagement,
+        "sponsor": config["sponsor"],
+        "eyebrow": config.get("eyebrow", ""),
+        "admission": config.get("admission", ""),
+        "days": days,
+        "url": film.get_absolute_url(),
+    }
 
 
 def _initial_calendar_month(coming_soon):
