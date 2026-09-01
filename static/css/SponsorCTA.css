@@ -1,0 +1,37 @@
+/* Homepage teaser for /sponsor/. Sits directly under the history CTA and
+ * borrows its quiet, centred shape deliberately — two calm blocks at the foot
+ * of the page, after the gift-card and open-mic CTAs have done the shouting.
+ * The gold rule is the one thing that separates it from its neighbour. */
+
+.sponsor-cta {
+  padding: clamp(2.5rem, 6vw, 4rem) 1.5rem;
+  text-align: center;
+}
+
+.sponsor-cta__content {
+  max-width: 46rem;
+  margin: 0 auto;
+}
+
+.sponsor-cta__eyebrow {
+  margin: 0 0 .5rem;
+  font-family: 'Oswald', 'Arial Narrow', sans-serif;
+  font-size: .8rem;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--color-gold, #c9a227);
+}
+
+.sponsor-cta__title {
+  margin: 0 0 1rem;
+  font-family: 'Oswald', 'Arial Narrow', sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+  letter-spacing: .04em;
+}
+
+.sponsor-cta__body {
+  margin: 0 0 1.75rem;
+  font-size: clamp(1rem, 2.4vw, 1.1rem);
+  line-height: 1.65;
+}

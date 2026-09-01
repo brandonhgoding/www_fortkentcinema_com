@@ -50,6 +50,14 @@ legacy_urlpatterns = [
         RedirectView.as_view(url="/", permanent=True),
         name="legacy_classics",
     ),
+    # The Silents Synced one-off screening played 2026-09-01 and its page was
+    # removed the same day. It was in the sitemap and carried its own inbound
+    # links, so it redirects rather than 404s.
+    re_path(
+        r"^events/silents-synced-a-woman-of-the-world/?$",
+        RedirectView.as_view(url="/", permanent=True),
+        name="legacy_event_silents_synced",
+    ),
     # No modern contact page; address and phone are in the homepage footer.
     re_path(
         r"^contact-fort-kent-cinema/?$",

@@ -1,5 +1,6 @@
-/* Homepage vote CTA. Shares the marquee vocabulary of EventCTA.css but reads
-   as an invitation rather than an announcement — this one asks for an action. */
+/* Homepage vote CTA. Shares the marquee vocabulary of the retired EventCTA.css
+   but reads as an invitation rather than an announcement — this one asks for an
+   action. */
 .vote-cta {
   display: flex;
   flex-direction: column;

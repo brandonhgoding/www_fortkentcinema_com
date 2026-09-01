@@ -5,6 +5,20 @@
 {% block description %}Put your business behind a movie. Local businesses sponsor screenings at Fort Kent Cinema — cover the film, the admission, even the popcorn, and we tell the whole town who made it happen.{% endblock %}
 {% block og_title %}Sponsor a Film | Fort Kent Cinema{% endblock %}
 {% block og_description %}Local businesses sponsor screenings at Maine's northernmost picture show. Browse what we can book and start a conversation.{% endblock %}
+{% comment %}
+  The page's own card instead of the site-wide one, rendered by
+  cinema/social_cards/promo.py off the same palette, bulbs and pine band as
+  the showtime cards. Regenerate with `manage.py render_promo_cards`.
+{% endcomment %}
+{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/og-sponsor.jpg' %}{% endblock %}
+{% comment %}
+  ?films=all is the no-JavaScript escape hatch for the film picker: the same
+  page, plus ~1,140 <option> elements. It is the heavy twin of a page that
+  is already indexed, so it stays out of the index. `follow`, not `nofollow` —
+  every link on it is a link worth crawling, and they all exist on /sponsor/
+  anyway.
+{% endcomment %}
+{% block robots %}{% if films_all %}noindex, follow{% else %}index, follow{% endif %}{% endblock %}
 
 {% block extra_head %}
   {% comment %}
@@ -13,6 +27,117 @@
     keeps working as — the plain inline form it was before.
   {% endcomment %}
   <script>document.documentElement.classList.add("js");</script>
+
+  {% comment %}
+    Three separate blocks rather than one @graph, matching /history/: each is
+    independently valid, so a mistake in one does not invalidate the others.
+
+    The page had none of this. base.html's MovieTheater says the cinema
+    exists; it says nothing about the thing this page actually sells, which
+    is a priced service with three named levels.
+  {% endcomment %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "name": "Film Sponsorship",
+    "serviceType": "Film sponsorship",
+    "description": "Local businesses sponsor a screening at Fort Kent Cinema — covering the cost of booking the film, and optionally admission and popcorn — in exchange for credit on the marquee, on screen before the film, and in the cinema's social posts.",
+    "url": "{{ request.scheme }}://{{ request.get_host }}{% url 'sponsor' %}",
+    "provider": {
+      "@type": "MovieTheater",
+      "name": "{{ site_config.cinema.name|escapejs }}",
+      "url": "{{ request.scheme }}://{{ request.get_host }}/",
+      "telephone": "{{ site_config.cinema.phone|escapejs }}",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "{{ site_config.cinema.address.street|escapejs }}",
+        "addressLocality": "{{ site_config.cinema.address.city|escapejs }}",
+        "addressRegion": "{{ site_config.cinema.address.state|escapejs }}",
+        "postalCode": "{{ site_config.cinema.address.zip|escapejs }}",
+        "addressCountry": "US"
+      }
+    },
+    {% comment %}
+      Who this is for and where. Neither is in the title or the H1, and both
+      are what a business in the valley would actually type.
+    {% endcomment %}
+    "audience": {
+      "@type": "BusinessAudience",
+      "name": "Local businesses and organizations"
+    },
+    "areaServed": [
+      {"@type": "City", "name": "Fort Kent", "containedInPlace": {"@type": "State", "name": "Maine"}},
+      {"@type": "AdministrativeArea", "name": "Aroostook County, Maine"},
+      {"@type": "AdministrativeArea", "name": "St. John Valley, Maine"}
+    ],
+    {% comment %}
+      minPrice, not price. Every tier on this page is quoted "from $X" —
+      the tier note says outright that the final number depends on the
+      title — and a flat `price` would be a firm quote we do not honour.
+      PriceSpecification.minPrice is the vocabulary for a starting price.
+    {% endcomment %}
+    "offers": [
+      {% for tier in tiers %}{
+        "@type": "Offer",
+        "name": "{{ tier.name|escapejs }}",
+        "description": "{{ tier.eyebrow|escapejs }}: {% for item in tier.includes %}{{ item|escapejs }}{% if not forloop.last %}; {% endif %}{% endfor %}.",
+        "url": "{{ request.scheme }}://{{ request.get_host }}{% url 'sponsor' %}#tiers",
+        "availability": "https://schema.org/InStock",
+        "priceSpecification": {
+          "@type": "PriceSpecification",
+          "minPrice": {{ tier.price }},
+          "priceCurrency": "USD",
+          "valueAddedTaxIncluded": false
+        }
+      }{% if not forloop.last %},{% endif %}{% endfor %}
+    ]
+  }
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Fort Kent Cinema",
+        "item": "{{ request.scheme }}://{{ request.get_host }}/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Sponsor a Film",
+        "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'sponsor' %}"
+      }
+    ]
+  }
+  </script>
+
+  {% comment %}
+    SPONSORSHIP_FAQ (web/constants.py) renders as a visible <dl> further down
+    this page as well. Google penalises FAQ markup whose answers are not on
+    the page, so both renderings read from the same list — same as
+    /membership/.
+  {% endcomment %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {% for faq in faqs %}{
+        "@type": "Question",
+        "name": "{{ faq.question|escapejs }}",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "{{ faq.answer|escapejs }}"
+        }
+      }{% if not forloop.last %},{% endif %}{% endfor %}
+    ]
+  }
+  </script>
 {% endblock %}
 
 {% block content %}
@@ -177,6 +302,41 @@
     </section>
 
     {% comment %}
+      The questions a business actually asks before it calls. They were being
+      answered on the phone, one at a time, and nowhere on the page — which
+      also meant the page had no text at all on renting, pricing that moves
+      with the title, or whether the public gets in.
+
+      A <dl>, not a details/summary accordion: every answer is short, and
+      collapsing them would hide the page's only long-tail text behind a
+      click. Answers here and in the FAQPage block above both render
+      SPONSORSHIP_FAQ, so they cannot drift.
+    {% endcomment %}
+    <section class="sponsor-faq" id="faq" aria-labelledby="sponsor-faq-title">
+      <header class="sponsor-faq__header">
+        <p class="sponsor-faq__eyebrow">Before you ask</p>
+        <h2 class="sponsor-faq__title" id="sponsor-faq-title">Questions we get</h2>
+      </header>
+      <dl class="sponsor-faq__list">
+        {% for faq in faqs %}
+          <div class="sponsor-faq__item">
+            <dt class="sponsor-faq__question">{{ faq.question }}</dt>
+            <dd class="sponsor-faq__answer">{{ faq.answer }}</dd>
+          </div>
+        {% endfor %}
+      </dl>
+      {% comment %}
+        The rental link is the one answer that points somewhere else, so it
+        gets a real link as well as the prose above — /rentals/ is a page a
+        reader who wants the room to themselves should land on.
+      {% endcomment %}
+      <p class="sponsor-faq__aside">
+        Looking to book the theater privately instead?
+        <a href="{% url 'rentals' %}">See private rentals</a>.
+      </p>
+    </section>
+
+    {% comment %}
       This section IS the drawer. Nothing here hides it: the .js class that
       JavaScript puts on <html> is what turns it into one, so with scripting
       off it stays the plain inline form at the foot of the page that it has
@@ -253,7 +413,17 @@
         if (id) {
           const select = field("studio_title");
           if (select) {
+            // The option list is fetched on demand, so the film they just
+            // clicked is usually not in the DOM yet. The row already carries
+            // everything an <option> needs, so build it here rather than
+            // blocking the drawer on a request. `selected` is remembered so
+            // that if the full list does arrive later and replaces these
+            // options, the after-swap hook can put the choice back.
+            if (!select.querySelector(`option[value="${id}"]`)) {
+              select.add(new Option(el.dataset.titleName, id));
+            }
             select.value = id;
+            select.dataset.selected = id;
           }
           const year = el.dataset.titleYear;
           this.filmName = year
@@ -284,6 +454,15 @@
             first.focus();
           }
         });
+      },
+
+      // Asks the <select> to pull its full option list. The element's own
+      // hx-trigger has `once` on it, so a repeat dispatch costs nothing.
+      loadFilmOptions() {
+        const select = this.$refs.drawer.querySelector('[name="studio_title"]');
+        if (select) {
+          select.dispatchEvent(new Event("sponsor-films-needed"));
+        }
       },
 
       close() {

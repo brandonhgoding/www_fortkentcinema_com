@@ -27,8 +27,16 @@
       <span class="sponsor-inquire__label">Film</span>
       <p class="sponsor-inquire__film-name"
          x-text="filmName || 'No particular film yet'"></p>
+      {% comment %}
+        Opening the list is also the moment the deferred options are worth
+        fetching, so this dispatches the event the <select> listens for (see
+        SponsorshipInquiryForm._defer_film_choices). HTMX's `once` makes a
+        second click a no-op, and the select's own `focus` trigger covers
+        anyone who tabs straight into it instead.
+      {% endcomment %}
       <button type="button" class="sponsor-inquire__film-change"
-              x-show="!showFilmSelect" @click="showFilmSelect = true">
+              x-show="!showFilmSelect"
+              @click="showFilmSelect = true; loadFilmOptions()">
         <span x-text="filmName ? 'Choose a different film' : 'Pick one from the list'"></span>
       </button>
     </div>
@@ -38,6 +46,22 @@
              {% if field.name == 'studio_title' %}:class="{ 'is-open': showFilmSelect }"{% endif %}>
         <span class="sponsor-inquire__label">{{ field.label }}</span>
         {{ field }}
+        {% if field.name == 'studio_title' and not films_all %}
+          {% comment %}
+            With scripting off there is nothing to fetch the deferred options
+            with, so this reloads the page with all of them rendered inline.
+            <noscript> renders only when scripting is disabled, so nobody
+            else ever sees it — the same trick the catalog's Search/Clear
+            buttons use. rel="nofollow" because ?films=all is a heavier copy
+            of a page Google already has.
+          {% endcomment %}
+          <noscript>
+            <a class="sponsor-inquire__film-all" rel="nofollow"
+               href="{% url 'sponsor' %}?films=all#inquire">
+              Show the full film list
+            </a>
+          </noscript>
+        {% endif %}
         {% if field.errors %}
           <span class="sponsor-inquire__field-error">{{ field.errors|join:" " }}</span>
         {% endif %}

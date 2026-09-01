@@ -639,3 +639,93 @@
   font-size: 1.05rem;
   color: var(--color-cream);
 }
+
+/* --- FAQ ------------------------------------------------------------------
+ * Same centred header rhythm as .sponsor-tiers, and the gold-on-charcoal
+ * card treatment of .sponsor-tier, so the block reads as another section of
+ * this page rather than something bolted on. Two columns where there is
+ * room: the answers are short enough that one long column would leave a lot
+ * of empty right-hand page.
+ */
+
+.sponsor-faq {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.sponsor-faq__header {
+  text-align: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.sponsor-faq__eyebrow {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--color-cream-muted);
+  margin-bottom: var(--spacing-xs);
+}
+
+.sponsor-faq__title {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  letter-spacing: 4px;
+  color: var(--color-gold);
+  text-shadow: 0 0 15px var(--color-gold-glow);
+}
+
+.sponsor-faq__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: var(--spacing-lg);
+  margin: 0;
+}
+
+.sponsor-faq__item {
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-gold-dim, rgba(201, 162, 39, 0.3));
+  background: var(--color-bg-charcoal);
+}
+
+.sponsor-faq__question {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  color: var(--color-gold);
+  margin-bottom: var(--spacing-sm);
+}
+
+/* <dd> carries a browser default indent that would knock every answer out of
+ * line with the question above it. */
+.sponsor-faq__answer {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--color-cream);
+}
+
+.sponsor-faq__aside {
+  margin-top: var(--spacing-lg);
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--color-cream-muted);
+}
+
+.sponsor-faq__aside a {
+  color: var(--color-gold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* The no-JavaScript link to ?films=all. Only ever painted when scripting is
+ * off, so it needs no .js guard of its own — <noscript> is the guard. */
+.sponsor-inquire__film-all {
+  display: inline-block;
+  margin-top: var(--spacing-xs);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--color-gold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

@@ -104,6 +104,16 @@ class LegacyPageRedirectTests(TestCase):
         resp = self.client.get("/classics")
         self.assertRedirects(resp, "/", status_code=301, target_status_code=200)
 
+    def test_retired_event_page_redirects_home(self):
+        """The Silents Synced screening played 2026-09-01 and its page came down
+        the same day. It was in the sitemap, so the URL must not 404."""
+        resp = self.client.get("/events/silents-synced-a-woman-of-the-world")
+        self.assertRedirects(resp, "/", status_code=301, target_status_code=200)
+
+    def test_retired_event_page_with_trailing_slash_redirects(self):
+        resp = self.client.get("/events/silents-synced-a-woman-of-the-world/")
+        self.assertRedirects(resp, "/", status_code=301, target_status_code=200)
+
 
 class LegacyRedirectsDoNotShadowLiveRoutesTests(TestCase):
     def test_modern_blog_routes_still_resolve(self):
