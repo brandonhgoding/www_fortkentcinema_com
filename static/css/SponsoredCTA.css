@@ -1,0 +1,162 @@
+/* Homepage banner for a sponsored screening.
+ *
+ * Descended from the retired EventCTA.css (see `git show
+ * 6caa0ac:static/css/EventCTA.css`), which held this same slot under the
+ * hero. Two deliberate differences from its ancestor:
+ *
+ * 1. The schedule is a ROW OF DAYS, not a single date/time line. A sponsored
+ *    run is several days of matinees, and stacking six showtimes vertically
+ *    pushed Now Showing below the fold on a phone.
+ *
+ * 2. It carries a sponsor credit. That line is the reason the whole banner
+ *    exists — a business paid for the run, and cinema.Engagement has nowhere
+ *    to record it — so it is styled to read as a credit rather than fine
+ *    print, but stays quieter than the title.
+ *
+ * DELIBERATELY NOT HIDDEN ON PHONES. static/css/home.css hides .hero,
+ * .open-mic-cta, .gift-card-cta and .blog below 600px — inherited from the
+ * old React app, which only mounted those components above a matchMedia
+ * check. This banner is intentionally absent from that rule: a holiday
+ * matinee is aimed at families who are overwhelmingly on phones, and hiding
+ * it there would cost most of its reach. The omission is a decision, not an
+ * oversight — please don't "fix" it.
+ */
+
+.sponsored-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+  text-align: center;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--color-bg-charcoal-dark) 0%, var(--color-bg-dark) 100%);
+  border-top: 1px solid var(--color-gold-warm);
+  border-bottom: 1px solid var(--color-gold-warm);
+  padding: var(--spacing-xl) var(--spacing-lg);
+  transition: background var(--transition-base);
+}
+
+.sponsored-cta:hover {
+  background: linear-gradient(
+    135deg,
+    var(--color-bg-charcoal) 0%,
+    var(--color-bg-charcoal-dark) 100%
+  );
+}
+
+.sponsored-cta:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: -4px;
+}
+
+.sponsored-cta__eyebrow {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--color-cream-muted);
+}
+
+.sponsored-cta__title {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  letter-spacing: 6px;
+  color: var(--color-gold);
+  text-shadow: 0 0 10px var(--color-gold-glow);
+  line-height: 1.1;
+}
+
+/* The days sit in a row, each a small block of date-over-times. `wrap` is
+   load-bearing: a four- or five-day run has to fold rather than squeeze. */
+.sponsored-cta__schedule {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--spacing-md) var(--spacing-lg);
+  margin-top: var(--spacing-sm);
+}
+
+.sponsored-cta__day {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 8rem;
+}
+
+.sponsored-cta__date {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  color: var(--color-cream);
+}
+
+.sponsored-cta__times {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--color-cream-muted);
+}
+
+.sponsored-cta__pricing {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-cream-muted);
+  margin-top: var(--spacing-xs);
+}
+
+/* The credit. Quieter than the title, but the sponsor's name itself is
+   lifted to cream so it reads as a name and not as a disclaimer. */
+.sponsored-cta__sponsor {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  letter-spacing: 1px;
+  color: var(--color-cream-muted);
+}
+
+.sponsored-cta__sponsor strong {
+  font-weight: 600;
+  color: var(--color-cream);
+}
+
+.sponsored-cta__link {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  margin-top: var(--spacing-xs);
+}
+
+.sponsored-cta:hover .sponsored-cta__link {
+  color: var(--color-gold-light);
+}
+
+@media (max-width: 600px) {
+  .sponsored-cta {
+    padding: var(--spacing-lg) var(--spacing-md);
+  }
+
+  .sponsored-cta__title {
+    font-size: 1.5rem;
+    letter-spacing: 4px;
+  }
+
+  /* Two days across rather than one: three stacked day-blocks plus the
+     credit is taller than the viewport's top half on a phone. */
+  .sponsored-cta__schedule {
+    gap: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .sponsored-cta__day {
+    min-width: 7rem;
+  }
+
+  .sponsored-cta__date {
+    font-size: 1rem;
+  }
+
+  .sponsored-cta__times {
+    font-size: 0.95rem;
+  }
+}
