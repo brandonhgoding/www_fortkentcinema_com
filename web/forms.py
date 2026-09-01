@@ -1,5 +1,6 @@
 from cinema.models import SponsorshipInquiry, StudioTitle
 from django import forms
+from django.urls import reverse_lazy
 
 from .constants import SPONSORSHIP_TIERS
 
@@ -24,7 +25,9 @@ class SponsorshipInquiryForm(forms.ModelForm):
         # labels/widgets are set there rather than here — setting them twice
         # would invite the two copies to drift apart.
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(
+        self, *args, defer_film_choices: bool = False, **kwargs
+    ) -> None:
         super().__init__(*args, **kwargs)
         self.fields["tier"] = forms.ChoiceField(
             required=False,
@@ -52,6 +55,56 @@ class SponsorshipInquiryForm(forms.ModelForm):
             error_messages={
                 "max_length": "Please keep this under 2,000 characters.",
             },
+        )
+
+        if defer_film_choices:
+            self._defer_film_choices()
+
+    def _defer_film_choices(self) -> None:
+        """Render the film <select> with only the option that is selected.
+
+        The full list is ~1,140 <option> elements — 56KB, more than half the
+        HTML of /sponsor/ — shipped to everyone before anyone opens the
+        inquiry drawer. The rest arrive from /sponsor/films the first time a
+        reader asks to browse them, and `?films=all` renders them inline for
+        anyone without JavaScript.
+
+        Only the *rendering* is trimmed. `queryset` is deliberately left
+        alone, so a POST is still validated against every available title and
+        a forged or unavailable pk is still rejected.
+        """
+        field = self.fields["studio_title"]
+        choices = [("", field.empty_label)]
+
+        # A bound form (a validation error re-render) carries the pick in
+        # `data`; an unbound one carries it in `initial` when the reader
+        # arrived on a URL that named a film. Either way the chosen option
+        # has to survive, or the select would silently forget it.
+        selected = self.data.get("studio_title") or self.initial.get(
+            "studio_title"
+        )
+        if selected:
+            chosen = field.queryset.filter(pk=selected).first()
+            if chosen is not None:
+                choices.append(
+                    (chosen.pk, field.label_from_instance(chosen))
+                )
+        field.widget.choices = choices
+
+        field.widget.attrs.update(
+            {
+                # innerHTML, not beforeend: the swap has to replace the
+                # trimmed list rather than append to it, or the option above
+                # would appear twice. after-swap puts the selection back,
+                # since replacing the options drops it.
+                "hx-get": reverse_lazy("sponsor_films"),
+                "hx-trigger": "focus once, sponsor-films-needed once",
+                "hx-swap": "innerHTML",
+                "hx-target": "this",
+                "hx-on::after-swap": (
+                    "this.value = this.dataset.selected || ''"
+                ),
+            }
         )
 
     @property

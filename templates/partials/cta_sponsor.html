@@ -1,0 +1,26 @@
+{% comment %}
+  Homepage teaser for /sponsor/.
+
+  Half its job is the internal link — /sponsor/ was reachable only from the
+  nav's "More" dropdown, the same one-link-sitewide position /history/ was in
+  before its CTA — and the other half is that the people it is aimed at are
+  not browsing showtimes when they think about it. So it leads with the named
+  business and the concrete thing they got, the way the sponsor page itself
+  does, rather than "support your local cinema".
+{% endcomment %}
+<section class="sponsor-cta" aria-labelledby="sponsor-cta-title">
+  <div class="sponsor-cta__content">
+    <p class="sponsor-cta__eyebrow">For local business</p>
+    <h2 class="sponsor-cta__title" id="sponsor-cta-title">PUT YOUR NAME ON THE MARQUEE</h2>
+    <p class="sponsor-cta__body">
+      A.H. Custom Carpentry covered the cost of bringing <em>The Wild Robot</em>
+      to Fort Kent. Their name went out with every post about the show, onto
+      the marquee on Hall Street, and onto the screen before the lights went
+      down. Pick a film, we book it, and the credit is yours &mdash; from $299.
+    </p>
+    <a href="{% url 'sponsor' %}" class="btn btn-ticket"
+       data-track="sponsor_click" data-track-location="home">
+      Sponsor a film
+    </a>
+  </div>
+</section>

@@ -32,7 +32,6 @@
 
 /* 4. Components. */
 @import '../../static/css/Hero.css';
-@import '../../static/css/EventCTA.css';
 @import '../../static/css/NowShowing.css';
 @import '../../static/css/MovieCard.css';
 @import '../../static/css/MovieScheduleCard.css';
@@ -40,6 +39,7 @@
 @import '../../static/css/ComingSoon.css';
 @import '../../static/css/GiftCardCTA.css';
 @import '../../static/css/HistoryCTA.css';
+@import '../../static/css/SponsorCTA.css';
 @import '../../static/css/VoteCTA.css';
 @import '../../static/css/Blog.css';
 @import '../../static/css/BlogCard.css';
@@ -55,7 +55,6 @@
 @import '../../static/css/MembershipTiers.css';
 @import '../../static/css/MembershipFAQ.css';
 @import '../../static/css/MoviePage.css';
-@import '../../static/css/EventPage.css';
 @import '../../static/css/PrivateRentalsPage.css';
 @import '../../static/css/SponsorPage.css';
 @import '../../static/css/HistoryPage.css';

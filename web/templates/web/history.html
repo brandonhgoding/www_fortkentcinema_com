@@ -407,8 +407,8 @@
     </section>
 
     {% comment %}
-      Trailer-facade pattern, same as partials/now_showing.html and the Silents
-      Synced page: the iframe src stays empty until `playing` flips, so the page
+      Trailer-facade pattern, same as partials/now_showing.html: the iframe src
+      stays empty until `playing` flips, so the page
       makes no request to YouTube unless someone asks. The plain link below it
       is the escape hatch for when an embed is blocked and shows a dead grey box.
     {% endcomment %}

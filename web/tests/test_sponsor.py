@@ -568,9 +568,30 @@ class SponsorDrawerTests(TestCase):
         # Alpine sets its value; the server keeps validating it. Dropping it
         # for a bare hidden input would mean no-JS visitors could not pick a
         # film at all.
+        #
+        # This used to assert that every option was rendered too. It no
+        # longer is: the list was ~1,140 options and more than half the
+        # page's HTML, so it is fetched on demand now (see
+        # SponsorshipInquiryForm._defer_film_choices). The intent above is
+        # unchanged and still tested — by the ?films=all assertion below and
+        # by SponsorDeferredFilmListTests in test_sponsor_seo.py, which
+        # checks that an un-rendered film is still accepted on POST.
         html = self._page()
         self.assertIn('name="studio_title"', html)
-        self.assertIn('value="%d"' % self.jaws.pk, html)
+        self.assertIn(reverse("sponsor_films"), html)
+
+    def test_visitors_without_javascript_can_still_reach_every_film(self):
+        # The <noscript> escape hatch for the deferred list. Without this,
+        # trimming the options would have quietly removed the only way a
+        # no-JS reader can name a film.
+        html = self._page()
+        self.assertIn("<noscript>", html)
+        self.assertIn("films=all", html)
+
+        full = self.client.get(
+            reverse("sponsor"), {"films": "all"}
+        ).content.decode()
+        self.assertIn('value="%d"' % self.jaws.pk, full)
 
     def test_tier_buttons_carry_their_tier(self):
         html = self._page()

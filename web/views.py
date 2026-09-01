@@ -17,11 +17,11 @@ from blog.models import BlogPost
 from cinema import voting as vote_engine
 from cinema.models import Film, Poll, PollStatus, StudioTitle
 from web.constants import (
-    EVENT_SILENTS_SYNCED,
     FILM_HISTORY_VIDEO,
     MEMBERSHIP,
     MEMBERSHIP_FAQ,
     SAVOY_PLAYBILLS,
+    SPONSORSHIP_FAQ,
     SPONSORSHIP_POPCORN_CAP,
     SPONSORSHIP_TIERS,
 )
@@ -59,10 +59,6 @@ class HomeView(TemplateView):
         initial_year, initial_month = _initial_calendar_month(coming_soon)
         ctx["initial_year"] = initial_year
         ctx["initial_month"] = initial_month
-
-        # Special-event CTA. Renders only while the show is still ahead of us,
-        # so the banner retires itself the night it plays.
-        ctx["silents_synced"] = silents_synced_event()
 
         # Self-expiring vote CTA: None unless a poll is OPEN, so the banner
         # retires itself when the round closes.
@@ -114,18 +110,6 @@ class HomeView(TemplateView):
         )
 
         return ctx
-
-
-def silents_synced_event():
-    """The Silents Synced event constants plus `is_upcoming`.
-
-    Shared by the event page and the homepage CTA so the two can never disagree
-    about whether the show has happened. `is_upcoming` flips at showtime, which
-    is what lets the CTA expire without a code change.
-    """
-    event = dict(EVENT_SILENTS_SYNCED)
-    event["is_upcoming"] = timezone.now() < event["starts_at"]
-    return event
 
 
 def _initial_calendar_month(coming_soon):
@@ -229,27 +213,6 @@ class MembershipView(TemplateView):
 
 class RentalsView(TemplateView):
     template_name = "web/rentals.html"
-
-
-class SilentsSyncedEventView(TemplateView):
-    """/events/silents-synced-a-woman-of-the-world.
-
-    A hand-authored page for a one-night special event. The pairing — a 1925
-    silent rescored to Pearl Jam — is the entire pitch, and the generic
-    /movies/<slug> layout has nowhere to put it.
-
-    The page outlives the screening: it keeps its own ranking history and its
-    own inbound links, so it becomes an archive rather than a 404. Only the
-    homepage CTA expires. If it is ever retired, it must 301 — see
-    web/redirects.py.
-    """
-
-    template_name = "web/event_silents_synced.html"
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["event"] = silents_synced_event()
-        return ctx
 
 
 class AboutView(TemplateView):
@@ -579,13 +542,40 @@ class SponsorView(SponsorCatalogMixin, ListView):
                 "q": self.request.GET.get("q", ""),
                 "selected_rating": self.request.GET.get("rating", ""),
                 "selected_decade": self.request.GET.get("decade", ""),
+                "faqs": SPONSORSHIP_FAQ,
                 # A bound form arrives via kwargs when SponsorInquiryView
                 # re-renders after a validation error; otherwise start empty.
-                "form": kwargs.get("form") or SponsorshipInquiryForm(),
+                "form": kwargs.get("form") or self.blank_form(),
                 "sent": self.request.GET.get("sent") == "1",
+                # Drives the noindex on ?films=all — see the block in
+                # web/sponsor.html. One page, two renderings of the same
+                # select, and only the light one belongs in the index.
+                "films_all": self.wants_all_films,
             }
         )
         return ctx
+
+    @property
+    def wants_all_films(self) -> bool:
+        """Whether to render all ~1,140 film options inline.
+
+        The no-JavaScript escape hatch. With scripting on, the options are
+        fetched from /sponsor/films on demand; with it off there is nothing to
+        fetch with, so a plain link in <noscript> reloads the page with the
+        full list in it.
+        """
+        return self.request.GET.get("films") == "all"
+
+    def blank_form(self) -> SponsorshipInquiryForm:
+        initial = {}
+        # Lets a link name a film without any JavaScript — the same thing the
+        # catalog's Sponsor links do through Alpine when it is available.
+        film = self.request.GET.get("film")
+        if film and film.isdigit():
+            initial["studio_title"] = film
+        return SponsorshipInquiryForm(
+            initial=initial, defer_film_choices=not self.wants_all_films
+        )
 
 
 class SponsorCatalogView(SponsorCatalogMixin, ListView):
@@ -614,6 +604,30 @@ class SponsorCatalogView(SponsorCatalogMixin, ListView):
         return response
 
 
+class SponsorFilmOptionsView(ListView):
+    """GET /sponsor/films — the inquiry form's film <option> list.
+
+    Exists so /sponsor/ can ship without it. The list is ~1,140 options and
+    was 56KB of every page load, for a control most visitors never open.
+
+    Unpaginated on purpose: this is one <select>, and a reader who opens it
+    expects the whole catalog. Same noindex treatment as the catalog
+    fragment — it is a bare fragment with no <head> to put a meta tag in, and
+    /sponsor/ is the page that should rank.
+    """
+
+    template_name = "partials/sponsor_film_options.html"
+    context_object_name = "titles"
+
+    def get_queryset(self):
+        return StudioTitle.objects.available().order_by("title", "pk")
+
+    def render_to_response(self, context, **response_kwargs):
+        response = super().render_to_response(context, **response_kwargs)
+        response["X-Robots-Tag"] = "noindex, nofollow"
+        return response
+
+
 class SponsorInquiryView(SponsorView):
     """POST /sponsor/inquire.
 
@@ -633,7 +647,12 @@ class SponsorInquiryView(SponsorView):
         return redirect("sponsor")
 
     def post(self, request, *args, **kwargs):
-        form = SponsorshipInquiryForm(request.POST)
+        # Deferred here too, so the error re-render is as light as the first
+        # paint. `defer_film_choices` only trims what gets rendered — the
+        # queryset validation below still sees every available title.
+        form = SponsorshipInquiryForm(
+            request.POST, defer_film_choices=not self.wants_all_films
+        )
         sent_url = f"{reverse('sponsor')}?sent=1#inquire"
 
         if form.is_bot:
