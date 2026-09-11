@@ -216,7 +216,7 @@ Both models in one migration, because a member without terms is not a thing the 
 - Consumes: `add_months` from Task 2
 - Produces:
   - `Member(first_name, last_name, email, phone, notes, created_at, updated_at)`, `Meta.ordering = ["last_name", "first_name"]`, `full_name` property
-  - `MembershipTerm(member, tier, started_on, expires_on, price_paid, purchased_at, notes, created_at)`, `related_name="terms"`, `Meta.ordering = ["-started_on"]`, `default_expiry(started_on, duration_months)` classmethod
+  - `MembershipTerm(member, tier, started_on, expires_on, price_paid, purchased_at, notes, created_at)`, `related_name="terms"`, `Meta.ordering = ["-started_on"]`, `default_expiry(started_on, duration_months)` staticmethod
   - Tasks 4-9 rely on all of these names
 
 - [ ] **Step 1: Write the failing tests**
