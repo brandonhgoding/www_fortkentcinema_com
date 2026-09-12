@@ -38,19 +38,19 @@ Splitting first means every later task adds a file instead of growing one. Same 
 - Consumes: nothing
 - Produces: `from audience.models import Subscriber, SubscriberStatus` keeps working — every later task and the existing `web/views.py:15` depend on it
 
-- [ ] **Step 1: Confirm the current tests pass before touching anything**
+- [x] **Step 1: Confirm the current tests pass before touching anything**
 
 Run: `.venv/bin/python manage.py test audience -v 2`
 Expected: PASS, 5 tests.
 
-- [ ] **Step 2: Move the file**
+- [x] **Step 2: Move the file**
 
 ```bash
 mkdir -p audience/models
 git mv audience/models.py audience/models/subscriber.py
 ```
 
-- [ ] **Step 3: Write the package `__init__.py`**
+- [x] **Step 3: Write the package `__init__.py`**
 
 Create `audience/models/__init__.py`:
 
@@ -64,22 +64,22 @@ __all__ = [
 ]
 ```
 
-- [ ] **Step 4: Verify nothing moved in the database**
+- [x] **Step 4: Verify nothing moved in the database**
 
 Run: `.venv/bin/python manage.py makemigrations --check --dry-run audience`
 Expected: exit 0, "No changes detected". If Django proposes a migration here, stop — the model's `Meta` or app label changed and must be put back.
 
-- [ ] **Step 5: Run the tests that prove the imports still resolve**
+- [x] **Step 5: Run the tests that prove the imports still resolve**
 
 Run: `.venv/bin/python manage.py test audience dashboard.tests.test_subscribers web.tests.test_vote_subscribe -v 2`
 Expected: PASS.
 
-- [ ] **Step 6: Lint**
+- [x] **Step 6: Lint**
 
 Run: `.venv/bin/python -m flake8 audience`
 Expected: no output.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add audience/models audience/models.py
@@ -106,7 +106,7 @@ Both the term's expiry default and the form need "twelve months from this date".
 - Consumes: nothing
 - Produces: `add_months(start: datetime.date, months: int) -> datetime.date` — used by Task 3's model default and Task 5's form
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `audience/tests/test_dates.py`:
 
@@ -152,12 +152,12 @@ class AddMonthsTests(SimpleTestCase):
         )
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 Run: `.venv/bin/python manage.py test audience.tests.test_dates -v 2`
 Expected: FAIL — `ModuleNotFoundError: No module named 'audience.dates'`.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Create `audience/dates.py`:
 
@@ -182,12 +182,12 @@ def add_months(start: datetime.date, months: int) -> datetime.date:
     return datetime.date(year, month, day)
 ```
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run: `.venv/bin/python manage.py test audience.tests.test_dates -v 2`
 Expected: PASS, 5 tests.
 
-- [ ] **Step 5: Lint and commit**
+- [x] **Step 5: Lint and commit**
 
 ```bash
 .venv/bin/python -m flake8 audience
@@ -219,7 +219,7 @@ Both models in one migration, because a member without terms is not a thing the 
   - `MembershipTerm(member, tier, started_on, expires_on, price_paid, purchased_at, notes, created_at)`, `related_name="terms"`, `Meta.ordering = ["-started_on"]`, `default_expiry(started_on, duration_months)` staticmethod
   - Tasks 4-9 rely on all of these names
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `audience/tests/test_member.py`:
 
@@ -310,12 +310,12 @@ class MembershipTermTests(TestCase):
         )
 ```
 
-- [ ] **Step 2: Run them and watch them fail**
+- [x] **Step 2: Run them and watch them fail**
 
 Run: `.venv/bin/python manage.py test audience.tests.test_member -v 2`
 Expected: FAIL — `ImportError: cannot import name 'Member' from 'audience.models'`.
 
-- [ ] **Step 3: Write `Member`**
+- [x] **Step 3: Write `Member`**
 
 Create `audience/models/member.py`:
 
@@ -368,7 +368,7 @@ class Member(models.Model):
         super().save(*args, **kwargs)
 ```
 
-- [ ] **Step 4: Write `MembershipTerm`**
+- [x] **Step 4: Write `MembershipTerm`**
 
 Create `audience/models/membership_term.py`:
 
@@ -427,7 +427,7 @@ class MembershipTerm(models.Model):
         return add_months(started_on, duration_months)
 ```
 
-- [ ] **Step 5: Export both models**
+- [x] **Step 5: Export both models**
 
 Replace `audience/models/__init__.py` with:
 
@@ -446,7 +446,7 @@ __all__ = [
 ]
 ```
 
-- [ ] **Step 6: Register them in the Django admin**
+- [x] **Step 6: Register them in the Django admin**
 
 `audience/admin.py` already registers `Subscriber`. Append:
 
@@ -468,17 +468,17 @@ class MemberAdmin(admin.ModelAdmin):
 
 Fold the new names into the existing `from .models import Subscriber` line rather than adding a second import.
 
-- [ ] **Step 7: Generate the migration**
+- [x] **Step 7: Generate the migration**
 
 Run: `.venv/bin/python manage.py makemigrations audience`
 Expected: creates `audience/migrations/0002_member_membershipterm.py` with two `CreateModel` operations and nothing else. Read it and confirm there is no operation touching `subscriber`.
 
-- [ ] **Step 8: Run the tests**
+- [x] **Step 8: Run the tests**
 
 Run: `.venv/bin/python manage.py test audience -v 2`
 Expected: PASS — the 5 subscriber tests, 5 date tests, and 9 new member tests.
 
-- [ ] **Step 9: Lint and commit**
+- [x] **Step 9: Lint and commit**
 
 ```bash
 .venv/bin/python -m flake8 audience
@@ -518,7 +518,7 @@ No stored flag. A stored `is_active` goes stale at midnight on every expiry and 
   - `audience.models.member.EXPIRING_SOON_DAYS = 30`
   - Tasks 6-9 render `status` and filter through `active()` / `lapsed()`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `audience/tests/test_member.py`:
 
@@ -635,12 +635,12 @@ class MemberManagerTests(TestCase):
         self.assertEqual(Member.objects.active().count(), 1)
 ```
 
-- [ ] **Step 2: Run them and watch them fail**
+- [x] **Step 2: Run them and watch them fail**
 
 Run: `.venv/bin/python manage.py test audience.tests.test_member -v 2`
 Expected: FAIL — `AttributeError: 'Member' object has no attribute 'current_term'`.
 
-- [ ] **Step 3: Add `is_current` to the term**
+- [x] **Step 3: Add `is_current` to the term**
 
 In `audience/models/membership_term.py`, add `from django.utils import timezone` to the imports and this property to `MembershipTerm`:
 
@@ -650,7 +650,7 @@ In `audience/models/membership_term.py`, add `from django.utils import timezone`
         return self.started_on <= timezone.localdate() <= self.expires_on
 ```
 
-- [ ] **Step 4: Add the derived attributes and manager methods**
+- [x] **Step 4: Add the derived attributes and manager methods**
 
 In `audience/models/member.py`, add the imports and replace the stub `MemberManager`:
 
@@ -724,12 +724,12 @@ And add to `Member`:
         return self.STATUS_LABELS[self.status]
 ```
 
-- [ ] **Step 5: Run the tests**
+- [x] **Step 5: Run the tests**
 
 Run: `.venv/bin/python manage.py test audience -v 2`
 Expected: PASS — 31 tests.
 
-- [ ] **Step 6: Lint and commit**
+- [x] **Step 6: Lint and commit**
 
 ```bash
 .venv/bin/python -m flake8 audience
