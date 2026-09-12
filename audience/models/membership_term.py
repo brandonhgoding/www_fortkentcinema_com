@@ -1,6 +1,7 @@
 import datetime
 
 from django.db import models
+from django.utils import timezone
 
 from audience.dates import add_months
 
@@ -46,6 +47,10 @@ class MembershipTerm(models.Model):
 
     def __str__(self) -> str:
         return f"{self.tier}: {self.started_on} – {self.expires_on}"
+
+    @property
+    def is_current(self) -> bool:
+        return self.started_on <= timezone.localdate() <= self.expires_on
 
     @staticmethod
     def default_expiry(
