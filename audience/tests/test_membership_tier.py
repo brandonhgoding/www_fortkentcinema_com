@@ -106,3 +106,44 @@ class MembershipTierTests(TestCase):
             [b.name for b in tier.benefits.all()],
             ["$2 off matinee tickets", "10% off rentals"],
         )
+
+
+class TierDeletionTests(TestCase):
+    """Membership terms are revenue records. Retire tiers; never delete them."""
+
+    def test_deleting_a_tier_with_terms_is_refused(self) -> None:
+        import datetime
+
+        from decimal import Decimal
+
+        from django.db.models import ProtectedError
+
+        from audience.models import Member, MembershipTerm
+
+        tier = MembershipTier.objects.get(slug="individual")
+        member = Member.objects.create(
+            first_name="Ada", last_name="Byron", email="ada@example.com"
+        )
+        MembershipTerm.objects.create(
+            member=member,
+            tier=tier,
+            started_on=datetime.date(2026, 1, 1),
+            expires_on=datetime.date(2026, 12, 31),
+            price_paid=Decimal("60.00"),
+        )
+        with self.assertRaises(ProtectedError):
+            tier.delete()
+
+    def test_a_tier_with_no_terms_can_still_be_deleted(self) -> None:
+        tier = MembershipTier.objects.create(
+            slug="typo-tier", name="Typo", price=1
+        )
+        tier.delete()
+        self.assertFalse(MembershipTier.objects.filter(slug="typo-tier").exists())
+
+    def test_retiring_keeps_the_tier_and_its_terms(self) -> None:
+        tier = MembershipTier.objects.get(slug="individual")
+        tier.show_on_membership_page = False
+        tier.save(update_fields=["show_on_membership_page"])
+        tier.refresh_from_db()
+        self.assertTrue(MembershipTier.objects.filter(slug="individual").exists())
