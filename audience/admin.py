@@ -25,6 +25,14 @@ class MembershipTierAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("name",)}
     filter_horizontal = ("benefits",)
 
+    def get_readonly_fields(self, request, obj=None):
+        # The slug is load-bearing outside this database: Square's payment
+        # dashboard redirects to /thanks?tier=<slug> and the Join button's
+        # GA4 tracking carries it too. Editing it after creation would break
+        # revenue attribution silently, with the page still rendering fine
+        # — so it is only ever editable (via prepopulated_fields) on add.
+        return ("slug",) if obj else ()
+
 
 @admin.register(MembershipBenefit)
 class MembershipBenefitAdmin(admin.ModelAdmin):

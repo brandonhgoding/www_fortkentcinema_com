@@ -116,8 +116,14 @@ def seed(apps, schema_editor):
 
 
 def unseed(apps, schema_editor):
-    apps.get_model("audience", "MembershipTier").objects.all().delete()
-    apps.get_model("audience", "MembershipBenefit").objects.all().delete()
+    # Scoped to exactly what `seed` created — an unscoped delete would also
+    # take any tier or benefit a staff member added since through the admin.
+    apps.get_model("audience", "MembershipTier").objects.filter(
+        slug__in=[spec["slug"] for spec in TIERS]
+    ).delete()
+    apps.get_model("audience", "MembershipBenefit").objects.filter(
+        name__in=[name for name, _sort_order in BENEFITS]
+    ).delete()
 
 
 class Migration(migrations.Migration):

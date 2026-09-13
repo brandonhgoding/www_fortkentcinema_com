@@ -14,7 +14,11 @@ def slug_to_fk(apps, schema_editor):
     Tier = apps.get_model("audience", "MembershipTier")
     by_slug = {t.slug: t for t in Tier.objects.all()}
 
-    for term in Term.objects.exclude(tier="").iterator():
+    # No .exclude(tier="") here: an empty-string tier is not a valid slug
+    # either, and skipping it would leave tier_fk NULL, deferring the
+    # failure to the closing AlterField's NOT NULL violation — a Postgres
+    # error with none of the detail the RuntimeError below gives.
+    for term in Term.objects.iterator():
         tier = by_slug.get(term.tier)
         if tier is None:
             raise RuntimeError(

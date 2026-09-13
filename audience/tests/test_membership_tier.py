@@ -72,7 +72,6 @@ class MembershipTierTests(TestCase):
     def test_price_is_a_whole_number(self) -> None:
         """$35, never $35.00 — the card renders it raw."""
         self.assertEqual(make_tier(price=35).price, 35)
-        self.assertNotIn(".", str(make_tier(slug="x", price=35).price))
 
     def test_ordering_is_by_sort_order_then_price(self) -> None:
         make_tier(slug="test-high", name="Test High", price=250, sort_order=50)

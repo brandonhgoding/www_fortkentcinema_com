@@ -270,3 +270,34 @@ class MemberExportTests(TestCase):
         self.assertEqual(
             self.client.get(reverse("dashboard:members_export")).status_code, 302
         )
+
+
+class MemberRosterQueryCountTests(TestCase):
+    """Pin the roster's query count so the tier N+1 can't come back quietly.
+
+    Before this branch, tier was a plain string column and cost nothing
+    extra to read. The FK it became is fetched through
+    prefetch_related("terms__tier"), which should still answer the whole
+    roster from a fixed, small number of queries — not one that grows with
+    the number of members. Measured directly against this test with 8
+    members each with a term: 6 queries — session lookup, auth user lookup,
+    the member query, the prefetched terms query, the prefetched tiers
+    query, and active_count's query for the header pill. None of the six
+    scale with the member count. Confirmed by temporarily reverting the
+    prefetch to plain "terms": query count jumped to 13 (one extra tier
+    query per member) and this test failed as expected.
+    """
+
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+
+    def test_roster_query_count_does_not_scale_with_member_count(self) -> None:
+        for i in range(8):
+            member = make_member(
+                first=f"First{i}", last=f"Last{i}", email=f"m{i}@example.com"
+            )
+            give_term(member)
+
+        with self.assertNumQueries(6):
+            self.client.get(reverse("dashboard:members"))

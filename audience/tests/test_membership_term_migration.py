@@ -12,6 +12,16 @@ back down again, and checks both directions actually preserve the data.
 Runs against a real schema-mutating migration, hence TransactionTestCase
 rather than TestCase — a plain TestCase wraps each test in a transaction
 that fights schema changes.
+
+TransactionTestCase's teardown flushes every table, so the catalogue seeded
+by migration 0004 does not survive this test class — it is gone for the
+remainder of the test run. That is harmless today only because Django runs
+TransactionTestCase classes after all plain TestCase classes, and nothing
+after this one in the run needs the seeded catalogue. A future
+TransactionTestCase or LiveServerTestCase that exercises /membership/ or the
+dashboard roster and needs MembershipTier rows to already exist must set
+`serialized_rollback = True` on itself, or it will fail with an inexplicable
+MembershipTier.DoesNotExist.
 """
 
 import datetime
@@ -28,6 +38,10 @@ class MembershipTermMigrationTests(TransactionTestCase):
 
     def setUp(self) -> None:
         executor = MigrationExecutor(connection)
+        # If a reverse-direction assertion below ever fails, leave the
+        # database migrated forward again rather than stranding the schema
+        # at 0004 for the rest of the run.
+        self.addCleanup(lambda: executor.migrate(self.migrate_to))
         executor.migrate(self.migrate_from)
         executor.loader.build_graph()
 

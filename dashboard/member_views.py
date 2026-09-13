@@ -35,7 +35,7 @@ def member_roster(request):
     rows at most; a query that could express "expiring soon" in SQL would
     duplicate the definition that lives on the model.
     """
-    members = Member.objects.prefetch_related("terms")
+    members = Member.objects.prefetch_related("terms__tier")
 
     q = (request.GET.get("q") or "").strip()
     if q:
@@ -180,7 +180,7 @@ def _term_list_response(request, member, toast_message):
 class MemberDetailView(StaffRequiredMixin, View):
     def get(self, request, pk):
         member = get_object_or_404(
-            Member.objects.prefetch_related("terms"), pk=pk
+            Member.objects.prefetch_related("terms__tier"), pk=pk
         )
         return render(
             request,
