@@ -255,6 +255,24 @@ class TermFormTierChoicesTests(TestCase):
             datetime.date(2027, 3, 1),
         )
 
+        # Every seeded tier is 12 months, so the case above alone would
+        # pass just as well against a clean() that hardcoded 12 months and
+        # never read tier.duration_months. Give a tier a different
+        # duration so only reading the field can produce the right answer.
+        short_tier = a_tier("individual")
+        short_tier.duration_months = 6
+        short_tier.save(update_fields=["duration_months"])
+
+        form = MembershipTermForm(data={
+            "tier": short_tier.pk,
+            "started_on": "2026-03-01",
+        })
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(
+            form.cleaned_data["expires_on"],
+            datetime.date(2026, 9, 1),
+        )
+
     def test_price_defaults_from_the_selected_tier(self) -> None:
         from dashboard.forms import MembershipTermForm
 
