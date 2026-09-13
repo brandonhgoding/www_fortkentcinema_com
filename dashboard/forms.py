@@ -1,8 +1,8 @@
 from audience.dates import add_months
-from audience.models import Member, MembershipTerm
+from audience.models import Member, MembershipTerm, MembershipTier
 from cinema.models import Engagement, Poll, Screen
 from django import forms
-from web.constants import MEMBERSHIP, MEMBERSHIP_BY_SLUG
+from django.db.models import Q
 
 # Labels match the leprinceos SPA (note: "standard" sound shows "Standard",
 # not the model's "Standard Surround").
@@ -88,11 +88,6 @@ class PollForm(forms.ModelForm):
         }
 
 
-# The tier catalogue lives in web.constants; `audience` cannot import it
-# (web imports audience), so validation against it happens here.
-MEMBERSHIP_TIER_CHOICES = [(t["slug"], t["name"]) for t in MEMBERSHIP]
-
-
 class MemberForm(forms.ModelForm):
     class Meta:
         model = Member
@@ -114,8 +109,9 @@ class MemberForm(forms.ModelForm):
 
 
 class MembershipTermForm(forms.ModelForm):
-    tier = forms.ChoiceField(
-        choices=MEMBERSHIP_TIER_CHOICES,
+    tier = forms.ModelChoiceField(
+        queryset=MembershipTier.objects.all(),
+        empty_label=None,
         widget=forms.Select(attrs={"class": "input"}),
     )
 
@@ -148,17 +144,24 @@ class MembershipTermForm(forms.ModelForm):
         self.fields["expires_on"].required = False
         self.fields["price_paid"].required = False
 
+        # Retired tiers stay selectable on a term that already uses one,
+        # so editing an old record cannot quietly re-tier it.
+        listed = Q(show_on_membership_page=True)
+        if self.instance.pk and self.instance.tier_id:
+            listed |= Q(pk=self.instance.tier_id)
+        self.fields["tier"].queryset = MembershipTier.objects.filter(listed)
+
     def clean(self):
         cleaned = super().clean()
-        tier = MEMBERSHIP_BY_SLUG.get(cleaned.get("tier"))
+        tier = cleaned.get("tier")
         started_on = cleaned.get("started_on")
         if tier is None:
             return cleaned
 
         if started_on and not cleaned.get("expires_on"):
-            cleaned["expires_on"] = add_months(started_on, tier["duration_months"])
+            cleaned["expires_on"] = add_months(started_on, tier.duration_months)
         if cleaned.get("price_paid") is None:
-            cleaned["price_paid"] = tier["price"]
+            cleaned["price_paid"] = tier.price
 
         expires_on = cleaned.get("expires_on")
         if started_on and expires_on and expires_on < started_on:

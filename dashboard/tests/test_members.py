@@ -7,9 +7,13 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from audience.models import Member, MembershipTerm
+from audience.models import Member, MembershipTerm, MembershipTier
 
 User = get_user_model()
+
+
+def a_tier(slug="individual"):
+    return MembershipTier.objects.get(slug=slug)
 
 
 def make_member(first="Ada", last="Lovelace", email="ada@example.com", **kwargs):
@@ -18,11 +22,11 @@ def make_member(first="Ada", last="Lovelace", email="ada@example.com", **kwargs)
     )
 
 
-def give_term(member, days_left=100, tier="individual"):
+def give_term(member, days_left=100, tier=None):
     today = timezone.localdate()
     return MembershipTerm.objects.create(
         member=member,
-        tier=tier,
+        tier=tier or a_tier(),
         started_on=today - datetime.timedelta(days=30),
         expires_on=today + datetime.timedelta(days=days_left),
         price_paid=Decimal("60.00"),
@@ -227,11 +231,11 @@ class MemberExportTests(TestCase):
     def test_one_row_per_member_from_the_latest_term(self) -> None:
         member = make_member()
         MembershipTerm.objects.create(
-            member=member, tier="individual",
+            member=member, tier=a_tier("individual"),
             started_on=datetime.date(2025, 1, 1),
             expires_on=datetime.date(2026, 1, 1), price_paid=Decimal("60.00"),
         )
-        give_term(member, tier="cinema-supporter")  # newer
+        give_term(member, tier=a_tier("cinema-supporter"))  # newer
 
         rows = [
             r for r in self.client.get(
