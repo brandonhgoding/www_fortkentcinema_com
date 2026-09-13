@@ -51,6 +51,16 @@ class Migration(migrations.Migration):
             ),
         ),
         migrations.RunPython(slug_to_fk, fk_to_slug),
+        # Give the still-present old `tier` CharField a default before it is
+        # dropped. Forward, this is inert — the field is removed one step
+        # later. In reverse, RemoveField's reversal re-adds `tier` on a table
+        # that may already have rows; without a default that re-add fails
+        # NOT NULL before fk_to_slug ever runs to fill in real slugs.
+        migrations.AlterField(
+            model_name="membershipterm",
+            name="tier",
+            field=models.CharField(max_length=32, default=""),
+        ),
         migrations.RemoveField(model_name="membershipterm", name="tier"),
         migrations.RenameField(
             model_name="membershipterm", old_name="tier_fk", new_name="tier"

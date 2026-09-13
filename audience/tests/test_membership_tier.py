@@ -142,8 +142,29 @@ class TierDeletionTests(TestCase):
         self.assertFalse(MembershipTier.objects.filter(slug="typo-tier").exists())
 
     def test_retiring_keeps_the_tier_and_its_terms(self) -> None:
+        import datetime
+
+        from decimal import Decimal
+
+        from audience.models import Member, MembershipTerm
+
         tier = MembershipTier.objects.get(slug="individual")
+        member = Member.objects.create(
+            first_name="Ada", last_name="Byron", email="ada@example.com"
+        )
+        term = MembershipTerm.objects.create(
+            member=member,
+            tier=tier,
+            started_on=datetime.date(2026, 1, 1),
+            expires_on=datetime.date(2026, 12, 31),
+            price_paid=Decimal("60.00"),
+        )
+
         tier.show_on_membership_page = False
         tier.save(update_fields=["show_on_membership_page"])
         tier.refresh_from_db()
+
         self.assertTrue(MembershipTier.objects.filter(slug="individual").exists())
+        self.assertEqual(list(tier.terms.all()), [term])
+        term.refresh_from_db()
+        self.assertEqual(term.tier, tier)
