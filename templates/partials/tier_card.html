@@ -12,16 +12,16 @@
     <p class="tier-card__price">${{ tier.price }}</p>
     <p class="tier-card__price-period">{{ tier.duration_months }}-month membership</p>
   </header>
-  {% if tier.perks %}
+  {% if tier.benefits.all %}
     <ul class="tier-card__perks">
-      {% for perk in tier.perks %}
+      {% for perk in tier.benefits.all %}
         <li>
           <span class="tier-card__perk-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
               <path d="M12 2l2.4 6.9 7.3.4-5.7 4.6 1.9 7.1L12 17l-5.9 4 1.9-7.1L2.3 9.3l7.3-.4z" />
             </svg>
           </span>
-          <span class="tier-card__perk-text">{{ perk }}</span>
+          <span class="tier-card__perk-text">{{ perk.name }}</span>
         </li>
       {% endfor %}
     </ul>

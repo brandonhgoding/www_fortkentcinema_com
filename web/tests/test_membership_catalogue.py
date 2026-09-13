@@ -137,3 +137,47 @@ class MembershipPageIsUnchangedTests(TestCase):
         end = self.html.index(f'data-track-tier="{slug}"')
         start = self.html.rindex("<article", 0, end)
         return self.html[start:end]
+
+
+class RetiredTierTests(TestCase):
+    """show_on_membership_page is a website switch, nothing more."""
+
+    def retire(self, slug="family-plus"):
+        from audience.models import MembershipTier
+
+        tier = MembershipTier.objects.get(slug=slug)
+        tier.show_on_membership_page = False
+        tier.save(update_fields=["show_on_membership_page"])
+        return tier
+
+    def test_retired_tier_is_absent_from_the_page(self) -> None:
+        self.retire()
+        html = self.client.get(reverse("membership")).content.decode()
+        self.assertNotIn('data-track-tier="family-plus"', html)
+        self.assertNotIn("https://square.link/u/1YSgMFSQ", html)
+
+    def test_the_other_tiers_still_render(self) -> None:
+        self.retire()
+        html = self.client.get(reverse("membership")).content.decode()
+        for slug in ("silver-screen", "individual", "cinema-supporter", "family"):
+            self.assertIn(f'data-track-tier="{slug}"', html)
+
+    def test_retired_tier_still_resolves_on_thanks(self) -> None:
+        """A bookmarked Square link must still attribute its revenue."""
+        self.retire()
+        html = self.client.get("/thanks", {"tier": "family-plus"}).content.decode()
+        self.assertIn("'purchase'", html)
+        self.assertIn("value: 250", html)
+
+
+class ThanksValueSourceTests(TestCase):
+    def test_value_comes_from_the_database_not_the_query_string(self) -> None:
+        html = self.client.get(
+            "/thanks", {"tier": "individual", "value": "99999"}
+        ).content.decode()
+        self.assertIn("value: 60", html)
+        self.assertNotIn("99999", html)
+
+    def test_unknown_tier_fires_nothing(self) -> None:
+        html = self.client.get("/thanks", {"tier": "not-a-tier"}).content.decode()
+        self.assertNotIn("'purchase'", html)

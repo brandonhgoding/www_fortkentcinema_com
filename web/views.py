@@ -12,7 +12,7 @@ from django.utils import timezone
 from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView
 
-from audience.models import Subscriber
+from audience.models import MembershipTier, Subscriber
 from blog.models import BlogPost
 from cinema import voting as vote_engine
 from cinema.models import (
@@ -26,7 +26,6 @@ from cinema.models import (
 from web.constants import (
     FILM_HISTORY_VIDEO,
     SPONSORED_SCREENING,
-    MEMBERSHIP,
     MEMBERSHIP_FAQ,
     SAVOY_PLAYBILLS,
     SPONSORSHIP_FAQ,
@@ -271,7 +270,10 @@ class MembershipView(TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["tiers"] = MEMBERSHIP
+        ctx["tiers"] = (
+            MembershipTier.objects.filter(show_on_membership_page=True)
+            .prefetch_related("benefits")
+        )
         ctx["faqs"] = MEMBERSHIP_FAQ
         return ctx
 
@@ -292,8 +294,8 @@ class ThanksView(TemplateView):
     and then abandons the Square checkout has not paid us, and attaching a value
     to that click would make GA4 report sales that never happened.
 
-    The value is looked up server-side from MEMBERSHIP by slug and is never read
-    from the query string, so it can't be forged by editing the URL.
+    The value is looked up server-side from the tier record by slug and is
+    never read from the query string, so it can't be forged by editing the URL.
 
     An unknown or missing tier (gift cards, whose amount is variable, redirect
     here without one) renders a generic thank-you and fires nothing at all —
@@ -310,7 +312,7 @@ class ThanksView(TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         slug = self.request.GET.get("tier", "")
-        ctx["tier"] = next((t for t in MEMBERSHIP if t["slug"] == slug), None)
+        ctx["tier"] = MembershipTier.objects.filter(slug=slug).first()
         return ctx
 
 
