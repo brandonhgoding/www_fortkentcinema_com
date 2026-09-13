@@ -6,12 +6,17 @@ are the first real customer PII in this database, so every view is
 staff-only, the CSV export included.
 """
 
+import json
+
 from audience.models import Member
 from django.db import models
-from django.shortcuts import render
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, render
+from django.urls import reverse
 from django.views import View
 from web.constants import MEMBERSHIP_TIER_LABELS
 
+from .forms import MemberForm
 from .mixins import StaffRequiredMixin
 
 STATUS_FILTERS = [
@@ -63,3 +68,80 @@ class MemberListView(StaffRequiredMixin, View):
                 "active_count": Member.objects.active().count(),
             },
         )
+
+
+def _render_member_form(request, form, action_url, submit_label):
+    return render(
+        request,
+        "dashboard/_member_form.html",
+        {"form": form, "form_action": action_url, "submit_label": submit_label},
+    )
+
+
+def _member_list_response(request, toast_message):
+    """Success response: OOB-swap the list, close the drawer, and toast."""
+    members, q, status = member_roster(request)
+    html = render(
+        request,
+        "dashboard/_member_list.html",
+        {"members": members, "tier_labels": MEMBERSHIP_TIER_LABELS},
+    ).content.decode()
+    html = html.replace(
+        '<div id="member-list">', '<div id="member-list" hx-swap-oob="true">', 1
+    )
+    resp = HttpResponse(html)
+    resp["HX-Trigger"] = json.dumps(
+        {
+            "close-drawer": True,
+            "dashboard-toast": {"kind": "success", "message": toast_message},
+        }
+    )
+    return resp
+
+
+class MemberCreateView(StaffRequiredMixin, View):
+    def get(self, request):
+        return _render_member_form(
+            request, MemberForm(), reverse("dashboard:member_create"), "Add Member"
+        )
+
+    def post(self, request):
+        form = MemberForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return _member_list_response(request, "Member added")
+        return _render_member_form(
+            request, form, reverse("dashboard:member_create"), "Add Member"
+        )
+
+
+class MemberEditView(StaffRequiredMixin, View):
+    def get(self, request, pk):
+        member = get_object_or_404(Member, pk=pk)
+        return _render_member_form(
+            request,
+            MemberForm(instance=member),
+            reverse("dashboard:member_edit", args=[pk]),
+            "Save Changes",
+        )
+
+    def post(self, request, pk):
+        member = get_object_or_404(Member, pk=pk)
+        form = MemberForm(request.POST, instance=member)
+        if form.is_valid():
+            form.save()
+            return _member_list_response(request, "Member updated")
+        return _render_member_form(
+            request,
+            form,
+            reverse("dashboard:member_edit", args=[pk]),
+            "Save Changes",
+        )
+
+
+class MemberDeleteView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        # No ProtectedError guard, unlike Screens: a person entered by
+        # mistake should be removable, and their terms only describe them.
+        get_object_or_404(Member, pk=pk).delete()
+        return _member_list_response(request, "Member deleted")

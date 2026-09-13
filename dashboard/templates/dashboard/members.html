@@ -9,6 +9,8 @@
       <h1 class="title">Members</h1>
       <p class="subtitle">{{ active_count }} active member{{ active_count|pluralize }}.</p>
     </div>
+    <button class="primaryButton" hx-get="{% url 'dashboard:member_create' %}"
+            hx-target="#drawer-content" @click="$store.drawer.show('New Member')">+ New Member</button>
   </div>
 
   <form class="memberFilters" method="get" action="{% url 'dashboard:members' %}">

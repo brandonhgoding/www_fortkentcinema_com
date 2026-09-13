@@ -1,4 +1,5 @@
 import datetime
+import json
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
@@ -112,3 +113,91 @@ class MemberListTests(TestCase):
     def test_sidebar_links_to_members(self) -> None:
         html = self.client.get(reverse("dashboard:home")).content.decode()
         self.assertIn(reverse("dashboard:members"), html)
+
+
+class MemberCreateEditTests(TestCase):
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+
+    def test_get_create_form(self) -> None:
+        html = self.client.get(reverse("dashboard:member_create")).content.decode()
+        self.assertIn('id="member-form"', html)
+        self.assertIn("Add Member", html)
+
+    def test_post_create_valid(self) -> None:
+        resp = self.client.post(
+            reverse("dashboard:member_create"),
+            {
+                "first_name": "Ada",
+                "last_name": "Lovelace",
+                "email": "Ada@Example.com",
+                "phone": "",
+                "notes": "",
+            },
+        )
+        self.assertEqual(resp.status_code, 200)
+        member = Member.objects.get()
+        self.assertEqual(member.email, "ada@example.com")
+
+        triggers = json.loads(resp["HX-Trigger"])
+        self.assertTrue(triggers["close-drawer"])
+        self.assertEqual(triggers["dashboard-toast"]["kind"], "success")
+        self.assertIn('hx-swap-oob="true"', resp.content.decode())
+
+    def test_post_create_invalid_redisplays_the_form(self) -> None:
+        resp = self.client.post(
+            reverse("dashboard:member_create"),
+            {"first_name": "Ada", "last_name": "Lovelace", "email": "not-an-email"},
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('id="member-form"', resp.content.decode())
+        self.assertEqual(Member.objects.count(), 0)
+
+    def test_post_edit_updates(self) -> None:
+        member = make_member()
+        self.client.post(
+            reverse("dashboard:member_edit", args=[member.pk]),
+            {
+                "first_name": "Ada",
+                "last_name": "King",
+                "email": "ada@example.com",
+                "phone": "207-555-0100",
+                "notes": "",
+            },
+        )
+        member.refresh_from_db()
+        self.assertEqual(member.last_name, "King")
+        self.assertEqual(member.phone, "207-555-0100")
+
+    def test_requires_staff(self) -> None:
+        self.client.logout()
+        self.assertEqual(
+            self.client.get(reverse("dashboard:member_create")).status_code, 302
+        )
+
+
+class MemberDeleteTests(TestCase):
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+
+    def test_delete_removes_the_member_and_their_terms(self) -> None:
+        member = make_member()
+        give_term(member)
+        resp = self.client.post(reverse("dashboard:member_delete", args=[member.pk]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(Member.objects.count(), 0)
+        self.assertEqual(MembershipTerm.objects.count(), 0)
+
+    def test_delete_toasts(self) -> None:
+        member = make_member()
+        resp = self.client.post(reverse("dashboard:member_delete", args=[member.pk]))
+        triggers = json.loads(resp["HX-Trigger"])
+        self.assertEqual(triggers["dashboard-toast"]["kind"], "success")
+
+    def test_confirm_copy_names_the_term_count(self) -> None:
+        member = make_member()
+        give_term(member)
+        html = self.client.get(reverse("dashboard:members")).content.decode()
+        self.assertIn("1 membership term", html)

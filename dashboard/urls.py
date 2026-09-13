@@ -68,6 +68,17 @@ urlpatterns = [
         name="subscribers_export",
     ),
     path("members", member_views.MemberListView.as_view(), name="members"),
+    path("members/new", member_views.MemberCreateView.as_view(), name="member_create"),
+    path(
+        "members/<int:pk>/edit",
+        member_views.MemberEditView.as_view(),
+        name="member_edit",
+    ),
+    path(
+        "members/<int:pk>/delete",
+        member_views.MemberDeleteView.as_view(),
+        name="member_delete",
+    ),
     path("inquiries", inquiry_views.InquiryListView.as_view(), name="inquiries"),
     path(
         "inquiries/<int:pk>/status",

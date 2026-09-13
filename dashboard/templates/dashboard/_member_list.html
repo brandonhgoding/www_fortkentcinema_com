@@ -4,7 +4,7 @@
   <div class="tableWrapper">
     <table class="table">
       <thead>
-        <tr><th>Name</th><th>Email</th><th>Phone</th><th>Tier</th><th>Expires</th><th>Status</th></tr>
+        <tr><th>Name</th><th>Email</th><th>Phone</th><th>Tier</th><th>Expires</th><th>Status</th><th>Actions</th></tr>
       </thead>
       <tbody>
         {% for member in members %}
@@ -15,6 +15,16 @@
           <td>{% if member.current_term %}{{ tier_labels|get_item:member.current_term.tier }}{% else %}—{% endif %}</td>
           <td>{% if member.current_term %}{{ member.current_term.expires_on|date:"M j, Y" }}{% else %}—{% endif %}</td>
           <td><span class="statusPill status-{{ member.status }}">{{ member.status_label }}</span></td>
+          <td>
+            <div class="actions">
+              <button class="actionButton" hx-get="{% url 'dashboard:member_edit' member.pk %}"
+                      hx-target="#drawer-content" @click="$store.drawer.show('Edit Member')">Edit</button>
+              <button class="actionButton deleteButton"
+                      hx-post="{% url 'dashboard:member_delete' member.pk %}"
+                      hx-target="#member-list" hx-swap="outerHTML"
+                      data-dashboard-confirm='{"title":"Delete Member","message":"Delete {{ member.full_name|escapejs }} and their {{ member.terms.count }} membership term(s)? This cannot be undone.","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
+            </div>
+          </td>
         </tr>
         {% endfor %}
       </tbody>
@@ -25,6 +35,8 @@
     <div class="empty-state-icon" style="font-size: 2.5rem;">🎟️</div>
     <h3 class="empty-state-title">No Members Yet</h3>
     <p class="empty-state-description">Memberships sold through Square are recorded here by hand. Add the roster as people join or renew.</p>
+    <button class="btn btn-primary" hx-get="{% url 'dashboard:member_create' %}"
+            hx-target="#drawer-content" @click="$store.drawer.show('New Member')">Add First Member</button>
   </div>
   {% endif %}
 </div>
