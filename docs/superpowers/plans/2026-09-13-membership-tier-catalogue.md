@@ -225,7 +225,35 @@ rm audience/migrations/0003_membershipbenefit_membershiptier.py
 rm audience/migrations/0004_membershiptier_hidden_alter_membershipterm_tier.py
 ```
 
-- [ ] **Step 2: Write the failing tests**
+- [ ] **Step 2: Put `MembershipTerm.tier` back to a slug string**
+
+The sketch this branch starts from changed `MembershipTerm.tier` to a foreign
+key without a coherent migration. Task 4 does that conversion properly. Leaving
+the sketch's version in place here would make Step 7 below generate a migration
+touching `membershipterm`, and Task 3's `makemigrations --check` would report
+pending changes.
+
+So restore the field in `audience/models/membership_term.py` to exactly what
+migration 0002 created, comment included:
+
+```python
+    # The tier slug from web.constants.MEMBERSHIP. Stored as a plain string
+    # because `web` imports `audience` — validating against the catalogue
+    # happens in dashboard.forms, where importing `web` is safe.
+    tier = models.CharField(max_length=32)
+```
+
+Also restore the blank line the sketch removed above `class MembershipTerm` —
+there must be **two** blank lines after the `add_months` import.
+
+This clears the 34 errors the branch starts with, because the tests that assign
+`tier="individual"` work again. Task 4 updates them when the field really does
+become a foreign key.
+
+Run: `.venv/bin/python manage.py test audience dashboard`
+Expected: PASS. Note the count; Task 4 changes it again.
+
+- [ ] **Step 3: Write the failing tests**
 
 Create `audience/tests/test_membership_tier.py`:
 
@@ -320,12 +348,12 @@ class MembershipTierTests(TestCase):
         )
 ```
 
-- [ ] **Step 3: Run them and watch them fail**
+- [ ] **Step 4: Run them and watch them fail**
 
 Run: `.venv/bin/python manage.py test audience.tests.test_membership_tier -v 2`
 Expected: FAIL — `TypeError` on unexpected keyword `slug`/`sort_order`, and `AttributeError` for `show_on_membership_page`.
 
-- [ ] **Step 4: Write `MembershipBenefit`**
+- [ ] **Step 5: Write `MembershipBenefit`**
 
 Replace `audience/models/membership_benefit.py` entirely:
 
@@ -366,7 +394,7 @@ class MembershipBenefit(models.Model):
         return self.name
 ```
 
-- [ ] **Step 5: Write `MembershipTier`**
+- [ ] **Step 6: Write `MembershipTier`**
 
 Replace `audience/models/membership_tier.py` entirely. Field names match
 `templates/partials/tier_card.html` exactly, so a tier instance drops into the
@@ -433,7 +461,7 @@ class MembershipTier(models.Model):
         return self.name
 ```
 
-- [ ] **Step 6: Register both in the admin**
+- [ ] **Step 7: Register both in the admin**
 
 Replace the two admin classes added in the uncommitted work. In `audience/admin.py`, the import line becomes:
 
@@ -466,17 +494,17 @@ class MembershipBenefitAdmin(admin.ModelAdmin):
     search_fields = ("name",)
 ```
 
-- [ ] **Step 7: Generate the schema migration**
+- [ ] **Step 8: Generate the schema migration**
 
 Run: `.venv/bin/python manage.py makemigrations audience -n membershipbenefit_membershiptier`
 Expected: creates `audience/migrations/0003_membershipbenefit_membershiptier.py` creating both models. It must **not** mention `membershipterm` — the FK swap is Task 4.
 
-- [ ] **Step 8: Run the tests**
+- [ ] **Step 9: Run the tests**
 
 Run: `.venv/bin/python manage.py test audience -v 2`
 Expected: PASS, including the 11 new tests.
 
-- [ ] **Step 9: Lint and commit**
+- [ ] **Step 10: Lint and commit**
 
 Run: `.venv/bin/python -m flake8 audience`
 Expected: no output.
@@ -1024,14 +1052,16 @@ move it:
 
         # Retired tiers stay selectable on a term that already uses one,
         # so editing an old record cannot quietly re-tier it.
-        listed = models.Q(show_on_membership_page=True)
+        listed = Q(show_on_membership_page=True)
         if self.instance.pk and self.instance.tier_id:
-            listed |= models.Q(pk=self.instance.tier_id)
+            listed |= Q(pk=self.instance.tier_id)
         self.fields["tier"].queryset = MembershipTier.objects.filter(listed)
 ```
 
-That needs `from django.db import models` at the top of `dashboard/forms.py` if it
-is not already imported.
+That needs `from django.db.models import Q` at the top of `dashboard/forms.py`.
+Import `Q` by name rather than `from django.db import models` — this module
+already imports model classes from `audience.models` and `cinema.models`, so a
+bare `models` name here would read as one of those.
 
 Replace the `clean()` body's tier lookup — `cleaned.get("tier")` is now a
 `MembershipTier` instance, so the `MEMBERSHIP_BY_SLUG` hop disappears:
