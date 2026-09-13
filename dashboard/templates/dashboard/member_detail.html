@@ -1,0 +1,24 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% block title %}{{ member.full_name }} · LeprinceOS{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/members.css' %}" />{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="header">
+    <div>
+      <a class="backLink" href="{% url 'dashboard:members' %}">← Members</a>
+      <h1 class="title">{{ member.full_name }}</h1>
+      <p class="subtitle">
+        <span class="statusPill status-{{ member.status }}">{{ member.status_label }}</span>
+        {{ member.email }}{% if member.phone %} · {{ member.phone }}{% endif %}
+      </p>
+    </div>
+    <button class="primaryButton" hx-get="{% url 'dashboard:term_create' member.pk %}"
+            hx-target="#drawer-content" @click="$store.drawer.show('Add Term')">+ Add Term</button>
+  </div>
+
+  {% if member.notes %}<p class="memberNotes">{{ member.notes|linebreaksbr }}</p>{% endif %}
+
+  {% include "dashboard/_term_list.html" %}
+</div>
+{% endblock %}

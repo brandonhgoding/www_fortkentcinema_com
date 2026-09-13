@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import inquiry_views, poll_views, subscriber_views, views
+from . import inquiry_views, member_views, poll_views, subscriber_views, views
 
 app_name = "dashboard"
 
@@ -66,6 +66,39 @@ urlpatterns = [
         "subscribers/export.csv",
         subscriber_views.SubscriberExportView.as_view(),
         name="subscribers_export",
+    ),
+    path("members", member_views.MemberListView.as_view(), name="members"),
+    path("members/new", member_views.MemberCreateView.as_view(), name="member_create"),
+    path(
+        "members/export.csv",
+        member_views.MemberExportView.as_view(),
+        name="members_export",
+    ),
+    path(
+        "members/<int:pk>/edit",
+        member_views.MemberEditView.as_view(),
+        name="member_edit",
+    ),
+    path(
+        "members/<int:pk>/delete",
+        member_views.MemberDeleteView.as_view(),
+        name="member_delete",
+    ),
+    path(
+        "members/<int:pk>",
+        member_views.MemberDetailView.as_view(),
+        name="member_detail",
+    ),
+    path(
+        "members/<int:pk>/terms/new",
+        member_views.TermCreateView.as_view(),
+        name="term_create",
+    ),
+    path("terms/<int:pk>/edit", member_views.TermEditView.as_view(), name="term_edit"),
+    path(
+        "terms/<int:pk>/delete",
+        member_views.TermDeleteView.as_view(),
+        name="term_delete",
     ),
     path("inquiries", inquiry_views.InquiryListView.as_view(), name="inquiries"),
     path(

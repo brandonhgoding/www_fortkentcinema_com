@@ -1,0 +1,44 @@
+<form id="term-form" class="form" hx-post="{{ form_action }}" hx-target="#drawer-content" hx-swap="innerHTML">
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="field-error">{{ form.non_field_errors }}</div>{% endif %}
+  <div class="formRow">
+    <div class="formGroup">
+      <label for="{{ form.tier.id_for_label }}">Tier</label>
+      {{ form.tier }}
+      {% if form.tier.errors %}<div class="field-error">{{ form.tier.errors|striptags }}</div>{% endif %}
+    </div>
+    <div class="formGroup">
+      <label for="{{ form.started_on.id_for_label }}">Start Date</label>
+      {{ form.started_on }}
+      {% if form.started_on.errors %}<div class="field-error">{{ form.started_on.errors|striptags }}</div>{% endif %}
+    </div>
+  </div>
+  <div class="formRow">
+    <div class="formGroup">
+      <label for="{{ form.expires_on.id_for_label }}">Expires (inclusive)</label>
+      {{ form.expires_on }}
+      <p class="fieldHint">Leave blank for the tier's usual length.</p>
+      {% if form.expires_on.errors %}<div class="field-error">{{ form.expires_on.errors|striptags }}</div>{% endif %}
+    </div>
+    <div class="formGroup">
+      <label for="{{ form.price_paid.id_for_label }}">Price Paid</label>
+      {{ form.price_paid }}
+      <p class="fieldHint">Leave blank for the tier's list price.</p>
+      {% if form.price_paid.errors %}<div class="field-error">{{ form.price_paid.errors|striptags }}</div>{% endif %}
+    </div>
+  </div>
+  <div class="formRow">
+    <div class="formGroup">
+      <label for="{{ form.purchased_at.id_for_label }}">Purchased On</label>
+      {{ form.purchased_at }}
+    </div>
+    <div class="formGroup">
+      <label for="{{ form.notes.id_for_label }}">Notes</label>
+      {{ form.notes }}
+    </div>
+  </div>
+</form>
+<div id="drawer-footer" class="footer" hx-swap-oob="true">
+  <button type="button" class="cancelButton" @click="$store.drawer.close()">Cancel</button>
+  <button type="submit" form="term-form" class="submitButton">{{ submit_label }}</button>
+</div>

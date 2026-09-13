@@ -142,6 +142,9 @@ MEMBERSHIP = [
     },
 ]
 
+MEMBERSHIP_BY_SLUG = {t["slug"]: t for t in MEMBERSHIP}
+MEMBERSHIP_TIER_LABELS = {t["slug"]: t["name"] for t in MEMBERSHIP}
+
 # Ported verbatim from the React SPA's src/data/membershipFaq.json.
 MEMBERSHIP_FAQ = [
     {
