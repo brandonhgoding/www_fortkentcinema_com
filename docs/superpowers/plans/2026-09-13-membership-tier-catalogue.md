@@ -50,6 +50,8 @@ It hardcodes its expectations on purpose. Importing web.constants here
 would mean asserting the page matches the thing that generated it.
 """
 
+from html import unescape
+
 from django.test import TestCase
 from django.urls import reverse
 
@@ -120,7 +122,12 @@ EXPECTED_TIERS = [
 
 class MembershipPageIsUnchangedTests(TestCase):
     def setUp(self) -> None:
-        self.html = self.client.get(reverse("membership")).content.decode()
+        # Unescaped, so the expectations below stay the literal catalogue
+        # wording. Django renders "&" as "&amp;", and asserting against the
+        # entity would mean the test no longer reads like the copy it pins.
+        self.html = unescape(
+            self.client.get(reverse("membership")).content.decode()
+        )
 
     def test_every_tier_name_is_present(self) -> None:
         for _slug, name, *_rest in EXPECTED_TIERS:
