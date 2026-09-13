@@ -7,9 +7,13 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from audience.models import Member, MembershipTerm
+from audience.models import Member, MembershipTerm, MembershipTier
 
 User = get_user_model()
+
+
+def a_tier(slug="individual"):
+    return MembershipTier.objects.get(slug=slug)
 
 
 def make_member(first="Ada", last="Lovelace", email="ada@example.com", **kwargs):
@@ -18,11 +22,11 @@ def make_member(first="Ada", last="Lovelace", email="ada@example.com", **kwargs)
     )
 
 
-def give_term(member, days_left=100, tier="individual"):
+def give_term(member, days_left=100, tier=None):
     today = timezone.localdate()
     return MembershipTerm.objects.create(
         member=member,
-        tier=tier,
+        tier=tier or a_tier(),
         started_on=today - datetime.timedelta(days=30),
         expires_on=today + datetime.timedelta(days=days_left),
         price_paid=Decimal("60.00"),
@@ -227,11 +231,11 @@ class MemberExportTests(TestCase):
     def test_one_row_per_member_from_the_latest_term(self) -> None:
         member = make_member()
         MembershipTerm.objects.create(
-            member=member, tier="individual",
+            member=member, tier=a_tier("individual"),
             started_on=datetime.date(2025, 1, 1),
             expires_on=datetime.date(2026, 1, 1), price_paid=Decimal("60.00"),
         )
-        give_term(member, tier="cinema-supporter")  # newer
+        give_term(member, tier=a_tier("cinema-supporter"))  # newer
 
         rows = [
             r for r in self.client.get(
@@ -266,3 +270,34 @@ class MemberExportTests(TestCase):
         self.assertEqual(
             self.client.get(reverse("dashboard:members_export")).status_code, 302
         )
+
+
+class MemberRosterQueryCountTests(TestCase):
+    """Pin the roster's query count so the tier N+1 can't come back quietly.
+
+    Before this branch, tier was a plain string column and cost nothing
+    extra to read. The FK it became is fetched through
+    prefetch_related("terms__tier"), which should still answer the whole
+    roster from a fixed, small number of queries — not one that grows with
+    the number of members. Measured directly against this test with 8
+    members each with a term: 6 queries — session lookup, auth user lookup,
+    the member query, the prefetched terms query, the prefetched tiers
+    query, and active_count's query for the header pill. None of the six
+    scale with the member count. Confirmed by temporarily reverting the
+    prefetch to plain "terms": query count jumped to 13 (one extra tier
+    query per member) and this test failed as expected.
+    """
+
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+
+    def test_roster_query_count_does_not_scale_with_member_count(self) -> None:
+        for i in range(8):
+            member = make_member(
+                first=f"First{i}", last=f"Last{i}", email=f"m{i}@example.com"
+            )
+            give_term(member)
+
+        with self.assertNumQueries(6):
+            self.client.get(reverse("dashboard:members"))

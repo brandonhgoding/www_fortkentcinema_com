@@ -5,7 +5,7 @@ from django.db import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
 
-from audience.models import Member, MembershipTerm
+from audience.models import Member, MembershipTerm, MembershipTier
 
 
 class MemberFieldTests(TestCase):
@@ -53,11 +53,12 @@ class MembershipTermTests(TestCase):
         self.member = Member.objects.create(
             first_name="Ada", last_name="Lovelace", email="ada@example.com"
         )
+        self.tier = MembershipTier.objects.get(slug="individual")
 
     def _term(self, **kwargs) -> MembershipTerm:
         defaults = {
             "member": self.member,
-            "tier": "individual",
+            "tier": self.tier,
             "started_on": datetime.date(2026, 1, 1),
             "expires_on": datetime.date(2027, 1, 1),
             "price_paid": Decimal("60.00"),
@@ -91,11 +92,12 @@ class DerivedStatusTests(TestCase):
             first_name="Ada", last_name="Lovelace", email="ada@example.com"
         )
         self.today = timezone.localdate()
+        self.tier = MembershipTier.objects.get(slug="individual")
 
     def _term(self, start_offset: int, end_offset: int) -> MembershipTerm:
         return MembershipTerm.objects.create(
             member=self.member,
-            tier="individual",
+            tier=self.tier,
             started_on=self.today + datetime.timedelta(days=start_offset),
             expires_on=self.today + datetime.timedelta(days=end_offset),
             price_paid=Decimal("60.00"),
@@ -144,12 +146,13 @@ class DerivedStatusTests(TestCase):
 class MemberManagerTests(TestCase):
     def setUp(self) -> None:
         self.today = timezone.localdate()
+        self.tier = MembershipTier.objects.get(slug="individual")
         self.active = Member.objects.create(
             first_name="Cur", last_name="Rent", email="current@example.com"
         )
         MembershipTerm.objects.create(
             member=self.active,
-            tier="individual",
+            tier=self.tier,
             started_on=self.today - datetime.timedelta(days=10),
             expires_on=self.today + datetime.timedelta(days=10),
             price_paid=Decimal("60.00"),
@@ -159,7 +162,7 @@ class MemberManagerTests(TestCase):
         )
         MembershipTerm.objects.create(
             member=self.lapsed,
-            tier="individual",
+            tier=self.tier,
             started_on=self.today - datetime.timedelta(days=400),
             expires_on=self.today - datetime.timedelta(days=35),
             price_paid=Decimal("60.00"),
@@ -186,7 +189,7 @@ class MemberManagerTests(TestCase):
     def test_a_member_with_two_terms_is_not_listed_twice(self) -> None:
         MembershipTerm.objects.create(
             member=self.active,
-            tier="individual",
+            tier=self.tier,
             started_on=self.today - datetime.timedelta(days=5),
             expires_on=self.today + datetime.timedelta(days=20),
             price_paid=Decimal("60.00"),

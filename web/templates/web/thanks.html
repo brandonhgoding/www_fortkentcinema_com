@@ -13,8 +13,8 @@ redirect. It has no business in search results.
   {% comment %}
   The only purchase event on the site. Square only redirects here after payment
   succeeds, so unlike an outbound "Join" click this represents money that
-  actually changed hands. `value` comes from web/constants.py via the view, not
-  from the query string — it can't be forged by editing the URL.
+  actually changed hands. `value` comes from the MembershipTier record via the
+  view, not from the query string — it can't be forged by editing the URL.
   {% endcomment %}
   <script>
     window.dataLayer = window.dataLayer || [];

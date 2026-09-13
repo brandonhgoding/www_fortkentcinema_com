@@ -1,4 +1,3 @@
-{% load dashboard_extras %}
 <div id="term-list">
   {% if terms %}
   <div class="tableWrapper">
@@ -9,7 +8,7 @@
       <tbody>
         {% for term in terms %}
         <tr class="{% if term.is_current %}currentTerm{% endif %}">
-          <td>{{ tier_labels|get_item:term.tier }}</td>
+          <td>{{ term.tier.name }}</td>
           <td>{{ term.started_on|date:"M j, Y" }}</td>
           <td>{{ term.expires_on|date:"M j, Y" }}</td>
           <td>${{ term.price_paid }}</td>

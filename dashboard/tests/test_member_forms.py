@@ -3,8 +3,12 @@ from decimal import Decimal
 
 from django.test import TestCase
 
-from audience.models import Member
+from audience.models import Member, MembershipTier
 from dashboard.forms import MemberForm, MembershipTermForm
+
+
+def a_tier(slug="individual"):
+    return MembershipTier.objects.get(slug=slug)
 
 
 class MemberFormTests(TestCase):
@@ -44,7 +48,9 @@ class MembershipTermFormTests(TestCase):
         self.assertIn("tier", form.errors)
 
     def test_expiry_defaults_to_the_tier_duration(self) -> None:
-        form = MembershipTermForm({"tier": "individual", "started_on": "2026-09-11"})
+        form = MembershipTermForm(
+            {"tier": a_tier().pk, "started_on": "2026-09-11"}
+        )
         self.assertTrue(form.is_valid(), form.errors)
         term = form.save(commit=False)
         term.member = self.member
@@ -52,13 +58,15 @@ class MembershipTermFormTests(TestCase):
         self.assertEqual(term.expires_on, datetime.date(2027, 9, 11))
 
     def test_price_defaults_to_the_tier_price(self) -> None:
-        form = MembershipTermForm({"tier": "individual", "started_on": "2026-09-11"})
+        form = MembershipTermForm(
+            {"tier": a_tier().pk, "started_on": "2026-09-11"}
+        )
         self.assertTrue(form.is_valid(), form.errors)
         self.assertEqual(form.cleaned_data["price_paid"], Decimal("60"))
 
     def test_an_explicit_price_survives(self) -> None:
         form = MembershipTermForm(
-            {"tier": "individual", "started_on": "2026-09-11", "price_paid": "0"}
+            {"tier": a_tier().pk, "started_on": "2026-09-11", "price_paid": "0"}
         )
         self.assertTrue(form.is_valid(), form.errors)
         self.assertEqual(form.cleaned_data["price_paid"], Decimal("0"))
@@ -66,7 +74,7 @@ class MembershipTermFormTests(TestCase):
     def test_an_explicit_expiry_survives(self) -> None:
         form = MembershipTermForm(
             {
-                "tier": "individual",
+                "tier": a_tier().pk,
                 "started_on": "2026-09-11",
                 "expires_on": "2027-03-11",
             }
@@ -75,12 +83,17 @@ class MembershipTermFormTests(TestCase):
         self.assertEqual(form.cleaned_data["expires_on"], datetime.date(2027, 3, 11))
 
     def test_start_date_is_required(self) -> None:
-        form = MembershipTermForm({"tier": "individual"})
+        form = MembershipTermForm({"tier": a_tier().pk})
         self.assertFalse(form.is_valid())
         self.assertIn("started_on", form.errors)
 
     def test_every_catalogue_tier_is_offered(self) -> None:
-        from web.constants import MEMBERSHIP
-
-        offered = {slug for slug, _label in MembershipTermForm().fields["tier"].choices}
-        self.assertEqual(offered, {t["slug"] for t in MEMBERSHIP})
+        offered = {
+            t.slug for t in MembershipTermForm().fields["tier"].queryset
+        }
+        self.assertEqual(
+            offered,
+            {t.slug for t in MembershipTier.objects.filter(
+                show_on_membership_page=True
+            )},
+        )

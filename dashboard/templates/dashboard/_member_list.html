@@ -1,4 +1,3 @@
-{% load dashboard_extras %}
 <div id="member-list">
   {% if members %}
   <div class="tableWrapper">
@@ -12,7 +11,7 @@
           <td><a class="memberLink" href="{% url 'dashboard:member_detail' member.pk %}">{{ member.last_name }}, {{ member.first_name }}</a></td>
           <td>{{ member.email }}</td>
           <td>{{ member.phone|default:"—" }}</td>
-          <td>{% if member.current_term %}{{ tier_labels|get_item:member.current_term.tier }}{% else %}—{% endif %}</td>
+          <td>{% if member.current_term %}{{ member.current_term.tier.name }}{% else %}—{% endif %}</td>
           <td>{% if member.current_term %}{{ member.current_term.expires_on|date:"M j, Y" }}{% else %}—{% endif %}</td>
           <td><span class="statusPill status-{{ member.status }}">{{ member.status_label }}</span></td>
           <td>

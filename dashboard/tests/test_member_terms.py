@@ -7,9 +7,19 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from audience.models import Member, MembershipTerm
+from audience.models import Member, MembershipTerm, MembershipTier
 
 User = get_user_model()
+
+
+def a_tier(slug="individual"):
+    return MembershipTier.objects.get(slug=slug)
+
+
+def make_member():
+    return Member.objects.create(
+        first_name="Ada", last_name="Lovelace", email="ada@example.com"
+    )
 
 
 class MemberDetailTests(TestCase):
@@ -33,12 +43,12 @@ class MemberDetailTests(TestCase):
 
     def test_lists_terms_newest_first_with_tier_labels(self) -> None:
         MembershipTerm.objects.create(
-            member=self.member, tier="individual",
+            member=self.member, tier=a_tier("individual"),
             started_on=datetime.date(2025, 1, 1),
             expires_on=datetime.date(2026, 1, 1), price_paid=Decimal("60.00"),
         )
         MembershipTerm.objects.create(
-            member=self.member, tier="cinema-supporter",
+            member=self.member, tier=a_tier("cinema-supporter"),
             started_on=datetime.date(2026, 1, 1),
             expires_on=datetime.date(2027, 1, 1), price_paid=Decimal("120.00"),
         )
@@ -89,7 +99,7 @@ class TermCreateTests(TestCase):
     def test_renewal_needs_only_a_tier_and_a_start_date(self) -> None:
         resp = self.client.post(
             reverse("dashboard:term_create", args=[self.member.pk]),
-            {"tier": "individual", "started_on": "2026-09-11",
+            {"tier": a_tier().pk, "started_on": "2026-09-11",
              "expires_on": "", "price_paid": "", "purchased_at": "", "notes": ""},
         )
         self.assertEqual(resp.status_code, 200)
@@ -112,7 +122,7 @@ class TermCreateTests(TestCase):
     def test_a_second_term_makes_a_lapsed_member_active(self) -> None:
         today = timezone.localdate()
         MembershipTerm.objects.create(
-            member=self.member, tier="individual",
+            member=self.member, tier=a_tier("individual"),
             started_on=today - datetime.timedelta(days=800),
             expires_on=today - datetime.timedelta(days=400),
             price_paid=Decimal("60.00"),
@@ -121,7 +131,7 @@ class TermCreateTests(TestCase):
 
         self.client.post(
             reverse("dashboard:term_create", args=[self.member.pk]),
-            {"tier": "individual", "started_on": today.isoformat(),
+            {"tier": a_tier().pk, "started_on": today.isoformat(),
              "expires_on": "", "price_paid": "", "purchased_at": "", "notes": ""},
         )
         self.member.refresh_from_db()
@@ -146,7 +156,7 @@ class TermEditDeleteTests(TestCase):
             first_name="Ada", last_name="Lovelace", email="ada@example.com"
         )
         self.term = MembershipTerm.objects.create(
-            member=self.member, tier="individual",
+            member=self.member, tier=a_tier("individual"),
             started_on=datetime.date(2026, 1, 1),
             expires_on=datetime.date(2027, 1, 1), price_paid=Decimal("60.00"),
         )
@@ -154,7 +164,7 @@ class TermEditDeleteTests(TestCase):
     def test_edit_fixes_a_typo(self) -> None:
         self.client.post(
             reverse("dashboard:term_edit", args=[self.term.pk]),
-            {"tier": "individual", "started_on": "2026-01-02",
+            {"tier": a_tier().pk, "started_on": "2026-01-02",
              "expires_on": "2027-01-02", "price_paid": "60.00",
              "purchased_at": "", "notes": ""},
         )
@@ -167,7 +177,7 @@ class TermEditDeleteTests(TestCase):
         )
         self.client.post(
             reverse("dashboard:term_edit", args=[self.term.pk]),
-            {"tier": "individual", "started_on": "2026-01-01",
+            {"tier": a_tier().pk, "started_on": "2026-01-01",
              "expires_on": "2027-01-01", "price_paid": "60.00",
              "purchased_at": "", "notes": "", "member": other.pk},
         )
@@ -176,10 +186,99 @@ class TermEditDeleteTests(TestCase):
 
     def test_delete_removes_only_that_term(self) -> None:
         MembershipTerm.objects.create(
-            member=self.member, tier="individual",
+            member=self.member, tier=a_tier("individual"),
             started_on=datetime.date(2025, 1, 1),
             expires_on=datetime.date(2026, 1, 1), price_paid=Decimal("60.00"),
         )
         self.client.post(reverse("dashboard:term_delete", args=[self.term.pk]))
         self.assertEqual(self.member.terms.count(), 1)
         self.assertEqual(Member.objects.count(), 1)
+
+
+class TermFormTierChoicesTests(TestCase):
+    """The dropdown comes from the database, and retiring is not destructive."""
+
+    def test_choices_come_from_the_catalogue(self) -> None:
+        from dashboard.forms import MembershipTermForm
+
+        slugs = {t.slug for t in MembershipTermForm().fields["tier"].queryset}
+        self.assertEqual(
+            slugs,
+            {"silver-screen", "individual", "cinema-supporter", "family",
+             "family-plus"},
+        )
+
+    def test_retired_tier_drops_out_for_a_new_term(self) -> None:
+        from dashboard.forms import MembershipTermForm
+
+        tier = MembershipTier.objects.get(slug="family-plus")
+        tier.show_on_membership_page = False
+        tier.save(update_fields=["show_on_membership_page"])
+
+        slugs = {t.slug for t in MembershipTermForm().fields["tier"].queryset}
+        self.assertNotIn("family-plus", slugs)
+
+    def test_retired_tier_stays_selectable_on_a_term_that_uses_it(self) -> None:
+        """Editing an old record must not quietly re-tier it."""
+        import datetime
+        from decimal import Decimal
+
+        from dashboard.forms import MembershipTermForm
+
+        tier = MembershipTier.objects.get(slug="family-plus")
+        member = make_member()
+        term = MembershipTerm.objects.create(
+            member=member, tier=tier,
+            started_on=datetime.date(2026, 1, 1),
+            expires_on=datetime.date(2026, 12, 31),
+            price_paid=Decimal("250.00"),
+        )
+        tier.show_on_membership_page = False
+        tier.save(update_fields=["show_on_membership_page"])
+
+        form = MembershipTermForm(instance=term)
+        self.assertIn(tier, form.fields["tier"].queryset)
+
+    def test_expiry_defaults_from_the_selected_tier(self) -> None:
+        import datetime
+
+        from dashboard.forms import MembershipTermForm
+
+        form = MembershipTermForm(data={
+            "tier": a_tier("individual").pk,
+            "started_on": "2026-03-01",
+        })
+        self.assertTrue(form.is_valid(), form.errors)
+        # 12 months, inclusive-through semantics preserved by add_months.
+        self.assertEqual(
+            form.cleaned_data["expires_on"],
+            datetime.date(2027, 3, 1),
+        )
+
+        # Every seeded tier is 12 months, so the case above alone would
+        # pass just as well against a clean() that hardcoded 12 months and
+        # never read tier.duration_months. Give a tier a different
+        # duration so only reading the field can produce the right answer.
+        short_tier = a_tier("individual")
+        short_tier.duration_months = 6
+        short_tier.save(update_fields=["duration_months"])
+
+        form = MembershipTermForm(data={
+            "tier": short_tier.pk,
+            "started_on": "2026-03-01",
+        })
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(
+            form.cleaned_data["expires_on"],
+            datetime.date(2026, 9, 1),
+        )
+
+    def test_price_defaults_from_the_selected_tier(self) -> None:
+        from dashboard.forms import MembershipTermForm
+
+        form = MembershipTermForm(data={
+            "tier": a_tier("cinema-supporter").pk,
+            "started_on": "2026-03-01",
+        })
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["price_paid"], 120)

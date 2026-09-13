@@ -20,11 +20,13 @@ class MembershipTerm(models.Model):
         "audience.Member", related_name="terms", on_delete=models.CASCADE
     )
 
-    # The tier slug from web.constants.MEMBERSHIP. Stored as a plain string
-    # because `web` imports `audience` — validating against the catalogue
-    # happens in dashboard.forms, where importing `web` is safe.
-    tier = models.CharField(max_length=32)
-
+    tier = models.ForeignKey(
+        "audience.MembershipTier",
+        related_name="terms",
+        on_delete=models.PROTECT,
+        help_text="Retire a tier with show_on_membership_page instead of "
+        "deleting it — terms are revenue records.",
+    )
     started_on = models.DateField()
     expires_on = models.DateField(
         help_text="Inclusive: the membership is good through this date."

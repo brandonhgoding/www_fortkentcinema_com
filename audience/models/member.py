@@ -62,9 +62,10 @@ class Member(models.Model):
         """The term covering today, or None.
 
         Iterates the related manager rather than filtering in SQL so that a
-        list view's prefetch_related("terms") answers every row from one
-        query. Terms are ordered newest-first, so a renewal wins over the
-        term it overlaps.
+        list view's prefetch_related("terms__tier") answers every row from
+        one query per relation (including the tier FK templates dereference).
+        Terms are ordered newest-first, so a renewal wins over the term it
+        overlaps.
         """
         today = timezone.localdate()
         for term in self.terms.all():

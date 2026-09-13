@@ -15,7 +15,6 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.views import View
-from web.constants import MEMBERSHIP_TIER_LABELS
 
 from .forms import MemberForm, MembershipTermForm
 from .mixins import StaffRequiredMixin
@@ -36,7 +35,7 @@ def member_roster(request):
     rows at most; a query that could express "expiring soon" in SQL would
     duplicate the definition that lives on the model.
     """
-    members = Member.objects.prefetch_related("terms")
+    members = Member.objects.prefetch_related("terms__tier")
 
     q = (request.GET.get("q") or "").strip()
     if q:
@@ -65,7 +64,6 @@ class MemberListView(StaffRequiredMixin, View):
                 "q": q,
                 "selected_status": status,
                 "statuses": STATUS_FILTERS,
-                "tier_labels": MEMBERSHIP_TIER_LABELS,
                 "active_count": Member.objects.active().count(),
             },
         )
@@ -85,7 +83,7 @@ def _member_list_response(request, toast_message):
     html = render(
         request,
         "dashboard/_member_list.html",
-        {"members": members, "tier_labels": MEMBERSHIP_TIER_LABELS},
+        {"members": members},
     ).content.decode()
     html = html.replace(
         '<div id="member-list">', '<div id="member-list" hx-swap-oob="true">', 1
@@ -164,7 +162,6 @@ def _term_list_response(request, member, toast_message):
         {
             "member": member,
             "terms": member.terms.all(),
-            "tier_labels": MEMBERSHIP_TIER_LABELS,
         },
     ).content.decode()
     html = html.replace(
@@ -183,7 +180,7 @@ def _term_list_response(request, member, toast_message):
 class MemberDetailView(StaffRequiredMixin, View):
     def get(self, request, pk):
         member = get_object_or_404(
-            Member.objects.prefetch_related("terms"), pk=pk
+            Member.objects.prefetch_related("terms__tier"), pk=pk
         )
         return render(
             request,
@@ -191,7 +188,6 @@ class MemberDetailView(StaffRequiredMixin, View):
             {
                 "member": member,
                 "terms": member.terms.all(),
-                "tier_labels": MEMBERSHIP_TIER_LABELS,
             },
         )
 
@@ -282,7 +278,7 @@ class MemberExportView(StaffRequiredMixin, View):
                 member.last_name,
                 member.email,
                 member.phone,
-                term.tier if term else "",
+                term.tier.slug if term else "",
                 term.started_on.isoformat() if term else "",
                 term.expires_on.isoformat() if term else "",
                 term.price_paid if term else "",
