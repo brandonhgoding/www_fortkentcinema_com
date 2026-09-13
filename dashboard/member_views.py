@@ -6,6 +6,7 @@ are the first real customer PII in this database, so every view is
 staff-only, the CSV export included.
 """
 
+import csv
 import json
 
 from audience.models import Member, MembershipTerm
@@ -253,3 +254,38 @@ class TermDeleteView(StaffRequiredMixin, View):
         member = term.member
         term.delete()
         return _term_list_response(request, member, "Term deleted")
+
+
+class MemberExportView(StaffRequiredMixin, View):
+    """One row per member, from their most recent term.
+
+    Matches the shape of the spreadsheet this replaces. A per-term export
+    for revenue analysis would be a second view; this one answers "who are
+    my members".
+    """
+
+    def get(self, request):
+        members, _q, _status = member_roster(request)
+
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="members.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow([
+            "first_name", "last_name", "email", "phone",
+            "tier", "started_on", "expires_on", "price_paid", "status",
+        ])
+        for member in members:
+            term = member.terms.first()  # ordering is -started_on
+            writer.writerow([
+                member.first_name,
+                member.last_name,
+                member.email,
+                member.phone,
+                term.tier if term else "",
+                term.started_on.isoformat() if term else "",
+                term.expires_on.isoformat() if term else "",
+                term.price_paid if term else "",
+                member.status,
+            ])
+        return response

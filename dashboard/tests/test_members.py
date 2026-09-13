@@ -201,3 +201,68 @@ class MemberDeleteTests(TestCase):
         give_term(member)
         html = self.client.get(reverse("dashboard:members")).content.decode()
         self.assertIn("1 membership term", html)
+
+
+class MemberExportTests(TestCase):
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+
+    def test_export_is_a_csv_attachment(self) -> None:
+        resp = self.client.get(reverse("dashboard:members_export"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["Content-Type"], "text/csv")
+        self.assertIn("attachment", resp["Content-Disposition"])
+        self.assertIn("members.csv", resp["Content-Disposition"])
+
+    def test_header_row(self) -> None:
+        body = self.client.get(reverse("dashboard:members_export")).content.decode()
+        self.assertTrue(
+            body.startswith(
+                "first_name,last_name,email,phone,tier,started_on,"
+                "expires_on,price_paid,status"
+            )
+        )
+
+    def test_one_row_per_member_from_the_latest_term(self) -> None:
+        member = make_member()
+        MembershipTerm.objects.create(
+            member=member, tier="individual",
+            started_on=datetime.date(2025, 1, 1),
+            expires_on=datetime.date(2026, 1, 1), price_paid=Decimal("60.00"),
+        )
+        give_term(member, tier="cinema-supporter")  # newer
+
+        rows = [
+            r for r in self.client.get(
+                reverse("dashboard:members_export")
+            ).content.decode().splitlines() if r
+        ]
+        self.assertEqual(len(rows), 2)  # header + one member
+        self.assertIn("cinema-supporter", rows[1])
+        self.assertNotIn("individual", rows[1])
+
+    def test_a_member_with_no_terms_still_exports(self) -> None:
+        make_member("No", "Terms", "never@example.com")
+        rows = [
+            r for r in self.client.get(
+                reverse("dashboard:members_export")
+            ).content.decode().splitlines() if r
+        ]
+        self.assertEqual(len(rows), 2)
+        self.assertIn("lapsed", rows[1])
+
+    def test_export_honours_the_status_filter(self) -> None:
+        give_term(make_member("Cur", "Rent", "current@example.com"))
+        make_member("No", "Terms", "never@example.com")
+        body = self.client.get(
+            reverse("dashboard:members_export"), {"status": "lapsed"}
+        ).content.decode()
+        self.assertIn("never@example.com", body)
+        self.assertNotIn("current@example.com", body)
+
+    def test_requires_staff(self) -> None:
+        self.client.logout()
+        self.assertEqual(
+            self.client.get(reverse("dashboard:members_export")).status_code, 302
+        )

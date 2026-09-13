@@ -70,6 +70,11 @@ urlpatterns = [
     path("members", member_views.MemberListView.as_view(), name="members"),
     path("members/new", member_views.MemberCreateView.as_view(), name="member_create"),
     path(
+        "members/export.csv",
+        member_views.MemberExportView.as_view(),
+        name="members_export",
+    ),
+    path(
         "members/<int:pk>/edit",
         member_views.MemberEditView.as_view(),
         name="member_edit",

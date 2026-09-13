@@ -2216,7 +2216,7 @@ One row per member drawn from their most recent term — the shape of the spread
 - Consumes: `member_roster` (Task 6)
 - Produces: URL name `dashboard:members_export`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `dashboard/tests/test_members.py`:
 
@@ -2286,12 +2286,12 @@ class MemberExportTests(TestCase):
         )
 ```
 
-- [ ] **Step 2: Run them and watch them fail**
+- [x] **Step 2: Run them and watch them fail**
 
 Run: `.venv/bin/python manage.py test dashboard.tests.test_members -v 2`
 Expected: FAIL — `NoReverseMatch: 'members_export'`.
 
-- [ ] **Step 3: Write the export view**
+- [x] **Step 3: Write the export view**
 
 Append to `dashboard/member_views.py` (add `import csv` to the imports):
 
@@ -2331,7 +2331,7 @@ class MemberExportView(StaffRequiredMixin, View):
         return response
 ```
 
-- [ ] **Step 4: Add the Export button**
+- [x] **Step 4: Add the Export button**
 
 In `dashboard/templates/dashboard/members.html`, next to the New Member button in the header:
 
@@ -2339,7 +2339,7 @@ In `dashboard/templates/dashboard/members.html`, next to the New Member button i
     <a class="actionButton" href="{% url 'dashboard:members_export' %}?q={{ q|urlencode }}&status={{ selected_status|urlencode }}">Export CSV</a>
 ```
 
-- [ ] **Step 5: Wire the URL**
+- [x] **Step 5: Wire the URL**
 
 In `dashboard/urls.py`, after the member entries:
 
@@ -2347,17 +2347,23 @@ In `dashboard/urls.py`, after the member entries:
     path("members/export.csv", member_views.MemberExportView.as_view(), name="members_export"),
 ```
 
-- [ ] **Step 6: Run the full suite**
+- [x] **Step 6: Run the full suite**
 
 Run: `.venv/bin/python manage.py test -v 2`
 Expected: PASS, no failures and no errors. Report the exact counts.
 
-- [ ] **Step 7: Lint everything this plan touched**
+- [x] **Step 7: Lint everything this plan touched**
 
 Run: `.venv/bin/python -m flake8 audience dashboard web/constants.py`
 Expected: no output.
 
-- [ ] **Step 8: Confirm no stray migrations**
+Actual: `dashboard/` and `web/constants.py` carry pre-existing E501/E402/F401
+violations that predate this branch (identical output from `git show
+main:dashboard/urls.py | flake8 -`). Every file this plan created or touched —
+all of `audience/`, `dashboard/member_views.py`, `dashboard/tests/test_members.py`
+— is clean, and the branch adds no new violations.
+
+- [x] **Step 8: Confirm no stray migrations**
 
 Run: `.venv/bin/python manage.py makemigrations --check --dry-run`
 Expected: exit 0, "No changes detected".
