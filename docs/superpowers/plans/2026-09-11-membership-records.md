@@ -764,7 +764,7 @@ This is the seam where the tier catalogue meets the models. `dashboard` importin
   - `dashboard.forms.MembershipTermForm` (fields: `tier`, `started_on`, `expires_on`, `price_paid`, `purchased_at`, `notes`)
   - Tasks 7 and 8 instantiate both
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `dashboard/tests/test_member_forms.py`:
 
@@ -857,12 +857,12 @@ class MembershipTermFormTests(TestCase):
         self.assertEqual(offered, {t["slug"] for t in MEMBERSHIP})
 ```
 
-- [ ] **Step 2: Run them and watch them fail**
+- [x] **Step 2: Run them and watch them fail**
 
 Run: `.venv/bin/python manage.py test dashboard.tests.test_member_forms -v 2`
 Expected: FAIL — `ImportError: cannot import name 'MemberForm' from 'dashboard.forms'`.
 
-- [ ] **Step 3: Add the tier lookups**
+- [x] **Step 3: Add the tier lookups**
 
 In `web/constants.py`, immediately after the closing `]` of the `MEMBERSHIP` list:
 
@@ -871,7 +871,7 @@ MEMBERSHIP_BY_SLUG = {t["slug"]: t for t in MEMBERSHIP}
 MEMBERSHIP_TIER_LABELS = {t["slug"]: t["name"] for t in MEMBERSHIP}
 ```
 
-- [ ] **Step 4: Write the forms**
+- [x] **Step 4: Write the forms**
 
 Append to `dashboard/forms.py` (and add `from audience.models import Member, MembershipTerm`, `from audience.dates import add_months`, and `from web.constants import MEMBERSHIP, MEMBERSHIP_BY_SLUG` to the imports at the top):
 
@@ -954,19 +954,19 @@ class MembershipTermForm(forms.ModelForm):
         return cleaned
 ```
 
-- [ ] **Step 5: Run the tests**
+- [x] **Step 5: Run the tests**
 
 Run: `.venv/bin/python manage.py test dashboard.tests.test_member_forms audience -v 2`
 Expected: PASS.
 
-- [ ] **Step 6: Confirm the public membership page still renders**
+- [x] **Step 6: Confirm the public membership page still renders**
 
 The new dict comprehensions run at import time in `web/constants.py`; a typo there breaks `/membership/`.
 
 Run: `.venv/bin/python manage.py test web.tests.test_pages web.tests.test_analytics -v 2`
 Expected: PASS.
 
-- [ ] **Step 7: Lint and commit**
+- [x] **Step 7: Lint and commit**
 
 ```bash
 .venv/bin/python -m flake8 web/constants.py dashboard/forms.py dashboard/tests/test_member_forms.py
@@ -1003,7 +1003,7 @@ Read-only list first: URL, view, template, sidebar link, CSS. Create/edit/delete
   - `MemberListView`, and the module-level helper `member_roster(request)` returning the filtered queryset — Task 7 and Task 9 reuse it
   - Template block `<div id="member-list">` — Task 7 swaps it out of band
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `dashboard/tests/test_members.py`:
 
@@ -1124,12 +1124,12 @@ class MemberListTests(TestCase):
         self.assertIn(reverse("dashboard:members"), html)
 ```
 
-- [ ] **Step 2: Run them and watch them fail**
+- [x] **Step 2: Run them and watch them fail**
 
 Run: `.venv/bin/python manage.py test dashboard.tests.test_members -v 2`
 Expected: FAIL — `NoReverseMatch: 'members' is not a valid view function or pattern name`.
 
-- [ ] **Step 3: Write the view module**
+- [x] **Step 3: Write the view module**
 
 Create `dashboard/member_views.py`:
 
@@ -1203,7 +1203,7 @@ class MemberListView(StaffRequiredMixin, View):
 
 Add `from django.db import models` to the imports — `member_roster` uses `models.Q`.
 
-- [ ] **Step 4: Write the templates**
+- [x] **Step 4: Write the templates**
 
 Create `dashboard/templates/dashboard/members.html`:
 
@@ -1273,7 +1273,7 @@ Create `dashboard/templates/dashboard/_member_list.html`:
 
 Note: the name cell is deliberately plain text here. `dashboard:member_detail` does not exist until Task 8, and `{% url %}` on an unknown name raises `NoReverseMatch` at render time — Task 8 replaces this cell with the anchor once the view exists.
 
-- [ ] **Step 5: Write the CSS**
+- [x] **Step 5: Write the CSS**
 
 Create `dashboard/static/dashboard/css/members.css`:
 
@@ -1324,7 +1324,7 @@ Create `dashboard/static/dashboard/css/members.css`:
 }
 ```
 
-- [ ] **Step 6: Wire the URL**
+- [x] **Step 6: Wire the URL**
 
 In `dashboard/urls.py`, add `member_views` to the `from . import ...` line and add this entry after the `subscribers` block:
 
@@ -1332,7 +1332,7 @@ In `dashboard/urls.py`, add `member_views` to the `from . import ...` line and a
     path("members", member_views.MemberListView.as_view(), name="members"),
 ```
 
-- [ ] **Step 7: Add the sidebar link**
+- [x] **Step 7: Add the sidebar link**
 
 In `dashboard/templates/dashboard/_sidebar.html`, between the Subscribers and Inquiries links:
 
@@ -1341,17 +1341,17 @@ In `dashboard/templates/dashboard/_sidebar.html`, between the Subscribers and In
       <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="5" width="16" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M2 9h16" stroke="currentColor" stroke-width="1.5"/><path d="M5 13h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Members</a>
 ```
 
-- [ ] **Step 8: Run the tests**
+- [x] **Step 8: Run the tests**
 
 Run: `.venv/bin/python manage.py test dashboard.tests.test_members -v 2`
 Expected: PASS, 9 tests.
 
-- [ ] **Step 9: Run the whole dashboard suite — the sidebar is on every page**
+- [x] **Step 9: Run the whole dashboard suite — the sidebar is on every page**
 
 Run: `.venv/bin/python manage.py test dashboard -v 2`
 Expected: PASS.
 
-- [ ] **Step 10: Lint and commit**
+- [x] **Step 10: Lint and commit**
 
 ```bash
 .venv/bin/python -m flake8 dashboard
