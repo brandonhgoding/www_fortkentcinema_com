@@ -76,6 +76,17 @@ class MembershipTierTests(TestCase):
             ["silver-screen", "individual", "family-plus"],
         )
 
+    def test_ties_on_sort_order_resolve_by_price(self) -> None:
+        """Only a true price tiebreak explains this order."""
+        make_tier(
+            slug="individual-plus", name="Individual Plus", price=90, sort_order=20
+        )
+        make_tier(slug="individual", name="Individual", price=60, sort_order=20)
+        self.assertEqual(
+            [t.slug for t in MembershipTier.objects.filter(sort_order=20)],
+            ["individual", "individual-plus"],
+        )
+
     def test_benefits_come_back_in_benefit_order(self) -> None:
         """The M2M is plain; the order lives on the benefit."""
         tier = make_tier()
