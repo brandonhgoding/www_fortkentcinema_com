@@ -14,7 +14,7 @@ import re
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from web.constants import MEMBERSHIP
+from audience.models import MembershipTier
 
 
 def tracked(html, event):
@@ -45,10 +45,11 @@ class GA4SnippetTests(TestCase):
 class ClickEventMarkupTests(TestCase):
     def test_membership_join_buttons_tagged_with_tier(self):
         html = self.client.get(reverse("membership")).content.decode()
+        tiers = MembershipTier.objects.filter(show_on_membership_page=True)
         hits = tracked(html, "membership_join_click")
-        self.assertEqual(len(hits), len(MEMBERSHIP))
-        for tier in MEMBERSHIP:
-            self.assertIn(f'data-track-tier="{tier["slug"]}"', html)
+        self.assertEqual(len(hits), tiers.count())
+        for tier in tiers:
+            self.assertIn(f'data-track-tier="{tier.slug}"', html)
 
     def test_membership_click_carries_no_monetary_value(self):
         """A click is not a purchase. Money belongs on /thanks and nowhere else."""
@@ -75,22 +76,22 @@ class ClickEventMarkupTests(TestCase):
 
 class ThanksPageTests(TestCase):
     def tier(self, slug):
-        return next(t for t in MEMBERSHIP if t["slug"] == slug)
+        return MembershipTier.objects.get(slug=slug)
 
     def test_known_tier_fires_purchase_with_the_real_price(self):
         tier = self.tier("cinema-supporter")
-        html = self.client.get("/thanks", {"tier": tier["slug"]}).content.decode()
+        html = self.client.get("/thanks", {"tier": tier.slug}).content.decode()
         self.assertIn("'purchase'", html)
-        self.assertIn(f"value: {tier['price']}", html)
+        self.assertIn(f"value: {tier.price}", html)
         self.assertIn("currency: 'USD'", html)
 
-    def test_value_comes_from_constants_not_the_query_string(self):
+    def test_value_comes_from_the_record_not_the_query_string(self):
         """Revenue must not be forgeable by editing the URL."""
         tier = self.tier("individual")
         html = self.client.get(
-            "/thanks", {"tier": tier["slug"], "value": "99999"}
+            "/thanks", {"tier": tier.slug, "value": "99999"}
         ).content.decode()
-        self.assertIn(f"value: {tier['price']}", html)
+        self.assertIn(f"value: {tier.price}", html)
         self.assertNotIn("99999", html)
 
     def test_unknown_tier_fires_nothing(self):

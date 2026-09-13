@@ -99,8 +99,8 @@ markup that isn't on the page.
     </section>
 
     {% comment %}
-      Tiers: loops MEMBERSHIP into partials/tier_card.html. id="tiers" is
-      the scroll target for the hero + final CTA anchor links.
+      Tiers: loops a MembershipTier queryset into partials/tier_card.html.
+      id="tiers" is the scroll target for the hero + final CTA anchor links.
     {% endcomment %}
     <section class="membership-tiers" id="tiers">
       <header class="membership-tiers__header" data-reveal>
