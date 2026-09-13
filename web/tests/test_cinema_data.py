@@ -20,10 +20,11 @@ def make_film(title="Dune", **kw):
 
 
 def make_engagement(screen, films, *, start, end, status="CONFIRMED", kind="REGULAR",
-                    show=True, event_title=""):
+                    show=True, event_title="", free_for_members=False):
     eng = Engagement.objects.create(
         screen=screen, start_date=start, end_date=end, status=status, kind=kind,
         show_in_main_listings=show, event_title=event_title,
+        is_free_for_members=free_for_members,
     )
     for i, f in enumerate(films, start=1):
         EngagementFilm.objects.create(engagement=eng, film=f, position=i)
@@ -93,10 +94,21 @@ class NowShowingTests(TestCase):
     def test_free_for_members_flag(self) -> None:
         eng = make_engagement(self.screen, [self.film],
                               start=self.today, end=self.today + datetime.timedelta(days=3),
-                              kind="CLASSIC")  # CLASSIC is free for members
+                              free_for_members=True)
         Showtime.objects.create(engagement=eng, starts_at=aware(self.today.year, self.today.month, self.today.day, 19, 0))
         out = get_now_showing()
         self.assertTrue(out[0]["is_free_for_members"])
+
+    def test_free_for_members_off_by_default_for_classics(self) -> None:
+        eng = make_engagement(self.screen, [self.film], start=self.today,
+                              end=self.today + datetime.timedelta(days=3),
+                              kind="CLASSIC")
+        Showtime.objects.create(
+            engagement=eng,
+            starts_at=aware(self.today.year, self.today.month, self.today.day, 19, 0),
+        )
+        out = get_now_showing()
+        self.assertFalse(out[0]["is_free_for_members"])
 
 
 from web.services.cinema_data import get_coming_soon

@@ -51,6 +51,11 @@ class Engagement(models.Model):
     )
     event_title = models.CharField(max_length=200, blank=True)
     show_in_main_listings = models.BooleanField(default=True)
+    is_free_for_members = models.BooleanField(
+        default=False,
+        help_text="Show a 'Free for Members' badge on the public listings "
+        "and movie page for this run.",
+    )
 
     # TODO: Validation that an 3d engagement can't be book on non 3d screens
 
@@ -77,12 +82,6 @@ class Engagement(models.Model):
 
     def __str__(self) -> str:
         return f"{self.display_title} ({self.start_date} → {self.end_date})"
-
-    @property
-    def is_free_for_members(self) -> bool:
-        if self.kind in [self.Kind.CLASSIC, self.Kind.DOUBLE_FEATURE, self.Kind.SPECIAL_EVENT]:
-            return True
-        return False
 
     @property
     def is_active(self) -> bool:

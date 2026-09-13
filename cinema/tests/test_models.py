@@ -80,9 +80,16 @@ class EngagementTestCase(TestCase):
         with self.assertRaises(IntegrityError), transaction.atomic():
             EngagementFilm.objects.create(engagement=eng, film=self.film_b, position=1)
 
-    def test_is_free_for_members_by_kind(self) -> None:
-        self.assertTrue(self._engagement(kind=Engagement.Kind.CLASSIC).is_free_for_members)
-        self.assertFalse(self._engagement(kind=Engagement.Kind.REGULAR).is_free_for_members)
+    def test_is_free_for_members_defaults_off(self) -> None:
+        for kind in (Engagement.Kind.CLASSIC, Engagement.Kind.REGULAR):
+            self.assertFalse(self._engagement(kind=kind).is_free_for_members)
+
+    def test_is_free_for_members_when_set(self) -> None:
+        eng = self._engagement(kind=Engagement.Kind.REGULAR)
+        eng.is_free_for_members = True
+        eng.save(update_fields=["is_free_for_members"])
+        eng.refresh_from_db()
+        self.assertTrue(eng.is_free_for_members)
 
 
 class ShowtimeTestCase(TestCase):
