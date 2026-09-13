@@ -180,18 +180,26 @@ MEMBERSHIP_FAQ = [
 # suffixes collisions, so booking a second copy of a title moves its slug and
 # quietly retires the banner — check here first if it stops appearing.
 #
-# Set to None once the run is over and nothing replaces it.
-SPONSORED_SCREENING = {
-    "film_slug": "the-land-before-time",
-    "sponsor": "AParadis Photography",
-    # The occasion, when there is one. A holiday weekend sells a family
-    # matinee better than the word "sponsored" does. Blank falls back to
-    # "Sponsored screening" in the template.
-    "eyebrow": "Labor Day Weekend",
-    # Confirmed by Brandon 2026-09-01. A price on the homepage is a promise we
-    # have to honour at the door — leave it out rather than guess.
-    "admission": "$4",
-}
+# None between runs. The banner already retires itself on the booking's
+# end_date, so clearing this is tidying rather than a deadline — but leaving a
+# finished run configured means the next slug collision or re-booking of the
+# same film can bring the banner back unannounced.
+#
+# The Land Before Time, sponsored by AParadis Photography over Labor Day
+# weekend 2026, was the first run. Its config is the shape to fill in:
+#
+#     SPONSORED_SCREENING = {
+#         "film_slug": "the-land-before-time",
+#         "sponsor": "AParadis Photography",
+#         # The occasion, when there is one. A holiday weekend sells a family
+#         # matinee better than the word "sponsored" does. Blank falls back to
+#         # "Sponsored screening" in the template.
+#         "eyebrow": "Labor Day Weekend",
+#         # A price on the homepage is a promise we have to honour at the
+#         # door — leave it out rather than guess.
+#         "admission": "$4",
+#     }
+SPONSORED_SCREENING = None
 
 # Sponsorship program. A local business underwrites a screening; the tiers
 # stack, each one adding to the one before it.

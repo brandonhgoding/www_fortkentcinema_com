@@ -20,8 +20,18 @@ from django.urls import reverse
 from django.utils import timezone
 
 from cinema.models import Engagement, EngagementFilm, Film, Screen, Showtime
-from web.constants import SPONSORED_SCREENING
 from web.views import sponsored_screening
+
+# The suite configures its own run rather than reading web.constants. Between
+# sponsored screenings the live SPONSORED_SCREENING is None, and a mechanism
+# that only works while a run happens to be booked is a mechanism that stops
+# being tested the moment the banner comes down.
+CONFIG = {
+    "film_slug": "the-land-before-time",
+    "sponsor": "AParadis Photography",
+    "eyebrow": "Labor Day Weekend",
+    "admission": "$4",
+}
 
 
 def make_screen():
@@ -35,7 +45,14 @@ def aware(d, hh, mm=0):
 class SponsoredScreeningFixture(TestCase):
     """A three-day run of the configured film with two showtimes a day."""
 
+    #: Overridden by the unconfigured-state tests below.
+    config = CONFIG
+
     def setUp(self):
+        patcher = mock.patch("web.views.SPONSORED_SCREENING", self.config)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
         self.screen = make_screen()
         self.film = Film.objects.create(
             title="The Land Before Time",
@@ -43,9 +60,9 @@ class SponsoredScreeningFixture(TestCase):
             rating="G",
             youtube_id="Hmrx8luoec0",
         )
-        # The constant finds the film by slug; the fixture must match it or
+        # The config finds the film by slug; the fixture must match it or
         # every assertion below is testing nothing.
-        self.assertEqual(self.film.slug, SPONSORED_SCREENING["film_slug"])
+        self.assertEqual(self.film.slug, CONFIG["film_slug"])
         self.today = timezone.localdate()
 
     def book(self, *, start_offset=0, days=3, status="CONFIRMED", times=(11, 13)):
@@ -134,7 +151,7 @@ class SponsoredScreeningBannerTests(SponsoredScreeningFixture):
     def test_eyebrow_falls_back_when_no_occasion_is_configured(self):
         """Not every sponsored run lands on a holiday."""
         self.book()
-        with mock.patch.dict(SPONSORED_SCREENING, {"eyebrow": ""}):
+        with mock.patch("web.views.SPONSORED_SCREENING", {**CONFIG, "eyebrow": ""}):
             html = self.home()
         self.assertIn("Sponsored screening", html)
         self.assertNotIn("Labor Day Weekend", html)
@@ -194,3 +211,22 @@ class SponsoredScreeningBannerTests(SponsoredScreeningFixture):
         html = self.home()
         self.assertNotIn("{#", html)
         self.assertNotIn("{% comment %}", html)
+
+
+class NoSponsoredScreeningConfiguredTests(SponsoredScreeningFixture):
+    """The state between runs, which is what the homepage does most of the year.
+
+    Clearing the constant has to be enough on its own: the booking it pointed
+    at is still sitting in the catalog, still CONFIRMED, still playing. Only
+    the config is gone.
+    """
+
+    config = None
+
+    def test_returns_none_when_nothing_is_configured(self):
+        self.book()
+        self.assertIsNone(sponsored_screening())
+
+    def test_banner_absent_when_nothing_is_configured(self):
+        self.book()
+        self.assertNotIn("sponsored-cta", self.home())
