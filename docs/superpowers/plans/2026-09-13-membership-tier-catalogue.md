@@ -751,9 +751,13 @@ def seed(apps, schema_editor):
         by_name[name] = Benefit.objects.create(name=name, sort_order=sort_order)
 
     for spec in TIERS:
-        names = spec.pop("benefits")
-        tier = Tier.objects.create(**spec)
-        tier.benefits.set([by_name[n] for n in names])
+        # Copy rather than pop: TIERS is module-level, and popping would
+        # mutate it for the life of the process. A reverse followed by a
+        # re-apply — which `migrate` back and forward in one process does —
+        # would then fail on the missing key.
+        fields = {k: v for k, v in spec.items() if k != "benefits"}
+        tier = Tier.objects.create(**fields)
+        tier.benefits.set([by_name[n] for n in spec["benefits"]])
 
 
 def unseed(apps, schema_editor):
