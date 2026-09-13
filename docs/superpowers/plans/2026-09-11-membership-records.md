@@ -1383,7 +1383,7 @@ Mirrors `ScreenCreateView` / `ScreenEditView` / `ScreenDeleteView` in `dashboard
 - Consumes: `MemberForm` (Task 5); `member_roster` (Task 6)
 - Produces: URL names `dashboard:member_create`, `dashboard:member_edit`, `dashboard:member_delete`; helpers `_render_member_form(request, form, action_url, submit_label)` and `_member_list_response(request, toast_message)` — Task 8 reuses neither, but Task 9 relies on the list markup staying stable
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `dashboard/tests/test_members.py`:
 
@@ -1479,12 +1479,12 @@ class MemberDeleteTests(TestCase):
         self.assertIn("1 membership term", html)
 ```
 
-- [ ] **Step 2: Run them and watch them fail**
+- [x] **Step 2: Run them and watch them fail**
 
 Run: `.venv/bin/python manage.py test dashboard.tests.test_members -v 2`
 Expected: FAIL — `NoReverseMatch: 'member_create'`.
 
-- [ ] **Step 3: Add the view helpers and the three views**
+- [x] **Step 3: Add the view helpers and the three views**
 
 Append to `dashboard/member_views.py` (add `import json`, `from django.http import HttpResponse`, `from django.shortcuts import get_object_or_404, render`, `from django.urls import reverse`, and `from .forms import MemberForm` to the imports):
 
@@ -1566,7 +1566,7 @@ class MemberDeleteView(StaffRequiredMixin, View):
         return _member_list_response(request, "Member deleted")
 ```
 
-- [ ] **Step 4: Write the form partial**
+- [x] **Step 4: Write the form partial**
 
 Create `dashboard/templates/dashboard/_member_form.html`:
 
@@ -1610,7 +1610,7 @@ Create `dashboard/templates/dashboard/_member_form.html`:
 </div>
 ```
 
-- [ ] **Step 5: Add the New Member button**
+- [x] **Step 5: Add the New Member button**
 
 In `dashboard/templates/dashboard/members.html`, inside `<div class="header">` after the `<div>` holding the title:
 
@@ -1627,7 +1627,7 @@ Also add the same button to the empty state in `_member_list.html`, replacing th
   </div>
 ```
 
-- [ ] **Step 6: Add the row actions**
+- [x] **Step 6: Add the row actions**
 
 In `_member_list.html`, add `<th>Actions</th>` to the header row and this cell to each body row:
 
@@ -1644,7 +1644,7 @@ In `_member_list.html`, add `<th>Actions</th>` to the header row and this cell t
           </td>
 ```
 
-- [ ] **Step 7: Wire the URLs**
+- [x] **Step 7: Wire the URLs**
 
 In `dashboard/urls.py`, after the `members` entry:
 
@@ -1654,12 +1654,12 @@ In `dashboard/urls.py`, after the `members` entry:
     path("members/<int:pk>/delete", member_views.MemberDeleteView.as_view(), name="member_delete"),
 ```
 
-- [ ] **Step 8: Run the tests**
+- [x] **Step 8: Run the tests**
 
 Run: `.venv/bin/python manage.py test dashboard.tests.test_members -v 2`
 Expected: PASS, 17 tests (9 from Task 6, 5 create/edit, 3 delete).
 
-- [ ] **Step 9: Lint and commit**
+- [x] **Step 9: Lint and commit**
 
 ```bash
 .venv/bin/python -m flake8 dashboard
@@ -1692,7 +1692,7 @@ Terms do not fit on a list row, so they live on the member's page. This is the r
 - Consumes: `MembershipTermForm` (Task 5); `Member`, `MembershipTerm` (Tasks 3-4)
 - Produces: URL names `dashboard:member_detail`, `dashboard:term_create`, `dashboard:term_edit`, `dashboard:term_delete`; `<div id="term-list">` for the OOB swap
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `dashboard/tests/test_member_terms.py`:
 
@@ -1884,12 +1884,12 @@ class TermEditDeleteTests(TestCase):
         self.assertEqual(Member.objects.count(), 1)
 ```
 
-- [ ] **Step 2: Run them and watch them fail**
+- [x] **Step 2: Run them and watch them fail**
 
 Run: `.venv/bin/python manage.py test dashboard.tests.test_member_terms -v 2`
 Expected: FAIL — `NoReverseMatch: 'member_detail'`.
 
-- [ ] **Step 3: Add the detail and term views**
+- [x] **Step 3: Add the detail and term views**
 
 Append to `dashboard/member_views.py` (add `from audience.models import Member, MembershipTerm` and `from .forms import MemberForm, MembershipTermForm` — fold into the existing import lines):
 
@@ -2002,7 +2002,7 @@ class TermDeleteView(StaffRequiredMixin, View):
         return _term_list_response(request, member, "Term deleted")
 ```
 
-- [ ] **Step 4: Write the detail templates**
+- [x] **Step 4: Write the detail templates**
 
 Create `dashboard/templates/dashboard/member_detail.html`:
 
@@ -2125,7 +2125,7 @@ Create `dashboard/templates/dashboard/_term_form.html`:
 </div>
 ```
 
-- [ ] **Step 5: Link the roster rows to the detail page**
+- [x] **Step 5: Link the roster rows to the detail page**
 
 In `_member_list.html`, replace the plain-text name cell from Task 6 — the line reading `<td class="memberName">{{ member.last_name }}, {{ member.first_name }}</td>` — with:
 
@@ -2133,7 +2133,7 @@ In `_member_list.html`, replace the plain-text name cell from Task 6 — the lin
           <td><a class="memberLink" href="{% url 'dashboard:member_detail' member.pk %}">{{ member.last_name }}, {{ member.first_name }}</a></td>
 ```
 
-- [ ] **Step 6: Add the supporting CSS**
+- [x] **Step 6: Add the supporting CSS**
 
 Append to `dashboard/static/dashboard/css/members.css`:
 
@@ -2168,7 +2168,7 @@ tr.currentTerm td {
 }
 ```
 
-- [ ] **Step 7: Wire the URLs**
+- [x] **Step 7: Wire the URLs**
 
 In `dashboard/urls.py`, after the member entries:
 
@@ -2181,12 +2181,12 @@ In `dashboard/urls.py`, after the member entries:
 
 `members/<int:pk>` must come **after** `members/new`, or `new` would be matched as a pk. It will not — `<int:pk>` does not match `new` — but keep the order anyway for readability.
 
-- [ ] **Step 8: Run the tests**
+- [x] **Step 8: Run the tests**
 
 Run: `.venv/bin/python manage.py test dashboard -v 2`
 Expected: PASS.
 
-- [ ] **Step 9: Lint and commit**
+- [x] **Step 9: Lint and commit**
 
 ```bash
 .venv/bin/python -m flake8 dashboard
