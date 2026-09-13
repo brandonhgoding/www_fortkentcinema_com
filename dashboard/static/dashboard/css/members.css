@@ -1,0 +1,44 @@
+.memberFilters {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.memberFilters .input {
+  max-width: 18rem;
+}
+
+.statusPill {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.statusPill.status-active {
+  background: rgba(34, 139, 94, 0.15);
+  color: #1c7a52;
+}
+
+.statusPill.status-expiring {
+  background: rgba(196, 143, 44, 0.18);
+  color: #8a6111;
+}
+
+.statusPill.status-lapsed {
+  background: rgba(120, 120, 120, 0.15);
+  color: #5b5b5b;
+}
+
+.memberLink {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.memberLink:hover {
+  text-decoration: underline;
+}

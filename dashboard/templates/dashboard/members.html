@@ -1,0 +1,26 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% block title %}Members · LeprinceOS{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/members.css' %}" />{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="header">
+    <div>
+      <h1 class="title">Members</h1>
+      <p class="subtitle">{{ active_count }} active member{{ active_count|pluralize }}.</p>
+    </div>
+  </div>
+
+  <form class="memberFilters" method="get" action="{% url 'dashboard:members' %}">
+    <input class="input" type="search" name="q" value="{{ q }}" placeholder="Search name or email" />
+    <select class="input" name="status">
+      {% for value, label in statuses %}
+      <option value="{{ value }}" {% if value == selected_status %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <button class="actionButton" type="submit">Filter</button>
+  </form>
+
+  {% include "dashboard/_member_list.html" %}
+</div>
+{% endblock %}
