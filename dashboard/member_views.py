@@ -8,7 +8,7 @@ staff-only, the CSV export included.
 
 import json
 
-from audience.models import Member
+from audience.models import Member, MembershipTerm
 from django.db import models
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
@@ -16,7 +16,7 @@ from django.urls import reverse
 from django.views import View
 from web.constants import MEMBERSHIP_TIER_LABELS
 
-from .forms import MemberForm
+from .forms import MemberForm, MembershipTermForm
 from .mixins import StaffRequiredMixin
 
 STATUS_FILTERS = [
@@ -145,3 +145,111 @@ class MemberDeleteView(StaffRequiredMixin, View):
         # mistake should be removable, and their terms only describe them.
         get_object_or_404(Member, pk=pk).delete()
         return _member_list_response(request, "Member deleted")
+
+
+def _render_term_form(request, form, action_url, submit_label):
+    return render(
+        request,
+        "dashboard/_term_form.html",
+        {"form": form, "form_action": action_url, "submit_label": submit_label},
+    )
+
+
+def _term_list_response(request, member, toast_message):
+    """OOB-swap the member's term list, close the drawer, and toast."""
+    html = render(
+        request,
+        "dashboard/_term_list.html",
+        {
+            "member": member,
+            "terms": member.terms.all(),
+            "tier_labels": MEMBERSHIP_TIER_LABELS,
+        },
+    ).content.decode()
+    html = html.replace(
+        '<div id="term-list">', '<div id="term-list" hx-swap-oob="true">', 1
+    )
+    resp = HttpResponse(html)
+    resp["HX-Trigger"] = json.dumps(
+        {
+            "close-drawer": True,
+            "dashboard-toast": {"kind": "success", "message": toast_message},
+        }
+    )
+    return resp
+
+
+class MemberDetailView(StaffRequiredMixin, View):
+    def get(self, request, pk):
+        member = get_object_or_404(
+            Member.objects.prefetch_related("terms"), pk=pk
+        )
+        return render(
+            request,
+            "dashboard/member_detail.html",
+            {
+                "member": member,
+                "terms": member.terms.all(),
+                "tier_labels": MEMBERSHIP_TIER_LABELS,
+            },
+        )
+
+
+class TermCreateView(StaffRequiredMixin, View):
+    def get(self, request, pk):
+        get_object_or_404(Member, pk=pk)
+        return _render_term_form(
+            request,
+            MembershipTermForm(),
+            reverse("dashboard:term_create", args=[pk]),
+            "Add Term",
+        )
+
+    def post(self, request, pk):
+        member = get_object_or_404(Member, pk=pk)
+        form = MembershipTermForm(request.POST)
+        if form.is_valid():
+            term = form.save(commit=False)
+            # The member comes from the URL, never the payload.
+            term.member = member
+            term.save()
+            return _term_list_response(request, member, "Term added")
+        return _render_term_form(
+            request,
+            form,
+            reverse("dashboard:term_create", args=[pk]),
+            "Add Term",
+        )
+
+
+class TermEditView(StaffRequiredMixin, View):
+    def get(self, request, pk):
+        term = get_object_or_404(MembershipTerm, pk=pk)
+        return _render_term_form(
+            request,
+            MembershipTermForm(instance=term),
+            reverse("dashboard:term_edit", args=[pk]),
+            "Save Changes",
+        )
+
+    def post(self, request, pk):
+        term = get_object_or_404(MembershipTerm, pk=pk)
+        form = MembershipTermForm(request.POST, instance=term)
+        if form.is_valid():
+            # `member` is not a form field, so a posted member id is ignored.
+            form.save()
+            return _term_list_response(request, term.member, "Term updated")
+        return _render_term_form(
+            request,
+            form,
+            reverse("dashboard:term_edit", args=[pk]),
+            "Save Changes",
+        )
+
+
+class TermDeleteView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        term = get_object_or_404(MembershipTerm, pk=pk)
+        member = term.member
+        term.delete()
+        return _term_list_response(request, member, "Term deleted")

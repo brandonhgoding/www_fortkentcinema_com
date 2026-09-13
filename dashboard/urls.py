@@ -79,6 +79,22 @@ urlpatterns = [
         member_views.MemberDeleteView.as_view(),
         name="member_delete",
     ),
+    path(
+        "members/<int:pk>",
+        member_views.MemberDetailView.as_view(),
+        name="member_detail",
+    ),
+    path(
+        "members/<int:pk>/terms/new",
+        member_views.TermCreateView.as_view(),
+        name="term_create",
+    ),
+    path("terms/<int:pk>/edit", member_views.TermEditView.as_view(), name="term_edit"),
+    path(
+        "terms/<int:pk>/delete",
+        member_views.TermDeleteView.as_view(),
+        name="term_delete",
+    ),
     path("inquiries", inquiry_views.InquiryListView.as_view(), name="inquiries"),
     path(
         "inquiries/<int:pk>/status",

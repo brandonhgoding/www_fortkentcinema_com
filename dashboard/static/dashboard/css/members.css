@@ -42,3 +42,32 @@
 .memberLink:hover {
   text-decoration: underline;
 }
+
+.backLink {
+  display: inline-block;
+  margin-bottom: 0.35rem;
+  font-size: 0.85rem;
+  color: inherit;
+  opacity: 0.7;
+  text-decoration: none;
+}
+
+.backLink:hover {
+  opacity: 1;
+}
+
+.memberNotes {
+  margin: 0 0 1rem;
+  white-space: pre-wrap;
+  opacity: 0.85;
+}
+
+.fieldHint {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+tr.currentTerm td {
+  font-weight: 600;
+}

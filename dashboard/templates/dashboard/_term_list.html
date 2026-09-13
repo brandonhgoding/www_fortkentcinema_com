@@ -1,0 +1,38 @@
+{% load dashboard_extras %}
+<div id="term-list">
+  {% if terms %}
+  <div class="tableWrapper">
+    <table class="table">
+      <thead>
+        <tr><th>Tier</th><th>Started</th><th>Expires</th><th>Paid</th><th>Purchased</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for term in terms %}
+        <tr class="{% if term.is_current %}currentTerm{% endif %}">
+          <td>{{ tier_labels|get_item:term.tier }}</td>
+          <td>{{ term.started_on|date:"M j, Y" }}</td>
+          <td>{{ term.expires_on|date:"M j, Y" }}</td>
+          <td>${{ term.price_paid }}</td>
+          <td>{{ term.purchased_at|date:"M j, Y"|default:"—" }}</td>
+          <td>
+            <div class="actions">
+              <button class="actionButton" hx-get="{% url 'dashboard:term_edit' term.pk %}"
+                      hx-target="#drawer-content" @click="$store.drawer.show('Edit Term')">Edit</button>
+              <button class="actionButton deleteButton"
+                      hx-post="{% url 'dashboard:term_delete' term.pk %}"
+                      hx-target="#term-list" hx-swap="outerHTML"
+                      data-dashboard-confirm='{"title":"Delete Term","message":"Delete this membership term? This cannot be undone.","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <h3 class="empty-state-title">No membership terms yet</h3>
+    <p class="empty-state-description">Add a term when this person buys or renews a membership.</p>
+  </div>
+  {% endif %}
+</div>

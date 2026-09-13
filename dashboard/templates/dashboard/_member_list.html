@@ -9,7 +9,7 @@
       <tbody>
         {% for member in members %}
         <tr>
-          <td class="memberName">{{ member.last_name }}, {{ member.first_name }}</td>
+          <td><a class="memberLink" href="{% url 'dashboard:member_detail' member.pk %}">{{ member.last_name }}, {{ member.first_name }}</a></td>
           <td>{{ member.email }}</td>
           <td>{{ member.phone|default:"—" }}</td>
           <td>{% if member.current_term %}{{ tier_labels|get_item:member.current_term.tier }}{% else %}—{% endif %}</td>
