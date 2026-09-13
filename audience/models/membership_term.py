@@ -5,7 +5,6 @@ from django.utils import timezone
 
 from audience.dates import add_months
 
-
 class MembershipTerm(models.Model):
     """One purchased membership period.
 
@@ -23,8 +22,7 @@ class MembershipTerm(models.Model):
     # The tier slug from web.constants.MEMBERSHIP. Stored as a plain string
     # because `web` imports `audience` — validating against the catalogue
     # happens in dashboard.forms, where importing `web` is safe.
-    tier = models.CharField(max_length=32)
-
+    tier = models.ForeignKey(to="MembershipTier", on_delete=models.CASCADE, related_name="terms", null=True)
     started_on = models.DateField()
     expires_on = models.DateField(
         help_text="Inclusive: the membership is good through this date."

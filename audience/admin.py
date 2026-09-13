@@ -1,6 +1,5 @@
 from django.contrib import admin
-
-from .models import Member, MembershipTerm, Subscriber
+from .models import Member, MembershipTerm, Subscriber, MembershipTier, MembershipBenefit
 
 
 @admin.register(Subscriber)
@@ -9,6 +8,17 @@ class SubscriberAdmin(admin.ModelAdmin):
     list_filter = ("status", "source")
     search_fields = ("email",)
     readonly_fields = ("unsubscribe_token", "consent_at")
+
+
+@admin.register(MembershipTier)
+class MembershipTierAdmin(admin.ModelAdmin):
+    list_display = ("name", "description")
+    list_filter = ("name",)
+
+@admin.register(MembershipBenefit)
+class MembershipBenefitAdmin(admin.ModelAdmin):
+    list_display = ("name", "description")
+    list_filter = ("name",)
 
 
 class MembershipTermInline(admin.TabularInline):
