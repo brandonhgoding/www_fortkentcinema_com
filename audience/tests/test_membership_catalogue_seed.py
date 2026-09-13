@@ -9,11 +9,16 @@ from django.test import TestCase
 from audience.models import MembershipBenefit, MembershipTier
 
 EXPECTED = {
-    "silver-screen": (35, "Seniors 65+", False, False),
-    "individual": (60, "", False, False),
-    "cinema-supporter": (120, "", True, False),
-    "family": (150, "", False, True),
-    "family-plus": (250, "", False, True),
+    "silver-screen": (35, "Seniors 65+", False, False,
+                      "https://square.link/u/UnQLNeHp"),
+    "individual": (60, "", False, False,
+                   "https://square.link/u/zricPsRR"),
+    "cinema-supporter": (120, "", True, False,
+                         "https://square.link/u/2HnpAb9N"),
+    "family": (150, "", False, True,
+               "https://square.link/u/FkcUasKu"),
+    "family-plus": (250, "", False, True,
+                    "https://square.link/u/1YSgMFSQ"),
 }
 
 
@@ -25,7 +30,7 @@ class SeededCatalogueTests(TestCase):
         self.assertEqual(MembershipBenefit.objects.count(), 10)
 
     def test_tier_fields(self) -> None:
-        for slug, (price, eyebrow, featured, family) in EXPECTED.items():
+        for slug, (price, eyebrow, featured, family, checkout_url) in EXPECTED.items():
             tier = MembershipTier.objects.get(slug=slug)
             self.assertEqual(tier.price, price, slug)
             self.assertEqual(tier.eyebrow, eyebrow, slug)
@@ -33,7 +38,7 @@ class SeededCatalogueTests(TestCase):
             self.assertEqual(tier.is_family_tier, family, slug)
             self.assertEqual(tier.duration_months, 12, slug)
             self.assertTrue(tier.show_on_membership_page, slug)
-            self.assertTrue(tier.checkout_url.startswith("https://square.link/"), slug)
+            self.assertEqual(tier.checkout_url, checkout_url, slug)
 
     def test_tiers_sort_by_price(self) -> None:
         self.assertEqual(
