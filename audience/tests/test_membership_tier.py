@@ -1,3 +1,5 @@
+import uuid
+
 from django.test import TestCase
 
 from audience.models import MembershipBenefit, MembershipTier
@@ -9,7 +11,9 @@ def make_benefit(name="$2 off matinee tickets", sort_order=10, **kw):
     )
 
 
-def make_tier(slug="individual", name="Individual", price=60, **kw):
+def make_tier(slug=None, name="Individual", price=60, **kw):
+    if slug is None:
+        slug = f"test-{uuid.uuid4().hex[:8]}"
     return MembershipTier.objects.create(
         slug=slug, name=name, price=price, **kw
     )
@@ -24,17 +28,20 @@ class MembershipBenefitTests(TestCase):
         self.assertEqual(make_benefit().description, "")
 
     def test_ordering_is_by_sort_order_then_name(self) -> None:
-        make_benefit(name="20% off rentals & parties", sort_order=60)
-        make_benefit(name="$4 off evening tickets", sort_order=20)
-        make_benefit(name="$2 off matinee tickets", sort_order=10)
-        make_benefit(name="10% off rentals", sort_order=60)
+        make_benefit(name="Zebra benefit", sort_order=60)
+        make_benefit(name="Apple benefit", sort_order=20)
+        make_benefit(name="Banana benefit", sort_order=10)
+        make_benefit(name="Yak benefit", sort_order=60)
         self.assertEqual(
-            [b.name for b in MembershipBenefit.objects.all()],
+            [b.name for b in MembershipBenefit.objects.filter(
+                name__in=["Zebra benefit", "Apple benefit", "Banana benefit",
+                          "Yak benefit"]
+            )],
             [
-                "$2 off matinee tickets",
-                "$4 off evening tickets",
-                "10% off rentals",
-                "20% off rentals & parties",
+                "Banana benefit",
+                "Apple benefit",
+                "Yak benefit",
+                "Zebra benefit",
             ],
         )
 
@@ -46,9 +53,9 @@ class MembershipTierTests(TestCase):
     def test_slug_is_unique(self) -> None:
         from django.db import IntegrityError, transaction
 
-        make_tier()
+        make_tier(slug="unique-test-slug")
         with self.assertRaises(IntegrityError), transaction.atomic():
-            make_tier(name="Duplicate")
+            make_tier(slug="unique-test-slug", name="Duplicate")
 
     def test_defaults(self) -> None:
         tier = make_tier()
@@ -68,23 +75,25 @@ class MembershipTierTests(TestCase):
         self.assertNotIn(".", str(make_tier(slug="x", price=35).price))
 
     def test_ordering_is_by_sort_order_then_price(self) -> None:
-        make_tier(slug="family-plus", name="Family Plus", price=250, sort_order=50)
-        make_tier(slug="silver-screen", name="Silver Screen", price=35, sort_order=10)
-        make_tier(slug="individual", name="Individual", price=60, sort_order=20)
+        make_tier(slug="test-high", name="Test High", price=250, sort_order=50)
+        make_tier(slug="test-low", name="Test Low", price=35, sort_order=10)
+        make_tier(slug="test-mid", name="Test Mid", price=60, sort_order=20)
         self.assertEqual(
-            [t.slug for t in MembershipTier.objects.all()],
-            ["silver-screen", "individual", "family-plus"],
+            [t.slug for t in MembershipTier.objects.filter(
+                slug__startswith="test-"
+            )],
+            ["test-low", "test-mid", "test-high"],
         )
 
     def test_ties_on_sort_order_resolve_by_price(self) -> None:
         """Only a true price tiebreak explains this order."""
         make_tier(
-            slug="individual-plus", name="Individual Plus", price=90, sort_order=20
+            slug="tiebreak-high", name="Tiebreak High", price=90, sort_order=70
         )
-        make_tier(slug="individual", name="Individual", price=60, sort_order=20)
+        make_tier(slug="tiebreak-low", name="Tiebreak Low", price=60, sort_order=70)
         self.assertEqual(
-            [t.slug for t in MembershipTier.objects.filter(sort_order=20)],
-            ["individual", "individual-plus"],
+            [t.slug for t in MembershipTier.objects.filter(sort_order=70)],
+            ["tiebreak-low", "tiebreak-high"],
         )
 
     def test_benefits_come_back_in_benefit_order(self) -> None:
