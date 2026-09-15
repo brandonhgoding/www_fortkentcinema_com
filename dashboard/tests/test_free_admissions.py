@@ -1,5 +1,6 @@
 import datetime
 from decimal import Decimal
+from unittest import mock
 
 from audience.models import FreeAdmission, Member, MembershipTerm, MembershipTier
 from django.contrib.auth.models import User
@@ -19,6 +20,17 @@ def give_term(member, slug="cinema-supporter"):
         tier=MembershipTier.objects.get(slug=slug),
         started_on=today - datetime.timedelta(days=30),
         expires_on=today + datetime.timedelta(days=300),
+        price_paid=Decimal("120.00"),
+    )
+
+
+def give_expired_term(member, slug="family-plus"):
+    today = timezone.localdate()
+    return MembershipTerm.objects.create(
+        member=member,
+        tier=MembershipTier.objects.get(slug=slug),
+        started_on=today - datetime.timedelta(days=400),
+        expires_on=today - datetime.timedelta(days=30),
         price_paid=Decimal("120.00"),
     )
 
@@ -62,6 +74,15 @@ class RosterColumnTests(StaffClient):
         self.assertNotIn("Redeem", html)
 
     def test_a_lapsed_member_shows_no_button(self) -> None:
+        """A member whose family-plus term *expired* — the tier grants 4,
+        but a lapsed membership carries no benefit."""
+        member = make_member()
+        give_expired_term(member, "family-plus")
+        html = self.roster()
+        self.assertNotIn("Redeem", html)
+        self.assertNotIn("0 / 4", html)
+
+    def test_a_member_with_no_term_at_all_shows_no_button(self) -> None:
         make_member()
         self.assertNotIn("Redeem", self.roster())
 
@@ -198,6 +219,22 @@ class RedeemTests(StaffClient):
         after = self.client.post(self.url).content.decode()
         self.assertIn("1 / 1", after)
 
+    def test_redeeming_from_a_filtered_roster_keeps_the_filter(self) -> None:
+        """The Redeem button's `hx-include=".memberFilters"` carries the
+        filter form's fields along with the POST, so the swapped-back
+        list stays filtered to whoever the box office was looking at
+        instead of reverting to the full roster. The test posts `q`
+        directly rather than driving htmx, since that is what the
+        browser sends once hx-include picks the field up."""
+        other = make_member("Someone", "Else", "else@example.com")
+        give_term(other, "family-plus")
+
+        html = self.client.post(
+            self.url, {"q": self.member.last_name}
+        ).content.decode()
+        self.assertIn(self.member.last_name, html)
+        self.assertNotIn(other.last_name, html)
+
     def test_get_is_not_allowed(self) -> None:
         self.assertEqual(self.client.get(self.url).status_code, 405)
 
@@ -255,25 +292,47 @@ class DetailPanelTests(StaffClient):
         return self.client.get(self.url).content.decode()
 
     def test_groups_by_month_with_a_used_over_allowance_header(self) -> None:
+        # Created with an August row sandwiched between two September
+        # ones, so creation order (Sep, Aug, Sep) differs from date order.
+        # `FreeAdmission.Meta.ordering` is `-redeemed_on` today, which
+        # always keeps same-month rows contiguous regardless of creation
+        # order, so this alone would not catch a sequential-scan bug — the
+        # ordering override below is what actually exercises it (see
+        # comment there).
         FreeAdmission.objects.create(
             member=self.member, redeemed_on=datetime.date(2026, 9, 14)
         )
         FreeAdmission.objects.create(
+            member=self.member, redeemed_on=datetime.date(2026, 8, 30)
+        )
+        FreeAdmission.objects.create(
             member=self.member, redeemed_on=datetime.date(2026, 9, 6)
         )
-        response = self.client.get(self.url)
+
+        # `_free_admission_months` must not depend on same-month rows
+        # being contiguous — only on `Meta.ordering` giving newest-first.
+        # Force ordering by creation order (Sep, Aug, Sep — not
+        # month-contiguous) to simulate a future reordering (e.g. to
+        # "most recently entered first") and prove the grouping survives
+        # it. Without this override, `-redeemed_on` sorts strictly by
+        # date and is always month-contiguous, so the bug this test
+        # guards against would slip past it.
+        with mock.patch.object(FreeAdmission._meta, "ordering", ["created_at"]):
+            response = self.client.get(self.url)
         html = response.content.decode()
         self.assertIn("September 2026", html)
         self.assertIn("2 of 4 used", html)
 
-        # `assertIn` above can't tell one header from two duplicated ones —
-        # a broken contiguity check in `_free_admission_months` (see its
-        # docstring) would still render "September 2026" and "2 of 4 used"
-        # somewhere on the page. Assert on the grouping object itself: one
-        # month, with both redemptions under it.
+        # `assertIn` above can't tell two correct groups from three broken
+        # ones — it would still find "September 2026" and "2 of 4 used"
+        # somewhere on the page either way. Assert on the grouping object
+        # itself: two months, with both September redemptions under one
+        # and the August redemption under the other.
         months = response.context["free_admission_months"]
-        self.assertEqual(len(months), 1)
-        self.assertEqual(len(months[0]["admissions"]), 2)
+        self.assertEqual(len(months), 2)
+        by_key = {month["key"]: month for month in months}
+        self.assertEqual(len(by_key[(2026, 9)]["admissions"]), 2)
+        self.assertEqual(len(by_key[(2026, 8)]["admissions"]), 1)
 
     def test_separates_months(self) -> None:
         FreeAdmission.objects.create(
@@ -307,6 +366,28 @@ class DetailPanelTests(StaffClient):
 
     def test_empty_state(self) -> None:
         self.assertIn("No free admissions yet", self.page())
+
+
+class DetailPanelZeroAllowanceTests(StaffClient):
+    """A lapsed or zero-allowance member's month header must not claim an
+    allowance they don't have — the roster shows "—" rather than "0 / 0"
+    for the same reason."""
+
+    def test_lapsed_member_with_history_has_no_of_m(self) -> None:
+        member = make_member()
+        give_expired_term(member, "family-plus")
+        FreeAdmission.objects.create(
+            member=member, redeemed_on=datetime.date(2026, 8, 12)
+        )
+        FreeAdmission.objects.create(
+            member=member, redeemed_on=datetime.date(2026, 8, 20)
+        )
+        html = self.client.get(
+            reverse("dashboard:member_detail", args=[member.pk])
+        ).content.decode()
+        self.assertIn("August 2026", html)
+        self.assertIn("2 used", html)
+        self.assertNotIn("of 0 used", html)
 
 
 class DeleteRedemptionTests(StaffClient):

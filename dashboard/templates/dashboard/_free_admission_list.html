@@ -6,7 +6,7 @@
       <tbody>
         {% for month in free_admission_months %}
         <tr class="monthRow">
-          <th colspan="3">{{ month.label }} — {{ month.used }} of {{ member.free_admission_allowance }} used</th>
+          <th colspan="3">{% if member.free_admission_allowance %}{{ month.label }} — {{ month.used }} of {{ member.free_admission_allowance }} used{% else %}{{ month.label }} — {{ month.used }} used{% endif %}</th>
         </tr>
         {% for admission in month.admissions %}
         <tr>

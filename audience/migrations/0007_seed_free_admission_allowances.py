@@ -19,9 +19,16 @@ ALLOWANCES = {
 def set_allowances(apps, schema_editor):
     Tier = apps.get_model("audience", "MembershipTier")
     for slug, allowance in ALLOWANCES.items():
-        Tier.objects.filter(slug=slug).update(
+        updated = Tier.objects.filter(slug=slug).update(
             free_admissions_per_month=allowance
         )
+        if updated != 1:
+            raise RuntimeError(
+                f"Expected exactly one MembershipTier with slug={slug!r}, "
+                f"found {updated}. The free-admission feature depends on "
+                "this seed; fix the slug (here or on the tier) before "
+                "re-running this migration."
+            )
 
 
 def clear_allowances(apps, schema_editor):

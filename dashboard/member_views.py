@@ -42,16 +42,29 @@ def member_roster(request):
     runs in Python over the prefetched terms. The roster is a few hundred
     rows at most; a query that could express "expiring soon" in SQL would
     duplicate the definition that lives on the model.
+
+    Reads from POST rather than GET on a POST request: the Redeem button
+    is an hx-post that carries the roster filter form's fields via
+    hx-include, so the swapped-back list stays filtered to whoever was on
+    screen instead of reverting to the full roster.
     """
+    params = request.POST if request.method == "POST" else request.GET
     first, last = month_bounds(*this_month())
     members = Member.objects.prefetch_related("terms__tier").annotate(
+        # distinct=True: free_admissions is the only multi-valued relation
+        # joined into this query today, so it doesn't change the count —
+        # but it makes the count immune to join fan-out if `?q=` ever
+        # matches a multi-valued relation (e.g. terms__tier__name) or the
+        # status filter moves into SQL, either of which would otherwise
+        # silently multiply this count.
         free_used_this_month=Count(
             "free_admissions",
             filter=Q(free_admissions__redeemed_on__range=(first, last)),
+            distinct=True,
         )
     )
 
-    q = (request.GET.get("q") or "").strip()
+    q = (params.get("q") or "").strip()
     if q:
         members = members.filter(
             models.Q(first_name__icontains=q)
@@ -59,7 +72,7 @@ def member_roster(request):
             | models.Q(email__icontains=q)
         )
 
-    status = (request.GET.get("status") or "").strip()
+    status = (params.get("status") or "").strip()
     valid = {value for value, _label in STATUS_FILTERS if value}
     members = list(members)
     if status in valid:
@@ -336,21 +349,25 @@ def _free_admission_months(member):
     aggregate: a member has a handful of these a year, and grouping here
     lets each month reuse `free_admissions_in` so the header count and the
     rows below it cannot disagree.
+
+    Keyed by `(year, month)` rather than compared against the previous row,
+    so the grouping is correct regardless of `FreeAdmission.Meta.ordering` —
+    it does not depend on same-month rows being contiguous. Relies on
+    Python dicts preserving insertion order, and on `member.free_admissions`
+    yielding newest-first, to keep the months newest-first here too.
     """
-    months = []
+    months: dict[tuple[int, int], dict] = {}
     for admission in member.free_admissions.all():
         key = (admission.redeemed_on.year, admission.redeemed_on.month)
-        if not months or months[-1]["key"] != key:
-            months.append(
-                {
-                    "key": key,
-                    "label": admission.redeemed_on.strftime("%B %Y"),
-                    "used": member.free_admissions_in(*key),
-                    "admissions": [],
-                }
-            )
-        months[-1]["admissions"].append(admission)
-    return months
+        if key not in months:
+            months[key] = {
+                "key": key,
+                "label": admission.redeemed_on.strftime("%B %Y"),
+                "used": member.free_admissions_in(*key),
+                "admissions": [],
+            }
+        months[key]["admissions"].append(admission)
+    return list(months.values())
 
 
 def _free_admission_list_response(request, member, toast_message):

@@ -57,7 +57,7 @@ class MembershipBenefitAdmin(admin.ModelAdmin):
 @admin.register(FreeAdmission)
 class FreeAdmissionAdmin(admin.ModelAdmin):
     list_display = ("member", "redeemed_on", "recorded_by")
-    list_filter = ("redeemed_on",)
+    list_select_related = ("member", "recorded_by")
     search_fields = ("member__first_name", "member__last_name", "member__email")
     date_hierarchy = "redeemed_on"
     autocomplete_fields = ("member",)

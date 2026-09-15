@@ -23,8 +23,8 @@
             <div class="actions">
               {% if member.free_admission_allowance %}
               <button class="actionButton" hx-post="{% url 'dashboard:free_admission_redeem' member.pk %}"
-                      hx-target="#member-list" hx-swap="outerHTML"
-                      {% if member.free_used_this_month >= member.free_admission_allowance %}data-dashboard-confirm='{"title":"Monthly allowance already used","message":"{{ member.full_name|escapejs }} has used {{ member.free_used_this_month }} of {{ member.free_admission_allowance }} free admission(s) this month. Record another?","confirmLabel":"Record anyway","variant":"warning"}'{% endif %}>Redeem</button>
+                      hx-target="#member-list" hx-swap="outerHTML" hx-include=".memberFilters"
+                      {% if member.free_used_this_month >= member.free_admission_allowance %}data-dashboard-confirm='{"title":"Monthly allowance already used","message":"{{ member.full_name|escapejs }} has used {{ member.free_used_this_month }} of {{ member.free_admission_allowance }} free admission(s) this month. Record another?","confirmLabel":"Record anyway"}'{% endif %}>Redeem</button>
               {% endif %}
               <button class="actionButton" hx-get="{% url 'dashboard:member_edit' member.pk %}"
                       hx-target="#drawer-content" @click="$store.drawer.show('Edit Member')">Edit</button>
