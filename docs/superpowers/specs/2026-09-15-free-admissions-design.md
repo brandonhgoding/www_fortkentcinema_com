@@ -120,13 +120,22 @@ that is occasionally lossy beats two rules that disagree.
     )
 ```
 
-A data migration sets **Cinema Supporter 1** and **Family Plus 4**. The other three
-tiers stay at 0.
+A data migration sets the five tiers, confirmed 2026-09-15:
 
-> **Confirm before implementation:** Silver Screen, Individual and Family are assumed
-> to include no free admissions. If any of them do, say so and the migration sets it.
-> Either way the value is editable in the admin afterwards without a deploy, which is
-> exactly what the 2026-09-13 catalogue work bought.
+| Tier | Price | Free admissions / month |
+|---|---|---|
+| Silver Screen | $35 | 0 |
+| Individual | $60 | 0 |
+| Cinema Supporter | $120 | **1** |
+| Family | $150 | 0 |
+| Family Plus | $250 | **4** |
+
+Only two tiers carry an allowance, so on a typical roster most rows show `—` and no
+Redeem button. The UI is designed around that being the common case, not the exception.
+
+These are editable in the admin afterwards without a deploy, which is exactly what the
+2026-09-13 catalogue work bought — so getting a number wrong is a correction, not a
+release.
 
 ### `audience/models/free_admission.py`
 
