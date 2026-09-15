@@ -202,7 +202,8 @@ def _term_list_response(request, member, toast_message):
 class MemberDetailView(StaffRequiredMixin, View):
     def get(self, request, pk):
         member = get_object_or_404(
-            Member.objects.prefetch_related("terms__tier"), pk=pk
+            Member.objects.prefetch_related("terms__tier", "free_admissions"),
+            pk=pk,
         )
         return render(
             request,
@@ -210,6 +211,7 @@ class MemberDetailView(StaffRequiredMixin, View):
             {
                 "member": member,
                 "terms": member.terms.all(),
+                "free_admission_months": _free_admission_months(member),
             },
         )
 
@@ -324,4 +326,60 @@ class FreeAdmissionRedeemView(StaffRequiredMixin, View):
         FreeAdmission.objects.create(member=member, recorded_by=request.user)
         return _member_list_response(
             request, f"Free admission recorded for {member.full_name}"
+        )
+
+
+def _free_admission_months(member):
+    """This member's redemptions, newest month first.
+
+    Grouped in Python over the prefetched rows rather than with a database
+    aggregate: a member has a handful of these a year, and grouping here
+    lets each month reuse `free_admissions_in` so the header count and the
+    rows below it cannot disagree.
+    """
+    months = []
+    for admission in member.free_admissions.all():
+        key = (admission.redeemed_on.year, admission.redeemed_on.month)
+        if not months or months[-1]["key"] != key:
+            months.append(
+                {
+                    "key": key,
+                    "label": admission.redeemed_on.strftime("%B %Y"),
+                    "used": member.free_admissions_in(*key),
+                    "admissions": [],
+                }
+            )
+        months[-1]["admissions"].append(admission)
+    return months
+
+
+def _free_admission_list_response(request, member, toast_message):
+    """Success response: OOB-swap the panel and toast."""
+    member = Member.objects.prefetch_related("terms__tier", "free_admissions").get(
+        pk=member.pk
+    )
+    html = render(
+        request,
+        "dashboard/_free_admission_list.html",
+        {"member": member, "free_admission_months": _free_admission_months(member)},
+    ).content.decode()
+    html = html.replace(
+        '<div id="free-admission-list">',
+        '<div id="free-admission-list" hx-swap-oob="true">',
+        1,
+    )
+    resp = HttpResponse(html)
+    resp["HX-Trigger"] = json.dumps(
+        {"dashboard-toast": {"kind": "success", "message": toast_message}}
+    )
+    return resp
+
+
+class FreeAdmissionDeleteView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        admission = get_object_or_404(FreeAdmission, pk=pk)
+        member = admission.member
+        admission.delete()
+        return _free_admission_list_response(
+            request, member, "Free admission removed"
         )

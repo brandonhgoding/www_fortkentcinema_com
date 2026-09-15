@@ -1,0 +1,35 @@
+<div id="free-admission-list">
+  <h2 class="panelTitle">Free admissions</h2>
+  {% if free_admission_months %}
+  <div class="tableWrapper">
+    <table class="table">
+      <tbody>
+        {% for month in free_admission_months %}
+        <tr class="monthRow">
+          <th colspan="3">{{ month.label }} — {{ month.used }} of {{ member.free_admission_allowance }} used</th>
+        </tr>
+        {% for admission in month.admissions %}
+        <tr>
+          <td>{{ admission.redeemed_on|date:"M j, Y" }}</td>
+          <td>{{ admission.recorded_by|default:"—" }}</td>
+          <td>
+            <div class="actions">
+              <button class="actionButton deleteButton"
+                      hx-post="{% url 'dashboard:free_admission_delete' admission.pk %}"
+                      hx-target="#free-admission-list" hx-swap="outerHTML"
+                      data-dashboard-confirm='{"title":"Remove Free Admission","message":"Remove the free admission dated {{ admission.redeemed_on|date:"M j, Y" }}? This cannot be undone.","confirmLabel":"Remove","variant":"danger"}'>Remove</button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <h3 class="empty-state-title">No free admissions yet</h3>
+    <p class="empty-state-description">Redeem one from the roster when this member uses a free admission.</p>
+  </div>
+  {% endif %}
+</div>

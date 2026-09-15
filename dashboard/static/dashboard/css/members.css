@@ -337,3 +337,23 @@ tr.currentTerm td {
   color: #8a6111;
   font-weight: 600;
 }
+
+.panelTitle {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--charcoal);
+  margin: 2rem 0 0.75rem;
+}
+
+/* Month headers inside the free-admission table. */
+.monthRow th {
+  text-align: left;
+  background: var(--cream);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--stone);
+  padding: 0.6rem 1rem;
+}

@@ -105,6 +105,11 @@ urlpatterns = [
         member_views.FreeAdmissionRedeemView.as_view(),
         name="free_admission_redeem",
     ),
+    path(
+        "free-admissions/<int:pk>/delete",
+        member_views.FreeAdmissionDeleteView.as_view(),
+        name="free_admission_delete",
+    ),
     path("inquiries", inquiry_views.InquiryListView.as_view(), name="inquiries"),
     path(
         "inquiries/<int:pk>/status",

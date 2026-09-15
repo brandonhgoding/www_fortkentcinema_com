@@ -116,6 +116,11 @@ class Member(models.Model):
 
         The roster counts the same thing with a SQL annotation; the two
         must agree, including at month boundaries.
+
+        Iterates the related manager rather than filtering in SQL for the
+        same reason `current_term` does: it lets a caller that has done
+        prefetch_related("free_admissions") answer every month for a
+        member from one query, instead of one query per month.
         """
         first, last = month_bounds(year, month)
         return sum(

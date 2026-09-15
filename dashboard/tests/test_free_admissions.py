@@ -242,3 +242,87 @@ class HouseTotalTests(StaffClient):
         )
         html = self.client.get(reverse("dashboard:members")).content.decode()
         self.assertIn("0 free admissions given", html)
+
+
+class DetailPanelTests(StaffClient):
+    def setUp(self) -> None:
+        super().setUp()
+        self.member = make_member()
+        give_term(self.member, "family-plus")
+        self.url = reverse("dashboard:member_detail", args=[self.member.pk])
+
+    def page(self) -> str:
+        return self.client.get(self.url).content.decode()
+
+    def test_groups_by_month_with_a_used_over_allowance_header(self) -> None:
+        FreeAdmission.objects.create(
+            member=self.member, redeemed_on=datetime.date(2026, 9, 14)
+        )
+        FreeAdmission.objects.create(
+            member=self.member, redeemed_on=datetime.date(2026, 9, 6)
+        )
+        html = self.page()
+        self.assertIn("September 2026", html)
+        self.assertIn("2 of 4 used", html)
+
+    def test_separates_months(self) -> None:
+        FreeAdmission.objects.create(
+            member=self.member, redeemed_on=datetime.date(2026, 9, 2)
+        )
+        FreeAdmission.objects.create(
+            member=self.member, redeemed_on=datetime.date(2026, 8, 30)
+        )
+        html = self.page()
+        self.assertIn("September 2026", html)
+        self.assertIn("August 2026", html)
+
+    def test_newest_month_first(self) -> None:
+        FreeAdmission.objects.create(
+            member=self.member, redeemed_on=datetime.date(2026, 8, 30)
+        )
+        FreeAdmission.objects.create(
+            member=self.member, redeemed_on=datetime.date(2026, 9, 2)
+        )
+        html = self.page()
+        self.assertLess(html.index("September 2026"), html.index("August 2026"))
+
+    def test_shows_who_recorded_it(self) -> None:
+        FreeAdmission.objects.create(member=self.member, recorded_by=self.staff)
+        self.assertIn("s", self.page())
+
+    def test_empty_state(self) -> None:
+        self.assertIn("No free admissions yet", self.page())
+
+
+class DeleteRedemptionTests(StaffClient):
+    def setUp(self) -> None:
+        super().setUp()
+        self.member = make_member()
+        give_term(self.member, "family-plus")
+        self.admission = FreeAdmission.objects.create(member=self.member)
+        self.url = reverse(
+            "dashboard:free_admission_delete", args=[self.admission.pk]
+        )
+
+    def test_deletes_it(self) -> None:
+        self.client.post(self.url)
+        self.assertEqual(FreeAdmission.objects.count(), 0)
+
+    def test_leaves_other_redemptions_alone(self) -> None:
+        other = FreeAdmission.objects.create(
+            member=self.member, redeemed_on=datetime.date(2026, 8, 1)
+        )
+        self.client.post(self.url)
+        self.assertTrue(FreeAdmission.objects.filter(pk=other.pk).exists())
+
+    def test_swaps_the_panel_back(self) -> None:
+        html = self.client.post(self.url).content.decode()
+        self.assertIn('id="free-admission-list"', html)
+        self.assertIn("hx-swap-oob", html)
+
+    def test_toasts(self) -> None:
+        self.assertIn("dashboard-toast", self.client.post(self.url)["HX-Trigger"])
+
+    def test_requires_staff(self) -> None:
+        self.client.logout()
+        self.assertEqual(self.client.post(self.url).status_code, 302)
