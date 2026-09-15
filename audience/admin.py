@@ -19,7 +19,14 @@ class SubscriberAdmin(admin.ModelAdmin):
 
 @admin.register(MembershipTier)
 class MembershipTierAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "price", "show_on_membership_page", "sort_order")
+    list_display = (
+        "name",
+        "slug",
+        "price",
+        "free_admissions_per_month",
+        "show_on_membership_page",
+        "sort_order",
+    )
     list_filter = ("show_on_membership_page", "featured", "is_family_tier")
     search_fields = ("name", "slug")
     filter_horizontal = ("benefits",)

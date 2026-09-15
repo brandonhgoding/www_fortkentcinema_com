@@ -167,3 +167,36 @@ class TierDeletionTests(TestCase):
         self.assertEqual(list(tier.terms.all()), [term])
         term.refresh_from_db()
         self.assertEqual(term.tier, tier)
+
+
+class FreeAdmissionAllowanceTests(TestCase):
+    """The per-tier monthly allowance, as seeded."""
+
+    def test_defaults_to_none_for_a_new_tier(self) -> None:
+        tier = MembershipTier.objects.create(
+            slug="brand-new", name="Brand New", price=10
+        )
+        self.assertEqual(tier.free_admissions_per_month, 0)
+
+    def test_seeded_allowances(self) -> None:
+        expected = {
+            "silver-screen": 0,
+            "individual": 0,
+            "cinema-supporter": 1,
+            "family": 0,
+            "family-plus": 4,
+        }
+        actual = {
+            t.slug: t.free_admissions_per_month
+            for t in MembershipTier.objects.all()
+        }
+        self.assertEqual(actual, expected)
+
+    def test_only_two_tiers_grant_any(self) -> None:
+        """Most rows on the roster will show no allowance at all."""
+        granting = MembershipTier.objects.filter(
+            free_admissions_per_month__gt=0
+        ).order_by("slug")
+        self.assertEqual(
+            [t.slug for t in granting], ["cinema-supporter", "family-plus"]
+        )

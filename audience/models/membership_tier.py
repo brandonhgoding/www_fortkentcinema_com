@@ -31,6 +31,11 @@ class MembershipTier(models.Model):
         help_text="Whole dollars. The page prints this raw, so 35 renders $35."
     )
     duration_months = models.PositiveSmallIntegerField(default=12)
+    free_admissions_per_month = models.PositiveSmallIntegerField(
+        default=0,
+        help_text="Free admissions this tier includes each calendar month. "
+        "0 means none. Resets on the 1st; unused ones do not carry over.",
+    )
     featured = models.BooleanField(
         default=False, help_text="Shows the 'Best Value' ribbon."
     )
