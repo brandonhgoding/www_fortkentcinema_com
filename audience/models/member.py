@@ -4,6 +4,8 @@ from typing import ClassVar
 from django.db import models
 from django.utils import timezone
 
+from audience.dates import month_bounds
+
 # How close to expiry a membership starts showing an amber pill. Affects the
 # colour of a badge and nothing else — no mail is sent.
 EXPIRING_SOON_DAYS = 30
@@ -97,6 +99,30 @@ class Member(models.Model):
     @property
     def status_label(self) -> str:
         return self.STATUS_LABELS[self.status]
+
+    @property
+    def free_admission_allowance(self) -> int:
+        """Free admissions a month, from the current term's tier.
+
+        Zero for a lapsed member: the benefit came with the membership.
+        Reads through `current_term`, which walks the prefetched terms
+        rather than querying, so a roster row costs nothing extra.
+        """
+        term = self.current_term
+        return term.tier.free_admissions_per_month if term else 0
+
+    def free_admissions_in(self, year: int, month: int) -> int:
+        """How many redemptions fall in that calendar month.
+
+        The roster counts the same thing with a SQL annotation; the two
+        must agree, including at month boundaries.
+        """
+        first, last = month_bounds(year, month)
+        return sum(
+            1
+            for admission in self.free_admissions.all()
+            if first <= admission.redeemed_on <= last
+        )
 
     def save(self, *args, **kwargs) -> None:
         self.email = (self.email or "").strip().lower()
