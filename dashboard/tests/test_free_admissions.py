@@ -73,6 +73,50 @@ class RosterColumnTests(StaffClient):
         self.assertIn("2 / 1", self.roster())
 
 
+class AllowanceBoundaryTests(StaffClient):
+    """`>` styles "over"; `>=` fires the confirm. At exactly the allowance,
+    the member is *at* the limit, not over it — but the next redemption
+    must still warn. Nothing previously checked the class or the attribute
+    themselves, only the "N / M" text, so flipping either operator would
+    have passed the roster tests silently.
+
+    The confirm-warning check looks for text unique to the redeem button's
+    payload ("Monthly allowance already used") rather than the bare
+    `data-dashboard-confirm` attribute, since the Delete button on every
+    row always carries that attribute regardless of allowance.
+    """
+
+    CONFIRM_TITLE = "Monthly allowance already used"
+
+    def roster(self) -> str:
+        return self.client.get(reverse("dashboard:members")).content.decode()
+
+    def test_at_exactly_the_allowance_is_not_styled_over(self) -> None:
+        member = make_member()
+        give_term(member, "cinema-supporter")  # allowance 1
+        FreeAdmission.objects.create(member=member)
+        html = self.roster()
+        self.assertIn("1 / 1", html)
+        self.assertNotIn("freeCount--over", html)
+
+    def test_at_exactly_the_allowance_the_button_warns(self) -> None:
+        member = make_member()
+        give_term(member, "cinema-supporter")  # allowance 1
+        FreeAdmission.objects.create(member=member)
+        self.assertIn(self.CONFIRM_TITLE, self.roster())
+
+    def test_strictly_over_is_styled_over(self) -> None:
+        member = make_member()
+        give_term(member, "cinema-supporter")  # allowance 1
+        FreeAdmission.objects.create(member=member)
+        FreeAdmission.objects.create(member=member)
+        self.assertIn("freeCount--over", self.roster())
+
+    def test_below_the_allowance_the_button_does_not_warn(self) -> None:
+        give_term(make_member(), "cinema-supporter")  # allowance 1, 0 used
+        self.assertNotIn(self.CONFIRM_TITLE, self.roster())
+
+
 class BothCountingPathsAgreeTests(StaffClient):
     """The roster counts in SQL; the detail page counts in Python.
 
@@ -144,6 +188,15 @@ class RedeemTests(StaffClient):
         self.client.post(self.url)
         self.client.post(self.url)
         self.assertEqual(self.member.free_admissions.count(), 2)
+
+    def test_the_swapped_back_list_shows_the_incremented_count(self) -> None:
+        """`_member_list_response` re-runs member_roster, so the count the
+        person at the counter sees should move without a page reload."""
+        before = self.client.get(reverse("dashboard:members")).content.decode()
+        self.assertIn("0 / 1", before)
+
+        after = self.client.post(self.url).content.decode()
+        self.assertIn("1 / 1", after)
 
     def test_get_is_not_allowed(self) -> None:
         self.assertEqual(self.client.get(self.url).status_code, 405)
