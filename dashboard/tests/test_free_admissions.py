@@ -261,9 +261,19 @@ class DetailPanelTests(StaffClient):
         FreeAdmission.objects.create(
             member=self.member, redeemed_on=datetime.date(2026, 9, 6)
         )
-        html = self.page()
+        response = self.client.get(self.url)
+        html = response.content.decode()
         self.assertIn("September 2026", html)
         self.assertIn("2 of 4 used", html)
+
+        # `assertIn` above can't tell one header from two duplicated ones —
+        # a broken contiguity check in `_free_admission_months` (see its
+        # docstring) would still render "September 2026" and "2 of 4 used"
+        # somewhere on the page. Assert on the grouping object itself: one
+        # month, with both redemptions under it.
+        months = response.context["free_admission_months"]
+        self.assertEqual(len(months), 1)
+        self.assertEqual(len(months[0]["admissions"]), 2)
 
     def test_separates_months(self) -> None:
         FreeAdmission.objects.create(
@@ -287,8 +297,13 @@ class DetailPanelTests(StaffClient):
         self.assertLess(html.index("September 2026"), html.index("August 2026"))
 
     def test_shows_who_recorded_it(self) -> None:
-        FreeAdmission.objects.create(member=self.member, recorded_by=self.staff)
-        self.assertIn("s", self.page())
+        # A username unlikely to occur by accident elsewhere on the page —
+        # unlike `self.staff` (username "s"), which is a single letter that
+        # appears in ordinary markup and words regardless of whether
+        # `recorded_by` is ever rendered.
+        recorder = User.objects.create_user(username="ouellette_m", password="pw12345")
+        FreeAdmission.objects.create(member=self.member, recorded_by=recorder)
+        self.assertContains(self.client.get(self.url), "ouellette_m", count=1)
 
     def test_empty_state(self) -> None:
         self.assertIn("No free admissions yet", self.page())
@@ -319,6 +334,25 @@ class DeleteRedemptionTests(StaffClient):
         html = self.client.post(self.url).content.decode()
         self.assertIn('id="free-admission-list"', html)
         self.assertIn("hx-swap-oob", html)
+
+    def test_swapped_back_panel_shows_the_decremented_count(self) -> None:
+        """The panel that comes back is recomputed after the delete, not
+        the one from before it — so its count reflects the row that's
+        gone."""
+        FreeAdmission.objects.create(
+            member=self.member, redeemed_on=self.admission.redeemed_on
+        )
+        before = self.page()
+        self.assertIn("2 of 4 used", before)
+
+        html = self.client.post(self.url).content.decode()
+        self.assertIn("1 of 4 used", html)
+        self.assertNotIn("2 of 4 used", html)
+
+    def page(self) -> str:
+        return self.client.get(
+            reverse("dashboard:member_detail", args=[self.member.pk])
+        ).content.decode()
 
     def test_toasts(self) -> None:
         self.assertIn("dashboard-toast", self.client.post(self.url)["HX-Trigger"])
