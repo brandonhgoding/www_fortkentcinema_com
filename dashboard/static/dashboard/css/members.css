@@ -325,3 +325,15 @@
 tr.currentTerm td {
   font-weight: 600;
 }
+
+/* Free-admission count on the roster. Over-allowance is worth seeing at a
+ * glance without being an error — going over is allowed, on purpose. */
+.freeCount {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.freeCount--over {
+  color: #8a6111;
+  font-weight: 600;
+}

@@ -100,6 +100,11 @@ urlpatterns = [
         member_views.TermDeleteView.as_view(),
         name="term_delete",
     ),
+    path(
+        "members/<int:pk>/free-admissions/redeem",
+        member_views.FreeAdmissionRedeemView.as_view(),
+        name="free_admission_redeem",
+    ),
     path("inquiries", inquiry_views.InquiryListView.as_view(), name="inquiries"),
     path(
         "inquiries/<int:pk>/status",

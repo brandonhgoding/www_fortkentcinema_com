@@ -7,7 +7,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from audience.models import Member, MembershipTerm, MembershipTier
+from audience.models import FreeAdmission, Member, MembershipTerm, MembershipTier
 
 User = get_user_model()
 
@@ -280,12 +280,15 @@ class MemberRosterQueryCountTests(TestCase):
     prefetch_related("terms__tier"), which should still answer the whole
     roster from a fixed, small number of queries — not one that grows with
     the number of members. Measured directly against this test with 8
-    members each with a term: 6 queries — session lookup, auth user lookup,
-    the member query, the prefetched terms query, the prefetched tiers
-    query, and active_count's query for the header pill. None of the six
-    scale with the member count. Confirmed by temporarily reverting the
-    prefetch to plain "terms": query count jumped to 13 (one extra tier
-    query per member) and this test failed as expected.
+    members each with a term: 7 queries — session lookup, auth user lookup,
+    the member query (now carrying the free_used_this_month annotation,
+    which joins the single free_admissions relation and rides along on this
+    same query rather than adding one), the prefetched terms query, the
+    prefetched tiers query, active_count's query for the header pill, and
+    the house total's aggregate over FreeAdmission for the month. None of
+    the seven scale with the member count. Confirmed by temporarily
+    reverting the prefetch to plain "terms": query count jumped (one extra
+    tier query per member) and this test failed as expected.
     """
 
     def setUp(self) -> None:
@@ -298,6 +301,8 @@ class MemberRosterQueryCountTests(TestCase):
                 first=f"First{i}", last=f"Last{i}", email=f"m{i}@example.com"
             )
             give_term(member)
+            if i % 2 == 0:
+                FreeAdmission.objects.create(member=member)
 
-        with self.assertNumQueries(6):
+        with self.assertNumQueries(7):
             self.client.get(reverse("dashboard:members"))

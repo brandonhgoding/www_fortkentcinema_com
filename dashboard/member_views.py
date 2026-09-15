@@ -9,11 +9,14 @@ staff-only, the CSV export included.
 import csv
 import json
 
-from audience.models import Member, MembershipTerm
+from audience.dates import month_bounds
+from audience.models import FreeAdmission, Member, MembershipTerm
 from django.db import models
+from django.db.models import Count, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views import View
 
 from .forms import MemberForm, MembershipTermForm
@@ -27,6 +30,11 @@ STATUS_FILTERS = [
 ]
 
 
+def this_month() -> tuple[int, int]:
+    today = timezone.localdate()
+    return today.year, today.month
+
+
 def member_roster(request):
     """The roster as filtered by ?q= and ?status=.
 
@@ -35,7 +43,13 @@ def member_roster(request):
     rows at most; a query that could express "expiring soon" in SQL would
     duplicate the definition that lives on the model.
     """
-    members = Member.objects.prefetch_related("terms__tier")
+    first, last = month_bounds(*this_month())
+    members = Member.objects.prefetch_related("terms__tier").annotate(
+        free_used_this_month=Count(
+            "free_admissions",
+            filter=Q(free_admissions__redeemed_on__range=(first, last)),
+        )
+    )
 
     q = (request.GET.get("q") or "").strip()
     if q:
@@ -56,6 +70,12 @@ def member_roster(request):
 class MemberListView(StaffRequiredMixin, View):
     def get(self, request):
         members, q, status = member_roster(request)
+
+        first, last = month_bounds(*this_month())
+        free_given_this_month = FreeAdmission.objects.filter(
+            redeemed_on__range=(first, last)
+        ).count()
+
         return render(
             request,
             "dashboard/members.html",
@@ -65,6 +85,8 @@ class MemberListView(StaffRequiredMixin, View):
                 "selected_status": status,
                 "statuses": STATUS_FILTERS,
                 "active_count": Member.objects.active().count(),
+                "free_given_this_month": free_given_this_month,
+                "this_month_label": timezone.localdate().strftime("%B"),
             },
         )
 
@@ -285,3 +307,21 @@ class MemberExportView(StaffRequiredMixin, View):
                 member.status,
             ])
         return response
+
+
+class FreeAdmissionRedeemView(StaffRequiredMixin, View):
+    """Record one free admission for a member.
+
+    Deliberately does not check the allowance. The screen warns before
+    calling this when the member is already at their limit, and staff may
+    go ahead — a two-screen cinema runs on the judgement of whoever is at
+    the counter, and a server-side refusal would make the one legitimate
+    override impossible.
+    """
+
+    def post(self, request, pk):
+        member = get_object_or_404(Member, pk=pk)
+        FreeAdmission.objects.create(member=member, recorded_by=request.user)
+        return _member_list_response(
+            request, f"Free admission recorded for {member.full_name}"
+        )
