@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from .models import (
+    FreeAdmission,
     Member,
     MembershipBenefit,
     MembershipTerm,
@@ -51,6 +52,15 @@ class MembershipTierAdmin(admin.ModelAdmin):
 class MembershipBenefitAdmin(admin.ModelAdmin):
     list_display = ("name", "sort_order")
     search_fields = ("name",)
+
+
+@admin.register(FreeAdmission)
+class FreeAdmissionAdmin(admin.ModelAdmin):
+    list_display = ("member", "redeemed_on", "recorded_by")
+    list_filter = ("redeemed_on",)
+    search_fields = ("member__first_name", "member__last_name", "member__email")
+    date_hierarchy = "redeemed_on"
+    autocomplete_fields = ("member",)
 
 
 class MembershipTermInline(admin.TabularInline):

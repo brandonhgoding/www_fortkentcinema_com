@@ -3,6 +3,7 @@ from .membership_term import MembershipTerm
 from .subscriber import Subscriber, SubscriberManager, SubscriberStatus
 from .membership_benefit import MembershipBenefit
 from .membership_tier import MembershipTier
+from .free_admission import FreeAdmission
 
 __all__ = [
     "Member",
@@ -13,4 +14,5 @@ __all__ = [
     "SubscriberStatus",
     "MembershipTier",
     "MembershipBenefit",
+    "FreeAdmission",
 ]
