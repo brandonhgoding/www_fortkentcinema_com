@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from .models import (
+    FreeAdmission,
     Member,
     MembershipBenefit,
     MembershipTerm,
@@ -19,7 +20,14 @@ class SubscriberAdmin(admin.ModelAdmin):
 
 @admin.register(MembershipTier)
 class MembershipTierAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "price", "show_on_membership_page", "sort_order")
+    list_display = (
+        "name",
+        "slug",
+        "price",
+        "free_admissions_per_month",
+        "show_on_membership_page",
+        "sort_order",
+    )
     list_filter = ("show_on_membership_page", "featured", "is_family_tier")
     search_fields = ("name", "slug")
     filter_horizontal = ("benefits",)
@@ -44,6 +52,15 @@ class MembershipTierAdmin(admin.ModelAdmin):
 class MembershipBenefitAdmin(admin.ModelAdmin):
     list_display = ("name", "sort_order")
     search_fields = ("name",)
+
+
+@admin.register(FreeAdmission)
+class FreeAdmissionAdmin(admin.ModelAdmin):
+    list_display = ("member", "redeemed_on", "recorded_by")
+    list_select_related = ("member", "recorded_by")
+    search_fields = ("member__first_name", "member__last_name", "member__email")
+    date_hierarchy = "redeemed_on"
+    autocomplete_fields = ("member",)
 
 
 class MembershipTermInline(admin.TabularInline):

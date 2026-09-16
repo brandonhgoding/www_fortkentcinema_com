@@ -16,6 +16,7 @@ from django.urls import reverse
 
 from audience.admin import MembershipTierAdmin
 from audience.models import (
+    FreeAdmission,
     Member,
     MembershipBenefit,
     MembershipTerm,
@@ -121,3 +122,12 @@ class AudienceAdminSmokeTests(TestCase):
         )
         self.assertRenders("admin:audience_member_changelist")
         self.assertRenders("admin:audience_member_change", member.pk)
+
+    def test_free_admission_pages(self) -> None:
+        member = Member.objects.create(
+            first_name="Denis", last_name="Bouchard", email="d.b@example.com"
+        )
+        admission = FreeAdmission.objects.create(member=member)
+        self.assertRenders("admin:audience_freeadmission_changelist")
+        self.assertRenders("admin:audience_freeadmission_add")
+        self.assertRenders("admin:audience_freeadmission_change", admission.pk)

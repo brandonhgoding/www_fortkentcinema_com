@@ -3,7 +3,7 @@
   <div class="tableWrapper">
     <table class="table">
       <thead>
-        <tr><th>Name</th><th>Email</th><th>Phone</th><th>Tier</th><th>Expires</th><th>Status</th><th>Actions</th></tr>
+        <tr><th>Name</th><th>Email</th><th>Phone</th><th>Tier</th><th>Free this month</th><th>Expires</th><th>Status</th><th>Actions</th></tr>
       </thead>
       <tbody>
         {% for member in members %}
@@ -12,10 +12,20 @@
           <td>{{ member.email }}</td>
           <td>{{ member.phone|default:"—" }}</td>
           <td>{% if member.current_term %}{{ member.current_term.tier.name }}{% else %}—{% endif %}</td>
+          <td>
+            {% if member.free_admission_allowance %}
+              <span class="freeCount{% if member.free_used_this_month > member.free_admission_allowance %} freeCount--over{% endif %}">{{ member.free_used_this_month }} / {{ member.free_admission_allowance }}</span>
+            {% else %}—{% endif %}
+          </td>
           <td>{% if member.current_term %}{{ member.current_term.expires_on|date:"M j, Y" }}{% else %}—{% endif %}</td>
           <td><span class="statusPill status-{{ member.status }}">{{ member.status_label }}</span></td>
           <td>
             <div class="actions">
+              {% if member.free_admission_allowance %}
+              <button class="actionButton" hx-post="{% url 'dashboard:free_admission_redeem' member.pk %}"
+                      hx-target="#member-list" hx-swap="outerHTML" hx-include=".memberFilters"
+                      {% if member.free_used_this_month >= member.free_admission_allowance %}data-dashboard-confirm='{"title":"Monthly allowance already used","message":"{{ member.full_name|escapejs }} has used {{ member.free_used_this_month }} of {{ member.free_admission_allowance }} free admission(s) this month. Record another?","confirmLabel":"Record anyway"}'{% endif %}>Redeem</button>
+              {% endif %}
               <button class="actionButton" hx-get="{% url 'dashboard:member_edit' member.pk %}"
                       hx-target="#drawer-content" @click="$store.drawer.show('Edit Member')">Edit</button>
               <button class="actionButton deleteButton"

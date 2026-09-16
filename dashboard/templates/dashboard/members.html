@@ -7,7 +7,7 @@
   <div class="header">
     <div>
       <h1 class="title">Members</h1>
-      <p class="subtitle">{{ active_count }} active member{{ active_count|pluralize }}.</p>
+      <p class="subtitle">{{ active_count }} active member{{ active_count|pluralize }}. {{ this_month_label }}: {{ free_given_this_month }} free admission{{ free_given_this_month|pluralize }} given.</p>
     </div>
     <div class="actions">
       <a class="actionButton" href="{% url 'dashboard:members_export' %}?q={{ q|urlencode }}&status={{ selected_status|urlencode }}">Export CSV</a>
