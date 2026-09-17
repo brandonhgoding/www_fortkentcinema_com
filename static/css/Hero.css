@@ -6,7 +6,24 @@
   justify-content: center;
   align-items: center;
   padding-top: 70px;
+  /* Also clips the dust canvas and the grain layer, which were fixed to the
+   * viewport before and are now absolute within the hero. Deliberately NOT
+   * `isolation: isolate` — that would create a stacking context and change
+   * where the z-index:-3/-2/-1 background layers below paint. */
   overflow: hidden;
+}
+
+/* Film grain — moved here from body::before, unchanged. It belongs to the
+ * theatre-dark hero; over the light page below it read as a dirty screen. */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.06'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 4;
+  opacity: 0.25;
+  animation: grain 0.5s steps(4) infinite;
 }
 
 /* Cool Charcoal-Black Background — midnight theater */

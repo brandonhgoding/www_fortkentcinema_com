@@ -13,9 +13,14 @@ function start(canvas) {
     if (!ctx) return;
     let width = 0;
     let height = 0;
+    /* The canvas is scoped to the hero now, not fixed to the viewport, so the
+     * bitmap has to match its own laid-out box. Sizing it to innerWidth/Height
+     * would leave the bitmap a different shape from the element and the CSS
+     * would stretch the drawing. clientWidth is 0 before layout, so fall back
+     * to the viewport on that first call. */
     function resize() {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
+      width = canvas.width = canvas.clientWidth || window.innerWidth;
+      height = canvas.height = canvas.clientHeight || window.innerHeight;
     }
     resize();
     const count = window.innerWidth < 700 ? 25 : 50;

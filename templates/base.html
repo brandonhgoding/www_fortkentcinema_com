@@ -129,10 +129,14 @@
     {% block extra_head %}{% endblock %}
   </head>
   <body>
-    <div class="vignette"></div>
-    <canvas class="fx-dust" data-ambient-dust aria-hidden="true"></canvas>
-    <div class="curtain-left"></div>
-    <div class="curtain-right"></div>
+    {% comment %}
+    The vignette, the two curtain gradients and the dust canvas used to live
+    here, fixed over every page. All four are dark-ground devices: the vignette
+    was rgba(0,0,0,.7) at the edges, which over a light surface is a grey halo
+    rather than a darkened theatre. The dust canvas moved into the hero, where
+    it still reads — and where it stops running a rAF loop on the seven routes
+    that have no hero at all.
+    {% endcomment %}
     <a href="#main-content" class="skip-link">Skip to main content</a>
 
     {% include "partials/nav.html" %}

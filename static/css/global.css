@@ -39,20 +39,12 @@ body {
   font-size: 18px;
 }
 
-/* Film grain overlay — silver-toned */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.06'/%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: 9999;
-  opacity: 0.25;
-  animation: grain 0.5s steps(4) infinite;
-}
+/* The film grain moved from body::before to .hero::before (Hero.css). The noise
+ * itself is unchanged — what changes is how it reads: over near-black it is
+ * film stock, over a warm white page the identical texture reads as JPEG
+ * artifacts or a dirty screen. Scoping it to the hero also stops a
+ * full-viewport fixed layer animating at 2fps on every route forever.
+ * @keyframes grain stays here; it is referenced from one place either way. */
 
 @keyframes grain {
   0%,
@@ -310,44 +302,16 @@ button {
   }
 }
 
-/* ============================================
-   VIGNETTE OVERLAY
-============================================ */
-.vignette {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.7) 100%);
-  pointer-events: none;
-  z-index: 9998;
-}
-
-/* ============================================
-   CURTAIN GLOW EDGES — deep midnight
-============================================ */
-.curtain-left,
-.curtain-right {
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  width: 120px;
-  z-index: 50;
-  pointer-events: none;
-}
-
-.curtain-left {
-  left: 0;
-  background: linear-gradient(90deg, var(--color-burgundy) 0%, transparent 100%);
-  opacity: 0.4;
-}
-
-.curtain-right {
-  right: 0;
-  background: linear-gradient(-90deg, var(--color-burgundy) 0%, transparent 100%);
-  opacity: 0.4;
-}
+/* The vignette and the two curtain-edge gradients were removed here along with
+ * their markup in base.html. Both were fixed, full-viewport, dark-ground
+ * devices: the vignette darkened the page edges with rgba(0,0,0,.7) at
+ * z-index 9998 — above the nav and every overlay — and the curtains were
+ * 120px burgundy gradients at 0.4 opacity, which over a light surface read as
+ * smudges on the monitor rather than as curtains.
+ *
+ * Deleting the curtains also removes a layout-shift surface: base.html's own
+ * preload comment records the font swap moving these overlays for CLS 0.027.
+ */
 
 /* ============================================
    ORNAMENTAL DIVIDERS — Art Deco Geometric
@@ -435,7 +399,7 @@ button {
    REDUCED MOTION
 ============================================ */
 @media (prefers-reduced-motion: reduce) {
-  body::before {
+  .hero::before {
     animation: none;
   }
 
