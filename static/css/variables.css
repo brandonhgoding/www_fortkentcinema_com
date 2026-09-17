@@ -16,7 +16,9 @@
    that satisfies both. Splitting them by role is what makes the colour
    change a reviewable diff instead of a guess.
 
-   Layer 2 currently holds the OLD dark values, so this file is a no-op.
+   The site is LIGHT-LED. The hero (Hero.css) is the single dark island and
+   re-declares layer 2 — and layer 3, which does not inherit an override —
+   on .hero itself.
 ============================================ */
 
 :root {
@@ -35,30 +37,47 @@
   --brand-warm-white: #f7f7f4;
 
   /* ---- 2. Semantic roles --------------------------------------------
-   * Still the Art Deco dark theme. The colour flip changes only this
-   * block; everything downstream follows. */
+   * The brand, light-led. The hero re-declares this whole block with dark
+   * values on .hero (Hero.css), so every component inside it inherits the
+   * dark reading with no per-rule exceptions.
+   *
+   * Why light: Brand Blue is 1.85:1 on the old #0a0a0e ground and 10.67:1
+   * on white. A blue-led identity cannot be expressed on a black page
+   * without inventing tints the brand does not specify. */
 
   /* Grounds, back to front */
-  --color-surface: #0a0a0e;
-  --color-surface-alt: #14141a;
-  --color-surface-raised: #1a1a22;
-  --color-surface-sunken: #06060a;
+  --color-surface: #f7f7f4;
+  --color-surface-alt: #f0f1e6;
+  --color-surface-raised: #ffffff;
+  --color-surface-sunken: #e9eadd;
 
   /* Type */
-  --color-text: #ede8dc;
-  --color-text-muted: #9a9080;
+  --color-text: #191b1b;       /* brand ink, 15.8:1 on surface */
+  --color-text-muted: #565b59; /* 7.1:1 on surface */
 
-  /* Accent — fills, rules and emphasis. NOT body text on a light ground. */
-  --color-accent: #c9a84c;
-  --color-accent-warm: #b89840;
-  --color-accent-light: #ddd0a0;
-  --color-accent-dim: rgba(201, 162, 39, 0.3);
-  --color-accent-glow: rgba(201, 168, 76, 0.25);
-  --color-accent-glow-strong: rgba(201, 168, 76, 0.4);
+  /* Accent — the blue leads. Gold is NOT here: it is 1.93:1 on white and
+   * this token is a text colour in 124 declarations. Gold returns inside
+   * the hero, where it is 8.98:1 on ink. */
+  --color-accent: #203982;
+  --color-accent-warm: #1d609e;
+  --color-accent-light: #3f63b8;
+  --color-accent-dim: rgba(32, 57, 130, 0.25);
+
+  /* The glow layers are deliberately transparent on light. They exist for
+   * neon on black; over a warm white page a coloured text-shadow reads as
+   * a blurred glyph, not as light. .btn-primary carries a real shadow
+   * instead. The hero turns them back on. */
+  --color-accent-glow: transparent;
+  --color-accent-glow-strong: transparent;
 
   /* Ink that sits ON an accent fill — buttons, badges, active pills.
    * This is the half of --color-bg-dark that was never a background. */
-  --color-on-accent: #0a0a0e;
+  --color-on-accent: #ffffff;
+
+  /* Semantic state, deliberately outside the brand palette. Form errors were
+   * previously coloured with a neon-glow token, which said "decoration"
+   * where they needed to say "this went wrong". 6.4:1 on surface. */
+  --color-danger: #993225;
 
   /* ---- 3. Legacy aliases --------------------------------------------
    * Keep working; migrate opportunistically when a file is open anyway. */
@@ -76,16 +95,21 @@
   --color-cream-muted: var(--color-text-muted);
   --color-white: #ffffff;
 
-  /* Not yet semantic: decorative metals and the neon stack, both revisited
-   * when the hero is retuned. */
-  --color-burgundy: #12101e;
-  --color-brass: #8a7030;
-  --color-brass-light: #a08840;
+  /* Decorative metals. These split by role in practice: --color-brass is
+   * only ever a rule or border, --color-brass-light is only ever a text
+   * colour, so they take light values suited to each rather than one
+   * shared metal. The hero puts the real brass back. */
+  --color-brass: #d2ccb4;       /* hairlines and panel borders */
+  --color-brass-light: #6b6240; /* small caption text, 6.2:1 on surface */
+  --color-burgundy: #d9dac9;    /* one table rule on /sponsor/ */
 
-  --neon-gold-inner: #efe0b8;
-  --neon-gold-mid: rgba(201, 168, 76, 0.5);
-  --neon-gold-outer: rgba(201, 168, 76, 0.25);
-  --neon-gold-far: rgba(201, 168, 76, 0.08);
+  /* The neon stack is the marquee's alone. Every use outside .hero has been
+   * given a real colour (the membership title, the sponsor form errors), so
+   * all four can go transparent here and the glow simply does not render. */
+  --neon-gold-inner: transparent;
+  --neon-gold-mid: transparent;
+  --neon-gold-outer: transparent;
+  --neon-gold-far: transparent;
 
   /* Fonts — open stand-ins for the brand faces. See fonts.css for why these
    * three and not Adobe Garamond Pro / Gill Sans Nova. Swapping to the

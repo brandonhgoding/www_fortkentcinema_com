@@ -1,12 +1,15 @@
+/* The nav is fixed and sits over both the dark hero and every light page, so
+ * it cannot borrow either ground. It carries its own light surface with a
+ * blur, which reads as glass over the marquee and as a plain bar elsewhere. */
 .nav {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 1000;
-  background: linear-gradient(180deg, rgba(8, 8, 12, 0.98) 0%, rgba(8, 8, 12, 0.95) 100%);
+  background: linear-gradient(180deg, rgba(247, 247, 244, 0.97) 0%, rgba(247, 247, 244, 0.92) 100%);
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(201, 168, 76, 0.15);
+  border-bottom: 1px solid rgba(32, 57, 130, 0.15);
 }
 
 .nav-container {
@@ -19,12 +22,20 @@
   height: 70px;
 }
 
+/* The wordmark is artwork, not type: it carries no font, colour or glow of
+ * its own, and the accessible name lives in the img alt. Sized by height so
+ * the 4.77:1 lockup keeps its ratio at every width. It is a two-line stacked
+ * mark, so it needs more height than a single-line wordmark would: below
+ * ~2.5rem the CINEMA line stops being legible. */
 .nav-logo {
-  font-family: var(--font-display);
-  font-size: 1.8rem;
-  letter-spacing: 2px;
-  color: var(--color-gold);
-  text-shadow: 0 0 10px var(--color-gold-glow);
+  display: flex;
+  align-items: center;
+}
+
+.nav-logo img {
+  display: block;
+  height: 2.75rem;
+  width: auto;
 }
 
 .nav-links {
@@ -177,11 +188,11 @@
   list-style: none;
   padding: var(--spacing-xs) 0;
   /* Same surface as the mobile panel, so the two read as one material. */
-  background: linear-gradient(180deg, rgba(8, 8, 12, 0.98) 0%, rgba(8, 8, 12, 0.95) 100%);
+  background: linear-gradient(180deg, rgba(247, 247, 244, 0.99) 0%, rgba(240, 241, 230, 0.97) 100%);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(201, 168, 76, 0.15);
+  border: 1px solid rgba(32, 57, 130, 0.15);
   border-radius: var(--radius-sm);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 24px rgba(20, 22, 21, 0.12);
 }
 
 .nav-dropdown-menu--open {
@@ -208,7 +219,7 @@
 }
 
 .nav-dropdown-link:hover {
-  background: rgba(201, 168, 76, 0.08);
+  background: rgba(32, 57, 130, 0.08);
 }
 
 /* The sliding gold underline belongs to the top row; inside the panel it
@@ -233,8 +244,8 @@
     height: 60px;
   }
 
-  .nav-logo {
-    font-size: 1.4rem;
+  .nav-logo img {
+    height: 2.1rem;
   }
 
   .nav-hamburger {
@@ -248,9 +259,9 @@
     left: 0;
     right: 0;
     flex-direction: column;
-    background: linear-gradient(180deg, rgba(8, 8, 12, 0.98) 0%, rgba(8, 8, 12, 0.95) 100%);
+    background: linear-gradient(180deg, rgba(247, 247, 244, 0.99) 0%, rgba(240, 241, 230, 0.97) 100%);
     backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(201, 168, 76, 0.15);
+    border-bottom: 1px solid rgba(32, 57, 130, 0.15);
     padding: var(--spacing-sm) 0;
     gap: 0;
   }

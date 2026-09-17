@@ -420,7 +420,7 @@
   position: fixed;
   inset: 0;
   z-index: 1100;
-  background: rgba(6, 6, 10, 0.78);
+  background: rgba(20, 22, 21, 0.78);
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--transition-base);
@@ -616,7 +616,7 @@
 .sponsor-inquire__error,
 .sponsor-inquire__field-error {
   font-family: var(--font-body);
-  color: var(--neon-gold-inner);
+  color: var(--color-danger);
   font-size: 0.9rem;
 }
 

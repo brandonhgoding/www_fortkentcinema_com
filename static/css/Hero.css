@@ -1,4 +1,55 @@
+/* THE HERO IS THE ONE DARK ISLAND ON THE SITE.
+ *
+ * It re-declares the whole semantic block rather than overriding colours
+ * rule by rule, so every descendant — including shared components that also
+ * render on light pages — inherits the dark reading for free. Add a colour
+ * here, not a `.hero .thing { color: ... }` exception.
+ *
+ * This is also where gold lives. Gold is 1.93:1 on white and unusable as
+ * text there, but 8.98:1 on brand ink, which is exactly what a marquee
+ * wants. */
 .hero {
+  --color-surface: #141615;
+  --color-surface-alt: #1b1d1b;
+  --color-surface-raised: #212420;
+  --color-surface-sunken: #0d0f0e;
+
+  --color-text: #ebedb8;
+  --color-text-muted: #9c9b81;
+
+  --color-accent: #d2bb33;
+  --color-accent-warm: #b8a32c;
+  --color-accent-light: #e6dc95;
+  --color-accent-dim: rgba(210, 187, 51, 0.3);
+  --color-accent-glow: rgba(210, 187, 51, 0.25);
+  --color-accent-glow-strong: rgba(210, 187, 51, 0.4);
+  --color-on-accent: #141615;
+
+  --color-brass: #8a7030;
+  --color-brass-light: #a08840;
+
+  --neon-gold-inner: #f6efc9;
+  --neon-gold-mid: rgba(210, 187, 51, 0.5);
+  --neon-gold-outer: rgba(210, 187, 51, 0.25);
+  --neon-gold-far: rgba(210, 187, 51, 0.08);
+
+  /* The legacy aliases have to be re-declared here, not just inherited.
+   * `--color-gold: var(--color-accent)` on :root resolves against :ROOT's
+   * --color-accent at its declaration site, so overriding --color-accent on
+   * .hero alone leaves --color-gold blue and the marquee loses its gold.
+   * Re-declaring them inside this scope re-resolves them against the values
+   * above. Any new alias added to variables.css needs a line here too. */
+  --color-bg-dark: var(--color-surface);
+  --color-bg-charcoal: var(--color-surface-alt);
+  --color-bg-charcoal-dark: var(--color-surface-sunken);
+  --color-bg-card: var(--color-surface-raised);
+  --color-gold: var(--color-accent);
+  --color-gold-warm: var(--color-accent-warm);
+  --color-gold-light: var(--color-accent-light);
+  --color-gold-glow: var(--color-accent-glow);
+  --color-cream: var(--color-text);
+  --color-cream-muted: var(--color-text-muted);
+
   position: relative;
   min-height: 100vh;
   display: flex;
@@ -33,7 +84,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(180deg, #06060c 0%, #0a0a12 30%, #12121c 70%, #0a0a12 100%);
+  background: linear-gradient(180deg, #0d0f0e 0%, #121413 30%, #1b1e1c 70%, #121413 100%);
   z-index: -3;
 }
 
@@ -50,13 +101,13 @@
     radial-gradient(1px 1px at 90px 40px, #c0beb8, transparent),
     radial-gradient(2px 2px at 130px 80px, rgba(200, 196, 188, 0.6), transparent),
     radial-gradient(1px 1px at 160px 120px, #e8e4dc, transparent),
-    radial-gradient(2px 2px at 200px 50px, rgba(201, 168, 76, 0.4), transparent),
+    radial-gradient(2px 2px at 200px 50px, rgba(210, 187, 51, 0.4), transparent),
     radial-gradient(1px 1px at 250px 160px, #dcdad4, transparent),
     radial-gradient(2px 2px at 300px 90px, rgba(220, 216, 208, 0.5), transparent),
     radial-gradient(1px 1px at 350px 30px, #c0beb8, transparent),
     radial-gradient(2px 2px at 400px 140px, rgba(232, 228, 220, 0.7), transparent),
     radial-gradient(1px 1px at 450px 70px, #e8e4dc, transparent),
-    radial-gradient(2px 2px at 500px 110px, rgba(201, 168, 76, 0.3), transparent);
+    radial-gradient(2px 2px at 500px 110px, rgba(210, 187, 51, 0.3), transparent);
   background-size: 550px 200px;
   animation: twinkle 4s ease-in-out infinite alternate;
 }
@@ -69,7 +120,7 @@
   right: 0;
   height: 300px;
   z-index: -1;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%2306060c' d='M0,320 L0,200 L30,200 L40,120 L50,180 L60,100 L70,160 L80,80 L90,140 L100,60 L110,130 L120,200 L150,200 L160,140 L170,190 L180,130 L190,170 L200,110 L210,160 L220,200 L280,200 L290,150 L300,190 L310,120 L320,170 L330,90 L340,150 L350,70 L360,140 L370,200 L430,200 L440,160 L450,190 L460,140 L470,180 L480,120 L490,170 L500,200 L560,200 L570,130 L580,180 L590,110 L600,160 L610,80 L620,150 L630,200 L700,200 L710,170 L720,195 L730,150 L740,185 L750,130 L760,175 L770,200 L830,200 L840,140 L850,185 L860,120 L870,170 L880,90 L890,160 L900,70 L910,145 L920,200 L980,200 L990,165 L1000,190 L1010,145 L1020,180 L1030,125 L1040,170 L1050,200 L1110,200 L1120,150 L1130,185 L1140,130 L1150,175 L1160,100 L1170,160 L1180,200 L1240,200 L1250,155 L1260,190 L1270,140 L1280,180 L1290,110 L1300,165 L1310,200 L1370,200 L1380,145 L1390,185 L1400,125 L1410,170 L1420,95 L1430,155 L1440,200 L1440,320 Z'/%3E%3C/svg%3E")
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%230d0f0e' d='M0,320 L0,200 L30,200 L40,120 L50,180 L60,100 L70,160 L80,80 L90,140 L100,60 L110,130 L120,200 L150,200 L160,140 L170,190 L180,130 L190,170 L200,110 L210,160 L220,200 L280,200 L290,150 L300,190 L310,120 L320,170 L330,90 L340,150 L350,70 L360,140 L370,200 L430,200 L440,160 L450,190 L460,140 L470,180 L480,120 L490,170 L500,200 L560,200 L570,130 L580,180 L590,110 L600,160 L610,80 L620,150 L630,200 L700,200 L710,170 L720,195 L730,150 L740,185 L750,130 L760,175 L770,200 L830,200 L840,140 L850,185 L860,120 L870,170 L880,90 L890,160 L900,70 L910,145 L920,200 L980,200 L990,165 L1000,190 L1010,145 L1020,180 L1030,125 L1040,170 L1050,200 L1110,200 L1120,150 L1130,185 L1140,130 L1150,175 L1160,100 L1170,160 L1180,200 L1240,200 L1250,155 L1260,190 L1270,140 L1280,180 L1290,110 L1300,165 L1310,200 L1370,200 L1380,145 L1390,185 L1400,125 L1410,170 L1420,95 L1430,155 L1440,200 L1440,320 Z'/%3E%3C/svg%3E")
     no-repeat bottom center;
   background-size: cover;
 }
@@ -84,13 +135,13 @@
   height: 200vmax;
   background: radial-gradient(
       ellipse 20% 25% at center,
-      rgba(201, 168, 76, 0.06) 0%,
+      rgba(210, 187, 51, 0.06) 0%,
       transparent 100%
     ),
     repeating-conic-gradient(
       from 0deg,
       transparent 0deg 4.5deg,
-      rgba(201, 168, 76, 0.015) 4.5deg 5deg
+      rgba(210, 187, 51, 0.015) 4.5deg 5deg
     );
   -webkit-mask-image: radial-gradient(ellipse 35% 45% at center, black, transparent);
   mask-image: radial-gradient(ellipse 35% 45% at center, black, transparent);
@@ -108,12 +159,12 @@
 
 .marquee-outer {
   position: relative;
-  background: linear-gradient(180deg, #14141a 0%, #0c0c12 100%);
+  background: linear-gradient(180deg, #1b1d1b 0%, #121413 100%);
   border: 2px solid var(--color-gold);
   border-radius: var(--radius-lg);
   padding: 28px;
   box-shadow:
-    inset 0 0 0 6px #0a0a0e,
+    inset 0 0 0 6px #141615,
     inset 0 0 0 7px var(--color-gold-warm),
     0 0 40px rgba(0, 0, 0, 0.9),
     0 0 80px var(--neon-gold-far);
@@ -290,14 +341,14 @@
 
 /* Inner panel — Art Deco double-line frame */
 .marquee-inner {
-  background: linear-gradient(180deg, #0c0c12 0%, #08080e 100%);
+  background: linear-gradient(180deg, #121413 0%, #0d0f0e 100%);
   border: 1px solid var(--color-gold);
   border-radius: 3px;
   padding: 30px 60px;
   text-align: center;
   box-shadow:
-    inset 0 0 0 4px #0a0a10,
-    inset 0 0 0 5px rgba(201, 168, 76, 0.35);
+    inset 0 0 0 4px #141615,
+    inset 0 0 0 5px rgba(210, 187, 51, 0.35);
 }
 
 /* Art Deco Neon Title — champagne glow */

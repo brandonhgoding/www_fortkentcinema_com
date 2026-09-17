@@ -100,7 +100,7 @@
 
 .rental-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 15px 30px rgba(20, 22, 21, 0.12);
 }
 
 .rental-card--featured {
@@ -220,7 +220,7 @@
   font-size: 1rem;
   font-weight: 600;
   line-height: 1.6;
-  border-bottom: 1px solid rgba(240, 195, 74, 0.15);
+  border-bottom: 1px solid rgba(32, 57, 130, 0.15);
 }
 
 .rentals-policies-content li:last-child {

@@ -93,7 +93,7 @@
   height: 240px;
   margin: -120px 0 0 -120px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(201, 168, 76, 0.13), transparent 70%);
+  background: radial-gradient(circle, rgba(32, 57, 130, 0.13), transparent 70%);
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -110,7 +110,7 @@
 }
 
 .fx-card--focus {
-  box-shadow: 0 10px 32px rgba(201, 168, 76, 0.18);
+  box-shadow: 0 10px 32px rgba(32, 57, 130, 0.18);
   z-index: 2;
 }
 

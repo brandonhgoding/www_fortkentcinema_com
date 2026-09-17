@@ -1,6 +1,17 @@
-<nav class="nav" x-data="{ open: false }" @keydown.escape.window="open = false">
+{% load static %}<nav class="nav" x-data="{ open: false }" @keydown.escape.window="open = false">
   <div class="nav-container">
-    <a href="/" class="nav-logo">{{ site_config.cinema.name|upper }}</a>
+    <a href="/" class="nav-logo">
+      {% comment %}
+        The real brand lockup: outlined letterforms, not live type. Rich Black
+        variant because the nav carries its own warm-white surface.
+      {% endcomment %}
+      <img
+        src="{% static 'img/fkc-wordmark-dark.svg' %}"
+        alt="{{ site_config.cinema.name }}"
+        width="210"
+        height="44"
+      >
+    </a>
     <button
       class="nav-hamburger"
       @click="open = !open"

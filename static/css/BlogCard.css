@@ -5,7 +5,7 @@
   transition:
     transform var(--transition-base),
     box-shadow var(--transition-base);
-  border: 1px solid rgba(201, 168, 76, 0.12);
+  border: 1px solid rgba(32, 57, 130, 0.12);
   display: flex;
   flex-direction: column;
   cursor: pointer;
@@ -14,7 +14,7 @@
 .blog-card:hover {
   transform: translateY(-8px);
   box-shadow:
-    0 20px 40px rgba(0, 0, 0, 0.4),
+    0 20px 40px rgba(20, 22, 21, 0.12),
     0 0 20px var(--color-gold-glow);
   border-color: var(--color-gold);
 }
@@ -64,7 +64,7 @@
   font-size: 0.8rem;
   letter-spacing: 1px;
   padding: 0.35rem 0.75rem;
-  background: rgba(201, 168, 76, 0.9);
+  background: rgba(32, 57, 130, 0.9);
   color: var(--color-on-accent);
   border-radius: var(--radius-sm);
   text-transform: uppercase;
@@ -112,7 +112,7 @@
   color: var(--color-cream-muted);
   margin-bottom: var(--spacing-sm);
   padding-top: var(--spacing-sm);
-  border-top: 1px solid rgba(201, 168, 76, 0.12);
+  border-top: 1px solid rgba(32, 57, 130, 0.12);
 }
 
 .blog-card-author {

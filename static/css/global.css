@@ -101,18 +101,23 @@ button {
   outline-offset: 2px;
 }
 
+/* The glow tokens are transparent on light, so the lift comes from a real
+ * shadow rather than a coloured halo. Inside the hero the glow returns and
+ * these stack. */
 .btn-primary {
-  background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-warm) 100%);
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-warm) 100%);
   color: var(--color-on-accent);
   box-shadow:
-    0 4px 15px var(--color-gold-glow),
+    0 2px 6px rgba(20, 22, 21, 0.16),
+    0 4px 15px var(--color-accent-glow),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .btn-primary:hover {
   transform: translateY(-3px);
   box-shadow:
-    0 8px 25px var(--color-gold-glow),
+    0 6px 18px rgba(20, 22, 21, 0.22),
+    0 8px 25px var(--color-accent-glow),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
@@ -247,9 +252,9 @@ button {
     opacity: 0.35;
     background: radial-gradient(
       circle at 30% 30%,
-      #a09040 0%,
+      #8a7a24 0%,
       var(--color-brass) 50%,
-      #1a1a22 100%
+      #141615 100%
     );
     box-shadow:
       0 0 3px var(--color-gold-warm),

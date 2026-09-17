@@ -16,13 +16,17 @@
   margin-bottom: var(--spacing-2xl);
 }
 
+/* The brand lockup, same Rich Black artwork as the nav — the footer ground is
+ * light too, so the white variant does not apply here. Sized a step up from
+ * the nav because this block anchors the brand column and has the room. */
 .footer-logo {
-  font-family: var(--font-display);
-  font-size: 2rem;
-  letter-spacing: 3px;
-  color: var(--color-gold);
-  text-shadow: 0 0 10px var(--color-gold-glow);
   margin-bottom: var(--spacing-md);
+}
+
+.footer-logo img {
+  display: block;
+  height: 3rem;
+  width: auto;
 }
 
 .footer-tagline {
@@ -108,7 +112,7 @@
 
 .footer-bottom {
   padding-top: var(--spacing-lg);
-  border-top: 1px solid rgba(201, 168, 76, 0.15);
+  border-top: 1px solid rgba(32, 57, 130, 0.15);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -161,6 +165,10 @@
 @media (max-width: 600px) {
   .footer-grid {
     grid-template-columns: 1fr;
+  }
+
+  .footer-logo img {
+    height: 2.5rem;
   }
 
   .footer-bottom {

@@ -54,7 +54,7 @@
   width: 100%;
   height: auto;
   border-radius: 3px;
-  border: 1px solid rgba(201, 168, 76, 0.25);
+  border: 1px solid rgba(32, 57, 130, 0.25);
 }
 
 .movie-page-badge {
@@ -147,7 +147,7 @@
   color: var(--color-gold);
   margin-bottom: var(--spacing-lg);
   padding-bottom: var(--spacing-sm);
-  border-bottom: 1px solid rgba(201, 168, 76, 0.2);
+  border-bottom: 1px solid rgba(32, 57, 130, 0.2);
 }
 
 .movie-page-day {
@@ -176,7 +176,7 @@
   flex-direction: column;
   gap: 0.2rem;
   padding: var(--spacing-sm) var(--spacing-md);
-  border: 1px solid rgba(201, 168, 76, 0.3);
+  border: 1px solid rgba(32, 57, 130, 0.3);
   border-radius: 2px;
   background: var(--color-bg-card);
   min-width: 8rem;

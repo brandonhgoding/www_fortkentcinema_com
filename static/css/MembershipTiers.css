@@ -70,10 +70,12 @@
 }
 
 .membership-tiers__error {
-  color: var(--color-gold-light);
-  border: 1px solid rgba(201, 168, 76, 0.3);
+  /* An error, not an accent: the danger token says "this went wrong" where a
+   * blue tint just read as another panel. */
+  color: var(--color-danger);
+  border: 1px solid rgba(153, 50, 37, 0.3);
   border-radius: var(--radius-md);
-  background: rgba(20, 20, 26, 0.5);
+  background: rgba(153, 50, 37, 0.06);
   max-width: 520px;
   margin: 0 auto;
 }
