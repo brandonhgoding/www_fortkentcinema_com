@@ -150,3 +150,17 @@ staticfiles/
 # Claude Code worktrees. Isolated checkouts of this same repo — committing
 # them would nest the whole tree inside itself.
 .claude/worktrees/
+
+# macOS Finder metadata.
+.DS_Store
+
+# Two files in BRANDING/ are deliberately not tracked:
+#   - "White/rick douglas.jpg" is a personal staff portrait, not a brand asset,
+#     and was misfiled into the logo-variant folder.
+#   - the US Route 1 shield is a stock JPEG under its original marketplace
+#     filename with no licence record, and is raster despite "vector" in the
+#     name. Fort Kent being the northern terminus of US 1 is a good hook, but it
+#     needs original artwork before it can be part of the brand.
+# Remove these two lines if you want them versioned anyway.
+BRANDING/White/rick douglas.jpg
+BRANDING/White/us-route-1-sign-shield-*.jpg

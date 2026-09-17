@@ -11,14 +11,14 @@
   max-width: 760px;
   margin: 0 auto;
   padding: var(--spacing-2xl) var(--spacing-lg);
-  border: 1px solid rgba(201, 168, 76, 0.5);
+  border: 1px solid rgba(32, 57, 130, 0.5);
   border-radius: var(--radius-lg);
   background:
-    linear-gradient(180deg, rgba(20, 20, 26, 0.7) 0%, rgba(10, 10, 14, 0.85) 100%);
+    linear-gradient(180deg, var(--color-surface-raised) 0%, var(--color-surface-alt) 100%);
   box-shadow:
-    inset 0 0 0 4px var(--color-bg-dark),
-    inset 0 0 0 5px rgba(201, 168, 76, 0.35),
-    0 0 60px var(--neon-gold-far);
+    inset 0 0 0 4px var(--color-surface-raised),
+    inset 0 0 0 5px rgba(32, 57, 130, 0.35),
+    0 4px 24px rgba(20, 22, 21, 0.08);
   position: relative;
   animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -49,7 +49,7 @@
 }
 
 .membership-hero__eyebrow {
-  font-family: var(--font-display);
+  font-family: var(--font-condensed);
   font-size: 0.85rem;
   letter-spacing: 6px;
   text-transform: uppercase;
@@ -62,13 +62,11 @@
   font-size: clamp(2.4rem, 6vw, 4.5rem);
   letter-spacing: 12px;
   text-transform: uppercase;
-  color: var(--neon-gold-inner);
+  /* No neon here. The four-layer glow stack belongs to the marquee on the
+   * home hero, which sits on ink; over a light panel the same shadows read
+   * as a smeared glyph rather than as a lit sign. Neon is the hero's alone. */
+  color: var(--color-accent);
   margin: 0;
-  text-shadow:
-    0 0 4px var(--neon-gold-inner),
-    0 0 12px var(--color-gold),
-    0 0 28px var(--neon-gold-mid),
-    0 0 48px var(--neon-gold-outer);
 }
 
 /* Decorative rule with center diamond */

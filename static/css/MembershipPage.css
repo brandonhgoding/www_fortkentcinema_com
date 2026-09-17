@@ -3,7 +3,7 @@
 ============================================ */
 .membership-page {
   background:
-    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(201, 168, 76, 0.08), transparent 60%),
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(32, 57, 130, 0.08), transparent 60%),
     linear-gradient(180deg, var(--color-bg-charcoal) 0%, var(--color-bg-dark) 100%);
   min-height: 100vh;
   padding-top: 70px;
@@ -24,7 +24,7 @@
   background: repeating-conic-gradient(
     from 0deg,
     transparent 0deg 6deg,
-    rgba(201, 168, 76, 0.012) 6deg 6.4deg
+    rgba(32, 57, 130, 0.012) 6deg 6.4deg
   );
   -webkit-mask-image: radial-gradient(ellipse 50% 35% at 50% 30%, black, transparent 70%);
   mask-image: radial-gradient(ellipse 50% 35% at 50% 30%, black, transparent 70%);

@@ -113,7 +113,7 @@ function Re(t) {
   if (e !== "static")
     try {
       let o = function() {
-        i = t.width = window.innerWidth, a = t.height = window.innerHeight;
+        i = t.width = t.clientWidth || window.innerWidth, a = t.height = t.clientHeight || window.innerHeight;
       };
       var n = o;
       const r = t.getContext("2d");
@@ -233,7 +233,7 @@ function Ue() {
 function wt(t) {
   t.classList.remove("hero--pre-show"), t.classList.add("hero--live"), t.dispatchEvent(new CustomEvent("neon:live"));
 }
-function Xe(t) {
+function We(t) {
   try {
     if (Ue()) {
       wt(t);
@@ -256,9 +256,9 @@ function Xe(t) {
     console.error("[effects] neon power-on disabled:", e), wt(t);
   }
 }
-function We(t = document) {
+function Xe(t = document) {
   t.querySelectorAll("[data-neon]").forEach((e) => {
-    e.dataset.neonInit || (e.dataset.neonInit = "1", Xe(e));
+    e.dataset.neonInit || (e.dataset.neonInit = "1", We(e));
   });
 }
 function ot(t, e) {
@@ -354,7 +354,7 @@ function ge(t, e) {
 }
 function Z() {
 }
-var X = 0.7, lt = 1 / X, T = "\\s*([+-]?\\d+)\\s*", W = "\\s*([+-]?(?:\\d*\\.)?\\d+(?:[eE][+-]?\\d+)?)\\s*", v = "\\s*([+-]?(?:\\d*\\.)?\\d+(?:[eE][+-]?\\d+)?)%\\s*", fn = /^#([0-9a-f]{3,8})$/, sn = new RegExp(`^rgb\\(${T},${T},${T}\\)$`), cn = new RegExp(`^rgb\\(${v},${v},${v}\\)$`), un = new RegExp(`^rgba\\(${T},${T},${T},${W}\\)$`), ln = new RegExp(`^rgba\\(${v},${v},${v},${W}\\)$`), dn = new RegExp(`^hsl\\(${W},${v},${v}\\)$`), hn = new RegExp(`^hsla\\(${W},${v},${v},${W}\\)$`), jt = {
+var W = 0.7, lt = 1 / W, T = "\\s*([+-]?\\d+)\\s*", X = "\\s*([+-]?(?:\\d*\\.)?\\d+(?:[eE][+-]?\\d+)?)\\s*", M = "\\s*([+-]?(?:\\d*\\.)?\\d+(?:[eE][+-]?\\d+)?)%\\s*", fn = /^#([0-9a-f]{3,8})$/, sn = new RegExp(`^rgb\\(${T},${T},${T}\\)$`), cn = new RegExp(`^rgb\\(${M},${M},${M}\\)$`), un = new RegExp(`^rgba\\(${T},${T},${T},${X}\\)$`), ln = new RegExp(`^rgba\\(${M},${M},${M},${X}\\)$`), dn = new RegExp(`^hsl\\(${X},${M},${M}\\)$`), hn = new RegExp(`^hsla\\(${X},${M},${M},${X}\\)$`), jt = {
   aliceblue: 15792383,
   antiquewhite: 16444375,
   aqua: 65535,
@@ -555,7 +555,7 @@ It(x, Et, ge(Z, {
     return t = t == null ? lt : Math.pow(lt, t), new x(this.r * t, this.g * t, this.b * t, this.opacity);
   },
   darker(t) {
-    return t = t == null ? X : Math.pow(X, t), new x(this.r * t, this.g * t, this.b * t, this.opacity);
+    return t = t == null ? W : Math.pow(W, t), new x(this.r * t, this.g * t, this.b * t, this.opacity);
   },
   rgb() {
     return this;
@@ -614,35 +614,35 @@ It(b, pn, ge(Z, {
     return t = t == null ? lt : Math.pow(lt, t), new b(this.h, this.s, this.l * t, this.opacity);
   },
   darker(t) {
-    return t = t == null ? X : Math.pow(X, t), new b(this.h, this.s, this.l * t, this.opacity);
+    return t = t == null ? W : Math.pow(W, t), new b(this.h, this.s, this.l * t, this.opacity);
   },
   rgb() {
     var t = this.h % 360 + (this.h < 0) * 360, e = isNaN(t) || isNaN(this.s) ? 0 : this.s, n = this.l, r = n + (n < 0.5 ? n : 1 - n) * e, i = 2 * n - r;
     return new x(
-      vt(t >= 240 ? t - 240 : t + 120, i, r),
-      vt(t, i, r),
-      vt(t < 120 ? t + 240 : t - 120, i, r),
+      Mt(t >= 240 ? t - 240 : t + 120, i, r),
+      Mt(t, i, r),
+      Mt(t < 120 ? t + 240 : t - 120, i, r),
       this.opacity
     );
   },
   clamp() {
-    return new b(Xt(this.h), it(this.s), it(this.l), dt(this.opacity));
+    return new b(Wt(this.h), it(this.s), it(this.l), dt(this.opacity));
   },
   displayable() {
     return (0 <= this.s && this.s <= 1 || isNaN(this.s)) && 0 <= this.l && this.l <= 1 && 0 <= this.opacity && this.opacity <= 1;
   },
   formatHsl() {
     const t = dt(this.opacity);
-    return `${t === 1 ? "hsl(" : "hsla("}${Xt(this.h)}, ${it(this.s) * 100}%, ${it(this.l) * 100}%${t === 1 ? ")" : `, ${t})`}`;
+    return `${t === 1 ? "hsl(" : "hsla("}${Wt(this.h)}, ${it(this.s) * 100}%, ${it(this.l) * 100}%${t === 1 ? ")" : `, ${t})`}`;
   }
 }));
-function Xt(t) {
+function Wt(t) {
   return t = (t || 0) % 360, t < 0 ? t + 360 : t;
 }
 function it(t) {
   return Math.max(0, Math.min(1, t || 0));
 }
-function vt(t, e, n) {
+function Mt(t, e, n) {
   return (t < 60 ? e + (n - e) * t / 60 : t < 180 ? n : t < 240 ? e + (n - e) * (240 - t) / 60 : e) * 255;
 }
 const _t = (t) => () => t;
@@ -656,7 +656,7 @@ function wn(t, e, n) {
     return Math.pow(t + r * e, n);
   };
 }
-function vn(t) {
+function Mn(t) {
   return (t = +t) == 1 ? ye : function(e, n) {
     return n - e ? wn(e, n, t) : _t(isNaN(e) ? n : e);
   };
@@ -665,8 +665,8 @@ function ye(t, e) {
   var n = e - t;
   return n ? bn(t, n) : _t(isNaN(t) ? e : t);
 }
-const Wt = (function t(e) {
-  var n = vn(e);
+const Xt = (function t(e) {
+  var n = Mn(e);
   function r(i, a) {
     var o = n((i = Et(i)).r, (a = Et(a)).r), f = n(i.g, a.g), c = n(i.b, a.b), s = ye(i.opacity, a.opacity);
     return function(l) {
@@ -675,7 +675,7 @@ const Wt = (function t(e) {
   }
   return r.gamma = t, r;
 })(1);
-function Mn(t, e) {
+function vn(t, e) {
   e || (e = []);
   var n = t ? Math.min(e.length, t.length) : 0, r = e.slice(), i;
   return function(a) {
@@ -716,7 +716,7 @@ function En(t, e) {
     return r;
   };
 }
-var St = /[-+]?(?:\d+\.?\d*|\.?\d+)(?:[eE][-+]?\d+)?/g, Mt = new RegExp(St.source, "g");
+var St = /[-+]?(?:\d+\.?\d*|\.?\d+)(?:[eE][-+]?\d+)?/g, vt = new RegExp(St.source, "g");
 function Sn(t) {
   return function() {
     return t;
@@ -728,9 +728,9 @@ function An(t) {
   };
 }
 function Ln(t, e) {
-  var n = St.lastIndex = Mt.lastIndex = 0, r, i, a, o = -1, f = [], c = [];
-  for (t = t + "", e = e + ""; (r = St.exec(t)) && (i = Mt.exec(e)); )
-    (a = i.index) > n && (a = e.slice(n, a), f[o] ? f[o] += a : f[++o] = a), (r = r[0]) === (i = i[0]) ? f[o] ? f[o] += i : f[++o] = i : (f[++o] = null, c.push({ i: o, x: ht(r, i) })), n = Mt.lastIndex;
+  var n = St.lastIndex = vt.lastIndex = 0, r, i, a, o = -1, f = [], c = [];
+  for (t = t + "", e = e + ""; (r = St.exec(t)) && (i = vt.exec(e)); )
+    (a = i.index) > n && (a = e.slice(n, a), f[o] ? f[o] += a : f[++o] = a), (r = r[0]) === (i = i[0]) ? f[o] ? f[o] += i : f[++o] = i : (f[++o] = null, c.push({ i: o, x: ht(r, i) })), n = vt.lastIndex;
   return n < e.length && (a = e.slice(n), f[o] ? f[o] += a : f[++o] = a), f.length < 2 ? c[0] ? An(c[0].x) : Sn(e) : (e = c.length, function(s) {
     for (var l = 0, u; l < e; ++l) f[(u = c[l]).i] = u.x(s);
     return f.join("");
@@ -738,7 +738,7 @@ function Ln(t, e) {
 }
 function Rt(t, e) {
   var n = typeof e, r;
-  return e == null || n === "boolean" ? _t(e) : (n === "number" ? ht : n === "string" ? (r = V(e)) ? (e = r, Wt) : Ln : e instanceof V ? Wt : e instanceof Date ? kn : Nn(e) ? Mn : Array.isArray(e) ? $n : typeof e.valueOf != "function" && typeof e.toString != "function" || isNaN(e) ? En : ht)(t, e);
+  return e == null || n === "boolean" ? _t(e) : (n === "number" ? ht : n === "string" ? (r = V(e)) ? (e = r, Xt) : Ln : e instanceof V ? Xt : e instanceof Date ? kn : Nn(e) ? vn : Array.isArray(e) ? $n : typeof e.valueOf != "function" && typeof e.toString != "function" || isNaN(e) ? En : ht)(t, e);
 }
 function In(t, e) {
   return t = +t, e = +e, function(n) {
@@ -920,18 +920,18 @@ function Yn(t) {
   var e = t.grouping === void 0 || t.thousands === void 0 ? Jt : jn(Qt.call(t.grouping, Number), t.thousands + ""), n = t.currency === void 0 ? "" : t.currency[0] + "", r = t.currency === void 0 ? "" : t.currency[1] + "", i = t.decimal === void 0 ? "." : t.decimal + "", a = t.numerals === void 0 ? Jt : Fn(Qt.call(t.numerals, String)), o = t.percent === void 0 ? "%" : t.percent + "", f = t.minus === void 0 ? "−" : t.minus + "", c = t.nan === void 0 ? "NaN" : t.nan + "";
   function s(u, d) {
     u = gt(u);
-    var p = u.fill, w = u.align, M = u.sign, C = u.symbol, J = u.zero, pt = u.width, bt = u.comma, $ = u.precision, qt = u.trim, g = u.type;
+    var p = u.fill, w = u.align, v = u.sign, C = u.symbol, J = u.zero, pt = u.width, bt = u.comma, $ = u.precision, qt = u.trim, g = u.type;
     g === "n" ? (bt = !0, g = "g") : Zt[g] || ($ === void 0 && ($ = 12), qt = !0, g = "g"), (J || p === "0" && w === "=") && (J = !0, p = "0", w = "=");
-    var Me = (d && d.prefix !== void 0 ? d.prefix : "") + (C === "$" ? n : C === "#" && /[boxX]/.test(g) ? "0" + g.toLowerCase() : ""), Ne = (C === "$" ? r : /[%p]/.test(g) ? o : "") + (d && d.suffix !== void 0 ? d.suffix : ""), Tt = Zt[g], $e = /[defgprs%]/.test(g);
+    var ve = (d && d.prefix !== void 0 ? d.prefix : "") + (C === "$" ? n : C === "#" && /[boxX]/.test(g) ? "0" + g.toLowerCase() : ""), Ne = (C === "$" ? r : /[%p]/.test(g) ? o : "") + (d && d.suffix !== void 0 ? d.suffix : ""), Tt = Zt[g], $e = /[defgprs%]/.test(g);
     $ = $ === void 0 ? 6 : /[gprs]/.test(g) ? Math.max(1, Math.min(21, $)) : Math.max(0, Math.min(20, $));
     function Ht(h) {
-      var k = Me, m = Ne, I, zt, Q;
+      var k = ve, m = Ne, I, zt, Q;
       if (g === "c")
         m = Tt(h) + m, h = "";
       else {
         h = +h;
         var tt = h < 0 || 1 / h < 0;
-        if (h = isNaN(h) ? c : Tt(Math.abs(h), $), qt && (h = Dn(h)), tt && +h == 0 && M !== "+" && (tt = !1), k = (tt ? M === "(" ? M : f : M === "-" || M === "(" ? "" : M) + k, m = (g === "s" && !isNaN(h) && mt !== void 0 ? te[8 + mt / 3] : "") + m + (tt && M === "(" ? ")" : ""), $e) {
+        if (h = isNaN(h) ? c : Tt(Math.abs(h), $), qt && (h = Dn(h)), tt && +h == 0 && v !== "+" && (tt = !1), k = (tt ? v === "(" ? v : f : v === "-" || v === "(" ? "" : v) + k, m = (g === "s" && !isNaN(h) && mt !== void 0 ? te[8 + mt / 3] : "") + m + (tt && v === "(" ? ")" : ""), $e) {
           for (I = -1, zt = h.length; ++I < zt; )
             if (Q = h.charCodeAt(I), 48 > Q || Q > 57) {
               m = (Q === 46 ? i + h.slice(I + 1) : h.slice(I)) + m, h = h.slice(0, I);
@@ -962,9 +962,9 @@ function Yn(t) {
     }, Ht;
   }
   function l(u, d) {
-    var p = Math.max(-8, Math.min(8, Math.floor(z(d) / 3))) * 3, w = Math.pow(10, -p), M = s((u = gt(u), u.type = "f", u), { suffix: te[8 + p / 3] });
+    var p = Math.max(-8, Math.min(8, Math.floor(z(d) / 3))) * 3, w = Math.pow(10, -p), v = s((u = gt(u), u.type = "f", u), { suffix: te[8 + p / 3] });
     return function(C) {
-      return M(w * C);
+      return v(w * C);
     };
   }
   return {
@@ -981,10 +981,10 @@ Un({
 function Un(t) {
   return at = Yn(t), pe = at.format, be = at.formatPrefix, at;
 }
-function Xn(t) {
+function Wn(t) {
   return Math.max(0, -z(Math.abs(t)));
 }
-function Wn(t, e) {
+function Xn(t, e) {
   return Math.max(0, Math.max(-8, Math.min(8, Math.floor(z(e) / 3))) * 3 - z(Math.abs(t)));
 }
 function Vn(t, e) {
@@ -995,7 +995,7 @@ function Kn(t, e, n, r) {
   switch (r = gt(r ?? ",f"), r.type) {
     case "s": {
       var o = Math.max(Math.abs(t), Math.abs(e));
-      return r.precision == null && !isNaN(a = Wn(i, o)) && (r.precision = a), be(r, o);
+      return r.precision == null && !isNaN(a = Xn(i, o)) && (r.precision = a), be(r, o);
     }
     case "":
     case "e":
@@ -1007,7 +1007,7 @@ function Kn(t, e, n, r) {
     }
     case "f":
     case "%": {
-      r.precision == null && !isNaN(a = Xn(i)) && (r.precision = a - (r.type === "%") * 2);
+      r.precision == null && !isNaN(a = Wn(i)) && (r.precision = a - (r.type === "%") * 2);
       break;
     }
   }
@@ -1103,15 +1103,15 @@ function rr(t, e = ":scope > article, :scope > a") {
       console.error("[effects] card spotlight disabled:", n);
     }
 }
-function ve(t = document) {
+function Me(t = document) {
   t.querySelectorAll("[data-spotlight]").forEach((e) => {
     e.dataset.spotlightInit || (e.dataset.spotlightInit = "1", rr(e));
   });
 }
 function ee() {
-  Pe(document), de(document), We(document), er(document), ve(document);
+  Pe(document), de(document), Xe(document), er(document), Me(document);
 }
 document.readyState !== "loading" ? ee() : document.addEventListener("DOMContentLoaded", ee);
 document.body.addEventListener("htmx:afterSwap", (t) => {
-  de(t.target), ve(t.target);
+  de(t.target), Me(t.target);
 });

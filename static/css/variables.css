@@ -1,43 +1,123 @@
 /* ============================================
-   CSS CUSTOM PROPERTIES — Art Deco Silver Screen
-   Inspired by 1930s-40s Hollywood Movie Palaces
+   DESIGN TOKENS
+
+   Three layers, and the order matters:
+
+     1. BRAND PRIMITIVES  the palette from BRANDING/, exactly as specified.
+                          Never referenced by a component — only by layer 2.
+     2. SEMANTIC ROLES    what a colour is *for*. New CSS uses these.
+     3. LEGACY ALIASES    the names ~1300 existing declarations already use,
+                          re-pointed at layer 2.
+
+   Why the middle layer exists: several of the original names did two jobs.
+   --color-bg-dark was the page ground AND the ink sitting on gold buttons;
+   --color-cream was body text AND, in one place, a fill. Moving to a light
+   ground drives those in opposite directions, so there is no single value
+   that satisfies both. Splitting them by role is what makes the colour
+   change a reviewable diff instead of a guess.
+
+   The site is LIGHT-LED. The hero (Hero.css) is the single dark island and
+   re-declares layer 2 — and layer 3, which does not inherit an override —
+   on .hero itself.
 ============================================ */
+
 :root {
-  /* Silver Screen Palette — cool charcoal-black */
-  --color-bg-dark: #0a0a0e;
-  --color-bg-charcoal: #14141a;
-  --color-bg-charcoal-dark: #06060a;
-  --color-bg-card: #1a1a22;
+  /* ---- 1. Brand primitives ------------------------------------------
+   * From BRANDING/FKC-Loyalty-Card.ai. The CMYK builds are the spec; these
+   * sRGB values are converted through the system generic CMYK profile, not
+   * Adobe's US Web Coated (SWOP), so they are accurate to a shade rather
+   * than final. Confirm against Illustrator before print-to-screen
+   * matching matters. Unused until the colour flip. */
+  --brand-blue: #203982;        /* C100 M89 Y0  K0   primary; 10.67:1 on white */
+  --brand-marquee: #1d609e;     /* C89  M59 Y0  K0   secondary; 6.52:1 on white */
+  --brand-gold: #d2bb33;        /* C17  M19 Y99 K0   accent only — 1.93:1 on white */
+  --brand-parchment: #ebedb8;   /* C8   M2  Y32 K0 */
+  --brand-ink: #191b1b;         /* C72  M67 Y64 K73 */
+  --brand-rich-black: #141615;  /* C73  M67 Y65 K80  large solids */
+  --brand-warm-white: #f7f7f4;
 
-  /* Champagne Gold — gilded accents */
-  --color-neon-red: #c9a84c;
-  --color-neon-red-glow: rgba(201, 168, 76, 0.4);
-  --color-gold: #c9a84c;
-  --color-gold-warm: #b89840;
-  --color-gold-glow: rgba(201, 168, 76, 0.25);
-  --color-gold-light: #ddd0a0;
+  /* ---- 2. Semantic roles --------------------------------------------
+   * The brand, light-led. The hero re-declares this whole block with dark
+   * values on .hero (Hero.css), so every component inside it inherits the
+   * dark reading with no per-rule exceptions.
+   *
+   * Why light: Brand Blue is 1.85:1 on the old #0a0a0e ground and 10.67:1
+   * on white. A blue-led identity cannot be expressed on a black page
+   * without inventing tints the brand does not specify. */
 
-  /* Text Colors — aged ivory */
-  --color-cream: #ede8dc;
-  --color-cream-muted: #9a9080;
+  /* Grounds, back to front */
+  --color-surface: #f7f7f4;
+  --color-surface-alt: #f0f1e6;
+  --color-surface-raised: #ffffff;
+  --color-surface-sunken: #e9eadd;
+
+  /* Type */
+  --color-text: #191b1b;       /* brand ink, 15.8:1 on surface */
+  --color-text-muted: #565b59; /* 7.1:1 on surface */
+
+  /* Accent — the blue leads. Gold is NOT here: it is 1.93:1 on white and
+   * this token is a text colour in 124 declarations. Gold returns inside
+   * the hero, where it is 8.98:1 on ink. */
+  --color-accent: #203982;
+  --color-accent-warm: #1d609e;
+  --color-accent-light: #3f63b8;
+  --color-accent-dim: rgba(32, 57, 130, 0.25);
+
+  /* The glow layers are deliberately transparent on light. They exist for
+   * neon on black; over a warm white page a coloured text-shadow reads as
+   * a blurred glyph, not as light. .btn-primary carries a real shadow
+   * instead. The hero turns them back on. */
+  --color-accent-glow: transparent;
+  --color-accent-glow-strong: transparent;
+
+  /* Ink that sits ON an accent fill — buttons, badges, active pills.
+   * This is the half of --color-bg-dark that was never a background. */
+  --color-on-accent: #ffffff;
+
+  /* Semantic state, deliberately outside the brand palette. Form errors were
+   * previously coloured with a neon-glow token, which said "decoration"
+   * where they needed to say "this went wrong". 6.4:1 on surface. */
+  --color-danger: #993225;
+
+  /* ---- 3. Legacy aliases --------------------------------------------
+   * Keep working; migrate opportunistically when a file is open anyway. */
+  --color-bg-dark: var(--color-surface);
+  --color-bg-charcoal: var(--color-surface-alt);
+  --color-bg-charcoal-dark: var(--color-surface-sunken);
+  --color-bg-card: var(--color-surface-raised);
+
+  --color-gold: var(--color-accent);
+  --color-gold-warm: var(--color-accent-warm);
+  --color-gold-light: var(--color-accent-light);
+  --color-gold-glow: var(--color-accent-glow);
+
+  --color-cream: var(--color-text);
+  --color-cream-muted: var(--color-text-muted);
   --color-white: #ffffff;
 
-  /* Deep accents — midnight indigo */
-  --color-deep-red: #1e1830;
-  --color-burgundy: #12101e;
-  --color-brass: #8a7030;
-  --color-brass-light: #a08840;
+  /* Decorative metals. These split by role in practice: --color-brass is
+   * only ever a rule or border, --color-brass-light is only ever a text
+   * colour, so they take light values suited to each rather than one
+   * shared metal. The hero puts the real brass back. */
+  --color-brass: #d2ccb4;       /* hairlines and panel borders */
+  --color-brass-light: #6b6240; /* small caption text, 6.2:1 on surface */
+  --color-burgundy: #d9dac9;    /* one table rule on /sponsor/ */
 
-  /* Neon Glow Layers — refined champagne */
-  --neon-gold-inner: #efe0b8;
-  --neon-gold-mid: rgba(201, 168, 76, 0.5);
-  --neon-gold-outer: rgba(201, 168, 76, 0.25);
-  --neon-gold-far: rgba(201, 168, 76, 0.08);
+  /* The neon stack is the marquee's alone. Every use outside .hero has been
+   * given a real colour (the membership title, the sponsor form errors), so
+   * all four can go transparent here and the glow simply does not render. */
+  --neon-gold-inner: transparent;
+  --neon-gold-mid: transparent;
+  --neon-gold-outer: transparent;
+  --neon-gold-far: transparent;
 
-  /* Fonts — Art Deco + Classic Serif */
-  --font-display: 'Poiret One', cursive;
-  --font-heading: 'Playfair Display', serif;
-  --font-body: 'Cormorant Garamond', Georgia, serif;
+  /* Fonts — open stand-ins for the brand faces. See fonts.css for why these
+   * three and not Adobe Garamond Pro / Gill Sans Nova. Swapping to the
+   * licensed faces later is these three values plus the @font-face blocks. */
+  --font-display: 'EB Garamond', Georgia, 'Times New Roman', serif;
+  --font-heading: 'EB Garamond', Georgia, 'Times New Roman', serif;
+  --font-body: 'Cabin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --font-condensed: 'Cabin Condensed', 'Cabin', 'Arial Narrow', sans-serif;
 
   /* Spacing */
   --spacing-xs: 0.5rem;

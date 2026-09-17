@@ -30,7 +30,7 @@
 
 .blog-view-all-link {
   display: inline-block;
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 1.1rem;
   letter-spacing: 3px;
   color: var(--color-gold);
@@ -43,7 +43,7 @@
 
 .blog-view-all-link:hover {
   background: var(--color-gold);
-  color: var(--color-bg-dark);
+  color: var(--color-on-accent);
   box-shadow: 0 0 20px var(--color-gold-glow);
 }
 
@@ -66,7 +66,7 @@
 }
 
 .blog-error {
-  color: var(--color-neon-red);
+  color: var(--color-accent);
 }
 
 @media (max-width: 768px) {

@@ -33,7 +33,7 @@
 
 .history-back {
   display: inline-block;
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 0.9rem;
   letter-spacing: 2px;
   color: var(--color-gold);
@@ -48,7 +48,7 @@
 }
 
 .history-eyebrow {
-  font-family: var(--font-display);
+  font-family: var(--font-condensed);
   font-size: 0.8rem;
   letter-spacing: 4px;
   text-transform: uppercase;
@@ -162,13 +162,18 @@
   margin-top: var(--spacing-xl);
 }
 
-.history-playbills__dating {
-  margin-top: var(--spacing-lg) !important;
+/* Scoped under .history-section (0-2-0) rather than !important. This is a <p>,
+ * so the bare class (0-1-0) lost to `.history-section p` (0-1-1) above and the
+ * three !important flags were the patch. Specificity does the same job without
+ * blocking a later theme override — which an !important colour would win
+ * against even when the surrounding ground has changed. */
+.history-section .history-playbills__dating {
+  margin-top: var(--spacing-lg);
   padding-top: var(--spacing-md);
   border-top: 1px solid var(--color-brass);
-  font-size: 0.98rem !important;
+  font-size: 0.98rem;
   font-style: italic;
-  color: var(--color-cream-muted) !important;
+  color: var(--color-text-muted);
 }
 
 .history-playbills__nav {
@@ -208,7 +213,7 @@
 }
 
 .history-playbills__count {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 0.9rem;
   letter-spacing: 2px;
   color: var(--color-cream-muted);
@@ -273,7 +278,7 @@
 }
 
 .history-video__play:hover {
-  background: rgba(201, 168, 76, .07);
+  background: rgba(32, 57, 130, .07);
 }
 
 .history-video__play:focus-visible {
@@ -289,7 +294,7 @@
 }
 
 .history-video__playlabel {
-  font-family: var(--font-display);
+  font-family: var(--font-condensed);
   font-size: 1.05rem;
   letter-spacing: 2px;
   text-transform: uppercase;

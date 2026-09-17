@@ -6,7 +6,9 @@ class ChromeTests(TestCase):
     def test_nav_renders_logo_and_links(self):
         html = self.client.get(reverse("home")).content.decode()
         self.assertIn('class="nav-logo"', html)
-        self.assertIn("FORT KENT CINEMA", html)          # logo = cinema name uppercased
+        # The logo is the brand wordmark SVG; its accessible name is the alt.
+        self.assertIn("fkc-wordmark-dark.svg", html)
+        self.assertIn('alt="Fort Kent Cinema"', html)
         self.assertIn('class="nav-link"', html)
         self.assertIn("/blog", html)                      # a route nav item
         self.assertIn('class="nav-hamburger"', html)      # mobile toggle present

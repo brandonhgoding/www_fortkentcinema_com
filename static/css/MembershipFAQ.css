@@ -13,7 +13,7 @@
 }
 
 .membership-faq__eyebrow {
-  font-family: var(--font-display);
+  font-family: var(--font-condensed);
   font-size: 0.85rem;
   letter-spacing: 5px;
   text-transform: uppercase;
@@ -61,11 +61,11 @@
 
 .membership-faq__item {
   padding: var(--spacing-lg) 0;
-  border-bottom: 1px solid rgba(201, 168, 76, 0.18);
+  border-bottom: 1px solid rgba(32, 57, 130, 0.18);
 }
 
 .membership-faq__item:first-child {
-  border-top: 1px solid rgba(201, 168, 76, 0.18);
+  border-top: 1px solid rgba(32, 57, 130, 0.18);
 }
 
 .membership-faq__question {

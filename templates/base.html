@@ -55,21 +55,26 @@
     <link rel="preconnect" href="https://m.media-amazon.com" crossorigin />
 
     {% comment %}
-    The three latin faces used above the fold. Without these the browser can't
-    discover a font until it has parsed the CSS, so it paints in the fallback and
-    then swaps — and that reflow is a layout shift (it moved the fixed curtain
-    overlays: CLS 0.027 under mobile emulation). Preloading gets them in flight
-    alongside the stylesheet, so text paints once, in the right font.
+    The three latin faces used above the fold: EB Garamond (display and
+    headings), Cabin (body and UI), Cabin Condensed (eyebrows and schedule
+    rows). Without these the browser can't discover a font until it has parsed
+    the CSS, so it paints in the fallback and then swaps — and that reflow is a
+    layout shift. Preloading gets them in flight alongside the stylesheet, so
+    text paints once, in the right font.
+
+    Oswald is deliberately absent: it sets the playbills on /history/ only, well
+    below the fold on a single route. Neither are the italic or latin-ext
+    subsets, which unicode-range gates behind characters most pages never use.
 
     `crossorigin` is required on font preloads even same-origin; without it the
     browser fetches the file twice.
     {% endcomment %}
     <link rel="preload" as="font" type="font/woff2" crossorigin
-          href="{% static 'fonts/poiret-one-latin.woff2' %}" />
+          href="{% static 'fonts/eb-garamond-latin.woff2' %}" />
     <link rel="preload" as="font" type="font/woff2" crossorigin
-          href="{% static 'fonts/playfair-display-latin.woff2' %}" />
+          href="{% static 'fonts/cabin-latin.woff2' %}" />
     <link rel="preload" as="font" type="font/woff2" crossorigin
-          href="{% static 'fonts/cormorant-garamond-latin.woff2' %}" />
+          href="{% static 'fonts/cabin-condensed-400-latin.woff2' %}" />
 
     {% comment %}
     ONE stylesheet. This used to be 15 separate render-blocking links, and
@@ -129,10 +134,14 @@
     {% block extra_head %}{% endblock %}
   </head>
   <body>
-    <div class="vignette"></div>
-    <canvas class="fx-dust" data-ambient-dust aria-hidden="true"></canvas>
-    <div class="curtain-left"></div>
-    <div class="curtain-right"></div>
+    {% comment %}
+    The vignette, the two curtain gradients and the dust canvas used to live
+    here, fixed over every page. All four are dark-ground devices: the vignette
+    was rgba(0,0,0,.7) at the edges, which over a light surface is a grey halo
+    rather than a darkened theatre. The dust canvas moved into the hero, where
+    it still reads — and where it stops running a rAF loop on the seven routes
+    that have no hero at all.
+    {% endcomment %}
     <a href="#main-content" class="skip-link">Skip to main content</a>
 
     {% include "partials/nav.html" %}

@@ -11,24 +11,24 @@
   max-width: 46rem;
   text-align: center;
   text-decoration: none;
-  color: var(--color-cream, #f3e9d2);
-  border: 2px solid var(--color-gold, #c9a227);
+  color: var(--color-text);
+  border: 2px solid var(--color-accent);
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--color-surface-raised);
   transition: transform 160ms ease, box-shadow 160ms ease;
 }
 
 .vote-cta:hover,
 .vote-cta:focus-visible {
   transform: translateY(-2px);
-  box-shadow: 0 0 18px rgba(201, 162, 39, 0.35);
+  box-shadow: 0 8px 22px rgba(20, 22, 21, 0.14);
 }
 
 .vote-cta__eyebrow {
   font-size: 0.75rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--color-gold, #c9a227);
+  color: var(--color-accent);
 }
 
 .vote-cta__title {
@@ -47,5 +47,5 @@
   font-size: 0.9rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-gold, #c9a227);
+  color: var(--color-accent);
 }

@@ -1,8 +1,15 @@
-<footer class="footer">
+{% load static %}<footer class="footer">
   <div class="footer-container">
     <div class="footer-grid">
       <div class="footer-brand">
-        <h3 class="footer-logo">{{ site_config.cinema.name|upper }}</h3>
+        <h3 class="footer-logo">
+          <img
+            src="{% static 'img/fkc-wordmark-dark.svg' %}"
+            alt="{{ site_config.cinema.name }}"
+            width="210"
+            height="44"
+          >
+        </h3>
         <p class="footer-tagline">&quot;{{ site_config.cinema.tagline }}&quot;</p>
         <address class="footer-address">
           {{ site_config.cinema.address.street }}

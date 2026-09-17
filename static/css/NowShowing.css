@@ -28,7 +28,7 @@
 
 .date-nav__arrow:hover:not(:disabled) {
   background: var(--color-gold);
-  color: var(--color-bg-dark);
+  color: var(--color-on-accent);
   border-color: var(--color-gold);
   box-shadow: 0 0 15px var(--color-gold-glow);
 }

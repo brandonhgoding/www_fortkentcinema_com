@@ -33,7 +33,7 @@
 .movie-page-back {
   color: var(--color-cream-muted);
   text-decoration: none;
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   letter-spacing: 1px;
   font-size: 0.9rem;
 }
@@ -54,7 +54,7 @@
   width: 100%;
   height: auto;
   border-radius: 3px;
-  border: 1px solid rgba(201, 168, 76, 0.25);
+  border: 1px solid rgba(32, 57, 130, 0.25);
 }
 
 .movie-page-badge {
@@ -62,8 +62,8 @@
   padding: 0.3rem 0.7rem;
   margin-bottom: var(--spacing-md);
   background: var(--color-gold);
-  color: var(--color-bg-dark);
-  font-family: var(--font-display);
+  color: var(--color-on-accent);
+  font-family: var(--font-body);
   font-size: 0.75rem;
   letter-spacing: 2px;
   border-radius: 2px;
@@ -116,7 +116,7 @@
   border-radius: 2px;
   color: var(--color-gold);
   text-decoration: none;
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   letter-spacing: 1px;
   font-size: 0.85rem;
   transition: background 0.2s ease, color 0.2s ease;
@@ -124,7 +124,7 @@
 
 .movie-page-link:hover {
   background: var(--color-gold);
-  color: var(--color-bg-dark);
+  color: var(--color-on-accent);
 }
 
 .movie-page-link--review {
@@ -132,9 +132,11 @@
   color: var(--color-cream);
 }
 
+/* Inverted pair, not an accent fill: the ground is the text colour and the
+ * text is the ground colour, so both sides flip together with the theme. */
 .movie-page-link--review:hover {
-  background: var(--color-cream);
-  color: var(--color-bg-dark);
+  background: var(--color-text);
+  color: var(--color-surface);
 }
 
 /* === Sections === */
@@ -145,7 +147,7 @@
   color: var(--color-gold);
   margin-bottom: var(--spacing-lg);
   padding-bottom: var(--spacing-sm);
-  border-bottom: 1px solid rgba(201, 168, 76, 0.2);
+  border-bottom: 1px solid rgba(32, 57, 130, 0.2);
 }
 
 .movie-page-day {
@@ -153,7 +155,7 @@
 }
 
 .movie-page-day-label {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   color: var(--color-cream);
   letter-spacing: 1px;
   margin-bottom: var(--spacing-sm);
@@ -174,14 +176,14 @@
   flex-direction: column;
   gap: 0.2rem;
   padding: var(--spacing-sm) var(--spacing-md);
-  border: 1px solid rgba(201, 168, 76, 0.3);
+  border: 1px solid rgba(32, 57, 130, 0.3);
   border-radius: 2px;
   background: var(--color-bg-card);
   min-width: 8rem;
 }
 
 .movie-page-time-value {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 1.25rem;
   color: var(--color-gold);
   letter-spacing: 1px;

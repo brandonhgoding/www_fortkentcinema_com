@@ -5,7 +5,7 @@
   transition:
     transform var(--transition-base),
     box-shadow var(--transition-base);
-  border: 1px solid rgba(201, 168, 76, 0.12);
+  border: 1px solid rgba(32, 57, 130, 0.12);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -14,7 +14,7 @@
 .movie-card:hover {
   transform: translateY(-8px);
   box-shadow:
-    0 20px 40px rgba(0, 0, 0, 0.4),
+    0 20px 40px rgba(20, 22, 21, 0.12),
     0 0 20px var(--color-gold-glow);
   border-color: var(--color-gold);
 }
@@ -34,7 +34,7 @@
     1;
   margin: 12px;
   box-shadow:
-    inset 0 0 20px rgba(0, 0, 0, 0.5),
+    inset 0 0 20px rgba(20, 22, 21, 0.12),
     0 4px 8px rgba(0, 0, 0, 0.3);
   display: flex;
   align-items: center;
@@ -78,9 +78,9 @@
   left: 0;
   z-index: 3;
   padding: 0.3rem 0.75rem;
-  background: var(--color-neon-red);
+  background: var(--color-accent);
   color: var(--color-cream);
-  font-family: var(--font-display);
+  font-family: var(--font-condensed);
   font-size: 0.85rem;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -186,7 +186,7 @@
   font-size: 0.8rem;
   font-weight: 600;
   padding: 0.25rem 0.5rem;
-  background: rgba(201, 168, 76, 0.12);
+  background: rgba(32, 57, 130, 0.12);
   border: 1px solid var(--color-gold);
   border-radius: 3px;
   color: var(--color-gold);
@@ -214,11 +214,11 @@
 }
 
 .showtime {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 0.9rem;
   letter-spacing: 1px;
   padding: 0.4rem 0.8rem;
-  background: rgba(201, 168, 76, 0.08);
+  background: rgba(32, 57, 130, 0.08);
   border: 1px solid var(--color-gold);
   border-radius: 3px;
   color: var(--color-gold);
@@ -228,7 +228,7 @@
 
 .showtime:hover {
   background: var(--color-gold);
-  color: var(--color-bg-dark);
+  color: var(--color-on-accent);
   box-shadow: 0 0 10px var(--color-gold-glow);
 }
 

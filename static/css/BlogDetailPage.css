@@ -17,7 +17,7 @@
 }
 
 .blog-detail-back-btn {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 0.9rem;
   letter-spacing: 2px;
   color: var(--color-gold);
@@ -30,7 +30,7 @@
 
 .blog-detail-back-btn:hover {
   background: var(--color-gold);
-  color: var(--color-bg-dark);
+  color: var(--color-on-accent);
 }
 
 .blog-detail-back-btn:focus-visible {
@@ -72,7 +72,7 @@
 }
 
 .blog-detail-back {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 0.9rem;
   letter-spacing: 2px;
   color: var(--color-gold);
@@ -93,28 +93,28 @@
 .blog-detail-article {
   background: var(--color-bg-charcoal);
   border-radius: var(--radius-lg);
-  border: 1px solid rgba(240, 195, 74, 0.2);
+  border: 1px solid rgba(32, 57, 130, 0.2);
   padding: var(--spacing-xl);
-  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 25px 80px rgba(20, 22, 21, 0.12);
 }
 
 .blog-detail-header {
   text-align: center;
   margin-bottom: var(--spacing-xl);
   padding-bottom: var(--spacing-xl);
-  border-bottom: 1px solid rgba(240, 195, 74, 0.2);
+  border-bottom: 1px solid rgba(32, 57, 130, 0.2);
 }
 
 .blog-detail-category {
   display: inline-block;
-  font-family: var(--font-display);
+  font-family: var(--font-condensed);
   font-size: 0.8rem;
   letter-spacing: 2px;
   padding: 0.4rem 1rem;
-  background: rgba(240, 195, 74, 0.15);
-  border: 1px solid var(--color-gold);
+  background: rgba(32, 57, 130, 0.08);
+  border: 1px solid var(--color-accent);
   border-radius: var(--radius-sm);
-  color: var(--color-gold);
+  color: var(--color-accent);
   text-transform: uppercase;
   margin-bottom: var(--spacing-md);
 }
@@ -169,7 +169,7 @@
 
 .blog-detail-share:hover {
   background: var(--color-gold);
-  color: var(--color-bg-dark);
+  color: var(--color-on-accent);
 }
 
 .blog-detail-share:focus-visible {
@@ -195,11 +195,11 @@
   margin-top: var(--spacing-2xl);
   text-align: center;
   padding-top: var(--spacing-xl);
-  border-top: 1px solid rgba(240, 195, 74, 0.15);
+  border-top: 1px solid rgba(32, 57, 130, 0.15);
 }
 
 .blog-detail-footer-link {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 1rem;
   letter-spacing: 2px;
   color: var(--color-gold);
@@ -213,7 +213,7 @@
 
 .blog-detail-footer-link:hover {
   background: var(--color-gold);
-  color: var(--color-bg-dark);
+  color: var(--color-on-accent);
   box-shadow: 0 0 20px var(--color-gold-glow);
 }
 
@@ -264,7 +264,7 @@
 .blog-related {
   margin-top: var(--spacing-xl);
   padding-top: var(--spacing-lg);
-  border-top: 1px solid rgba(201, 168, 76, 0.2);
+  border-top: 1px solid rgba(32, 57, 130, 0.2);
 }
 
 .blog-related-title {
@@ -291,7 +291,7 @@
 .blog-detail-film-link {
   margin-top: var(--spacing-lg);
   padding-top: var(--spacing-md);
-  border-top: 1px solid rgba(201, 168, 76, 0.2);
+  border-top: 1px solid rgba(32, 57, 130, 0.2);
 }
 
 .blog-detail-film-link a {

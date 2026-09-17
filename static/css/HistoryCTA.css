@@ -18,7 +18,7 @@
   font-size: .8rem;
   letter-spacing: .28em;
   text-transform: uppercase;
-  color: var(--color-gold, #c9a227);
+  color: var(--color-gold);
 }
 
 .history-cta__title {
