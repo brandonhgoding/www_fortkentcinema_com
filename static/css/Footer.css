@@ -143,7 +143,7 @@
 
 .social-link:hover {
   background: var(--color-gold);
-  color: var(--color-bg-dark);
+  color: var(--color-on-accent);
   border-color: var(--color-gold);
 }
 

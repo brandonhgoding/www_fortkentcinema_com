@@ -368,7 +368,7 @@
 
 .sponsor-table__sponsor:hover,
 .sponsor-table__sponsor:focus-visible {
-  color: var(--color-bg-dark);
+  color: var(--color-on-accent);
   background: var(--color-gold);
   border-color: var(--color-gold);
 }
@@ -683,7 +683,7 @@
 
 .sponsor-faq__item {
   padding: var(--spacing-md);
-  border: 1px solid var(--color-gold-dim, rgba(201, 162, 39, 0.3));
+  border: 1px solid var(--color-accent-dim);
   background: var(--color-bg-charcoal);
 }
 

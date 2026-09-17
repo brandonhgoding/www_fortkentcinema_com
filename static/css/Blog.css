@@ -43,7 +43,7 @@
 
 .blog-view-all-link:hover {
   background: var(--color-gold);
-  color: var(--color-bg-dark);
+  color: var(--color-on-accent);
   box-shadow: 0 0 20px var(--color-gold-glow);
 }
 
@@ -66,7 +66,7 @@
 }
 
 .blog-error {
-  color: var(--color-neon-red);
+  color: var(--color-accent);
 }
 
 @media (max-width: 768px) {

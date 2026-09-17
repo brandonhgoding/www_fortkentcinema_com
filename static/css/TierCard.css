@@ -60,7 +60,7 @@
   top: 14px;
   right: -30px;
   background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-warm) 100%);
-  color: var(--color-bg-dark);
+  color: var(--color-on-accent);
   font-family: var(--font-display);
   font-size: 0.7rem;
   letter-spacing: 3px;
@@ -220,7 +220,7 @@
 
 .tier-card--featured .tier-card__cta {
   background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-warm) 100%);
-  color: var(--color-bg-dark);
+  color: var(--color-on-accent);
   border: 1px solid var(--color-gold);
   box-shadow: 0 4px 15px var(--color-gold-glow);
 }
@@ -229,7 +229,7 @@
   transform: translateY(-2px);
   box-shadow: 0 8px 25px var(--color-gold-glow);
   background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-warm) 100%);
-  color: var(--color-bg-dark);
+  color: var(--color-on-accent);
 }
 
 /* Family ribbon — mirrored to the top-left so it can coexist with the featured ribbon */

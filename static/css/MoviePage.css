@@ -62,7 +62,7 @@
   padding: 0.3rem 0.7rem;
   margin-bottom: var(--spacing-md);
   background: var(--color-gold);
-  color: var(--color-bg-dark);
+  color: var(--color-on-accent);
   font-family: var(--font-display);
   font-size: 0.75rem;
   letter-spacing: 2px;
@@ -124,7 +124,7 @@
 
 .movie-page-link:hover {
   background: var(--color-gold);
-  color: var(--color-bg-dark);
+  color: var(--color-on-accent);
 }
 
 .movie-page-link--review {
@@ -132,9 +132,11 @@
   color: var(--color-cream);
 }
 
+/* Inverted pair, not an accent fill: the ground is the text colour and the
+ * text is the ground colour, so both sides flip together with the theme. */
 .movie-page-link--review:hover {
-  background: var(--color-cream);
-  color: var(--color-bg-dark);
+  background: var(--color-text);
+  color: var(--color-surface);
 }
 
 /* === Sections === */

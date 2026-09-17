@@ -65,7 +65,7 @@
   letter-spacing: 1px;
   padding: 0.35rem 0.75rem;
   background: rgba(201, 168, 76, 0.9);
-  color: var(--color-bg-dark);
+  color: var(--color-on-accent);
   border-radius: var(--radius-sm);
   text-transform: uppercase;
 }
@@ -140,6 +140,6 @@
 
 .blog-card-read-more:hover {
   background: var(--color-gold);
-  color: var(--color-bg-dark);
+  color: var(--color-on-accent);
   box-shadow: 0 0 10px var(--color-gold-glow);
 }

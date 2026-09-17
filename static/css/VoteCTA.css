@@ -12,7 +12,7 @@
   text-align: center;
   text-decoration: none;
   color: var(--color-cream, #f3e9d2);
-  border: 2px solid var(--color-gold, #c9a227);
+  border: 2px solid var(--color-gold);
   border-radius: 6px;
   background: rgba(0, 0, 0, 0.25);
   transition: transform 160ms ease, box-shadow 160ms ease;
@@ -28,7 +28,7 @@
   font-size: 0.75rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--color-gold, #c9a227);
+  color: var(--color-gold);
 }
 
 .vote-cta__title {
@@ -47,5 +47,5 @@
   font-size: 0.9rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-gold, #c9a227);
+  color: var(--color-gold);
 }

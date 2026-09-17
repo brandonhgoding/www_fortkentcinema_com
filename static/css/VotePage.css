@@ -19,7 +19,7 @@
   font-size: 0.85rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-gold, #c9a227);
+  color: var(--color-gold);
   text-decoration: none;
 }
 
@@ -54,7 +54,7 @@
   font-size: 0.8rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--color-gold, #c9a227);
+  color: var(--color-gold);
   margin-bottom: 0.5rem;
 }
 
@@ -71,7 +71,7 @@
 
 .vote-option:hover,
 .vote-option:focus-within {
-  border-color: var(--color-gold, #c9a227);
+  border-color: var(--color-gold);
   background: rgba(201, 162, 39, 0.08);
 }
 
@@ -106,7 +106,7 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #14100c;
-  background: var(--color-gold, #c9a227);
+  background: var(--color-gold);
   border: 0;
   border-radius: 4px;
   cursor: pointer;
@@ -128,7 +128,7 @@
 }
 
 .vote-results__row--mine .vote-results__title {
-  color: var(--color-gold, #c9a227);
+  color: var(--color-gold);
 }
 
 .vote-results__bar {
@@ -142,7 +142,7 @@
 .vote-results__fill {
   display: block;
   height: 100%;
-  background: var(--color-gold, #c9a227);
+  background: var(--color-gold);
 }
 
 .vote-results__count {
@@ -170,7 +170,7 @@
 .vote-panel__winner {
   text-align: center;
   padding: 1.5rem 1rem;
-  border: 2px solid var(--color-gold, #c9a227);
+  border: 2px solid var(--color-gold);
   border-radius: 6px;
 }
 
@@ -178,7 +178,7 @@
   font-size: 0.75rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--color-gold, #c9a227);
+  color: var(--color-gold);
   margin: 0;
 }
 
@@ -189,7 +189,7 @@
 }
 
 .vote-panel__winner-link {
-  color: var(--color-gold, #c9a227);
+  color: var(--color-gold);
 }
 
 /* Email ask */
@@ -226,7 +226,7 @@
   padding: 0.6rem 1.25rem;
   border: 0;
   border-radius: 4px;
-  background: var(--color-gold, #c9a227);
+  background: var(--color-gold);
   color: #14100c;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -258,7 +258,7 @@
   font-size: 1rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--color-gold, #c9a227);
+  color: var(--color-gold);
 }
 
 .vote-archive__list {
@@ -281,5 +281,5 @@
   font-size: 0.85rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-gold, #c9a227);
+  color: var(--color-gold);
 }

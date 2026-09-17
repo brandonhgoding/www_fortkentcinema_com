@@ -1,34 +1,87 @@
 /* ============================================
-   CSS CUSTOM PROPERTIES — Art Deco Silver Screen
-   Inspired by 1930s-40s Hollywood Movie Palaces
+   DESIGN TOKENS
+
+   Three layers, and the order matters:
+
+     1. BRAND PRIMITIVES  the palette from BRANDING/, exactly as specified.
+                          Never referenced by a component — only by layer 2.
+     2. SEMANTIC ROLES    what a colour is *for*. New CSS uses these.
+     3. LEGACY ALIASES    the names ~1300 existing declarations already use,
+                          re-pointed at layer 2.
+
+   Why the middle layer exists: several of the original names did two jobs.
+   --color-bg-dark was the page ground AND the ink sitting on gold buttons;
+   --color-cream was body text AND, in one place, a fill. Moving to a light
+   ground drives those in opposite directions, so there is no single value
+   that satisfies both. Splitting them by role is what makes the colour
+   change a reviewable diff instead of a guess.
+
+   Layer 2 currently holds the OLD dark values, so this file is a no-op.
 ============================================ */
+
 :root {
-  /* Silver Screen Palette — cool charcoal-black */
-  --color-bg-dark: #0a0a0e;
-  --color-bg-charcoal: #14141a;
-  --color-bg-charcoal-dark: #06060a;
-  --color-bg-card: #1a1a22;
+  /* ---- 1. Brand primitives ------------------------------------------
+   * From BRANDING/FKC-Loyalty-Card.ai. The CMYK builds are the spec; these
+   * sRGB values are converted through the system generic CMYK profile, not
+   * Adobe's US Web Coated (SWOP), so they are accurate to a shade rather
+   * than final. Confirm against Illustrator before print-to-screen
+   * matching matters. Unused until the colour flip. */
+  --brand-blue: #203982;        /* C100 M89 Y0  K0   primary; 10.67:1 on white */
+  --brand-marquee: #1d609e;     /* C89  M59 Y0  K0   secondary; 6.52:1 on white */
+  --brand-gold: #d2bb33;        /* C17  M19 Y99 K0   accent only — 1.93:1 on white */
+  --brand-parchment: #ebedb8;   /* C8   M2  Y32 K0 */
+  --brand-ink: #191b1b;         /* C72  M67 Y64 K73 */
+  --brand-rich-black: #141615;  /* C73  M67 Y65 K80  large solids */
+  --brand-warm-white: #f7f7f4;
 
-  /* Champagne Gold — gilded accents */
-  --color-neon-red: #c9a84c;
-  --color-neon-red-glow: rgba(201, 168, 76, 0.4);
-  --color-gold: #c9a84c;
-  --color-gold-warm: #b89840;
-  --color-gold-glow: rgba(201, 168, 76, 0.25);
-  --color-gold-light: #ddd0a0;
+  /* ---- 2. Semantic roles --------------------------------------------
+   * Still the Art Deco dark theme. The colour flip changes only this
+   * block; everything downstream follows. */
 
-  /* Text Colors — aged ivory */
-  --color-cream: #ede8dc;
-  --color-cream-muted: #9a9080;
+  /* Grounds, back to front */
+  --color-surface: #0a0a0e;
+  --color-surface-alt: #14141a;
+  --color-surface-raised: #1a1a22;
+  --color-surface-sunken: #06060a;
+
+  /* Type */
+  --color-text: #ede8dc;
+  --color-text-muted: #9a9080;
+
+  /* Accent — fills, rules and emphasis. NOT body text on a light ground. */
+  --color-accent: #c9a84c;
+  --color-accent-warm: #b89840;
+  --color-accent-light: #ddd0a0;
+  --color-accent-dim: rgba(201, 162, 39, 0.3);
+  --color-accent-glow: rgba(201, 168, 76, 0.25);
+  --color-accent-glow-strong: rgba(201, 168, 76, 0.4);
+
+  /* Ink that sits ON an accent fill — buttons, badges, active pills.
+   * This is the half of --color-bg-dark that was never a background. */
+  --color-on-accent: #0a0a0e;
+
+  /* ---- 3. Legacy aliases --------------------------------------------
+   * Keep working; migrate opportunistically when a file is open anyway. */
+  --color-bg-dark: var(--color-surface);
+  --color-bg-charcoal: var(--color-surface-alt);
+  --color-bg-charcoal-dark: var(--color-surface-sunken);
+  --color-bg-card: var(--color-surface-raised);
+
+  --color-gold: var(--color-accent);
+  --color-gold-warm: var(--color-accent-warm);
+  --color-gold-light: var(--color-accent-light);
+  --color-gold-glow: var(--color-accent-glow);
+
+  --color-cream: var(--color-text);
+  --color-cream-muted: var(--color-text-muted);
   --color-white: #ffffff;
 
-  /* Deep accents — midnight indigo */
-  --color-deep-red: #1e1830;
+  /* Not yet semantic: decorative metals and the neon stack, both revisited
+   * when the hero is retuned. */
   --color-burgundy: #12101e;
   --color-brass: #8a7030;
   --color-brass-light: #a08840;
 
-  /* Neon Glow Layers — refined champagne */
   --neon-gold-inner: #efe0b8;
   --neon-gold-mid: rgba(201, 168, 76, 0.5);
   --neon-gold-outer: rgba(201, 168, 76, 0.25);

@@ -125,7 +125,7 @@ a.blog-pagination-step:hover {
 }
 
 .blog-pagination-page--current {
-  color: var(--color-bg-dark);
+  color: var(--color-on-accent);
   background: var(--color-gold);
   border-color: var(--color-gold);
 }

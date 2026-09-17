@@ -30,7 +30,7 @@
 
 .blog-detail-back-btn:hover {
   background: var(--color-gold);
-  color: var(--color-bg-dark);
+  color: var(--color-on-accent);
 }
 
 .blog-detail-back-btn:focus-visible {
@@ -169,7 +169,7 @@
 
 .blog-detail-share:hover {
   background: var(--color-gold);
-  color: var(--color-bg-dark);
+  color: var(--color-on-accent);
 }
 
 .blog-detail-share:focus-visible {
@@ -213,7 +213,7 @@
 
 .blog-detail-footer-link:hover {
   background: var(--color-gold);
-  color: var(--color-bg-dark);
+  color: var(--color-on-accent);
   box-shadow: 0 0 20px var(--color-gold-glow);
 }
 

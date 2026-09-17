@@ -76,7 +76,7 @@
 
 .nav-cta {
   background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-warm) 100%);
-  color: var(--color-bg-dark);
+  color: var(--color-on-accent);
   padding: 0.6rem 1.5rem;
   border-radius: var(--radius-sm);
   font-family: var(--font-display);
@@ -96,7 +96,7 @@
 }
 
 .nav-cta:focus-visible {
-  outline: 3px solid var(--color-bg-dark);
+  outline: 3px solid var(--color-on-accent);
   outline-offset: 2px;
 }
 
