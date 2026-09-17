@@ -49,7 +49,7 @@
 }
 
 .membership-hero__eyebrow {
-  font-family: var(--font-display);
+  font-family: var(--font-condensed);
   font-size: 0.85rem;
   letter-spacing: 6px;
   text-transform: uppercase;

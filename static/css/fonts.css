@@ -7,131 +7,141 @@
  * to a THIRD host for the actual files. Four levels deep, every level blocking
  * paint. Serving them ourselves removes both hosts from the critical path.
  *
- * These are VARIABLE fonts: one file covers a whole weight range, so each face
- * below declares `font-weight: <min> <max>` and several weights share a single
- * file. Do not split them back out per weight — naming the same bytes four
- * different things makes the browser download them four times.
+ * THE BRAND FACES ARE NOT THESE. BRANDING/ specifies Adobe Garamond Pro and
+ * Gill Sans Nova; both need paid web licences (Adobe Fonts and Monotype), so
+ * these are open substitutes chosen to hold the same voice:
+ *
+ *   EB Garamond     -> Adobe Garamond Pro       display, headings, prose
+ *   Cabin           -> Gill Sans Nova           UI, buttons, labels
+ *   Cabin Condensed -> Gill Sans Nova Condensed eyebrows, badges, schedule rows
+ *
+ * Cabin is drawn on the humanist-sans tradition Gill Sans defines, which is why
+ * it stands in rather than a grotesque. When the licences are bought, the swap
+ * is three values in variables.css plus the faces below.
+ *
+ * OSWALD IS NOT PART OF THE BRAND and must stay. It sets the 1931 Savoy
+ * playbills on /history/ — an Alternate Gothic grotesque a job printer of that
+ * date would actually have had in his case. Cabin Condensed is humanist and
+ * would turn a reproduction into a pastiche. It is below the fold on one route
+ * and deliberately not preloaded.
+ *
+ * EB Garamond and Cabin are VARIABLE: one file covers a whole weight range, so
+ * each face declares `font-weight: <min> <max>` and several weights share a
+ * single file. Do not split them back out per weight — naming the same bytes
+ * four different things makes the browser download them four times. Cabin
+ * Condensed is not variable, so its weights are separate files.
  *
  * Latin and latin-ext subsets only; the Cyrillic/Greek/Vietnamese subsets Google
- * ships are dead weight for an English-language cinema in Maine.
+ * ships are dead weight for an English-language cinema in Maine. French accents
+ * (e a c o u) live in the latin range, so the St. John Valley is covered without
+ * latin-ext, which is gated behind unicode-range and fetched only if a U+0100+
+ * character actually appears.
  *
- * All three families are OFL-licensed; self-hosting is permitted.
+ * All four families are OFL-licensed; self-hosting is permitted.
  */
 
-/* Cormorant Garamond — italic, latin, weights 400 500 */
-@font-face {
-  font-family: 'Cormorant Garamond';
-  font-style: italic;
-  font-weight: 400 500;
-  font-display: swap;
-  src: url('../fonts/cormorant-garamond-italic-latin.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
 
-/* Cormorant Garamond — italic, latin-ext, weights 400 500 */
+/* EB Garamond — normal, latin, weights 400 700 (variable) */
 @font-face {
-  font-family: 'Cormorant Garamond';
-  font-style: italic;
-  font-weight: 400 500;
-  font-display: swap;
-  src: url('../fonts/cormorant-garamond-italic-latin-ext.woff2') format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-
-/* Cormorant Garamond — normal, latin, weights 400 700 */
-@font-face {
-  font-family: 'Cormorant Garamond';
+  font-family: 'EB Garamond';
   font-style: normal;
   font-weight: 400 700;
   font-display: swap;
-  src: url('../fonts/cormorant-garamond-latin.woff2') format('woff2');
+  src: url('../fonts/eb-garamond-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-/* Cormorant Garamond — normal, latin-ext, weights 400 700 */
+/* EB Garamond — normal, latin-ext, weights 400 700 (variable) */
 @font-face {
-  font-family: 'Cormorant Garamond';
+  font-family: 'EB Garamond';
   font-style: normal;
   font-weight: 400 700;
   font-display: swap;
-  src: url('../fonts/cormorant-garamond-latin-ext.woff2') format('woff2');
+  src: url('../fonts/eb-garamond-latin-ext.woff2') format('woff2');
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
-/* Playfair Display — italic, latin, weights 400 700 */
+/* EB Garamond — italic, latin, weights 400 700 (variable) */
 @font-face {
-  font-family: 'Playfair Display';
+  font-family: 'EB Garamond';
   font-style: italic;
   font-weight: 400 700;
   font-display: swap;
-  src: url('../fonts/playfair-display-italic-latin.woff2') format('woff2');
+  src: url('../fonts/eb-garamond-italic-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-/* Playfair Display — italic, latin-ext, weights 400 700 */
+/* EB Garamond — italic, latin-ext, weights 400 700 (variable) */
 @font-face {
-  font-family: 'Playfair Display';
+  font-family: 'EB Garamond';
   font-style: italic;
   font-weight: 400 700;
   font-display: swap;
-  src: url('../fonts/playfair-display-italic-latin-ext.woff2') format('woff2');
+  src: url('../fonts/eb-garamond-italic-latin-ext.woff2') format('woff2');
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
-/* Playfair Display — normal, latin, weights 400 900 */
+/* Cabin — normal, latin, weights 400 700 (variable) */
 @font-face {
-  font-family: 'Playfair Display';
+  font-family: 'Cabin';
   font-style: normal;
-  font-weight: 400 900;
+  font-weight: 400 700;
   font-display: swap;
-  src: url('../fonts/playfair-display-latin.woff2') format('woff2');
+  src: url('../fonts/cabin-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-/* Playfair Display — normal, latin-ext, weights 400 900 */
+/* Cabin — normal, latin-ext, weights 400 700 (variable) */
 @font-face {
-  font-family: 'Playfair Display';
+  font-family: 'Cabin';
   font-style: normal;
-  font-weight: 400 900;
+  font-weight: 400 700;
   font-display: swap;
-  src: url('../fonts/playfair-display-latin-ext.woff2') format('woff2');
+  src: url('../fonts/cabin-latin-ext.woff2') format('woff2');
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
-/* Poiret One — normal, latin, weights 400 */
+/* Cabin Condensed — normal, latin, weights 400 */
 @font-face {
-  font-family: 'Poiret One';
+  font-family: 'Cabin Condensed';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('../fonts/poiret-one-latin.woff2') format('woff2');
+  src: url('../fonts/cabin-condensed-400-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-/* Poiret One — normal, latin-ext, weights 400 */
+/* Cabin Condensed — normal, latin-ext, weights 400 */
 @font-face {
-  font-family: 'Poiret One';
+  font-family: 'Cabin Condensed';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('../fonts/poiret-one-latin-ext.woff2') format('woff2');
+  src: url('../fonts/cabin-condensed-400-latin-ext.woff2') format('woff2');
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
-/* Oswald — normal, latin, weights 200-700 (variable).
- *
- * The fourth family, and the only one not used sitewide: it exists for the
- * recreated Savoy playbills on /history/. The originals were job-printed in
- * heavy condensed gothic, which none of the three Art Deco/serif families
- * above can imitate — Poiret One and Playfair are exactly the wrong century
- * of taste for a 1931 handbill. Oswald is an approximation of that idiom, not
- * a facsimile of the metal type a local printer actually set.
- *
- * Variable, so one file covers the huge SAVOY wordmark (700) and the show
- * rows (500-600). OFL-licensed, same as the others; self-hosting permitted.
- * NOT preloaded in base.html: it is below the fold on one page, and preloading
- * it would make every other page pay for bytes it never renders.
- */
+/* Cabin Condensed — normal, latin, weights 600 */
+@font-face {
+  font-family: 'Cabin Condensed';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../fonts/cabin-condensed-600-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Cabin Condensed — normal, latin-ext, weights 600 */
+@font-face {
+  font-family: 'Cabin Condensed';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../fonts/cabin-condensed-600-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* Oswald — normal, latin, weights 200 700 (variable) */
 @font-face {
   font-family: 'Oswald';
   font-style: normal;
@@ -141,7 +151,7 @@
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-/* Oswald — normal, latin-ext, weights 200-700 (variable) */
+/* Oswald — normal, latin-ext, weights 200 700 (variable) */
 @font-face {
   font-family: 'Oswald';
   font-style: normal;

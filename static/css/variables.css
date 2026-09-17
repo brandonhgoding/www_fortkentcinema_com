@@ -87,10 +87,13 @@
   --neon-gold-outer: rgba(201, 168, 76, 0.25);
   --neon-gold-far: rgba(201, 168, 76, 0.08);
 
-  /* Fonts — Art Deco + Classic Serif */
-  --font-display: 'Poiret One', cursive;
-  --font-heading: 'Playfair Display', serif;
-  --font-body: 'Cormorant Garamond', Georgia, serif;
+  /* Fonts — open stand-ins for the brand faces. See fonts.css for why these
+   * three and not Adobe Garamond Pro / Gill Sans Nova. Swapping to the
+   * licensed faces later is these three values plus the @font-face blocks. */
+  --font-display: 'EB Garamond', Georgia, 'Times New Roman', serif;
+  --font-heading: 'EB Garamond', Georgia, 'Times New Roman', serif;
+  --font-body: 'Cabin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --font-condensed: 'Cabin Condensed', 'Cabin', 'Arial Narrow', sans-serif;
 
   /* Spacing */
   --spacing-xs: 0.5rem;

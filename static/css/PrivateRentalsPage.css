@@ -17,7 +17,7 @@
 
 .rentals-back {
   display: inline-block;
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 0.9rem;
   letter-spacing: 2px;
   color: var(--color-gold);
@@ -260,7 +260,7 @@
 }
 
 .rentals-cta-contact a {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 1.1rem;
   letter-spacing: 2px;
   color: var(--color-cream);

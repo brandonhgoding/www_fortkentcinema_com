@@ -33,7 +33,7 @@
 
 .history-back {
   display: inline-block;
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 0.9rem;
   letter-spacing: 2px;
   color: var(--color-gold);
@@ -48,7 +48,7 @@
 }
 
 .history-eyebrow {
-  font-family: var(--font-display);
+  font-family: var(--font-condensed);
   font-size: 0.8rem;
   letter-spacing: 4px;
   text-transform: uppercase;
@@ -213,7 +213,7 @@
 }
 
 .history-playbills__count {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 0.9rem;
   letter-spacing: 2px;
   color: var(--color-cream-muted);
@@ -294,7 +294,7 @@
 }
 
 .history-video__playlabel {
-  font-family: var(--font-display);
+  font-family: var(--font-condensed);
   font-size: 1.05rem;
   letter-spacing: 2px;
   text-transform: uppercase;

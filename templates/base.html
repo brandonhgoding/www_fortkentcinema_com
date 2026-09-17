@@ -55,21 +55,26 @@
     <link rel="preconnect" href="https://m.media-amazon.com" crossorigin />
 
     {% comment %}
-    The three latin faces used above the fold. Without these the browser can't
-    discover a font until it has parsed the CSS, so it paints in the fallback and
-    then swaps — and that reflow is a layout shift (it moved the fixed curtain
-    overlays: CLS 0.027 under mobile emulation). Preloading gets them in flight
-    alongside the stylesheet, so text paints once, in the right font.
+    The three latin faces used above the fold: EB Garamond (display and
+    headings), Cabin (body and UI), Cabin Condensed (eyebrows and schedule
+    rows). Without these the browser can't discover a font until it has parsed
+    the CSS, so it paints in the fallback and then swaps — and that reflow is a
+    layout shift. Preloading gets them in flight alongside the stylesheet, so
+    text paints once, in the right font.
+
+    Oswald is deliberately absent: it sets the playbills on /history/ only, well
+    below the fold on a single route. Neither are the italic or latin-ext
+    subsets, which unicode-range gates behind characters most pages never use.
 
     `crossorigin` is required on font preloads even same-origin; without it the
     browser fetches the file twice.
     {% endcomment %}
     <link rel="preload" as="font" type="font/woff2" crossorigin
-          href="{% static 'fonts/poiret-one-latin.woff2' %}" />
+          href="{% static 'fonts/eb-garamond-latin.woff2' %}" />
     <link rel="preload" as="font" type="font/woff2" crossorigin
-          href="{% static 'fonts/playfair-display-latin.woff2' %}" />
+          href="{% static 'fonts/cabin-latin.woff2' %}" />
     <link rel="preload" as="font" type="font/woff2" crossorigin
-          href="{% static 'fonts/cormorant-garamond-latin.woff2' %}" />
+          href="{% static 'fonts/cabin-condensed-400-latin.woff2' %}" />
 
     {% comment %}
     ONE stylesheet. This used to be 15 separate render-blocking links, and

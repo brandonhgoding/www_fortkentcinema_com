@@ -56,14 +56,22 @@ class SingleStylesheetTests(TestCase):
 
     def test_above_the_fold_fonts_are_preloaded(self):
         """Without these the browser can't discover a font until it has parsed the
-        CSS, so it paints in the fallback and then swaps — and that reflow moved
-        the fixed curtain overlays (CLS 0.027 under mobile emulation)."""
+        CSS, so it paints in the fallback and then swaps, and that reflow is a
+        layout shift.
+
+        Oswald is deliberately not here — it sets the /history/ playbills only,
+        below the fold on one route. Nor are the italic and latin-ext subsets,
+        which unicode-range gates behind characters most pages never use."""
         html = self.client.get(reverse("home")).content.decode()
         preloads = re.findall(r'<link[^>]+rel="preload"[^>]+>', html)
         self.assertEqual(len(preloads), 3, "expected the 3 latin faces preloaded")
-        for family in ["poiret-one", "playfair-display", "cormorant-garamond"]:
+        for family in ["eb-garamond", "cabin-latin", "cabin-condensed-400"]:
             self.assertTrue(
                 any(family in p for p in preloads), f"{family} not preloaded"
+            )
+        for family in ["oswald", "italic", "latin-ext"]:
+            self.assertFalse(
+                any(family in p for p in preloads), f"{family} should not preload"
             )
 
     def test_font_preloads_are_crossorigin(self):

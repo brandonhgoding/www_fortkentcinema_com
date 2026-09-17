@@ -60,7 +60,7 @@
   position: absolute;
   top: var(--spacing-sm);
   left: var(--spacing-sm);
-  font-family: var(--font-display);
+  font-family: var(--font-condensed);
   font-size: 0.8rem;
   letter-spacing: 1px;
   padding: 0.35rem 0.75rem;
@@ -124,7 +124,7 @@
 }
 
 .blog-card-read-more {
-  font-family: var(--font-display);
+  font-family: var(--font-condensed);
   font-size: 0.9rem;
   letter-spacing: 1px;
   padding: 0.5rem 1rem;

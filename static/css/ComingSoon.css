@@ -94,7 +94,7 @@
   padding: 0.25rem 0.5rem;
   background: var(--color-accent);
   color: var(--color-cream);
-  font-family: var(--font-display);
+  font-family: var(--font-condensed);
   font-size: 0.7rem;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -173,7 +173,7 @@
 }
 
 .coming-movie-date {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 0.9rem;
   letter-spacing: 2px;
   color: var(--color-accent);
@@ -260,7 +260,7 @@
 }
 
 .coming-calendar-dayheader {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 1rem;
   letter-spacing: 2px;
   color: var(--color-gold);
@@ -292,7 +292,7 @@
 }
 
 .coming-calendar-cell__day {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 0.85rem;
   color: var(--color-cream-muted);
   display: block;

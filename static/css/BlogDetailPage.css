@@ -17,7 +17,7 @@
 }
 
 .blog-detail-back-btn {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 0.9rem;
   letter-spacing: 2px;
   color: var(--color-gold);
@@ -72,7 +72,7 @@
 }
 
 .blog-detail-back {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 0.9rem;
   letter-spacing: 2px;
   color: var(--color-gold);
@@ -107,7 +107,7 @@
 
 .blog-detail-category {
   display: inline-block;
-  font-family: var(--font-display);
+  font-family: var(--font-condensed);
   font-size: 0.8rem;
   letter-spacing: 2px;
   padding: 0.4rem 1rem;
@@ -199,7 +199,7 @@
 }
 
 .blog-detail-footer-link {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 1rem;
   letter-spacing: 2px;
   color: var(--color-gold);

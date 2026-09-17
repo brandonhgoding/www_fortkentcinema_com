@@ -30,7 +30,7 @@
 
 .blog-view-all-link {
   display: inline-block;
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 1.1rem;
   letter-spacing: 3px;
   color: var(--color-gold);

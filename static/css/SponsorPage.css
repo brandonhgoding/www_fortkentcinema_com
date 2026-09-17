@@ -27,7 +27,7 @@
 
 .sponsor-back {
   display: inline-block;
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 0.9rem;
   letter-spacing: 2px;
   color: var(--color-gold);
@@ -67,7 +67,7 @@
 }
 
 .sponsor-example__eyebrow {
-  font-family: var(--font-display);
+  font-family: var(--font-condensed);
   font-size: 0.8rem;
   letter-spacing: 3px;
   text-transform: uppercase;
@@ -132,7 +132,7 @@
 }
 
 .sponsor-tier__eyebrow {
-  font-family: var(--font-display);
+  font-family: var(--font-condensed);
   font-size: 0.75rem;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -245,7 +245,7 @@
 }
 
 .sponsor-filters__label {
-  font-family: var(--font-display);
+  font-family: var(--font-condensed);
   font-size: 0.75rem;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -320,7 +320,7 @@
 }
 
 .sponsor-table thead th {
-  font-family: var(--font-display);
+  font-family: var(--font-condensed);
   font-size: 0.8rem;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -354,7 +354,7 @@
 }
 
 .sponsor-table__sponsor {
-  font-family: var(--font-display);
+  font-family: var(--font-condensed);
   font-size: 0.85rem;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -572,7 +572,7 @@
 }
 
 .sponsor-inquire__label {
-  font-family: var(--font-display);
+  font-family: var(--font-condensed);
   font-size: 0.75rem;
   letter-spacing: 2px;
   text-transform: uppercase;

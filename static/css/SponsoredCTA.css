@@ -120,7 +120,7 @@
 }
 
 .sponsored-cta__link {
-  font-family: var(--font-display);
+  font-family: var(--font-condensed);
   font-size: 0.95rem;
   letter-spacing: 2px;
   text-transform: uppercase;

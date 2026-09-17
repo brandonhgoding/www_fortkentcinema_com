@@ -34,7 +34,7 @@
 }
 
 .nav-link {
-  font-family: var(--font-display);
+  font-family: var(--font-condensed);
   font-weight: 400;
   font-size: 1rem;
   text-transform: uppercase;
@@ -79,7 +79,7 @@
   color: var(--color-on-accent);
   padding: 0.6rem 1.5rem;
   border-radius: var(--radius-sm);
-  font-family: var(--font-display);
+  font-family: var(--font-condensed);
   font-weight: 400;
   font-size: 0.9rem;
   text-transform: uppercase;
