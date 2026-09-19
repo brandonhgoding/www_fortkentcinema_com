@@ -3,7 +3,6 @@
    d3 CINEMATIC EFFECTS — layered on top of the
    Art Deco theme; never modifies base styles.
    Custom properties written by effect hooks:
-     --fx-draw  0..1  divider stroke draw progress
      --fx-fade  0..1  content fade/translate progress
 ============================================ */
 
@@ -16,28 +15,6 @@
 .fx-reveal.fx-revealed {
   opacity: 1;
   transform: none;
-}
-
-.fx-divider {
-  display: block;
-  width: 220px;
-  max-width: 60%;
-  height: 28px;
-  margin: 14px auto 0;
-  overflow: visible;
-}
-
-.fx-divider path {
-  stroke: var(--color-gold);
-  fill: none;
-  stroke-width: 1.5;
-  stroke-dasharray: 1;
-  stroke-dashoffset: calc(1 - var(--fx-draw, 1));
-}
-
-.fx-divider circle {
-  fill: var(--color-gold);
-  opacity: var(--fx-draw, 1);
 }
 
 /* === Hero neon power-on === */
@@ -123,14 +100,6 @@
   .fx-reveal {
     opacity: 1 !important;
     transform: none !important;
-  }
-
-  .fx-divider path {
-    stroke-dashoffset: 0 !important;
-  }
-
-  .fx-divider circle {
-    opacity: 1 !important;
   }
 
   .hero--live .hero-tagline,

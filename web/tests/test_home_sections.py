@@ -75,14 +75,24 @@ class SectionCompositionTests(TestCase):
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_now_showing", return_value=[])
-    def test_ornament_dividers_are_gone(self, _ns, _cs):
-        """Removed in markup (the partial is deleted), in CSS
-        (.ornament-divider and friends) and in the template tag that placed
-        them. This asserts none of the three comes back alone."""
+    def test_section_ornaments_are_gone(self, _ns, _cs):
+        """Two decorative devices were removed from between and beneath the
+        sections, each in every layer it touched:
+
+          * the ornament divider — partial deleted, .ornament-* rules
+            deleted, and the template tag that placed it deleted;
+          * the fx-divider chevron under each section subtitle — <svg>
+            deleted from three partials, .fx-divider rules deleted, and the
+            --fx-draw property that drew its stroke no longer set by
+            scrollReveal.js (nothing else consumed it).
+
+        Sections are separated by their alternating grounds. This asserts no
+        layer of either device comes back on its own."""
         html = self.home()
         self.assertNotIn("ornament-divider", html)
         self.assertNotIn("ornament-line", html)
         self.assertNotIn("ornament-star", html)
+        self.assertNotIn("fx-divider", html)
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_now_showing", return_value=[])

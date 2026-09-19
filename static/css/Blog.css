@@ -108,9 +108,8 @@
   /* No .section-title override here. It used to need one — 3rem with 8px of
    * fixed tracking plus 160px of flanking hairlines is about 330px of heading
    * for the word "BLOG", which clipped inside this container. global.css now
-   * owns that: the type scale drops --type-title to 2rem at this breakpoint
-   * and hides the hairlines, and the fx-divider under the subtitle carries the
-   * ornament instead. A local copy would only fight it. */
+   * owns that: the type scale drops --type-title to 1.875rem at this
+   * breakpoint and hides the hairlines. A local copy would only fight it. */
 
   .blog-grid,
   .blog-grid-preview {

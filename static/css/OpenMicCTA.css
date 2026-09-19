@@ -39,7 +39,7 @@
  * so it moves with the rest of the scale at 900px and 600px and stays exactly
  * one step below the section headings (NOW SHOWING, COMING SOON, BLOG) rather
  * than being a different idea at a similar size. It does NOT get the flanking
- * hairlines or the fx-divider; that ornament is the section level's badge.
+ * hairlines or a subtitle; that pairing is the section level's badge.
  *
  * font-weight is stated rather than inherited from the UA's <h2> bold, and
  * line-height overrides body's 1.7, which on a display line is leading meant

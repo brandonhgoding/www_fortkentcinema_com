@@ -100,9 +100,13 @@ button {
    Section headings outranking CTA headings is deliberate and correct. The
    point is that it is ONE step down a shared scale rather than a different
    idea, and the two levels are told apart by three things at once — size,
-   tracking, and ornament: only the section level gets the flanking hairlines,
-   the subtitle and the fx-divider. A CTA heading that simply cloned
-   .section-title would flatten the page in the opposite direction.
+   tracking, and ornament: only the section level gets the flanking hairlines
+   and the subtitle. A CTA heading that simply cloned .section-title would
+   flatten the page in the opposite direction.
+
+   (There was a fourth signal, an fx-divider chevron under each section
+   subtitle. It was removed with the ornament dividers; the section level is
+   now marked by the hairlines and the subtitle alone.)
 
    TRACKING. Caps want letterspacing, but a fixed pixel value is wrong at two
    sizes and catastrophic at four, so it is expressed in em and travels with the
@@ -330,8 +334,9 @@ button {
  * already uses most of the 326px between the gutters, and 160px of rules on
  * top of it would run off the page (body has overflow-x: hidden, so it would
  * silently clip rather than scroll). Hence the tablet shrink and the phone
- * drop, where the fx-divider under the subtitle is already carrying the
- * ornament for that header.
+ * drop. On a phone the subtitle is then the only thing marking the section
+ * level — which is enough, because at that width the sections are stacked
+ * single-file and their alternating grounds are doing the separating.
  */
 .section-title::before,
 .section-title::after {
@@ -691,6 +696,16 @@ button {
   margin: 0 auto;
   padding: var(--spacing-xl) var(--spacing-md);
   text-align: center;
+}
+
+/* .coming-empty is emitted by the {% empty %} of the poster loop, so unlike
+ * .no-showtimes its parent is .coming-movies-grid — a real CSS grid. Without
+ * this it becomes a grid ITEM and sits in the first column, so `margin: 0
+ * auto` centres it inside a half-width track and the block reads as
+ * left-aligned on any viewport wide enough for two columns. Spanning every
+ * track is what makes the centring above mean what it looks like it means. */
+.coming-empty {
+  grid-column: 1 / -1;
 }
 
 .no-showtimes__lead,

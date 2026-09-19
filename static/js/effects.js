@@ -49,7 +49,7 @@ function At(e) {
     e.classList.add("fx-reveal");
     let t = null, n = !1;
     t = Et(e, (r) => {
-      e.style.setProperty("--fx-draw", String(r)), e.style.setProperty("--fx-fade", String(Math.min(r / St, 1))), r >= 1 && (e.classList.add("fx-revealed"), n = !0, t && (t(), t = null));
+      e.style.setProperty("--fx-fade", String(Math.min(r / St, 1))), r >= 1 && (e.classList.add("fx-revealed"), n = !0, t && (t(), t = null));
     }), n && t && (t(), t = null);
   } catch (t) {
     console.error("[effects] scroll reveal disabled:", t), e.classList.add("fx-reveal", "fx-revealed");
