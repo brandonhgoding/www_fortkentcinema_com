@@ -69,8 +69,17 @@ class BaseChromeTests(TestCase):
     def test_chrome_elements_present(self):
         html = self.client.get(reverse("home")).content.decode()
         self.assertIn('class="skip-link"', html)
-        self.assertIn("fx-dust", html)
-        self.assertIn("data-ambient-dust", html)
+
+    def test_ambient_dust_is_gone(self):
+        """The hero's floating dust canvas was removed deliberately: its motes
+        were hardcoded rgba(201, 168, 76) — the old design's warm gold, not a
+        brand value — and it read as grain over the blue-led hero rather than
+        as projector light. Removed in markup (hero.html), CSS (.fx-dust) and
+        JS (frontend/effects/init/ambientDust.js, deleted). This asserts it
+        stays gone; a reappearance means one of the three came back alone."""
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertNotIn("fx-dust", html)
+        self.assertNotIn("data-ambient-dust", html)
 
     def test_canonical_uses_request_url(self):
         html = self.client.get(reverse("home")).content.decode()
@@ -209,8 +218,7 @@ class HomeIntegrationTests(TestCase):
             'class="hero"', 'id="now-showing"', 'id="coming-soon"',
         )]
         self.assertEqual(order, sorted(order))
-        self.assertIn("ornament", html)          # dividers present
-        self.assertIn('data-ambient-dust', html)  # base chrome intact
+        self.assertIn('class="skip-link"', html)  # base chrome intact
 
 
 class BlogTeaserTests(TestCase):

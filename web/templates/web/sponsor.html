@@ -159,26 +159,56 @@
     </header>
 
     {% comment %}
-      The worked example does the selling. A named local business is far more
-      persuasive than "Your Business Here", and A.H. Custom Carpentry approved
-      being named.
+      The worked examples do the selling. A named local business is far more
+      persuasive than "Your Business Here", and both of these approved being
+      named.
+
+      Two of them, not one: the past run is the proof this actually happens
+      and the upcoming one is the proof it is still happening. Either alone
+      answers only half of what a business wondering about it wants to know.
+
+      Both come from SPONSORSHIP_SHOWCASE in web/constants.py, and each is
+      guarded separately — when the upcoming run plays it becomes the past
+      one, and if nothing is booked to follow it that slot is None and this
+      collapses to a single card with no template change.
     {% endcomment %}
-    <section class="sponsor-example">
-      <p class="sponsor-example__eyebrow">Happening this month</p>
-      <h2 class="sponsor-example__title">
-        A.H. Custom Carpentry is sponsoring <em>The Wild Robot</em>
-      </h2>
-      <p class="sponsor-example__body">
-        They're covering the cost of bringing the film to Fort Kent. In return,
-        their name goes out with every post we make about the show, it's on the
-        marquee on Hall Street, and it's on screen before the lights go down.
-        One local business, one movie, a whole town that knows who paid for it.
-      </p>
-      <p class="sponsor-example__body">
-        That's the whole idea. You pick a film, we book it, and the credit is
-        yours.
-      </p>
-    </section>
+    <div class="sponsor-examples">
+      {% if showcase.past %}
+      <section class="sponsor-example">
+        <p class="sponsor-example__eyebrow">Past sponsor</p>
+        <h2 class="sponsor-example__title">
+          {{ showcase.past.sponsor }} sponsored <em>{{ showcase.past.film }}</em>
+        </h2>
+        <p class="sponsor-example__body">
+          The first one. They covered the cost of bringing the film to Fort
+          Kent{% if showcase.past.occasion %} for {{ showcase.past.occasion }}{% endif %},
+          and their name went out with every post we made about the show, onto
+          the marquee on Hall Street, and onto the screen before the lights
+          went down.
+        </p>
+      </section>
+      {% endif %}
+
+      {% if showcase.upcoming %}
+      <section class="sponsor-example">
+        <p class="sponsor-example__eyebrow">Coming up</p>
+        <h2 class="sponsor-example__title">
+          {{ showcase.upcoming.sponsor }} is sponsoring <em>{{ showcase.upcoming.film }}</em>
+        </h2>
+        <p class="sponsor-example__body">
+          They're covering the cost of bringing the film to Fort Kent. In
+          return, their name goes out with every post we make about the show,
+          it's on the marquee on Hall Street, and it's on screen before the
+          lights go down.
+        </p>
+      </section>
+      {% endif %}
+    </div>
+
+    <p class="sponsor-examples__note">
+      That's the whole idea. You pick a film, we book it, and the credit is
+      yours.
+    </p>
 
     <section class="sponsor-tiers" id="tiers">
       <header class="sponsor-tiers__header">

@@ -33,25 +33,73 @@
   flex-wrap: wrap;
 }
 
+/* Step 2 of the type scale (global.css): the CTA heading. This used to be
+ * 1.75rem with a fixed 4px of tracking — a third, unrelated <h2> treatment on
+ * a page that already had two. It now takes --type-heading and --track-heading,
+ * so it moves with the rest of the scale at 900px and 600px and stays exactly
+ * one step below the section headings (NOW SHOWING, COMING SOON, BLOG) rather
+ * than being a different idea at a similar size. It does NOT get the flanking
+ * hairlines or a subtitle; that pairing is the section level's badge.
+ *
+ * font-weight is stated rather than inherited from the UA's <h2> bold, and
+ * line-height overrides body's 1.7, which on a display line is leading meant
+ * for paragraphs.
+ *
+ * The `text-shadow: 0 0 8px var(--color-accent-glow), 0 0 20px
+ * var(--neon-gold-far)` that used to be here is deleted, not commented out.
+ * Both tokens are `transparent` outside .hero — which re-declares the neon
+ * stack on itself — and this band is not inside the hero, so the shadow could
+ * never paint. A rule that renders nothing is indistinguishable from a bug the
+ * next time somebody goes looking for one. */
 .gift-card-cta__title {
   font-family: var(--font-display);
-  font-size: 1.75rem;
-  letter-spacing: 4px;
+  font-weight: 700;
+  font-size: var(--type-heading);
+  line-height: 1.15;
+  letter-spacing: var(--track-heading);
   color: var(--color-accent);
-  text-shadow:
-    0 0 8px var(--color-accent-glow),
-    0 0 20px var(--neon-gold-far);
   margin: 0;
 }
 
+/* PHONE — dead code until now, same story as OpenMicCTA: home.css hid
+ * .gift-card-cta below 600px (see the note there). Title over button, both
+ * centred, and the button becomes a real full-width touch target instead of
+ * an inline pill sitting under a heading. */
 @media (max-width: 600px) {
+  .gift-card-cta {
+    padding: var(--spacing-lg) var(--spacing-sm);
+  }
+
+  /* Same fixed 600px ellipse as the open-mic band; same fix. */
+  .gift-card-cta::before {
+    width: 110%;
+    height: 120px;
+  }
+
   .gift-card-cta__content {
     flex-direction: column;
     text-align: center;
     gap: var(--spacing-md);
   }
 
+  /* No font-size or letter-spacing here on purpose: --type-heading and
+   * --track-heading already redefine themselves at 600px, so a hardcoded
+   * phone value would fight the scale rather than extend it. All this block
+   * adds is the wrap, which is a layout concern. */
   .gift-card-cta__title {
-    font-size: 1.5rem;
+    text-wrap: balance;
+  }
+
+  /* 44px is the touch-target floor; the padding lands this at ~48px. The
+   * max-width stops it spanning the full 600px handset as a banner, and
+   * keeps .btn-ticket's notch pseudo-elements (-6px either side) inside the
+   * section's own gutter. */
+  .gift-card-cta__content .btn {
+    width: 100%;
+    max-width: 320px;
+    min-height: 44px;
+    padding: 0.75rem var(--spacing-md);
+    font-size: 1rem;
+    letter-spacing: 2px;
   }
 }

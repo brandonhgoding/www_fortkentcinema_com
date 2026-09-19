@@ -3,12 +3,8 @@
          x-effect="document.body.style.overflow = trailer ? 'hidden' : ''">
   <div class="section-container">
     <div class="section-header">
-      <h2 class="section-title section-title--red">COMING SOON</h2>
+      <h2 class="section-title">COMING SOON</h2>
       <p class="section-subtitle">Get excited for these upcoming releases</p>
-      <svg class="fx-divider" viewBox="0 0 400 40" aria-hidden="true" focusable="false">
-        <path d="M 10 20 L 150 20 L 170 8 L 200 32 L 230 8 L 250 20 L 390 20" pathLength="1" />
-        <circle cx="200" cy="20" r="3" />
-      </svg>
       <div class="coming-view-toggle">
         <button class="coming-view-btn"
                 :class="{ 'coming-view-btn--active': view === 'grid' }"
@@ -88,6 +84,35 @@
           <p class="coming-movie-genre">{{ movie.genre }}</p>
         </div>
       </article>
+      {% empty %}
+      {% comment %}
+        This loop had no empty branch at all: with nothing booked ahead, the
+        heading sat above a blank void. Same reasoning as the Now Showing
+        empty state — this is the page that carries the site's search
+        traffic, so the void is what gets indexed.
+      {% endcomment %}
+      <div class="coming-empty">
+        <p class="coming-empty__lead">Nothing on the calendar yet.</p>
+        <p class="coming-empty__body">
+          Upcoming titles land here as soon as a run is booked. We announce
+          each one on Facebook first, and the blog covers the ones worth a
+          longer look.
+        </p>
+        <ul class="coming-empty__links">
+          {% if site_config.social.facebook %}
+          <li>
+            <a href="{{ site_config.social.facebook }}"
+               target="_blank" rel="noopener noreferrer"
+               data-track="facebook_click" data-track-location="coming_soon_empty">
+              Follow us on Facebook
+            </a>
+          </li>
+          {% endif %}
+          <li><a href="{% url 'blog_list' %}">Read the blog</a></li>
+          <li><a href="{% url 'sponsor' %}">Pick a film and sponsor it</a></li>
+          <li><a href="/membership/">Join the Cinema Club</a></li>
+        </ul>
+      </div>
       {% endfor %}
     </div>
 

@@ -4,19 +4,33 @@
   Half its job is the internal link — /sponsor/ was reachable only from the
   nav's "More" dropdown, the same one-link-sitewide position /history/ was in
   before its CTA — and the other half is that the people it is aimed at are
-  not browsing showtimes when they think about it. So it leads with the named
-  business and the concrete thing they got, the way the sponsor page itself
-  does, rather than "support your local cinema".
+  not browsing showtimes when they think about it.
+
+  This used to open with a worked example: "A.H. Custom Carpentry covered the
+  cost of bringing The Wild Robot to Fort Kent." A named local business sells
+  harder than "Your Business Here", and that example is real and approved —
+  it still leads /sponsor/ itself, which is where a case study belongs.
+
+  It does not belong here, because this block has to stay true without
+  anyone maintaining it. The named version described one booking in the past
+  tense and quietly went stale the moment that run ended; keeping it honest
+  meant editing the home page every time a sponsorship finished. What is
+  written below is the presenting tier itself — every clause maps to an entry
+  in SPONSORSHIP_TIERS[0]["includes"], so it is true of whoever signs next,
+  and specific enough not to collapse into "support your local cinema".
+
+  The price is rendered, not typed. It is the lowest tier in
+  SPONSORSHIP_TIERS (HomeView passes it as sponsorship_from_price), so
+  "from $N" cannot drift away from the prices on /sponsor/.
 {% endcomment %}
 <section class="sponsor-cta" aria-labelledby="sponsor-cta-title">
   <div class="sponsor-cta__content">
-    <p class="sponsor-cta__eyebrow">For local business</p>
     <h2 class="sponsor-cta__title" id="sponsor-cta-title">PUT YOUR NAME ON THE MARQUEE</h2>
     <p class="sponsor-cta__body">
-      A.H. Custom Carpentry covered the cost of bringing <em>The Wild Robot</em>
-      to Fort Kent. Their name went out with every post about the show, onto
-      the marquee on Hall Street, and onto the screen before the lights went
-      down. Pick a film, we book it, and the credit is yours &mdash; from $299.
+      You pick the film and we book it. Your name goes on the marquee on Hall
+      Street, out with every post we make about the show, and onto the screen
+      before the lights go down &mdash; one local business, one movie, and a
+      whole town that knows who paid for it. From ${{ sponsorship_from_price }}.
     </p>
     <a href="{% url 'sponsor' %}" class="btn btn-ticket"
        data-track="sponsor_click" data-track-location="home">

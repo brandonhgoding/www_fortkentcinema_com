@@ -133,9 +133,15 @@
   text-transform: uppercase;
 }
 
+/* The chips inside this row are .showtime, which is owned by MovieCard.css and
+   shared with movie_card.html. Nothing here overrides it on purpose: a
+   schedule chip that looked different on this card than on the film card
+   would read as a different kind of thing. The gap is the one local decision
+   — the chips are now 40px tall, so they need a little more air between rows
+   than between columns to stay legible as separate times on a phone. */
 .schedule-day__times {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--spacing-xs) 0.5rem;
   flex-wrap: wrap;
 }
 

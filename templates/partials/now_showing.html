@@ -5,10 +5,6 @@
     <div class="section-header">
       <h2 class="section-title">NOW SHOWING</h2>
       <p class="section-subtitle">Currently playing at Fort Kent Cinema</p>
-      <svg class="fx-divider" viewBox="0 0 400 40" aria-hidden="true" focusable="false">
-        <path d="M 10 20 L 150 20 L 170 8 L 200 32 L 230 8 L 250 20 L 390 20" pathLength="1" />
-        <circle cx="200" cy="20" r="3" />
-      </svg>
     </div>
 
     {% if ns_dates %}
@@ -44,8 +40,32 @@
       {% endfor %}
     </div>
     {% else %}
+    {% comment %}
+      This used to be one flat sentence and a dead end. The home page carries
+      almost all of this site's search clicks, so whatever stands here when
+      nothing is booked is indexable content — it should say what is true and
+      then hand the visitor somewhere to go.
+    {% endcomment %}
     <div class="no-showtimes">
-      <p>No showtimes available.</p>
+      <p class="no-showtimes__lead">No showtimes available.</p>
+      <p class="no-showtimes__body">
+        The screen is dark between bookings. New runs go up here as soon as
+        they are confirmed, and we post every one to Facebook first.
+      </p>
+      <ul class="no-showtimes__links">
+        <li><a href="#coming-soon">See what is coming soon</a></li>
+        {% if site_config.social.facebook %}
+        <li>
+          <a href="{{ site_config.social.facebook }}"
+             target="_blank" rel="noopener noreferrer"
+             data-track="facebook_click" data-track-location="now_showing_empty">
+            Follow us on Facebook
+          </a>
+        </li>
+        {% endif %}
+        <li><a href="/membership/">Join the Cinema Club</a></li>
+        <li><a href="/history/">Read the history, back to 1917</a></li>
+      </ul>
     </div>
     {% endif %}
   </div>

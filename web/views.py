@@ -30,6 +30,7 @@ from web.constants import (
     SAVOY_PLAYBILLS,
     SPONSORSHIP_FAQ,
     SPONSORSHIP_POPCORN_CAP,
+    SPONSORSHIP_SHOWCASE,
     SPONSORSHIP_TIERS,
 )
 from web.forms import SponsorshipInquiryForm
@@ -78,6 +79,11 @@ class HomeView(TemplateView):
 
         # Home blog teaser: latest 2 posts, deterministically ordered.
         ctx["recent_posts"] = BlogPost.objects.select_related("author", "category").order_by("-post_date", "-id")[:2]
+
+        # The sponsor CTA says "From $N". N is the cheapest tier rather than a
+        # typed number, so the home page cannot drift away from the prices on
+        # /sponsor/ when a tier is repriced.
+        ctx["sponsorship_from_price"] = min(t["price"] for t in SPONSORSHIP_TIERS)
 
         # Hero marquee bulbs: 17 across top/bottom, 5 down each side (Hero.jsx).
         ctx["hero_top_bulbs"] = range(17)
@@ -598,6 +604,7 @@ class SponsorView(SponsorCatalogMixin, ListView):
         ctx.update(
             {
                 "tiers": SPONSORSHIP_TIERS,
+                "showcase": SPONSORSHIP_SHOWCASE,
                 "popcorn_cap": SPONSORSHIP_POPCORN_CAP,
                 "total_count": available.count(),
                 "ratings": sorted(

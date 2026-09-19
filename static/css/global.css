@@ -78,6 +78,108 @@ button {
 }
 
 /* ============================================
+   TYPE SCALE — one ratio, four steps
+
+   WHY THIS EXISTS. The home page carried four different treatments for <h2>,
+   all at the same semantic rank: 48px EB Garamond with 8px of tracking
+   (.section-title, below), 25.6px Oswald (the history and sponsor CTAs), and
+   28px EB Garamond with 4px of tracking (the gift-card and open-mic CTAs).
+   Same rank, no visual relationship — four unrelated decisions rather than one
+   system, which is what the audit meant by "no shared visual level".
+
+   These tokens are the system. The steps are a perfect fourth (4:3, ratio
+   1.333) anchored on the existing 3rem section title, so NOW SHOWING reads
+   exactly as it did on desktop and everything else is placed against it:
+
+     --type-title    3rem       48px    section headings  (NOW SHOWING)
+     --type-heading  2.25rem    36px    CTA headings      (A CENTURY ON THIS LOT)
+     --type-sub      1.6875rem  27px    sub-headings inside a section
+     --type-lead     1.266rem   20.3px  section subtitles, lead paragraphs
+     --type-label    0.95rem    15.2px  eyebrows, small caps-y labels
+
+   Section headings outranking CTA headings is deliberate and correct. The
+   point is that it is ONE step down a shared scale rather than a different
+   idea, and the two levels are told apart by three things at once — size,
+   tracking, and ornament: only the section level gets the flanking hairlines
+   and the subtitle. A CTA heading that simply cloned .section-title would
+   flatten the page in the opposite direction.
+
+   (There was a fourth signal, an fx-divider chevron under each section
+   subtitle. It was removed with the ornament dividers; the section level is
+   now marked by the hairlines and the subtitle alone.)
+
+   TRACKING. Caps want letterspacing, but a fixed pixel value is wrong at two
+   sizes and catastrophic at four, so it is expressed in em and travels with the
+   step. The display level is deliberately wider than the CTA level (0.12em vs
+   0.04em): monumental versus spoken. The old 8px at 48px was 0.167em, which is
+   past the point where a word stops reading as a word.
+
+   MOBILE. There was no mobile type scale at all — .section-title was 48px with
+   8px of tracking at every viewport, so both NOW SHOWING and COMING SOON
+   wrapped to two lines on a 390px phone. Widths below are measured from the
+   shipped EB Garamond woff2, instanced at wght 700 (the weight these actually
+   render at), against the 326px available inside .section-container's 2rem
+   gutters at 390px. NOW SHOWING is the widest of the three titles:
+
+     old, 48px / 8px fixed ......... 461px  — wrapped
+     phone step, 2rem / 0.08em ..... 278px  — fits, 48px to spare
+     tablet step at 601px .......... 356px  of 537px
+     desktop step .................. 437px  of 1336px
+
+   COMING SOON is 263px at the phone step and BLOG is 96px, so the phone step
+   is set by NOW SHOWING and the other two inherit the headroom.
+
+   BREAKPOINTS. Only the two this page already uses: 600px, which is the Now
+   Showing desktop/phone layout split (see home.css) and the breakpoint every
+   home-page component's own phone rules are written at, and 900px as the
+   tablet step. Do not add a third — the site's set is already 600/768/900/1200
+   and the audit flagged that incoherence separately.
+============================================ */
+:root {
+  --type-title: 3rem;
+  --type-heading: 2.25rem;
+  --type-sub: 1.6875rem;
+  --type-lead: 1.266rem;
+  --type-label: 0.95rem;
+
+  --track-title: 0.12em;
+  --track-heading: 0.04em;
+  --track-label: 0.1em;
+}
+
+/* Tablet. The same ratio, the whole scale moved down one notch. */
+@media (max-width: 900px) {
+  :root {
+    --type-title: 2.5rem;
+    --type-heading: 1.875rem;
+    --type-sub: 1.406rem;
+    --type-lead: 1.125rem;
+
+    --track-title: 0.1em;
+  }
+}
+
+/* Phone. This block MUST stay after the 900px one: both match at or below
+ * 600px and they have equal specificity, so source order is what decides. */
+@media (max-width: 600px) {
+  :root {
+    /* 1.875rem, not 2rem. At 2rem the glyphs of "NOW SHOWING" measure 275px
+     * and the phone gutter leaves 343px at 390px — comfortable — but only
+     * 273px at 320px, so it wrapped on the narrowest phones by two pixels.
+     * One step down is 258px and clears 320px with room. Measured against the
+     * real layout, not the viewport width: see the PHONE GUTTER block below
+     * for why those two numbers are not the same thing. */
+    --type-title: 1.875rem;
+    --type-heading: 1.5rem;
+    --type-sub: 1.125rem;
+    --type-lead: 1.0625rem;
+    --type-label: 0.875rem;
+
+    --track-title: 0.08em;
+  }
+}
+
+/* ============================================
    BUTTON STYLES — Art Deco Geometric
 ============================================ */
 .btn {
@@ -196,16 +298,46 @@ button {
   margin-bottom: var(--spacing-2xl);
 }
 
+/* Step 1 of the type scale: the section heading. Used on exactly three
+ * elements, all on the home page — NOW SHOWING, COMING SOON and BLOG.
+ *
+ * font-weight was never declared here; it rendered at 700 only because these
+ * happen to be <h2> and the UA stylesheet says bold. Stating it means the
+ * treatment does not change if the class is ever put on something else.
+ *
+ * line-height too: body sets 1.7, which on a 48px display line is 82px of
+ * leading and pulls the title away from its own subtitle. Display type wants
+ * less than text does, not the same.
+ *
+ * The `text-shadow: 0 0 12px var(--neon-gold-far)` that used to be here is
+ * gone rather than kept "just in case". --neon-gold-far is `transparent`
+ * everywhere except inside .hero, which re-declares the neon stack on itself,
+ * and none of the three section headers is inside the hero. It could not
+ * render, and a shadow that never paints is indistinguishable from a bug when
+ * the next person goes looking for one.
+ */
 .section-title {
   font-family: var(--font-display);
-  font-size: 3rem;
-  letter-spacing: 8px;
+  font-weight: 700;
+  font-size: var(--type-title);
+  line-height: 1.1;
+  letter-spacing: var(--track-title);
   color: var(--color-gold);
-  text-shadow: 0 0 12px var(--neon-gold-far);
   position: relative;
   display: inline-block;
 }
 
+/* The flanking hairlines are the section level's badge — the CTA level does
+ * not get them, and that absence is a third of how the two steps are told
+ * apart. They are absolutely positioned, so they add nothing to the title's
+ * own measured width, but they still need somewhere to sit: at 390px the title
+ * already uses most of the 326px between the gutters, and 160px of rules on
+ * top of it would run off the page (body has overflow-x: hidden, so it would
+ * silently clip rather than scroll). Hence the tablet shrink and the phone
+ * drop. On a phone the subtitle is then the only thing marking the section
+ * level — which is enough, because at that width the sections are stacked
+ * single-file and their alternating grounds are doing the separating.
+ */
 .section-title::before,
 .section-title::after {
   content: '';
@@ -224,23 +356,71 @@ button {
   left: calc(100% + 20px);
 }
 
-.section-title--red {
-  color: var(--color-accent);
-  text-shadow: 0 0 12px var(--color-accent-glow-strong);
+@media (max-width: 900px) {
+  .section-title::before,
+  .section-title::after {
+    width: 36px;
+  }
+
+  .section-title::before {
+    right: calc(100% + 14px);
+  }
+
+  .section-title::after {
+    left: calc(100% + 14px);
+  }
 }
 
-.section-title--red::before,
-.section-title--red::after {
-  background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+@media (max-width: 600px) {
+  .section-title::before,
+  .section-title::after {
+    display: none;
+  }
 }
 
+/* .section-title--red — DELETED. Do not resurrect it.
+ *
+ * It was the only thing telling COMING SOON apart from NOW SHOWING, and since
+ * the colour flip it told them apart by nothing at all. It set:
+ *
+ *     color: var(--color-accent);                             <- the value
+ *     text-shadow: 0 0 12px var(--color-accent-glow-strong);     .section-title
+ *     ::before/::after { ... var(--color-accent) ... }            already had
+ *
+ * --color-accent is the exact value --color-gold aliases on the light ground,
+ * and --color-accent-glow-strong is `transparent` outside .hero. Measured on
+ * the rendered page, both titles came out rgb(32, 57, 130): byte-identical.
+ * The name is itself a fossil — it dates from the dark-ground era, when the
+ * modifier really was red.
+ *
+ * Two large, adjacent, identically-set blocks gave a visitor no signal about
+ * which one is "what you can see this week" and which is "what is coming
+ * later", which is the most important distinction on a cinema home page. That
+ * job now lives in ComingSoon.css, which is in the COMPONENTS layer and can
+ * therefore actually override this file — a modifier defined here can only ever
+ * lose to the component sheet, which is part of why this one was so easy to
+ * leave broken. See the comment at the top of that file for what carries the
+ * distinction and why each part of it survives on a light ground.
+ *
+ * The class is still on the <h2> in templates/partials/coming_soon.html, where
+ * it is now inert and harmless; removing it from the markup is a separate,
+ * template-owner change.
+ */
+
+/* The subtitle is a companion to step 1, not a step of its own: it takes
+ * --type-lead so it moves with the title at every breakpoint instead of
+ * staying 17.6px while the heading above it shrinks by a third. The 1px of
+ * tracking it used to carry was 0.057em on italic sans, which reads as a
+ * spacing bug; 0.02em is a nudge, which is all italics need.
+ */
 .section-subtitle {
   font-family: var(--font-body);
-  font-size: 1.1rem;
+  font-size: var(--type-lead);
   font-style: italic;
+  line-height: 1.5;
   color: var(--color-cream-muted);
   margin-top: var(--spacing-sm);
-  letter-spacing: 1px;
+  letter-spacing: 0.02em;
 }
 
 /* ============================================
@@ -321,42 +501,7 @@ button {
 /* ============================================
    ORNAMENTAL DIVIDERS — Art Deco Geometric
 ============================================ */
-.ornament-divider {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 2rem 0;
-}
 
-.ornament-line {
-  height: 1px;
-  width: 200px;
-  background: linear-gradient(90deg, transparent, var(--color-gold), transparent);
-}
-
-.ornament-diamond {
-  width: 2px;
-  height: 18px;
-  background: var(--color-gold);
-  transform: none;
-  flex-shrink: 0;
-  box-shadow: 0 0 4px var(--neon-gold-far);
-}
-
-.ornament-star {
-  color: var(--color-gold);
-  font-size: 18px;
-  flex-shrink: 0;
-  text-shadow: 0 0 6px var(--neon-gold-outer);
-  letter-spacing: 2px;
-}
-
-@media (max-width: 600px) {
-  .ornament-line {
-    width: 60px;
-  }
-}
 
 /* ============================================
    SKIP LINK
@@ -477,10 +622,17 @@ button {
   text-align: center;
 }
 
+/* /thanks is the only page-level heading defined in this file, so it takes
+ * step 1 of the scale directly. It was 3rem/6px — the same size as
+ * .section-title but a third tracking value, and with no mobile step either.
+ * Pointing it at the tokens is what makes the scale a system rather than a
+ * home-page local convention. */
 .thanks-title {
   font-family: var(--font-display);
-  font-size: 3rem;
-  letter-spacing: 6px;
+  font-weight: 700;
+  font-size: var(--type-title);
+  line-height: 1.1;
+  letter-spacing: var(--track-title);
   color: var(--color-gold);
   margin-bottom: var(--spacing-lg);
 }
@@ -516,4 +668,146 @@ button {
 .thanks-cta:hover {
   background: var(--color-gold);
   color: var(--color-on-accent);
+}
+
+/* ============================================
+   EMPTY STATES
+
+   Two sections can render with nothing in them: Now Showing between bookings,
+   and Coming Soon before the next run is confirmed. Both used to be dead ends —
+   Now Showing said "No showtimes available." and stopped, and Coming Soon had
+   no {% empty %} at all, so it rendered a heading above a void.
+
+   That matters more here than on most sites. The home page takes ~99% of this
+   site's search clicks, so whatever these blocks say IS the indexed content of
+   the highest-value page on the domain whenever the screen is dark. An empty
+   section is an invitation to act, not a status message.
+
+   The two blocks are structurally identical (lead / body / link list) but keep
+   separate class names because they belong to different components. They are
+   grouped here, in BASE, rather than duplicated into NowShowing.css and
+   ComingSoon.css — one pattern, one definition. Neither component sheet styles
+   these classes, so there is nothing for the later cascade layers to fight.
+============================================ */
+
+.no-showtimes,
+.coming-empty {
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: var(--spacing-xl) var(--spacing-md);
+  text-align: center;
+}
+
+/* .coming-empty is emitted by the {% empty %} of the poster loop, so unlike
+ * .no-showtimes its parent is .coming-movies-grid — a real CSS grid. Without
+ * this it becomes a grid ITEM and sits in the first column, so `margin: 0
+ * auto` centres it inside a half-width track and the block reads as
+ * left-aligned on any viewport wide enough for two columns. Spanning every
+ * track is what makes the centring above mean what it looks like it means. */
+.coming-empty {
+  grid-column: 1 / -1;
+}
+
+.no-showtimes__lead,
+.coming-empty__lead {
+  font-family: var(--font-display);
+  font-size: var(--type-lead);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--color-text);
+  margin: 0 0 var(--spacing-xs);
+}
+
+.no-showtimes__body,
+.coming-empty__body {
+  font-family: var(--font-body);
+  color: var(--color-text-muted);
+  /* Under 80 characters at this size; serif lead above, sans body below. */
+  max-width: 44ch;
+  margin: 0 auto var(--spacing-lg);
+}
+
+/* The links are the whole point of the block, so they are a row of real
+ * targets rather than a bulleted list. list-style and padding are both reset
+ * because <ul> carries a default marker and indent that would pull the
+ * centred layout off axis. */
+.no-showtimes__links,
+.coming-empty__links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--spacing-xs) var(--spacing-md);
+}
+
+.no-showtimes__links a,
+.coming-empty__links a {
+  display: inline-flex;
+  align-items: center;
+  /* 44px touch target — these are the only things to tap in an empty section. */
+  min-height: 44px;
+  font-family: var(--font-condensed);
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  transition: color var(--transition-fast);
+}
+
+.no-showtimes__links a:hover {
+  color: var(--color-accent-warm);
+}
+
+.coming-empty__links a:hover {
+  color: var(--color-accent-warm);
+}
+
+.no-showtimes__links a:focus-visible,
+.coming-empty__links a:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+  .no-showtimes,
+  .coming-empty {
+    padding: var(--spacing-lg) var(--spacing-sm);
+  }
+
+  /* Stacked, not wrapped: four links wrapping across a 390px screen produce a
+   * ragged two-and-a-half-line block. One per row reads as a menu. */
+  .no-showtimes__links,
+  .coming-empty__links {
+    flex-direction: column;
+    gap: 0;
+  }
+}
+
+/* ============================================
+   PHONE GUTTER
+
+   Every section that uses .section-container nested TWO gutters: the section
+   itself pads var(--spacing-lg) horizontally, then .section-container pads
+   var(--spacing-lg) again. 2rem + 2rem each side is 128px of a 375px screen —
+   34% of the viewport spent on margin.
+
+   It went unnoticed because the three worst-hit sections were either hidden on
+   phones (.blog) or never checked against a real layout. It is what made
+   "NOW SHOWING" wrap at the new 2rem phone step: the glyphs measure 275px and
+   the type scale was sized against the ~326px the viewport suggests, but the
+   title only ever had 247px to sit in.
+
+   One gutter, declared once, here. The sections zero their own horizontal
+   padding at this breakpoint (NowShowing.css, ComingSoon.css, Blog.css) so
+   this is the only one left. 375 - 32 = 343px of content, and the widest
+   section title needs 275px.
+============================================ */
+@media (max-width: 600px) {
+  .section-container {
+    padding: 0 var(--spacing-sm);
+  }
 }

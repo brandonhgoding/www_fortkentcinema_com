@@ -1,4 +1,5 @@
 import datetime
+from unittest import mock
 
 from cinema.models import SponsorshipInquiry, Studio, StudioTitle
 from django.test import TestCase
@@ -143,10 +144,45 @@ class SponsorPageTests(TestCase):
         tiers = self.client.get(reverse("sponsor")).context["tiers"]
         self.assertEqual([t["price"] for t in tiers], [299, 499, 799])
 
-    def test_page_names_the_real_sponsor_example(self):
+    def test_page_names_the_real_sponsor_examples(self):
         html = self.client.get(reverse("sponsor")).content.decode()
         self.assertIn("A.H. Custom Carpentry", html)
         self.assertIn("The Wild Robot", html)
+        self.assertIn("AParadis Photography", html)
+        self.assertIn("The Land Before Time", html)
+
+    def test_both_showcase_cards_render_with_their_own_framing(self):
+        """Past and upcoming answer different questions — has this actually
+        happened, and is it still happening — so each is labelled and cast in
+        its own tense."""
+        html = self.client.get(reverse("sponsor")).content.decode()
+        self.assertEqual(html.count('class="sponsor-example"'), 2)
+        self.assertIn("Past sponsor", html)
+        self.assertIn("Coming up", html)
+        self.assertIn("sponsored <em>The Land Before Time</em>", html)
+        self.assertIn("is sponsoring <em>The Wild Robot</em>", html)
+
+    def test_either_showcase_slot_can_be_empty(self):
+        """When the upcoming run plays it becomes the past one, and there may
+        be nothing booked to follow it. That is a constants edit, not a
+        template edit, and the page must not render an empty card."""
+        with mock.patch.dict(
+            "web.views.SPONSORSHIP_SHOWCASE", {"upcoming": None}, clear=False
+        ):
+            html = self.client.get(reverse("sponsor")).content.decode()
+        self.assertEqual(html.count('class="sponsor-example"'), 1)
+        self.assertIn("AParadis Photography", html)
+        self.assertNotIn("Coming up", html)
+
+    def test_the_showcase_states_no_date_it_cannot_back_up(self):
+        """This block was headed "Happening this month", which was true when
+        written and silently stopped being true. Nothing here may claim a
+        date unless SPONSORSHIP_SHOWCASE carries one."""
+        html = self.client.get(reverse("sponsor")).content.decode()
+        start = html.index('class="sponsor-examples"')
+        block = html[start:html.index("sponsor-tiers", start)]
+        self.assertNotIn("this month", block.lower())
+        self.assertNotIn("Happening", block)
 
     def test_full_house_tier_states_the_guest_cap_and_size(self):
         html = self.client.get(reverse("sponsor")).content.decode()

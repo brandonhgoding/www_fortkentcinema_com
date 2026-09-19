@@ -1,11 +1,9 @@
-import { initAmbientDust } from './init/ambientDust.js';
 import { initScrollReveal } from './init/scrollReveal.js';
 import { initNeonPowerOn } from './init/neonPowerOn.js';
 import { initCursorBulbs } from './init/cursorBulbs.js';
 import { initCardSpotlight } from './init/cardSpotlight.js';
 
 function boot() {
-  initAmbientDust(document);
   initScrollReveal(document);
   initNeonPowerOn(document);
   initCursorBulbs(document);

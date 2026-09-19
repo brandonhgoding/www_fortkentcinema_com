@@ -58,12 +58,49 @@
 }
 
 /* Worked example — the part that actually sells */
+/* Two worked examples — the past run and the one coming up — side by side.
+ *
+ * auto-fit rather than a fixed 1fr 1fr, because either card can be absent
+ * (SPONSORSHIP_SHOWCASE guards them separately) and a lone card should fill
+ * the row instead of sitting in a half-width column with a gap beside it.
+ *
+ * That means there is no breakpoint here: the pair stacks when the container
+ * can no longer fit two 22rem tracks, measured at about 820px of viewport.
+ * Deliberately not a media query — the cards flip on the width they actually
+ * need, and with one card they never flip at all, which a 900px query would
+ * have got wrong in both directions.
+ *
+ * align-items: stretch so the two cards are the same height whatever the
+ * copy does — these sit directly under the page title and a ragged pair is
+ * the first thing a visitor sees. */
+.sponsor-examples {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: var(--spacing-lg);
+  align-items: stretch;
+  margin-bottom: var(--spacing-md);
+}
+
 .sponsor-example {
   background: var(--color-bg-card);
   border: 1px solid var(--color-brass);
   border-radius: 4px;
   padding: var(--spacing-xl);
-  margin-bottom: var(--spacing-2xl);
+  /* The grid owns the spacing between and below now. */
+  margin-bottom: 0;
+}
+
+/* The line that is about the programme rather than either example. It sat
+ * inside the single card as a second paragraph; with two cards it belongs to
+ * neither, so it closes the pair. */
+.sponsor-examples__note {
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: var(--color-text-muted);
+  text-align: center;
+  max-width: 44ch;
+  margin: 0 auto var(--spacing-2xl);
 }
 
 .sponsor-example__eyebrow {
@@ -77,9 +114,14 @@
 
 .sponsor-example__title {
   font-family: var(--font-heading);
-  font-size: 1.75rem;
+  /* Was a flat 1.75rem, set when this was one full-width card. In a column
+   * roughly half that wide it needs to come down, but not on a phone where
+   * the card is full-width again — hence clamp rather than a media query. */
+  font-size: clamp(1.4rem, 1.15rem + 1vw, 1.75rem);
+  line-height: 1.25;
   color: var(--color-gold);
   margin-bottom: var(--spacing-md);
+  text-wrap: balance;
 }
 
 .sponsor-example__body {
@@ -88,6 +130,10 @@
   line-height: 1.7;
   color: var(--color-cream);
   margin-bottom: var(--spacing-sm);
+}
+
+.sponsor-example__body:last-child {
+  margin-bottom: 0;
 }
 
 /* Tiers */

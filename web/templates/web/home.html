@@ -8,25 +8,46 @@
 
 
 {% block content %}
+  {% comment %}
+    A plain list of sections, in the SPA's order, asserted by
+    web/tests/test_pages.py::test_full_home_composition_order.
+
+    There used to be ornament dividers between these, and a {% templatetag openblock %} section {% templatetag closeblock %}
+    tag (web/templatetags/page_sections.py) whose whole job was deciding
+    where a seam belonged — a section only got one if a live section came
+    before it, so a self-expiring CTA could not leave a stacked or orphan
+    divider behind. The dividers are gone, which left that tag doing nothing
+    a bare {% templatetag openblock %} include {% templatetag closeblock %} does not, so it went with them.
+
+    Sections are separated by their own alternating grounds now. The two
+    self-expiring CTAs below still render nothing when they are not live;
+    with no seams to place, that needs no help.
+  {% endcomment %}
+
   {# Task 5: hero + now showing #}
   {% include "partials/hero.html" %}
-  {% include "partials/ornament_divider.html" %}
+
   {# Sponsored-screening banner, top slot — self-expiring; see the partial. #}
   {% include "partials/cta_sponsored.html" %}
   {% include "partials/cta_vote.html" %}
+
   {% include "partials/now_showing.html" %}
+
   {# Task 6: open-mic CTA + coming soon (grid view; calendar deferred to Plan 4) #}
-  {% include "partials/ornament_divider.html" %}
   {% include "partials/cta_openmic.html" %}
-  {% include "partials/ornament_divider.html" %}
   {% include "partials/coming_soon.html" %}
+
   {# Task 7: gift-card CTA + blog teaser #}
-  {% include "partials/ornament_divider.html" %}
   {% include "partials/cta_giftcard.html" %}
-  {% include "partials/ornament_divider.html" %}
-  {% include "partials/cta_history.html" %}
-  {% include "partials/ornament_divider.html" %}
-  {% include "partials/cta_sponsor.html" %}
-  {% include "partials/ornament_divider.html" %}
+  {% comment %}
+    Paired, not stacked. These two are the page's most similar blocks, and
+    side by side they read as two offers rather than the site asking twice.
+    See static/css/CtaPair.css — the wrapper is the grid; the halves keep
+    their own padding and type. Stacks below 900px.
+  {% endcomment %}
+  <div class="cta-pair">
+    {% include "partials/cta_history.html" %}
+    {% include "partials/cta_sponsor.html" %}
+  </div>
   {% include "partials/blog_teaser.html" %}
 {% endblock %}

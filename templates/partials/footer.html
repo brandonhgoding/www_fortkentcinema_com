@@ -41,10 +41,25 @@
       </div>
 
       {% comment %}
-        The SPA's footer-column blocks (Quick Links, About Us links, Box
-        Office Hours) are commented out in the React source and intentionally
-        omitted here too.
+        Box Office Hours. The SPA commented this column out, and the hours sat
+        in SITE_CONFIG["hours"] rendering in exactly zero templates — a cinema
+        site that never says when it is open, against "fort kent cinema hours"
+        being the local-intent query this site should own. Looped over the
+        config rather than typed out, so this block and the
+        openingHoursSpecification in base.html read the same rows.
+
+        The SPA's other dead columns (Quick Links, About Us links) stay
+        omitted.
       {% endcomment %}
+      <div class="footer-column footer-hours">
+        <h3 class="footer-heading">Box Office Hours</h3>
+        {% for period in site_config.hours.values %}
+        <p class="footer-hours-row">
+          <span class="footer-hours-days">{{ period.days }}</span>
+          <span class="footer-hours-time">{{ period.open }} &ndash; {{ period.close }}</span>
+        </p>
+        {% endfor %}
+      </div>
     </div>
 
     <div class="footer-bottom">

@@ -143,3 +143,65 @@
   color: var(--color-on-accent);
   box-shadow: 0 0 10px var(--color-gold-glow);
 }
+
+/* PHONE — BlogCard.css had no media queries at all, because the only place
+ * these cards rendered on a phone was the teaser, and home.css hid that
+ * outright below 600px (see the note there). The card was therefore never
+ * designed for a full-width single column, only for a ~380px grid track.
+ *
+ * Two things change at full width. The 16/9 image becomes a 160px letterbox
+ * strip under a card that is now taller than it is wide, and the hover state
+ * — which on a touch screen latches on tap and stays latched — starts lifting
+ * a card that occupies most of the screen. */
+@media (max-width: 600px) {
+  /* 3/2 gives the image back some height against a full-width card without
+   * turning the card into one photograph. */
+  .blog-card-image {
+    aspect-ratio: 3/2;
+  }
+
+  /* A tap leaves :hover stuck on the card until the next tap elsewhere, so the
+   * lift and the glow read as a rendering bug rather than feedback. The card
+   * is wrapped in an <a>; :focus-visible on .blog-card-link (Blog.css) is the
+   * state that matters here. */
+  .blog-card:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: rgba(32, 57, 130, 0.12);
+  }
+
+  .blog-card:hover .blog-card-img {
+    transform: none;
+  }
+
+  .blog-card-content {
+    padding: var(--spacing-sm);
+  }
+
+  .blog-card-title {
+    font-size: 1.25rem;
+    /* Card titles run two or three lines at full width; balancing keeps the
+     * last line from being a single orphaned word. */
+    text-wrap: balance;
+  }
+
+  .blog-card-subtitle {
+    font-size: 1rem;
+  }
+
+  .blog-card-excerpt {
+    font-size: 0.95rem;
+  }
+
+  /* Decorative — the whole card is the link — but at full width a
+   * left-aligned pill under a wide block of text looks orphaned. Stretched
+   * and centred it reads as the card's own footer, and it happens to clear
+   * 44px, which matters for anyone who aims at it anyway. */
+  .blog-card-read-more {
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+  }
+}

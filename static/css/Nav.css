@@ -30,6 +30,10 @@
 .nav-logo {
   display: flex;
   align-items: center;
+  /* Never shrink against the hamburger: the lockup is artwork with a fixed
+     4.77:1 ratio, so losing width here would squash both lines rather than
+     reflow anything. If it ever does not fit, that has to be visible. */
+  flex: 0 0 auto;
 }
 
 .nav-logo img {
@@ -111,15 +115,25 @@
   outline-offset: 2px;
 }
 
-/* Hamburger button — hidden on desktop */
+/* Hamburger button — hidden on desktop.
+
+   This is the ONLY navigation control on a phone, so it gets the full
+   comfortable-touch square rather than whatever 8px of padding around three
+   24px lines happened to add up to (it was 40x32). The box is set explicitly
+   instead of with padding so the target cannot drift when the line count or
+   the gap changes; the lines stay 24px wide and are centred inside it. */
 .nav-hamburger {
   display: none;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
   gap: 5px;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
   background: none;
   border: none;
-  padding: 8px;
+  padding: 0;
   cursor: pointer;
 }
 
@@ -210,8 +224,13 @@
   width: 100%;
 }
 
+/* Inherits .nav-link's 44px min-height. As a block that only set the box
+   height and left the text sitting at the top of it, which made a 44px row
+   look like a 30px one and invited someone to "tidy up" the extra space.
+   Flex centres the label in the target it already has. */
 .nav-dropdown-link {
-  display: block;
+  display: flex;
+  align-items: center;
   width: 100%;
   padding: 0.5rem var(--spacing-sm);
   font-size: 0.9rem;
@@ -244,8 +263,16 @@
     height: 60px;
   }
 
+  /* 2.1rem (33.6px) was below the documented legibility floor for this
+     lockup: it is two stacked lines, and under ~2.5rem the CINEMA line and
+     its rule flourishes stop resolving. On a phone this is the first
+     branding a visitor sees, so it holds the floor rather than the bar.
+
+     It fits: 2.5rem tall x 4.77:1 = 191px wide, plus the 44px hamburger is
+     235px inside a 320px viewport less the container's 2x32px gutters —
+     256px available, ~21px to spare — and 40px tall inside the 60px bar. */
   .nav-logo img {
-    height: 2.1rem;
+    height: 2.5rem;
   }
 
   .nav-hamburger {

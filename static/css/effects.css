@@ -3,7 +3,6 @@
    d3 CINEMATIC EFFECTS — layered on top of the
    Art Deco theme; never modifies base styles.
    Custom properties written by effect hooks:
-     --fx-draw  0..1  divider stroke draw progress
      --fx-fade  0..1  content fade/translate progress
 ============================================ */
 
@@ -16,28 +15,6 @@
 .fx-reveal.fx-revealed {
   opacity: 1;
   transform: none;
-}
-
-.fx-divider {
-  display: block;
-  width: 220px;
-  max-width: 60%;
-  height: 28px;
-  margin: 14px auto 0;
-  overflow: visible;
-}
-
-.fx-divider path {
-  stroke: var(--color-gold);
-  fill: none;
-  stroke-width: 1.5;
-  stroke-dasharray: 1;
-  stroke-dashoffset: calc(1 - var(--fx-draw, 1));
-}
-
-.fx-divider circle {
-  fill: var(--color-gold);
-  opacity: var(--fx-draw, 1);
 }
 
 /* === Hero neon power-on === */
@@ -118,36 +95,11 @@
   opacity: 0.7;
 }
 
-/* === Ambient projector dust === */
-/* Scoped to the hero (see templates/partials/hero.html). Was fixed at
- * 100vw/100vh over every page; absolute within .hero, which sets
- * `isolation: isolate`. Below 600px the hero is display:none, so the rAF
- * loop stops entirely on phones. */
-.fx-dust {
-  position: absolute;
-  inset: 0;
-  /* A canvas is a replaced element: inset:0 alone resolves to its intrinsic
-   * 300x150 rather than stretching, so the box must be stated. The old rule
-   * got this for free from width:100vw/height:100vh. */
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 3;
-}
-
 /* === Reduced motion: final states, no movement === */
 @media (prefers-reduced-motion: reduce) {
   .fx-reveal {
     opacity: 1 !important;
     transform: none !important;
-  }
-
-  .fx-divider path {
-    stroke-dashoffset: 0 !important;
-  }
-
-  .fx-divider circle {
-    opacity: 1 !important;
   }
 
   .hero--live .hero-tagline,

@@ -1,6 +1,9 @@
 import { onScrollProgress } from '../core/scrollProgress.js';
 import { getMotionTier } from '../core/motionPrefs.js';
 
+// This used to also set --fx-draw, which drew the section dividers'
+// chevron stroke. Those dividers are gone; --fx-fade is the only
+// property anything still reads, and it drives .fx-reveal.
 const FADE_SPAN = 0.3;
 
 function reveal(node) {
@@ -13,7 +16,6 @@ function reveal(node) {
     let unsubscribe = null;
     let revealed = false;
     unsubscribe = onScrollProgress(node, (progress) => {
-      node.style.setProperty('--fx-draw', String(progress));
       node.style.setProperty('--fx-fade', String(Math.min(progress / FADE_SPAN, 1)));
       if (progress >= 1) {
         node.classList.add('fx-revealed');

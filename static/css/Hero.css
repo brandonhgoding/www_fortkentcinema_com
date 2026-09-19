@@ -125,30 +125,6 @@
   background-size: cover;
 }
 
-/* Art Deco Sunburst + Spotlight */
-.light-spill {
-  position: absolute;
-  top: 40%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 200vmax;
-  height: 200vmax;
-  background: radial-gradient(
-      ellipse 20% 25% at center,
-      rgba(210, 187, 51, 0.06) 0%,
-      transparent 100%
-    ),
-    repeating-conic-gradient(
-      from 0deg,
-      transparent 0deg 4.5deg,
-      rgba(210, 187, 51, 0.015) 4.5deg 5deg
-    );
-  -webkit-mask-image: radial-gradient(ellipse 35% 45% at center, black, transparent);
-  mask-image: radial-gradient(ellipse 35% 45% at center, black, transparent);
-  pointer-events: none;
-  z-index: 5;
-}
-
 /* Main Marquee Sign — Art Deco Double Border */
 .marquee-container {
   position: relative;
@@ -398,7 +374,17 @@
   animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.9s both;
 }
 
-/* Responsive */
+/* ============================================
+   RESPONSIVE
+
+   Everything below 600px was written for the SPA and then never rendered:
+   home.css hid .hero outright on phones, so these rules have been dead code
+   since the Django port. The gate is gone (see the note in home.css) and the
+   phone block is now the layout that the majority of this cinema's visitors
+   actually see, so it is built out properly rather than left as a font-size
+   shrink.
+============================================ */
+
 @media (max-width: 900px) {
   .marquee-title {
     font-size: 3.5rem;
@@ -415,10 +401,75 @@
   }
 }
 
+/* PHONE HERO — 320px to 600px.
+ *
+ * Three problems to solve at once, and they pull against each other:
+ *
+ *   1. The marquee is a fixed-width sign with a bulb frame hanging outside its
+ *      own box. It has to survive a 320px viewport without clipping, and the
+ *      bulbs have to stay outside the frame without leaving the screen.
+ *   2. `min-height: 100vh` + `justify-content: center` puts the two CTAs below
+ *      the fold on a phone and reproduces the desktop dead zone underneath
+ *      them. On a phone the whole island has to be one screen, buttons
+ *      included.
+ *   3. The dark ground and the marquee's neon text-shadow are the brand's one
+ *      dark moment and the only place gold is legible. Neither is negotiable,
+ *      so the savings come from geometry, not from flattening the sign.
+ */
 @media (max-width: 600px) {
+  .hero {
+    /* Content sets the height instead of the viewport. With the geometry
+     * below this lands around 60-65vh on a modern phone and stays under one
+     * screen even on a 320x568 handset, so both buttons are reachable
+     * without scrolling. The 70px is the fixed nav. */
+    min-height: 0;
+    justify-content: flex-start;
+    padding: calc(70px + var(--spacing-sm)) var(--spacing-sm) var(--spacing-lg);
+  }
+
+  /* 300px of pine silhouette under a ~520px hero is most of the island. */
+  .hero-pines {
+    height: 140px;
+  }
+
+  .marquee-container {
+    /* Fill the padded hero rather than sizing to the title. A full-bleed sign
+     * is what a marquee looks like on a phone anyway, and it makes the box
+     * width predictable so the bulb rails and the title can be sized against
+     * it. */
+    width: 100%;
+    margin-bottom: var(--spacing-md);
+  }
+
+  .marquee-outer {
+    padding: var(--spacing-sm);
+  }
+
+  /* Narrow side padding because the title needs every pixel of the 320px box;
+   * the double inset box-shadow on .marquee-outer already reads as the gap
+   * between the two frames, so the panel does not also have to hold one. */
+  .marquee-inner {
+    padding: var(--spacing-sm) var(--spacing-xs);
+  }
+
+  /* The title is the page's only <h1>. It is sized in vw so it tracks the box
+   * it has to fit inside: at 320px it settles at the 1.75rem floor and wraps
+   * to FORT KENT / CINEMA, which is how a two-line marquee reads anyway, and
+   * from roughly 545px up it fits on one line again. The ceiling stops it
+   * colliding with the 900px step. Tracking is in em for the same reason —
+   * a fixed 5px is 18% of the glyph at this size and blows the line out. */
   .marquee-title {
-    font-size: 2.2rem;
-    letter-spacing: 5px;
+    font-size: clamp(1.75rem, 8vw, 2.35rem);
+    letter-spacing: 0.12em;
+    line-height: 1.15;
+    /* Trailing letter-spacing hangs off the right of EVERY line, so centred
+     * text sits half a track too far left. Widening the box by one track to
+     * the right puts the glyphs back on the axis of the sign. (An indent
+     * would only move the first line, which is the wrong half of it.) */
+    margin-right: -0.12em;
+    /* The five-layer glow is a lot of blur to composite per frame on a phone
+     * and the outer two are invisible at this size. Keep the inner core so it
+     * still reads as neon. */
     text-shadow:
       0 0 4px var(--neon-gold-inner),
       0 0 8px var(--color-gold),
@@ -426,25 +477,102 @@
   }
 
   .marquee-subtitle {
-    font-size: 1rem;
-    letter-spacing: 3px;
+    font-size: clamp(0.72rem, 3vw, 1rem);
+    letter-spacing: 0.14em;
+    line-height: 1.6;
+    margin-right: -0.14em;
+    margin-top: var(--spacing-xs);
+    /* Without this the tagline wraps to "...PICTURE / SHOW *", stranding the
+     * closing star on a line of its own. Balancing splits it on a word break
+     * instead. Unsupported browsers ignore the declaration and get the greedy
+     * wrap they get today. */
+    text-wrap: balance;
   }
 
-  .marquee-inner {
-    padding: 20px 30px;
+  /* BULBS.
+   *
+   * The markup is fixed at 17 top, 17 bottom, 5 per side. Seventeen 14px
+   * bulbs, each carrying a 12px glow, across a 256px rail is a continuous
+   * smear rather than a row of lamps. Dropping every second bulb from the
+   * horizontal rails leaves 9, which at 320-390px works out to roughly the
+   * same bulb-to-gap ratio the sign has on a desktop — so the phone reads as
+   * the same object, not a degraded one.
+   *
+   * The surviving odd children keep animation-delays 0 / 0.2 / 0.4 ... 1.6,
+   * i.e. the same chase at double the step. No delay overrides needed. */
+  .marquee-bulbs-top .bulb:nth-child(even),
+  .marquee-bulbs-bottom .bulb:nth-child(even) {
+    display: none;
   }
 
-  .marquee-outer {
-    padding: 18px;
+  .bulb {
+    width: 9px;
+    height: 9px;
+    box-shadow:
+      0 0 4px #e8d080,
+      0 0 8px var(--color-gold-glow);
   }
 
-  .hero-cta {
-    flex-direction: column;
-    align-items: center;
+  /* Re-centre the rails on the frame edge for the smaller bulb: a 9px lamp
+   * wants a -4px offset to sit half in, half out. The old -10px was tuned for
+   * 14px and would leave the side rails hanging 10px into a 16px gutter. */
+  .marquee-bulbs-top {
+    top: -4px;
+  }
+
+  .marquee-bulbs-bottom {
+    bottom: -4px;
+  }
+
+  .marquee-bulbs-left {
+    left: -4px;
+  }
+
+  .marquee-bulbs-right {
+    right: -4px;
+  }
+
+  .marquee-bulbs-top,
+  .marquee-bulbs-bottom {
+    left: var(--spacing-sm);
+    right: var(--spacing-sm);
+  }
+
+  .marquee-bulbs-left,
+  .marquee-bulbs-right {
+    top: var(--spacing-sm);
+    bottom: var(--spacing-sm);
+  }
+
+  .hero-tagline {
+    margin-bottom: var(--spacing-sm);
   }
 
   .hero-tagline p {
-    font-size: 1.2rem;
-    padding: 0 var(--spacing-md);
+    font-size: 1.05rem;
+    line-height: 1.5;
+    /* Stops the quote ending on a one-word last line. */
+    text-wrap: balance;
+    /* The hero carries the side gutter now; this was doubling it. */
+    padding: 0;
+  }
+
+  /* Two full-width stacked targets. 44px is the floor for a touch target;
+   * the padding here lands them at ~48px. max-width keeps them from
+   * stretching into banners on a 600px handset. */
+  .hero-cta {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-sm);
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .hero-cta .btn {
+    width: 100%;
+    min-height: 44px;
+    padding: 0.625rem var(--spacing-md);
+    font-size: 1rem;
+    letter-spacing: 2px;
   }
 }
