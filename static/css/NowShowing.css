@@ -143,3 +143,12 @@
   max-width: 480px;
   margin: 0 auto;
 }
+
+/* The horizontal half of this section's padding is dropped on phones — it was
+ * stacking with .section-container's for a 4rem gutter each side. The single
+ * remaining gutter is declared in global.css. */
+@media (max-width: 600px) {
+  .now-showing {
+    padding: var(--spacing-xl) 0;
+  }
+}

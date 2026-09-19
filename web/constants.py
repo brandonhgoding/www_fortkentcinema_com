@@ -1,3 +1,6 @@
+import datetime
+from urllib.parse import quote_plus
+
 # Ported verbatim from the React SPA's src/data/siteConfig.json.
 SITE_CONFIG = {
     "cinema": {
@@ -43,6 +46,70 @@ SITE_CONFIG = {
             ],
         },
     ],
+}
+
+
+# Everything below is derived from SITE_CONFIG above, so the config stays the
+# single source of truth. SITE_CONFIG["seo"] is what templates read: it rides
+# along on the existing `site_config` context variable, which is why it lives
+# here rather than in a second context processor.
+
+_WEEK = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+]
+
+
+def _expand_days(label):
+    """"Monday - Thursday" -> ["Monday", ..., "Thursday"].
+
+    The hours blocks are written for humans ("Friday - Sunday"); schema.org
+    wants the days named one by one. Ranges wrap, so "Saturday - Monday"
+    would work too.
+    """
+    parts = [part.strip() for part in label.split("-")]
+    if len(parts) == 1:
+        return [parts[0]]
+    start, end = _WEEK.index(parts[0]), _WEEK.index(parts[-1])
+    if start <= end:
+        return _WEEK[start : end + 1]
+    return _WEEK[start:] + _WEEK[: end + 1]
+
+
+def _iso_time(label):
+    """"4:00 PM" -> "16:00". schema.org opens/closes are 24-hour ISO."""
+    return datetime.datetime.strptime(label, "%I:%M %p").strftime("%H:%M")
+
+
+OPENING_HOURS_SPECIFICATION = [
+    {
+        "dayOfWeek": _expand_days(block["days"]),
+        "opens": _iso_time(block["open"]),
+        "closes": _iso_time(block["close"]),
+    }
+    for block in SITE_CONFIG["hours"].values()
+]
+
+_ADDRESS = SITE_CONFIG["cinema"]["address"]
+_MAP_QUERY = quote_plus(
+    "{street}, {city}, {state} {zip}".format(
+        street=_ADDRESS["street"],
+        city=_ADDRESS["city"],
+        state=_ADDRESS["state"],
+        zip=_ADDRESS["zip"],
+    )
+)
+
+SITE_CONFIG["seo"] = {
+    "opening_hours": OPENING_HOURS_SPECIFICATION,
+    # hasMap on the MovieTheater. Built from the address rather than pasted,
+    # so moving the theater moves the pin.
+    "map_url": "https://www.google.com/maps/search/?api=1&query=" + _MAP_QUERY,
 }
 
 # Ported verbatim from the React SPA's src/data/membershipFaq.json.

@@ -22,8 +22,9 @@
   <span class="vote-cta__link">Cast your vote &rarr;</span>
 </a>
 {% comment %}
-  Trailing divider inside the guard, matching cta_silents_synced.html —
-  without it, removing the CTA leaves two dividers stacked together.
+  No trailing divider here any more — see cta_sponsored.html for the full
+  reasoning. Short version: home.html wraps each section in
+  {% templatetag openblock %} section {% templatetag closeblock %}, which owns the seams, so a partial no longer
+  compensates for what its neighbours might do.
 {% endcomment %}
-{% include "partials/ornament_divider.html" %}
 {% endif %}

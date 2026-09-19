@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load page_sections %}
 
 {% block title %}Fort Kent Cinema | Movies in the St. John Valley{% endblock %}
 {% block description %}Fort Kent Cinema - Your local movie theater in Fort Kent, Maine. Check showtimes, coming soon, and join our membership program.{% endblock %}
@@ -8,25 +9,35 @@
 
 
 {% block content %}
+  {% comment %}
+    Every section is wrapped in the "section" tag from
+    web/templatetags/page_sections.py, and the ornament dividers are no
+    longer written out here: a section emits one only when a live section
+    came before it. A section that renders to nothing — cta_sponsored.html
+    between sponsored runs, cta_vote.html between vote rounds, and anything
+    else that learns to expire itself later — takes its seam with it, so the
+    page cannot open with a divider, end with one, or stack two.
+
+    Order is the SPA's and is asserted by
+    web/tests/test_pages.py::test_full_home_composition_order.
+  {% endcomment %}
+
   {# Task 5: hero + now showing #}
-  {% include "partials/hero.html" %}
-  {% include "partials/ornament_divider.html" %}
+  {% section %}{% include "partials/hero.html" %}{% endsection %}
+
   {# Sponsored-screening banner, top slot — self-expiring; see the partial. #}
-  {% include "partials/cta_sponsored.html" %}
-  {% include "partials/cta_vote.html" %}
-  {% include "partials/now_showing.html" %}
+  {% section %}{% include "partials/cta_sponsored.html" %}{% endsection %}
+  {% section %}{% include "partials/cta_vote.html" %}{% endsection %}
+
+  {% section %}{% include "partials/now_showing.html" %}{% endsection %}
+
   {# Task 6: open-mic CTA + coming soon (grid view; calendar deferred to Plan 4) #}
-  {% include "partials/ornament_divider.html" %}
-  {% include "partials/cta_openmic.html" %}
-  {% include "partials/ornament_divider.html" %}
-  {% include "partials/coming_soon.html" %}
+  {% section %}{% include "partials/cta_openmic.html" %}{% endsection %}
+  {% section %}{% include "partials/coming_soon.html" %}{% endsection %}
+
   {# Task 7: gift-card CTA + blog teaser #}
-  {% include "partials/ornament_divider.html" %}
-  {% include "partials/cta_giftcard.html" %}
-  {% include "partials/ornament_divider.html" %}
-  {% include "partials/cta_history.html" %}
-  {% include "partials/ornament_divider.html" %}
-  {% include "partials/cta_sponsor.html" %}
-  {% include "partials/ornament_divider.html" %}
-  {% include "partials/blog_teaser.html" %}
+  {% section %}{% include "partials/cta_giftcard.html" %}{% endsection %}
+  {% section %}{% include "partials/cta_history.html" %}{% endsection %}
+  {% section %}{% include "partials/cta_sponsor.html" %}{% endsection %}
+  {% section %}{% include "partials/blog_teaser.html" %}{% endsection %}
 {% endblock %}

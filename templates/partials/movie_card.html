@@ -51,10 +51,15 @@
       <span class="movie-runtime">{{ movie.runtime }}</span>
     </div>
     <p class="movie-genre">{{ movie.genre }}</p>
+    {% comment %} Spans, not buttons. There is no online ticket path in this
+    project at all — Showtime carries no booking URL and the only Square link
+    on the site is the gift card — so a <button> here promised a purchase that
+    cannot happen. These are schedule chips; .showtime is styled to match.
+    {% endcomment %}
     {% for slot in movie.upcoming %}
     <div class="movie-showtimes" x-show="dates[idx] === '{{ slot.key }}'">
       {% for time in slot.times %}
-      <button class="showtime">{{ time }}</button>
+      <span class="showtime">{{ time }}</span>
       {% endfor %}
     </div>
     {% endfor %}

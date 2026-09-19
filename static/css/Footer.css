@@ -9,11 +9,45 @@
   margin: 0 auto;
 }
 
+/* Four declared columns, one actual child.
+
+   This grid was ported from the React footer, which had four blocks; three of
+   them (Quick Links, About Us, Box Office Hours) are commented out in the
+   template, so the brand block was being squeezed into 2/5 of the width and
+   the remaining 60% of the footer was empty.
+
+   auto-fit rather than a fixed count: empty repeated tracks collapse to zero
+   and the 1fr redistributes to the ones that actually have a child, so the
+   footer is correct for one column, for the two it has now (brand + hours),
+   and for a third if Quick Links is ever restored — without anyone having to
+   come back and re-count the fractions here.
+
+   The min() guards the phone case: minmax(18rem, 1fr) alone would refuse to
+   go below 288px and overflow a 320px screen. Below ~37rem of content width
+   only one track fits, so the columns stack with no media query; at 900px two
+   tracks fit; at 1400px the two children split the full width. */
 .footer-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
   gap: var(--spacing-2xl);
   margin-bottom: var(--spacing-2xl);
+  /* Columns of different lengths start at the same rule, not stretched. */
+  align-items: start;
+}
+
+/* Generic wrapper for any non-brand column (the template uses
+   .footer-column .footer-hours). min-width:0 keeps a long unbroken string
+   from forcing a grid track wider than its share. */
+.footer-column {
+  min-width: 0;
+}
+
+/* With the grid now filling the width, the brand column would run the
+   address and tagline to ~660px on a desktop. Cap the measure instead;
+   the column still occupies its half, the type just stops being a ribbon. */
+.footer-brand {
+  min-width: 0;
+  max-width: 34rem;
 }
 
 /* The brand lockup, same Rich Black artwork as the nav — the footer ground is
@@ -58,17 +92,53 @@
   outline-offset: 2px;
 }
 
+/* Two links that rendered as one sentence.
+
+   These were inline-block, the same muted grey as the address directly above
+   them, with no underline, no separator and no margin between them, so
+   "Our History" and "Sponsor a Film" ran together as the single grey string
+   "Our History Sponsor a Film" — neither one reading as a link at all.
+
+   That matters more than it looks: footer.html records that both are
+   deliberate internal-linking fixes. /history/ and /sponsor/ were each
+   reachable from exactly one place sitewide (the nav's "More" dropdown), and
+   a page nothing links to is a page Google will not index. A link nobody can
+   see is worth about as much to a human.
+
+   The markup cannot change and no separator element can be added, so the
+   separation is done with the box: each link is its own flex line, sized to
+   its text (width:fit-content, so the hit area does not silently span the
+   whole column) and 44px tall, which both separates the two from each other
+   and gives the phone a real tap target. The accent colour and the underline
+   are what distinguish them from the address copy. */
 .footer-about-link {
-  display: inline-block;
-  margin-top: var(--spacing-sm);
-  color: var(--color-cream-muted);
-  text-decoration: none;
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 44px;
+  color: var(--color-gold);
   font-family: var(--font-body);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
   transition: color var(--transition-fast);
 }
 
+/* The first link needs to clear the address block; the second only needs to
+   clear the first, which its own 44px box already does. */
+.footer-address + .footer-about-link {
+  margin-top: var(--spacing-md);
+}
+
 .footer-about-link:hover {
-  color: var(--color-gold);
+  color: var(--color-gold-warm);
+}
+
+/* These ARE interactive, unlike the schedule chips — the ring stays. */
+.footer-about-link:focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 2px;
 }
 
 .footer-heading {
@@ -103,11 +173,50 @@
   outline-offset: 2px;
 }
 
+/* Box office hours — the second real column.
+
+   .footer-hours was written for the React block that never shipped and sat
+   unused, as did .footer-heading above. Both are now what the template
+   emits, so this is the same class doing the job it was written for, with
+   the row parts it needs added.
+
+   Capped measure: the column is half the footer on a desktop, and a days /
+   time pair set with space-between across ~660px would put a canyon between
+   "Fri – Sun" and its time. The rows stay a readable table. */
 .footer-hours {
   color: var(--color-cream-muted);
   font-size: 1rem;
   font-weight: 600;
   line-height: 1.8;
+  max-width: 22rem;
+}
+
+.footer-hours-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 var(--spacing-sm);
+  padding: 0.35rem 0;
+  /* Same hairline as .footer-bottom, so the footer has one rule weight. */
+  border-bottom: 1px solid rgba(32, 57, 130, 0.15);
+}
+
+.footer-hours-row:last-child {
+  border-bottom: none;
+}
+
+.footer-hours-days {
+  color: var(--color-cream-muted);
+}
+
+/* The time is the answer to the question the block is asked, so it takes the
+   text colour and the weight; the days are the label. Tabular figures keep
+   the times aligned down the right edge of the column. */
+.footer-hours-time {
+  color: var(--color-cream);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .footer-bottom {
@@ -156,19 +265,32 @@
   outline-offset: 2px;
 }
 
+/* The 900px column count is no longer declared here: auto-fit already drops
+   to two tracks at this width and to one below ~37rem. What is left is the
+   gutter, which is the part the track count cannot decide — 4rem between two
+   columns reads as generous at 1400px and as a gap at 900px. */
 @media (max-width: 900px) {
   .footer-grid {
-    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-xl);
   }
 }
 
 @media (max-width: 600px) {
+  /* Stacked, the gap is vertical space between two blocks of text rather
+     than a gutter, and 4rem of it reads as a missing section. */
   .footer-grid {
-    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
   }
 
   .footer-logo img {
     height: 2.5rem;
+  }
+
+  /* Full width at phone size: the column is the screen, so the measure cap
+     is doing nothing but risking a ragged right edge. */
+  .footer-hours {
+    max-width: none;
   }
 
   .footer-bottom {

@@ -69,8 +69,71 @@
   color: var(--color-accent);
 }
 
+/* Tablet: the auto-fit grid holds two 320px columns down to about 700px, then
+ * would try to keep them at 300px each. Collapse to one column before the
+ * cards get narrower than their own type. */
 @media (max-width: 768px) {
-  .blog-grid {
+  .blog-grid,
+  .blog-grid-preview {
     grid-template-columns: 1fr;
+  }
+}
+
+/* PHONE — the teaser was hidden outright below 600px by home.css (see the
+ * note there), which took /blog/ and both post links off the mobile page
+ * entirely. It is back, as a single full-width column.
+ *
+ * Note the grid rules above have to name .blog-grid-preview as well, not just
+ * .blog-grid. Both selectors are (0,1,0), so `minmax(300px, 1fr)` on
+ * .blog-grid-preview beats a bare `.blog-grid { 1fr }` written earlier in the
+ * file, and a 300px minimum track inside a ~256px container is exactly the
+ * horizontal overflow this section is not allowed to have. */
+@media (max-width: 600px) {
+  .blog {
+    /* The gutter moves to .section-container below so there is only one of
+     * it; .blog's own var(--spacing-lg) was stacking with it for 4rem of
+     * padding on a 320px screen. */
+    padding: var(--spacing-xl) 0;
+  }
+
+  /* No .blog .section-container gutter here any more: global.css now sets the
+   * single phone gutter for every .section-container, and this was an
+   * identical duplicate of it. .blog's own padding above still zeroes the
+   * horizontal half, which is what stops the two stacking. */
+
+  .blog .section-header {
+    margin-bottom: var(--spacing-lg);
+  }
+
+  /* No .section-title override here. It used to need one — 3rem with 8px of
+   * fixed tracking plus 160px of flanking hairlines is about 330px of heading
+   * for the word "BLOG", which clipped inside this container. global.css now
+   * owns that: the type scale drops --type-title to 2rem at this breakpoint
+   * and hides the hairlines, and the fx-divider under the subtitle carries the
+   * ornament instead. A local copy would only fight it. */
+
+  .blog-grid,
+  .blog-grid-preview {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .blog-view-all {
+    margin-top: var(--spacing-md);
+  }
+
+  /* An inline-block link with 3rem of side padding is a small target in the
+   * middle of a wide empty row. Make it the block-level button it already
+   * looks like, at the 44px touch floor. */
+  .blog-view-all-link {
+    display: block;
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
+    min-height: 44px;
+    padding: 0.75rem var(--spacing-md);
+    font-size: 1rem;
+    letter-spacing: 2px;
   }
 }

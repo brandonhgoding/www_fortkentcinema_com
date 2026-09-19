@@ -71,7 +71,19 @@
   cursor: pointer;
 }
 
-/* "Free for Members" banner ribbon */
+/* "Free for Members" banner ribbon.
+ *
+ * The ink is --color-on-accent, NOT --color-cream. Both names survive from the
+ * dark-ground design, where --color-cream was a near-white that happened to
+ * work on any fill. After the colour flip it aliases --color-text (#191b1b),
+ * so this badge was rendering near-black on Brand Blue at 1.63:1 — the label
+ * that advertises the membership program, effectively unreadable. With
+ * --color-on-accent it is 10.66:1.
+ *
+ * .coming-free-banner in ComingSoon.css carried the identical fossil and was
+ * fixed in the same pass. Text sitting ON an accent fill always takes
+ * --color-on-accent; --color-cream is body ink on a light ground.
+ */
 .movie-free-banner {
   position: absolute;
   top: 10px;
@@ -79,7 +91,7 @@
   z-index: 3;
   padding: 0.3rem 0.75rem;
   background: var(--color-accent);
-  color: var(--color-cream);
+  color: var(--color-on-accent);
   font-family: var(--font-condensed);
   font-size: 0.85rem;
   letter-spacing: 1px;
@@ -213,26 +225,52 @@
   padding-top: var(--spacing-sm);
 }
 
+/* Showtimes are INFORMATION, not controls.
+
+   These were <button class="showtime"> carrying cursor:pointer, a hover fill
+   and a :focus-visible ring — three separate promises that tapping one buys a
+   ticket. There is no online ticketing path anywhere in this project: no
+   ticket URL on the Showtime model, no booking link in any template, no JS
+   bound to .showtime, and the only Square link on the site is the gift card.
+   Tickets are sold at the door. The markup is now a <span>, and the
+   interactive affordances are deliberately gone with it.
+
+   Do NOT restore cursor:pointer, :hover or :focus-visible here. The hover
+   fill was a false affordance, not decoration, and a <span> is not focusable
+   so the ring could never have shown for a keyboard user anyway. If online
+   sales ever land, this goes back to a <button> and the states come back
+   with it — together, not one at a time.
+
+   What stays is the chip. It is doing real typographic work: it groups the
+   times for a day and separates one from the next. The old chip measured
+   88x33 at 390px, which read as a cramped button; this is a 40px-tall label
+   sized to be scanned at arm's length without crowding its neighbours.
+
+   Styled here but used by BOTH movie_card.html and movie_schedule_card.html.
+   MovieScheduleCard.css deliberately carries no .showtime override, so this
+   rule is the whole story for both. */
 .showtime {
+  /* A <span> is inline by default — without this the vertical padding would
+     not affect layout and the chip would collapse to a line of text. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0.35rem 0.85rem;
   font-family: var(--font-body);
-  font-size: 0.9rem;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
   letter-spacing: 1px;
-  padding: 0.4rem 0.8rem;
+  /* Times wrap onto two or three rows on a phone; tabular figures keep the
+     digits the same width so the rows read as a column of times. */
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
   background: rgba(32, 57, 130, 0.08);
-  border: 1px solid var(--color-gold);
+  /* Muted rule rather than the full accent: a solid blue border plus blue
+     text is the site's link signature, which is what has to stop being
+     said here. The ink is body text colour for the same reason. */
+  border: 1px solid var(--color-accent-dim);
   border-radius: 3px;
-  color: var(--color-gold);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.showtime:hover {
-  background: var(--color-gold);
-  color: var(--color-on-accent);
-  box-shadow: 0 0 10px var(--color-gold-glow);
-}
-
-.showtime:focus-visible {
-  outline: 3px solid var(--color-gold);
-  outline-offset: 2px;
+  color: var(--color-text);
 }
