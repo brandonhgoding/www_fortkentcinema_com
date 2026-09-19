@@ -496,42 +496,7 @@ button {
 /* ============================================
    ORNAMENTAL DIVIDERS — Art Deco Geometric
 ============================================ */
-.ornament-divider {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 2rem 0;
-}
 
-.ornament-line {
-  height: 1px;
-  width: 200px;
-  background: linear-gradient(90deg, transparent, var(--color-gold), transparent);
-}
-
-.ornament-diamond {
-  width: 2px;
-  height: 18px;
-  background: var(--color-gold);
-  transform: none;
-  flex-shrink: 0;
-  box-shadow: 0 0 4px var(--neon-gold-far);
-}
-
-.ornament-star {
-  color: var(--color-gold);
-  font-size: 18px;
-  flex-shrink: 0;
-  text-shadow: 0 0 6px var(--neon-gold-outer);
-  letter-spacing: 2px;
-}
-
-@media (max-width: 600px) {
-  .ornament-line {
-    width: 60px;
-  }
-}
 
 /* ============================================
    SKIP LINK

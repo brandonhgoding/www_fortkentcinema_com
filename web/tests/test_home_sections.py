@@ -1,4 +1,4 @@
-"""Home page structure: dividers, showtime chips, hours and empty states.
+"""Home page structure: section order, showtime chips, hours, empty states.
 
 The audit found four things wrong on the page that carries ~99% of this
 site's search clicks:
@@ -9,6 +9,12 @@ site's search clicks:
     ticket path in the project at all;
   * SITE_CONFIG["hours"] rendered in zero templates;
   * empty states that were a flat sentence or a blank void.
+
+The dividers were then removed outright rather than placed correctly, and
+the {% section %} tag went with them — with no seam to emit it did nothing
+a bare {% include %} does not. Sections are separated by their alternating
+grounds. What survives here is the ordering guarantee and a check that the
+ornament does not come back.
 """
 
 import datetime
@@ -16,14 +22,12 @@ import json
 import re
 from unittest import mock
 
-from django.template import Context, Template
 from django.test import TestCase
 from django.urls import reverse
 
 from web.constants import SITE_CONFIG
 
 SECTION_MARKERS = (
-    "ornament-divider",
     "hero",
     "sponsored-cta",
     "vote-cta",
@@ -42,7 +46,7 @@ def main_content(html):
 
 
 def section_sequence(html):
-    """The order the page's top-level sections and dividers appear in."""
+    """The order the page's top-level sections appear in."""
     pattern = r'class="(%s)"' % "|".join(SECTION_MARKERS)
     return [m.group(1) for m in re.finditer(pattern, main_content(html))]
 
@@ -63,90 +67,40 @@ def movie(**over):
     return base
 
 
-class SectionTagTests(TestCase):
-    """web/templatetags/page_sections.py in isolation."""
-
-    def render(self, body, **ctx):
-        return Template("{% load page_sections %}" + body).render(Context(ctx))
-
-    def test_single_section_gets_no_divider(self):
-        out = self.render("{% section %}A{% endsection %}")
-        self.assertNotIn("ornament-divider", out)
-        self.assertIn("A", out)
-
-    def test_divider_sits_between_two_live_sections(self):
-        out = self.render(
-            "{% section %}A{% endsection %}{% section %}B{% endsection %}"
-        )
-        self.assertEqual(out.count("ornament-divider"), 1)
-        self.assertLess(out.index("A"), out.index("ornament-divider"))
-        self.assertLess(out.index("ornament-divider"), out.index("B"))
-
-    def test_empty_section_contributes_no_divider(self):
-        out = self.render(
-            "{% section %}A{% endsection %}"
-            "{% section %}{% if on %}X{% endif %}{% endsection %}"
-            "{% section %}B{% endsection %}",
-            on=False,
-        )
-        self.assertEqual(out.count("ornament-divider"), 1)
-        self.assertNotIn("X", out)
-
-    def test_page_never_opens_with_a_divider(self):
-        out = self.render(
-            "{% section %}{% if on %}X{% endif %}{% endsection %}"
-            "{% section %}B{% endsection %}",
-            on=False,
-        )
-        self.assertNotIn("ornament-divider", out)
-
-    def test_page_never_ends_with_a_divider(self):
-        out = self.render(
-            "{% section %}A{% endsection %}"
-            "{% section %}{% if on %}X{% endif %}{% endsection %}",
-            on=False,
-        )
-        self.assertNotIn("ornament-divider", out)
-
-    def test_a_sections_own_trailing_divider_is_absorbed(self):
-        """cta_sponsored.html and cta_vote.html each tuck a trailing divider
-        inside their own {% if %}. That workaround stays where it is — this
-        tag has to tolerate it without doubling the seam."""
-        out = self.render(
-            "{% section %}A{% include 'partials/ornament_divider.html' %}"
-            "{% endsection %}{% section %}B{% endsection %}"
-        )
-        self.assertEqual(out.count("ornament-divider"), 1)
-
-
-class HomeDividerTests(TestCase):
-    """The rendered page, with and without the two self-expiring CTAs."""
+class SectionCompositionTests(TestCase):
+    """The page is a plain list of sections now."""
 
     def home(self):
         return self.client.get(reverse("home")).content.decode()
 
-    def assert_well_formed(self, seq):
-        self.assertTrue(seq, "no sections rendered")
-        self.assertNotEqual(seq[0], "ornament-divider", "page opens with a divider")
-        self.assertNotEqual(seq[-1], "ornament-divider", "page ends with a divider")
-        for first, second in zip(seq, seq[1:]):
-            self.assertFalse(
-                first == second == "ornament-divider",
-                "two dividers stacked with nothing between them: %s" % seq,
-            )
+    @mock.patch("web.views.get_coming_soon", return_value=[])
+    @mock.patch("web.views.get_now_showing", return_value=[])
+    def test_ornament_dividers_are_gone(self, _ns, _cs):
+        """Removed in markup (the partial is deleted), in CSS
+        (.ornament-divider and friends) and in the template tag that placed
+        them. This asserts none of the three comes back alone."""
+        html = self.home()
+        self.assertNotIn("ornament-divider", html)
+        self.assertNotIn("ornament-line", html)
+        self.assertNotIn("ornament-star", html)
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_now_showing", return_value=[])
-    def test_dividers_separate_live_sections_only(self, _ns, _cs):
+    def test_sections_appear_once_each_in_order(self, _ns, _cs):
         seq = section_sequence(self.home())
-        self.assert_well_formed(seq)
-        dividers = seq.count("ornament-divider")
-        self.assertEqual(dividers, len(seq) - dividers - 1)
+        self.assertEqual(seq, sorted(set(seq), key=seq.index),
+                         "a section rendered twice: %s" % seq)
+        self.assertEqual(seq[0], "hero")
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_now_showing", return_value=[])
-    def test_still_well_formed_with_both_self_expiring_ctas_live(self, _ns, _cs):
-        """Both CTAs carry their own trailing divider. Neither may double up."""
+    def test_self_expiring_ctas_appear_only_when_live(self, _ns, _cs):
+        """cta_sponsored and cta_vote render nothing between runs/rounds.
+        With no seams to place, that needs no coordination — but they still
+        have to actually disappear."""
+        self.assertNotIn("sponsored-cta", section_sequence(self.home()))
+        self.assertNotIn("vote-cta", section_sequence(self.home()))
+
         banner = {
             "url": "/movies/dune/",
             "eyebrow": "",
@@ -163,16 +117,7 @@ class HomeDividerTests(TestCase):
             seq = section_sequence(self.home())
         self.assertIn("sponsored-cta", seq)
         self.assertIn("vote-cta", seq)
-        self.assert_well_formed(seq)
-
-    @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing", return_value=[])
-    def test_each_live_cta_adds_exactly_one_divider(self, _ns, _cs):
-        plain = self.home().count("ornament-divider")
-        poll = {"title": "Pick the Sunday matinee", "options": {"count": 3}}
-        with mock.patch("web.views.vote_service.current_poll", return_value=poll):
-            with_vote = self.home().count("ornament-divider")
-        self.assertEqual(with_vote, plain + 1)
+        self.assertEqual(seq[0], "hero")
 
 
 class ShowtimeChipTests(TestCase):

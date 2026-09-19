@@ -186,17 +186,21 @@ class SponsoredScreeningBannerTests(SponsoredScreeningFixture):
         html = self.home()
         self.assertLess(html.index("sponsored-cta"), html.index('id="now-showing"'))
 
-    def test_no_orphan_divider_when_the_banner_is_absent(self):
-        """The trailing divider sits inside the same guard, so the banner and
-        exactly one divider leave together."""
+    def test_the_banner_leaves_nothing_behind_when_absent(self):
+        """This used to assert that the banner and exactly one ornament
+        divider left together, because the partial carried a trailing
+        divider inside its own guard. The dividers are gone sitewide, so
+        what matters now is simply that no fragment of the banner survives
+        the booking it advertised."""
         self.book()
-        with_banner = self.home()
+        self.assertIn("sponsored-cta", self.home())
         Engagement.objects.all().delete()
         without = self.home()
-        self.assertEqual(
-            with_banner.count("ornament-divider") - 1,
-            without.count("ornament-divider"),
-        )
+        self.assertNotIn("sponsored-cta", without)
+        # Not the sponsor's name: "A.H. Custom Carpentry" is also permanent
+        # copy in cta_sponsor.html, the marketing block further down the page.
+        # The banner's own link text is the thing only the banner renders.
+        self.assertNotIn("Showtimes &amp; trailer", without)
 
     def test_banner_is_not_hidden_on_phones(self):
         """static/css/home.css hides every other homepage CTA below 600px. A

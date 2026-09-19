@@ -218,7 +218,6 @@ class HomeIntegrationTests(TestCase):
             'class="hero"', 'id="now-showing"', 'id="coming-soon"',
         )]
         self.assertEqual(order, sorted(order))
-        self.assertIn("ornament", html)          # dividers present
         self.assertIn('class="skip-link"', html)  # base chrome intact
 
 
