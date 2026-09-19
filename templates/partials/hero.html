@@ -3,14 +3,6 @@
   <div class="hero-background"></div>
   <div class="hero-stars"></div>
   <div class="hero-pines"></div>
-  <div class="light-spill"></div>
-  {% comment %}
-  Scoped to the hero rather than fixed over the whole page. The init hook
-  queries [data-ambient-dust] wherever it sits, so moving the element is
-  enough; .hero is position:relative and clips it with overflow:hidden.
-  {% endcomment %}
-  <canvas class="fx-dust" data-ambient-dust aria-hidden="true"></canvas>
-
   {% comment %}Main Marquee Sign{% endcomment %}
   <div class="marquee-container">
     <div class="marquee-outer">
