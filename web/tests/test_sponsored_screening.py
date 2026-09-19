@@ -197,9 +197,11 @@ class SponsoredScreeningBannerTests(SponsoredScreeningFixture):
         Engagement.objects.all().delete()
         without = self.home()
         self.assertNotIn("sponsored-cta", without)
-        # Not the sponsor's name: "A.H. Custom Carpentry" is also permanent
-        # copy in cta_sponsor.html, the marketing block further down the page.
-        # The banner's own link text is the thing only the banner renders.
+        # The banner's own link text, not the sponsor's name. That name used
+        # to be permanent copy in cta_sponsor.html further down the page, so
+        # asserting on it proved nothing; the teaser has since been
+        # generalised and no longer names anyone, but the link text remains
+        # the more precise probe — it belongs to the banner alone.
         self.assertNotIn("Showtimes &amp; trailer", without)
 
     def test_banner_is_not_hidden_on_phones(self):

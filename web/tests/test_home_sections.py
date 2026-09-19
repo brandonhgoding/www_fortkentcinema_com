@@ -25,7 +25,7 @@ from unittest import mock
 from django.test import TestCase
 from django.urls import reverse
 
-from web.constants import SITE_CONFIG
+from web.constants import SITE_CONFIG, SPONSORSHIP_TIERS
 
 SECTION_MARKERS = (
     "hero",
@@ -288,3 +288,60 @@ class EmptyStateTests(TestCase):
         html = self.client.get(reverse("home")).content.decode()
         self.assertNotIn("no-showtimes", html)
         self.assertNotIn("coming-empty", html)
+
+
+class SponsorCtaCopyTests(TestCase):
+    """The homepage sponsor CTA has to stay true with nobody maintaining it."""
+
+    def home(self):
+        return self.client.get(reverse("home")).content.decode()
+
+    def body(self):
+        html = self.home()
+        start = html.index('class="sponsor-cta__body"')
+        return html[start:html.index("</p>", start)]
+
+    def test_it_names_no_sponsor_and_no_film(self):
+        """It used to open with a worked example — "A.H. Custom Carpentry
+        covered the cost of bringing The Wild Robot to Fort Kent". That is a
+        real, approved sponsorship and it still leads /sponsor/, which is
+        where a case study belongs.
+
+        Here it was written in the past tense about one finished booking, so
+        it went stale the moment that run ended and only a human remembering
+        to edit the home page could fix it. The copy is now the presenting
+        tier itself, which is true of whoever signs next."""
+        body = self.body()
+        self.assertNotIn("A.H. Custom Carpentry", body)
+        self.assertNotIn("Wild Robot", body)
+
+    def test_the_sponsor_page_keeps_its_named_example(self):
+        """Generalising the teaser must not have touched the case study."""
+        html = self.client.get(reverse("sponsor")).content.decode()
+        self.assertIn("A.H. Custom Carpentry", html)
+        self.assertIn("The Wild Robot", html)
+
+    def test_the_price_is_the_cheapest_tier(self):
+        cheapest = min(t["price"] for t in SPONSORSHIP_TIERS)
+        self.assertEqual(cheapest, 299)  # guards the fixture, not the render
+        self.assertIn("From $%d." % cheapest, self.body())
+
+    def test_the_price_tracks_the_tiers_rather_than_being_typed(self):
+        """Repricing the cheapest tier has to move the home page with it."""
+        repriced = [dict(t) for t in SPONSORSHIP_TIERS]
+        repriced[0] = {**repriced[0], "price": 349}
+        with mock.patch("web.views.SPONSORSHIP_TIERS", repriced):
+            body = self.body()
+        self.assertIn("From $349.", body)
+        self.assertNotIn("$299", body)
+
+    def test_every_promise_maps_to_the_presenting_tier(self):
+        """Each clause in the body is an entry in SPONSORSHIP_TIERS[0].
+        If a perk is dropped from the tier, this copy is now overselling."""
+        includes = " ".join(SPONSORSHIP_TIERS[0]["includes"]).lower()
+        for perk in ("marquee", "on screen before the film", "posts"):
+            self.assertIn(perk, includes)
+        body = self.body().lower()
+        self.assertIn("marquee", body)
+        self.assertIn("before the lights go down", body)
+        self.assertIn("post", body)
