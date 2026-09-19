@@ -10,6 +10,7 @@
       <p class="subtitle">{{ active_count }} active member{{ active_count|pluralize }}. {{ this_month_label }}: {{ free_given_this_month }} free admission{{ free_given_this_month|pluralize }} given.</p>
     </div>
     <div class="actions">
+      <a class="actionButton" href="{% url 'dashboard:terms' %}">Terms sold</a>
       <a class="actionButton" href="{% url 'dashboard:members_export' %}?q={{ q|urlencode }}&status={{ selected_status|urlencode }}">Export CSV</a>
       <button class="primaryButton" hx-get="{% url 'dashboard:member_create' %}"
               hx-target="#drawer-content" @click="$store.drawer.show('New Member')">+ New Member</button>

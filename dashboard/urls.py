@@ -1,6 +1,14 @@
 from django.urls import path
 
-from . import inquiry_views, member_views, poll_views, subscriber_views, views
+from . import (
+    inquiry_views,
+    member_views,
+    poll_views,
+    subscriber_views,
+    term_views,
+    tier_views,
+    views,
+)
 
 app_name = "dashboard"
 
@@ -94,6 +102,12 @@ urlpatterns = [
         member_views.TermCreateView.as_view(),
         name="term_create",
     ),
+    path("terms", term_views.TermLedgerView.as_view(), name="terms"),
+    path(
+        "terms/export.csv",
+        term_views.TermExportView.as_view(),
+        name="terms_export",
+    ),
     path("terms/<int:pk>/edit", member_views.TermEditView.as_view(), name="term_edit"),
     path(
         "terms/<int:pk>/delete",
@@ -109,6 +123,38 @@ urlpatterns = [
         "free-admissions/<int:pk>/delete",
         member_views.FreeAdmissionDeleteView.as_view(),
         name="free_admission_delete",
+    ),
+    path("memberships", tier_views.TierListView.as_view(), name="tiers"),
+    path("memberships/new", tier_views.TierCreateView.as_view(), name="tier_create"),
+    path(
+        "memberships/<int:pk>/edit",
+        tier_views.TierEditView.as_view(),
+        name="tier_edit",
+    ),
+    path(
+        "memberships/<int:pk>/listing",
+        tier_views.TierListingView.as_view(),
+        name="tier_listing",
+    ),
+    path(
+        "memberships/<int:pk>/delete",
+        tier_views.TierDeleteView.as_view(),
+        name="tier_delete",
+    ),
+    path(
+        "memberships/benefits/new",
+        tier_views.BenefitCreateView.as_view(),
+        name="benefit_create",
+    ),
+    path(
+        "memberships/benefits/<int:pk>/edit",
+        tier_views.BenefitEditView.as_view(),
+        name="benefit_edit",
+    ),
+    path(
+        "memberships/benefits/<int:pk>/delete",
+        tier_views.BenefitDeleteView.as_view(),
+        name="benefit_delete",
     ),
     path("inquiries", inquiry_views.InquiryListView.as_view(), name="inquiries"),
     path(

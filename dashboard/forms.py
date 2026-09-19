@@ -1,5 +1,10 @@
 from audience.dates import add_months
-from audience.models import Member, MembershipTerm, MembershipTier
+from audience.models import (
+    Member,
+    MembershipBenefit,
+    MembershipTerm,
+    MembershipTier,
+)
 from cinema.models import Engagement, Poll, Screen
 from django import forms
 from django.db.models import Q
@@ -167,3 +172,91 @@ class MembershipTermForm(forms.ModelForm):
         if started_on and expires_on and expires_on < started_on:
             self.add_error("expires_on", "Expiry cannot be before the start date.")
         return cleaned
+
+
+class MembershipTierForm(forms.ModelForm):
+    benefits = forms.ModelMultipleChoiceField(
+        queryset=MembershipBenefit.objects.all(),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        help_text="Ticked perks are listed on the membership page, in "
+        "benefit sort order.",
+    )
+
+    class Meta:
+        model = MembershipTier
+        fields = [
+            "name", "slug", "eyebrow", "price", "duration_months",
+            "free_admissions_per_month", "checkout_url", "benefits",
+            "featured", "is_family_tier", "show_on_membership_page",
+            "sort_order", "description",
+        ]
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "input"}),
+            "slug": forms.TextInput(
+                attrs={"class": "input", "placeholder": "e.g. cinema-supporter"}
+            ),
+            "eyebrow": forms.TextInput(
+                attrs={"class": "input", "placeholder": "e.g. Seniors 65+"}
+            ),
+            "price": forms.NumberInput(
+                attrs={"class": "input", "min": "0", "step": "1"}
+            ),
+            "duration_months": forms.NumberInput(
+                attrs={"class": "input", "min": "1", "step": "1"}
+            ),
+            "free_admissions_per_month": forms.NumberInput(
+                attrs={"class": "input", "min": "0", "step": "1"}
+            ),
+            "checkout_url": forms.URLInput(
+                attrs={"class": "input", "placeholder": "https://square.link/..."}
+            ),
+            "sort_order": forms.NumberInput(attrs={"class": "input", "step": "1"}),
+            "description": forms.Textarea(attrs={"class": "input", "rows": 3}),
+        }
+        labels = {
+            "price": "Price (whole dollars)",
+            "duration_months": "Length (months)",
+            "free_admissions_per_month": "Free admissions per month",
+            "checkout_url": "Square payment link",
+            "featured": "Show the 'Best Value' ribbon",
+            "is_family_tier": "Show the 'For Families' ribbon",
+            "show_on_membership_page": "List on the public membership page",
+            "description": "Internal notes (not shown on the website)",
+        }
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        # The slug is load-bearing outside this database — Square redirects
+        # to /thanks?tier=<slug> and the Join button's GA4 tracking carries
+        # it — so editing it after creation would break revenue attribution
+        # silently, with the page still rendering fine. Same rule the admin
+        # enforces (audience/admin.py), for the same reason.
+        if self.instance.pk:
+            self.fields["slug"].disabled = True
+            self.fields["slug"].help_text = (
+                "Fixed after creation: Square and GA4 both key off it."
+            )
+
+    def clean_slug(self) -> str:
+        # A disabled field falls back to the initial value, so an edit can
+        # never change it even if the POST carries a different slug.
+        return self.instance.slug if self.instance.pk else self.cleaned_data["slug"]
+
+
+class MembershipBenefitForm(forms.ModelForm):
+    class Meta:
+        model = MembershipBenefit
+        fields = ["name", "description", "sort_order"]
+        widgets = {
+            "name": forms.TextInput(
+                attrs={"class": "input", "placeholder": "e.g. $4 off evening tickets"}
+            ),
+            "description": forms.Textarea(attrs={"class": "input", "rows": 2}),
+            "sort_order": forms.NumberInput(attrs={"class": "input", "step": "1"}),
+        }
+        labels = {
+            "name": "Perk, worded as it should read on the membership page",
+            "description": "Internal notes (not shown on the website)",
+            "sort_order": "Sort order (variants of the same perk share a value)",
+        }

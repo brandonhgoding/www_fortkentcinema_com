@@ -282,3 +282,152 @@ class TermFormTierChoicesTests(TestCase):
         })
         self.assertTrue(form.is_valid(), form.errors)
         self.assertEqual(form.cleaned_data["price_paid"], 120)
+
+
+class RenewPrefillTests(TestCase):
+    """The Renew button opens the same form as Add Term, pre-answered."""
+
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+        self.member = make_member()
+
+    def renew_form(self):
+        from dashboard.forms import MembershipTermForm  # noqa: F401
+
+        return self.client.get(
+            reverse("dashboard:term_create", args=[self.member.pk]), {"renew": "1"}
+        ).content.decode()
+
+    def test_prefills_the_tier_and_a_continuing_start_date(self) -> None:
+        MembershipTerm.objects.create(
+            member=self.member, tier=a_tier("cinema-supporter"),
+            started_on=datetime.date(2026, 1, 1),
+            expires_on=datetime.date(2026, 12, 31),
+            price_paid=Decimal("120.00"),
+        )
+        html = self.renew_form()
+        self.assertIn('value="2027-01-01"', html)
+        self.assertIn(
+            f'value="{a_tier("cinema-supporter").pk}" selected', html
+        )
+
+    def test_expiry_and_price_are_left_blank_to_refill_from_the_tier(self) -> None:
+        """A renewal must pick up a price rise since the last term."""
+        MembershipTerm.objects.create(
+            member=self.member, tier=a_tier("individual"),
+            started_on=datetime.date(2026, 1, 1),
+            expires_on=datetime.date(2026, 12, 31),
+            price_paid=Decimal("45.00"),
+        )
+        html = self.renew_form()
+        self.assertNotIn("45.00", html)
+        self.assertNotIn('value="2026-12-31"', html)
+
+    def test_add_term_without_the_flag_still_opens_blank(self) -> None:
+        MembershipTerm.objects.create(
+            member=self.member, tier=a_tier("individual"),
+            started_on=datetime.date(2026, 1, 1),
+            expires_on=datetime.date(2026, 12, 31),
+            price_paid=Decimal("60.00"),
+        )
+        html = self.client.get(
+            reverse("dashboard:term_create", args=[self.member.pk])
+        ).content.decode()
+        self.assertNotIn('value="2027-01-01"', html)
+
+    def test_renewing_a_lapsed_member_starts_today(self) -> None:
+        MembershipTerm.objects.create(
+            member=self.member, tier=a_tier("individual"),
+            started_on=datetime.date(2020, 1, 1),
+            expires_on=datetime.date(2020, 12, 31),
+            price_paid=Decimal("60.00"),
+        )
+        html = self.renew_form()
+        self.assertIn(f'value="{timezone.localdate().isoformat()}"', html)
+
+    def test_a_member_with_no_terms_gets_a_blank_form(self) -> None:
+        resp = self.client.get(
+            reverse("dashboard:term_create", args=[self.member.pk]), {"renew": "1"}
+        )
+        self.assertEqual(resp.status_code, 200)
+
+    def test_a_retired_tier_is_not_prefilled(self) -> None:
+        """It is not in the dropdown for a new term, so seeding it would
+        render a select with nothing chosen and lose the intent silently."""
+        tier = a_tier("family-plus")
+        MembershipTerm.objects.create(
+            member=self.member, tier=tier,
+            started_on=datetime.date(2026, 1, 1),
+            expires_on=datetime.date(2026, 12, 31),
+            price_paid=Decimal("250.00"),
+        )
+        tier.show_on_membership_page = False
+        tier.save(update_fields=["show_on_membership_page"])
+
+        html = self.renew_form()
+        self.assertIn('value="2027-01-01"', html)
+        self.assertNotIn(f'value="{tier.pk}" selected', html)
+
+    def test_the_renew_button_is_hidden_for_a_member_with_no_terms(self) -> None:
+        html = self.client.get(
+            reverse("dashboard:member_detail", args=[self.member.pk])
+        ).content.decode()
+        self.assertNotIn("renew=1", html)
+
+
+class OverlapFlagTests(TestCase):
+    """Double-entered renewals look exactly like early ones to the model,
+    so the roster flags the pair instead of refusing the save."""
+
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+        self.member = make_member()
+
+    def add_term(self, start, end):
+        return MembershipTerm.objects.create(
+            member=self.member, tier=a_tier("individual"),
+            started_on=start, expires_on=end, price_paid=Decimal("60.00"),
+        )
+
+    def detail_html(self):
+        return self.client.get(
+            reverse("dashboard:member_detail", args=[self.member.pk])
+        ).content.decode()
+
+    def test_consecutive_terms_are_not_flagged(self) -> None:
+        self.add_term(datetime.date(2025, 1, 1), datetime.date(2025, 12, 31))
+        self.add_term(datetime.date(2026, 1, 1), datetime.date(2026, 12, 31))
+        self.assertNotIn("Overlaps", self.detail_html())
+
+    def test_a_duplicated_renewal_is_flagged(self) -> None:
+        self.add_term(datetime.date(2026, 1, 1), datetime.date(2026, 12, 31))
+        self.add_term(datetime.date(2026, 1, 1), datetime.date(2026, 12, 31))
+        self.assertEqual(self.detail_html().count("Overlaps"), 2)
+
+    def test_the_flag_appears_on_the_swapped_back_list_too(self) -> None:
+        """The OOB swap after a save must agree with a fresh page load."""
+        self.add_term(datetime.date(2026, 1, 1), datetime.date(2026, 12, 31))
+        html = self.client.post(
+            reverse("dashboard:term_create", args=[self.member.pk]),
+            {
+                "tier": a_tier("individual").pk,
+                "started_on": "2026-06-01",
+                "expires_on": "",
+                "price_paid": "",
+                "purchased_at": "",
+                "notes": "",
+            },
+        ).content.decode()
+        self.assertEqual(html.count("Overlaps"), 2)
+
+    def test_the_flag_clears_when_the_duplicate_is_deleted(self) -> None:
+        self.add_term(datetime.date(2026, 1, 1), datetime.date(2026, 12, 31))
+        dupe = self.add_term(
+            datetime.date(2026, 1, 1), datetime.date(2026, 12, 31)
+        )
+        html = self.client.post(
+            reverse("dashboard:term_delete", args=[dupe.pk])
+        ).content.decode()
+        self.assertNotIn("Overlaps", html)
