@@ -30,6 +30,7 @@ from web.constants import (
     SAVOY_PLAYBILLS,
     SPONSORSHIP_FAQ,
     SPONSORSHIP_POPCORN_CAP,
+    SPONSORSHIP_SHOWCASE,
     SPONSORSHIP_TIERS,
 )
 from web.forms import SponsorshipInquiryForm
@@ -603,6 +604,7 @@ class SponsorView(SponsorCatalogMixin, ListView):
         ctx.update(
             {
                 "tiers": SPONSORSHIP_TIERS,
+                "showcase": SPONSORSHIP_SHOWCASE,
                 "popcorn_cap": SPONSORSHIP_POPCORN_CAP,
                 "total_count": available.count(),
                 "ratings": sorted(

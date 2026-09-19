@@ -184,6 +184,32 @@ SPONSORED_SCREENING = None
 # See docs/superpowers/specs/2026-08-23-film-sponsorships-design.md.
 SPONSORSHIP_POPCORN_CAP = 100
 
+# The two worked examples on /sponsor/. A named local business sells far
+# harder than "Your Business Here", and both of these approved being named.
+#
+# They live here rather than in the template because "upcoming" has a shelf
+# life: the day The Wild Robot plays, it becomes the past example and the
+# upcoming slot needs the next booking or nothing at all. That should be a
+# data edit, not a template edit — the same reason SPONSORED_SCREENING is a
+# constant. Either slot may be None and its card simply does not render.
+#
+# Do not add a date to `upcoming` unless it is confirmed. This block used to
+# be headed "Happening this month", which was true when it was written and
+# silently stopped being true afterwards.
+SPONSORSHIP_SHOWCASE = {
+    "past": {
+        "sponsor": "AParadis Photography",
+        "film": "The Land Before Time",
+        # The first sponsored run. Admission was $4 at the door; see the
+        # retired SPONSORED_SCREENING config above for the full shape.
+        "occasion": "Labor Day weekend",
+    },
+    "upcoming": {
+        "sponsor": "A.H. Custom Carpentry",
+        "film": "The Wild Robot",
+    },
+}
+
 SPONSORSHIP_TIERS = [
     {
         "key": "presenting",
