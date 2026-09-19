@@ -15,28 +15,21 @@
  * peers.
  */
 
-/* This block carries a ground and the section hairlines; the history CTA
- * directly above it does not.
+/* No ground and no hairlines of its own.
  *
- * Both used to sit on the plain surface with an ornament divider between
- * them. The dividers are gone sitewide, which left the page's two most
- * similar blocks — same eyebrow-less centred text, same body measure, same
- * blue ticket button — running into each other with a 0px boundary and no
- * signal that they are two different offers.
+ * It briefly had both: when the ornament dividers were removed, this block
+ * and the history CTA directly above it — same centred text, same measure,
+ * same blue ticket button — met at a 0px boundary with nothing to say they
+ * were two different offers, so alternating the ground pulled them apart.
  *
- * Alternating the ground is how every other seam on this page is read now
- * (now-showing -> open-mic -> coming-soon -> gift-card all alternate), so
- * this restores the rhythm rather than inventing a device for one pair. The
- * hairlines are the same 1px --color-accent-warm the open-mic and gift-card
- * bands use, deliberately NOT the 2px gold Coming Soon uses — that one is
- * the section level's badge.
+ * They are now laid out side by side instead (static/css/CtaPair.css), and a
+ * single vertical rule separates them. A second ground on one half would cut
+ * the pair down the middle and undo exactly the reading that pairing them is
+ * for.
  */
 .sponsor-cta {
   padding: clamp(2.5rem, 6vw, 4rem) 1.5rem;
   text-align: center;
-  background: var(--color-surface-alt);
-  border-top: 1px solid var(--color-accent-warm);
-  border-bottom: 1px solid var(--color-accent-warm);
 }
 
 .sponsor-cta__content {

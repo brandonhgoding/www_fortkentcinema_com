@@ -39,7 +39,15 @@
 
   {# Task 7: gift-card CTA + blog teaser #}
   {% include "partials/cta_giftcard.html" %}
-  {% include "partials/cta_history.html" %}
-  {% include "partials/cta_sponsor.html" %}
+  {% comment %}
+    Paired, not stacked. These two are the page's most similar blocks, and
+    side by side they read as two offers rather than the site asking twice.
+    See static/css/CtaPair.css — the wrapper is the grid; the halves keep
+    their own padding and type. Stacks below 900px.
+  {% endcomment %}
+  <div class="cta-pair">
+    {% include "partials/cta_history.html" %}
+    {% include "partials/cta_sponsor.html" %}
+  </div>
   {% include "partials/blog_teaser.html" %}
 {% endblock %}

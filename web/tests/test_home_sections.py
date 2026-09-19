@@ -104,6 +104,24 @@ class SectionCompositionTests(TestCase):
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_now_showing", return_value=[])
+    def test_history_and_sponsor_ctas_are_paired(self, _ns, _cs):
+        """These two are the page's most similar blocks and were flagged as
+        structural twins that read as one templated run. They are laid out
+        side by side above 900px, which needs a wrapper element — CSS alone
+        cannot pair two sibling <section>s. If the wrapper is lost they fall
+        back to stacking, silently, so the nesting is asserted."""
+        main = main_content(self.home())
+        pair = re.search(
+            r'<div class="cta-pair">(.*?)</div>\s*<section class="blog"',
+            main, re.S)
+        self.assertIsNotNone(pair, "the .cta-pair wrapper is gone")
+        self.assertIn("history-cta", pair.group(1))
+        self.assertIn("sponsor-cta", pair.group(1))
+        self.assertLess(pair.group(1).index("history-cta"),
+                        pair.group(1).index("sponsor-cta"))
+
+    @mock.patch("web.views.get_coming_soon", return_value=[])
+    @mock.patch("web.views.get_now_showing", return_value=[])
     def test_self_expiring_ctas_appear_only_when_live(self, _ns, _cs):
         """cta_sponsored and cta_vote render nothing between runs/rounds.
         With no seams to place, that needs no coordination — but they still
