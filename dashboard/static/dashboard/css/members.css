@@ -357,3 +357,102 @@ tr.currentTerm td {
   color: var(--stone);
   padding: 0.6rem 1rem;
 }
+
+/* Membership catalogue (tiers + perks) and the terms ledger.
+ *
+ * Both pages load this sheet rather than adding a third and fourth copy of
+ * the page-chrome block above. They are the same area of the dashboard as
+ * the roster, and every class they add is namespaced to them.
+ */
+
+/* screens.css defines .checkboxLabel with a 1.5rem top padding, which
+ * baselines a lone checkbox against a labelled field beside it. The tier
+ * form stacks three of them in one group instead, so it defines its own
+ * without that padding rather than inheriting a rule meant for the other
+ * layout. */
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  font-weight: 400;
+}
+
+.checkboxLabel input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* The perk picker. Scrolls rather than pushing the drawer footer off the
+ * bottom once the catalogue grows past a handful of perks. */
+.checkList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 14rem;
+  overflow-y: auto;
+  padding: 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+  background: white;
+}
+
+/* Section header inside a page that already has a .header at the top. */
+.panelHeader {
+  align-items: center;
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.panelHeader::after {
+  display: none;
+}
+
+.panelHeader .panelTitle {
+  margin: 0;
+}
+
+.tierName {
+  display: block;
+  font-weight: 600;
+}
+
+.tierEyebrow {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--stone);
+}
+
+/* Shown small because it is a fixed identifier, not a label: Square and
+ * GA4 key off it, so it is there to be read, not changed. */
+.tierSlug {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.7rem;
+  color: var(--stone);
+}
+
+.tierPerks {
+  max-width: 22rem;
+  font-size: 0.8125rem;
+  color: var(--stone);
+}
+
+/* A retired tier still sells nothing, but its rows are history — dimmed,
+ * not hidden. */
+.tierRetired td {
+  opacity: 0.6;
+}
+
+/* Date-range inputs in the ledger filter bar carry their own caption. */
+.filterLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8125rem;
+  color: var(--stone);
+  white-space: nowrap;
+}

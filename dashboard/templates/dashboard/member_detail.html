@@ -13,8 +13,17 @@
         {{ member.email }}{% if member.phone %} · {{ member.phone }}{% endif %}
       </p>
     </div>
-    <button class="primaryButton" hx-get="{% url 'dashboard:term_create' member.pk %}"
-            hx-target="#drawer-content" @click="$store.drawer.show('Add Term')">+ Add Term</button>
+    <div class="actions">
+      {% if terms %}
+      {# Renew prefills the tier and a start date that continues from the
+         latest term; Add Term stays blank for anything that isn't a
+         like-for-like renewal. #}
+      <button class="actionButton" hx-get="{% url 'dashboard:term_create' member.pk %}?renew=1"
+              hx-target="#drawer-content" @click="$store.drawer.show('Renew Membership')">Renew</button>
+      {% endif %}
+      <button class="primaryButton" hx-get="{% url 'dashboard:term_create' member.pk %}"
+              hx-target="#drawer-content" @click="$store.drawer.show('Add Term')">+ Add Term</button>
+    </div>
   </div>
 
   {% if member.notes %}<p class="memberNotes">{{ member.notes|linebreaksbr }}</p>{% endif %}

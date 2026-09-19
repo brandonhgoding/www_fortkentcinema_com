@@ -1,0 +1,25 @@
+<form id="benefit-form" class="form" hx-post="{{ form_action }}" hx-target="#drawer-content" hx-swap="innerHTML">
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="field-error">{{ form.non_field_errors }}</div>{% endif %}
+  <div class="formGroup">
+    <label for="{{ form.name.id_for_label }}">Perk</label>
+    {{ form.name }}
+    <p class="fieldHint">Worded exactly as it should read on the membership page.</p>
+    {% if form.name.errors %}<div class="field-error">{{ form.name.errors|striptags }}</div>{% endif %}
+  </div>
+  <div class="formGroup">
+    <label for="{{ form.sort_order.id_for_label }}">Sort order</label>
+    {{ form.sort_order }}
+    <p class="fieldHint">Lower sorts first. Variants of the same perk — "$1 off" and "$4 off" evening tickets — share a value, which is what keeps every tier's list in the same order.</p>
+    {% if form.sort_order.errors %}<div class="field-error">{{ form.sort_order.errors|striptags }}</div>{% endif %}
+  </div>
+  <div class="formGroup">
+    <label for="{{ form.description.id_for_label }}">Internal notes</label>
+    {{ form.description }}
+    <p class="fieldHint">For staff. Not rendered on the website.</p>
+  </div>
+</form>
+<div id="drawer-footer" class="footer" hx-swap-oob="true">
+  <button type="button" class="cancelButton" @click="$store.drawer.close()">Cancel</button>
+  <button type="submit" form="benefit-form" class="submitButton">{{ submit_label }}</button>
+</div>

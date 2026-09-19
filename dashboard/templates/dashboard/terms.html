@@ -1,0 +1,70 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% block title %}Terms · LeprinceOS{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/members.css' %}" />{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="header">
+    <div>
+      <a class="backLink" href="{% url 'dashboard:members' %}">← Members</a>
+      <h1 class="title">Terms sold</h1>
+      <p class="subtitle">{{ term_count }} term{{ term_count|pluralize }} · ${{ revenue }} collected</p>
+    </div>
+    <div class="actions">
+      <a class="actionButton" href="{% url 'dashboard:terms_export' %}?{{ request.GET.urlencode }}">Export CSV</a>
+      <a class="actionButton" href="{% url 'dashboard:tiers' %}">Tiers</a>
+    </div>
+  </div>
+
+  <form class="memberFilters" method="get" action="{% url 'dashboard:terms' %}">
+    <input class="input" type="search" name="q" value="{{ q }}" placeholder="Search name or email" />
+    <select class="input" name="window">
+      {% for value, label in windows %}
+      <option value="{{ value }}" {% if value == selected_window %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <select class="input" name="tier">
+      <option value="">All tiers</option>
+      {% for tier in tiers %}
+      <option value="{{ tier.slug }}" {% if tier.slug == selected_tier %}selected{% endif %}>{{ tier.name }}</option>
+      {% endfor %}
+    </select>
+    <label class="filterLabel">Started from <input class="input" type="date" name="from" value="{{ started_from }}" /></label>
+    <label class="filterLabel">to <input class="input" type="date" name="to" value="{{ started_to }}" /></label>
+    <button class="actionButton" type="submit">Filter</button>
+  </form>
+
+  {# Read-only on purpose: the drawer forms here answer with an OOB swap of
+     the member page's #term-list, which this page does not have. Editing a
+     term is one click away behind the member link. #}
+  {% if terms %}
+  <div class="tableWrapper">
+    <table class="table">
+      <thead>
+        <tr><th>Member</th><th>Tier</th><th>Started</th><th>Expires</th><th>Paid</th><th>Purchased</th></tr>
+      </thead>
+      <tbody>
+        {% for term in terms %}
+        <tr>
+          <td><a class="memberLink" href="{% url 'dashboard:member_detail' term.member.pk %}">{{ term.member.full_name }}</a></td>
+          <td>{{ term.tier.name }}</td>
+          <td>{{ term.started_on|date:"M j, Y" }}</td>
+          <td>
+            {{ term.expires_on|date:"M j, Y" }}
+            {% if term.expires_on < today %}<span class="statusPill status-lapsed">Expired</span>{% endif %}
+          </td>
+          <td>${{ term.price_paid }}</td>
+          <td>{{ term.purchased_at|date:"M j, Y"|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <h3 class="empty-state-title">No terms match</h3>
+    <p class="empty-state-description">Widen the filters, or add a term from a member's page.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

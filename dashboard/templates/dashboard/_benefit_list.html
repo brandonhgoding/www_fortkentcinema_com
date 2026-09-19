@@ -1,0 +1,35 @@
+<div id="benefit-list">
+  {% if benefits %}
+  <div class="tableWrapper">
+    <table class="table">
+      <thead>
+        <tr><th>Perk</th><th>Sort order</th><th>Used by</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for benefit in benefits %}
+        <tr>
+          <td>{{ benefit.name }}</td>
+          <td>{{ benefit.sort_order }}</td>
+          <td>{{ benefit.tier_count }} tier{{ benefit.tier_count|pluralize }}</td>
+          <td>
+            <div class="actions">
+              <button class="actionButton" hx-get="{% url 'dashboard:benefit_edit' benefit.pk %}"
+                      hx-target="#drawer-content" @click="$store.drawer.show('Edit Perk')">Edit</button>
+              <button class="actionButton deleteButton"
+                      hx-post="{% url 'dashboard:benefit_delete' benefit.pk %}"
+                      hx-target="#benefit-list" hx-swap="outerHTML"
+                      data-dashboard-confirm='{"title":"Delete Perk","message":"Delete this perk? It is listed by {{ benefit.tier_count }} tier{{ benefit.tier_count|pluralize }} and will drop off the membership page for all of them.","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <h3 class="empty-state-title">No perks yet</h3>
+    <p class="empty-state-description">Perks are shared across tiers, so add each one once and tick it on the tiers that offer it.</p>
+  </div>
+  {% endif %}
+</div>

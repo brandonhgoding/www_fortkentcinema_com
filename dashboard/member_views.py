@@ -11,6 +11,7 @@ import json
 
 from audience.dates import month_bounds
 from audience.models import FreeAdmission, Member, MembershipTerm
+from audience.terms import overlapping_term_ids, renewal_start
 from django.db import models
 from django.db.models import Count, Q
 from django.http import HttpResponse
@@ -181,6 +182,31 @@ class MemberDeleteView(StaffRequiredMixin, View):
         return _member_list_response(request, "Member deleted")
 
 
+def _renewal_initial(member, request) -> dict:
+    """Prefill for the Renew button: same tier, starting where the last
+    term leaves off.
+
+    Only for `?renew=1` — a blank Add Term form still opens blank, because
+    the reason to add a term by hand is usually that it is *not* a
+    like-for-like renewal. Expiry and price are left out so the form fills
+    them from the tier, which keeps a renewal honest about a price change
+    since the last one.
+
+    A retired tier is not prefilled: `MembershipTermForm` drops retired
+    tiers from the dropdown for a new term, so seeding one would render a
+    select with nothing chosen and silently lose the intent.
+    """
+    if request.GET.get("renew") != "1":
+        return {}
+    latest = member.terms.select_related("tier").first()  # ordering is -started_on
+    if latest is None:
+        return {}
+    initial = {"started_on": renewal_start(latest, timezone.localdate())}
+    if latest.tier.show_on_membership_page:
+        initial["tier"] = latest.tier_id
+    return initial
+
+
 def _render_term_form(request, form, action_url, submit_label):
     return render(
         request,
@@ -189,15 +215,28 @@ def _render_term_form(request, form, action_url, submit_label):
     )
 
 
+def _term_list_context(member) -> dict:
+    """What `_term_list.html` needs, wherever it is rendered from.
+
+    Re-reads the terms rather than trusting a prefetch on `member`: this
+    runs right after a term was added, edited or deleted, and a prefetched
+    cache from before the write would render the list the staffer just
+    changed.
+    """
+    terms = list(member.terms.select_related("tier"))
+    return {
+        "member": member,
+        "terms": terms,
+        "overlapping_term_ids": overlapping_term_ids(terms),
+    }
+
+
 def _term_list_response(request, member, toast_message):
     """OOB-swap the member's term list, close the drawer, and toast."""
     html = render(
         request,
         "dashboard/_term_list.html",
-        {
-            "member": member,
-            "terms": member.terms.all(),
-        },
+        _term_list_context(member),
     ).content.decode()
     html = html.replace(
         '<div id="term-list">', '<div id="term-list" hx-swap-oob="true">', 1
@@ -222,8 +261,7 @@ class MemberDetailView(StaffRequiredMixin, View):
             request,
             "dashboard/member_detail.html",
             {
-                "member": member,
-                "terms": member.terms.all(),
+                **_term_list_context(member),
                 "free_admission_months": _free_admission_months(member),
             },
         )
@@ -231,10 +269,10 @@ class MemberDetailView(StaffRequiredMixin, View):
 
 class TermCreateView(StaffRequiredMixin, View):
     def get(self, request, pk):
-        get_object_or_404(Member, pk=pk)
+        member = get_object_or_404(Member, pk=pk)
         return _render_term_form(
             request,
-            MembershipTermForm(),
+            MembershipTermForm(initial=_renewal_initial(member, request)),
             reverse("dashboard:term_create", args=[pk]),
             "Add Term",
         )

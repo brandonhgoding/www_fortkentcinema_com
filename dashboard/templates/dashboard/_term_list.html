@@ -8,7 +8,12 @@
       <tbody>
         {% for term in terms %}
         <tr class="{% if term.is_current %}currentTerm{% endif %}">
-          <td>{{ term.tier.name }}</td>
+          <td>
+            {{ term.tier.name }}
+            {% if term.pk in overlapping_term_ids %}
+            <span class="statusPill status-expiring" title="These dates overlap another term. A renewal entered early looks like this too — check it is not the same purchase keyed twice.">Overlaps</span>
+            {% endif %}
+          </td>
           <td>{{ term.started_on|date:"M j, Y" }}</td>
           <td>{{ term.expires_on|date:"M j, Y" }}</td>
           <td>${{ term.price_paid }}</td>
