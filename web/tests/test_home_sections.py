@@ -339,9 +339,12 @@ class SponsorCtaCopyTests(TestCase):
         """Each clause in the body is an entry in SPONSORSHIP_TIERS[0].
         If a perk is dropped from the tier, this copy is now overselling."""
         includes = " ".join(SPONSORSHIP_TIERS[0]["includes"]).lower()
-        for perk in ("marquee", "on screen before the film", "posts"):
+        for perk in ("big screen before the film", "posts"):
             self.assertIn(perk, includes)
         body = self.body().lower()
-        self.assertIn("marquee", body)
+        self.assertIn("big screen", body)
         self.assertIn("before the lights go down", body)
         self.assertIn("post", body)
+        # There is no marquee on the building. The credit a sponsor buys is
+        # the screen itself, and the copy must not promise street signage.
+        self.assertNotIn("marquee", body)
