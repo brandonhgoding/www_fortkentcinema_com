@@ -254,6 +254,31 @@ class BlogTeaserTests(TestCase):
         self.assertIn('class="blog-card"', html)
         self.assertIn('class="blog-card-excerpt"', html)
 
+    @mock.patch("web.views.get_coming_soon", return_value=[])
+    @mock.patch("web.views.get_now_showing", return_value=[])
+    def test_teaser_shows_six_newest_posts(self, _ns, _cs):
+        # Six fills the teaser grid evenly at every breakpoint (3/2/1 across),
+        # so a row is never left half empty. Newest first, oldest dropped.
+        for i in range(8):
+            BlogPost.objects.create(
+                title=f"Filler {i}",
+                # BlogPost slugs come from the subtitle, not the title.
+                subtitle=f"Filler subtitle {i}",
+                author=self.author,
+                category=self.category,
+                content="Body.",
+                post_date=f"2026-02-{i + 1:02d}",
+            )
+        resp = self.client.get(reverse("home"))
+        posts = list(resp.context["recent_posts"])
+        self.assertEqual(len(posts), 6)
+        self.assertEqual(
+            [p.title for p in posts],
+            [f"Filler {i}" for i in range(7, 1, -1)],
+        )
+        # The 2026-01-01 post from setUpTestData is the oldest and falls off.
+        self.assertNotIn("Fort Kent Cinema Turns 90", [p.title for p in posts])
+
 
 class MembershipPageTests(TestCase):
     def test_membership_200_and_template(self):

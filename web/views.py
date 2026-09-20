@@ -77,8 +77,13 @@ class HomeView(TemplateView):
         # retires itself when the round closes.
         ctx["vote_poll"] = vote_service.current_poll()
 
-        # Home blog teaser: latest 2 posts, deterministically ordered.
-        ctx["recent_posts"] = BlogPost.objects.select_related("author", "category").order_by("-post_date", "-id")[:2]
+        # Home blog teaser: latest 6 posts, deterministically ordered. Six is
+        # what the teaser grid lays out evenly — three across on a desktop,
+        # two on a tablet, one on a phone — so no row is ever left half full.
+        ctx["recent_posts"] = (
+            BlogPost.objects.select_related("author", "category")
+            .order_by("-post_date", "-id")[:6]
+        )
 
         # The sponsor CTA says "From $N". N is the cheapest tier rather than a
         # typed number, so the home page cannot drift away from the prices on
