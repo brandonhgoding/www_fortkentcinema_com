@@ -220,6 +220,41 @@
   }
 }
 
+/* Hover bridge.
+ *
+ * The panel hangs 12px below the toggle (top: calc(100% + 12px)) and that gap
+ * was dead space. .nav-dropdown:hover covers the button and the panel, but not
+ * what is between them, so a pointer travelling from "More" down to Sponsor
+ * left the subtree mid-journey and the menu closed under the cursor — the
+ * menu was unreachable by the one gesture that opens it.
+ *
+ * This strip extends the panel's hit area up across the gap without moving the
+ * panel a pixel. It is a DOM descendant of .nav-dropdown, so hovering it keeps
+ * the rule above true. It is deliberately invisible — no background — and its
+ * only job is to receive the pointer.
+ *
+ * bottom:100% pins it to the panel rather than to a repeated offset, so it
+ * tracks `top` automatically if that 12px is ever retuned; only the height
+ * has to be kept in step.
+ *
+ * Off below 769px: there the panel is position:static inside the hamburger
+ * list, and this strip would be positioned against the <li> instead, floating
+ * over real links. */
+@media (hover: hover) and (min-width: 769px) {
+  .nav-dropdown-menu::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    /* 13, not 12: the extra pixel overlaps the toggle's bottom edge so the
+       two hit areas meet rather than merely touch. At exactly 12 the boundary
+       row belongs to neither — hit-testing there returns .nav-container, and
+       a cursor sampling that one row mid-travel closes the menu. */
+    height: 13px;
+  }
+}
+
 .nav-dropdown-menu li {
   width: 100%;
 }
