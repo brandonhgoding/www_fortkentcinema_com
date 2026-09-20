@@ -42,7 +42,7 @@
     "@type": "Service",
     "name": "Film Sponsorship",
     "serviceType": "Film sponsorship",
-    "description": "Local businesses sponsor a screening at Fort Kent Cinema — covering the cost of booking the film, and optionally admission and popcorn — in exchange for credit on the marquee, on screen before the film, and in the cinema's social posts.",
+    "description": "Local businesses sponsor a screening at Fort Kent Cinema — covering the cost of booking the film, and optionally admission and popcorn — in exchange for credit on the big screen before the film and in the cinema's social posts.",
     "url": "{{ request.scheme }}://{{ request.get_host }}{% url 'sponsor' %}",
     "provider": {
       "@type": "MovieTheater",
@@ -182,9 +182,8 @@
         <p class="sponsor-example__body">
           The first one. They covered the cost of bringing the film to Fort
           Kent{% if showcase.past.occasion %} for {{ showcase.past.occasion }}{% endif %},
-          and their name went out with every post we made about the show, onto
-          the marquee on Hall Street, and onto the screen before the lights
-          went down.
+          and their name went out with every post we made about the show and
+          onto the big screen before the lights went down.
         </p>
       </section>
       {% endif %}
@@ -198,8 +197,7 @@
         <p class="sponsor-example__body">
           They're covering the cost of bringing the film to Fort Kent. In
           return, their name goes out with every post we make about the show,
-          it's on the marquee on Hall Street, and it's on screen before the
-          lights go down.
+          and it's on the big screen before the lights go down.
         </p>
       </section>
       {% endif %}

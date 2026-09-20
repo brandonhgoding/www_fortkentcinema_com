@@ -219,8 +219,7 @@ SPONSORSHIP_TIERS = [
         "includes": [
             "We book the title you pick",
             "Social media posts in the run-up to the show",
-            "Your name on the marquee",
-            "Your name on screen before the film",
+            "Your name on the big screen before the film",
         ],
     },
     {
@@ -231,8 +230,7 @@ SPONSORSHIP_TIERS = [
         "includes": [
             "We book the title you pick",
             "Social media posts in the run-up to the show",
-            "Your name on the marquee",
-            "Your name on screen before the film",
+            "Your name on the big screen before the film",
             "Admission is free for everyone who comes",
         ],
     },
@@ -244,8 +242,7 @@ SPONSORSHIP_TIERS = [
         "includes": [
             "We book the title you pick",
             "Social media posts in the run-up to the show",
-            "Your name on the marquee",
-            "Your name on screen before the film",
+            "Your name on the big screen before the film",
             "Admission is free for everyone who comes",
             "Medium buttered popcorn for the first 100 guests",
         ],
@@ -290,9 +287,8 @@ SPONSORSHIP_FAQ = [
     {
         "question": "What does my business actually get?",
         "answer": (
-            "Your name on the marquee on Hall Street, on screen before the "
-            "film, and in every social media post we make in the run-up to "
-            "the show."
+            "Your name on the big screen before the film, and in every "
+            "social media post we make in the run-up to the show."
         ),
     },
     {
