@@ -48,6 +48,7 @@ class NowShowingTests(TestCase):
     def setUp(self) -> None:
         self.screen = make_screen()
         self.film = make_film("Dune", runtime_minutes=155, rating="PG-13",
+                              synopsis="Paul goes to the desert.",
                               poster_url="http://p/d.jpg", youtube_id="yt1")
         self.today = timezone.localdate()
 
@@ -66,10 +67,24 @@ class NowShowingTests(TestCase):
         self.assertEqual(m["rating"], "PG-13")
         self.assertEqual(m["runtime"], "2h 35min")
         self.assertEqual(m["genre"], "")
+        self.assertEqual(m["synopsis"], "Paul goes to the desert.")
         self.assertEqual(m["poster"], "http://p/d.jpg")
         self.assertEqual(m["youtube_id"], "yt1")
         self.assertEqual(sorted(m["showtimes"].keys()), [d.isoformat(), d2.isoformat()])
         self.assertEqual(m["showtimes"][d.isoformat()], ["1:00 PM", "7:00 PM"])
+
+    def test_synopsis_falls_back_to_overview(self) -> None:
+        # The card prints Film.description, so a film we never wrote a synopsis
+        # for still shows the TMDB blurb rather than an empty column.
+        film = make_film("Arrival", overview="Heptapods land.")
+        eng = make_engagement(self.screen, [film], start=self.today,
+                              end=self.today + datetime.timedelta(days=1))
+        Showtime.objects.create(
+            engagement=eng,
+            starts_at=aware(self.today.year, self.today.month, self.today.day, 19, 0),
+        )
+        out = [m for m in get_now_showing() if m["title"] == "Arrival"]
+        self.assertEqual(out[0]["synopsis"], "Heptapods land.")
 
     def test_hidden_engagement_excluded(self) -> None:
         eng = make_engagement(self.screen, [self.film],

@@ -52,11 +52,54 @@
   text-align: center;
 }
 
+/* The grid is sized in three steps, and the card itself changes shape at the
+ * last one (see MovieCard.css).
+ *
+ * The 260px cap was the whole problem: on a 1400px container two films sat as
+ * a pair of narrow slips with ~1000px of empty parchment either side, which
+ * read as a placeholder rather than the week's programme. A cinema's current
+ * run is the most important thing on this page and it should occupy the page
+ * like one.
+ *
+ * Tablet keeps the portrait card and just lets it breathe to 340px. From
+ * 1024px the card goes landscape — poster left, everything we know about the
+ * film right — so the extra width becomes prose instead of a poster the
+ * height of the viewport.
+ *
+ * The landscape step is FLEX, not grid, and that is deliberate. Grid's
+ * `auto-fit` counts columns off the track's max sizing function, so any cap
+ * that keeps a card readable also caps the number of films per row — three
+ * films wrapped to 2+1 on a 2000px screen with half the page empty. A flex
+ * line asks the opposite question: fit what fits, let the cards share the
+ * width, wrap only when they would go under 30rem. The card's own flex basis
+ * and max-width (MovieCard.css) are the whole sizing policy. */
 .movies-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 260px));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 340px));
   gap: var(--spacing-lg);
   justify-content: center;
+}
+
+@media (min-width: 1024px) {
+  .movies-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--spacing-xl) var(--spacing-lg);
+  }
+}
+
+/* Three films need 1504px of content (3 x 30rem + two gaps) and the page's
+ * 1400px container only ever offers 1336, so on a big monitor the third film
+ * dropped to a row of its own. This section — and only this section — takes
+ * the extra width, because it is the one that holds the week's programme.
+ *
+ * Below ~1680px the viewport is the binding constraint, not this cap, so the
+ * rule simply does nothing and the row stays at two. */
+@media (min-width: 1680px) {
+  .now-showing .section-container {
+    max-width: 1720px;
+  }
 }
 
 .no-showtimes {
