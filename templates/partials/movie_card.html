@@ -50,7 +50,14 @@
       <span class="movie-rating">{{ movie.rating }}</span>
       <span class="movie-runtime">{{ movie.runtime }}</span>
     </div>
-    <p class="movie-genre">{{ movie.genre }}</p>
+    {% if movie.genre %}<p class="movie-genre">{{ movie.genre }}</p>{% endif %}
+    {% comment %} Rendered always, revealed only above 1200px, where the card
+    turns landscape and there is room for prose next to the poster. Below that
+    the card is a poster and a set of times; the synopsis lives on the film's
+    own page. {% endcomment %}
+    {% if movie.synopsis %}
+    <p class="movie-synopsis">{{ movie.synopsis }}</p>
+    {% endif %}
     {% comment %} Spans, not buttons. There is no online ticket path in this
     project at all — Showtime carries no booking URL and the only Square link
     on the site is the gift card — so a <button> here promised a purchase that

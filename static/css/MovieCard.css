@@ -274,3 +274,77 @@
   border-radius: 3px;
   color: var(--color-text);
 }
+
+/* Synopsis.
+ *
+ * Present in the markup at every width, shown only in the landscape card
+ * below. On a portrait card it would push the showtimes — the one thing a
+ * visitor came for — off the bottom of a tall poster, so at narrow widths the
+ * film's own page keeps the prose. */
+.movie-synopsis {
+  display: none;
+}
+
+/* Landscape card: poster left, film right.
+ *
+ * Matches the 1024px step where .movies-grid stops capping columns at 340px
+ * (NowShowing.css). Above it a card is 450–600px wide, and a portrait layout
+ * would spend all of that on a poster 900px tall. Turning the card on its
+ * side keeps the poster at a sane size and gives the text a column of its own
+ * — which is what makes room for the synopsis.
+ *
+ * The poster column is a clamp, not a percentage alone: at the narrow end of
+ * the range a bare 34% left the poster smaller than it is on a phone. */
+@media (min-width: 1024px) {
+  .movie-card {
+    flex-direction: row;
+    /* Sizing policy for the whole row: grow into whatever the line offers,
+       never below 30rem (under that the synopsis column stops holding a
+       readable measure, and the line wraps instead), never above 40rem (a
+       week with one booking would otherwise stretch across the container). */
+    flex: 1 1 30rem;
+    max-width: 40rem;
+    /* Every card in a row the same height, with the showtimes pinned to the
+       bottom by .movie-showtimes' margin-top:auto. This has to say `auto`
+       explicitly: a flex item only stretches when its cross size is auto, so
+       the height:100% above — which the portrait GRID resolves against its
+       row and needs — quietly opted each card out of stretching, and a film
+       with a three-line synopsis sat 50px shorter than its neighbours. */
+    height: auto;
+  }
+
+  .movie-poster {
+    flex: 0 0 clamp(11.5rem, 38%, 15rem);
+    /* Without this the poster stretches to the row's tallest card and the
+       2/3 aspect ratio is silently overridden. */
+    align-self: flex-start;
+  }
+
+  .movie-info {
+    padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-lg) var(--spacing-md);
+  }
+
+  .movie-title {
+    font-size: 1.5rem;
+  }
+
+  .movie-synopsis {
+    /* Clamped rather than truncated server-side: the whole blurb stays in the
+       page for search engines and for anyone reading with styles off, and the
+       card keeps a predictable height next to its neighbour. */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 6;
+    line-clamp: 6;
+    overflow: hidden;
+    margin: var(--spacing-xs) 0 var(--spacing-sm);
+    max-width: 60ch;
+    font-size: 1rem;
+    line-height: 1.65;
+    color: var(--color-text-muted);
+  }
+
+  .movie-showtimes {
+    padding-top: var(--spacing-md);
+  }
+}

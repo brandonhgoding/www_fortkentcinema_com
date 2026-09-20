@@ -69,6 +69,11 @@ def get_now_showing():
                 "rating": (pf.rating if pf else "") or "",
                 "runtime": _format_runtime(pf.runtime_minutes if pf else None),
                 "genre": "",
+                # Wide viewports show this on the card itself (see
+                # MovieCard.css). `description` is the film's own synopsis
+                # with the TMDB overview as fallback, the same text the
+                # /movies/<slug> page leads with.
+                "synopsis": (pf.description if pf else "") or "",
                 "poster": (pf.poster_url if pf else "") or "",
                 "showtimes": showtimes_by_date,
                 "youtube_id": (pf.youtube_id if pf else "") or "",
