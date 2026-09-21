@@ -285,6 +285,15 @@ SPONSORSHIP_FAQ = [
         ),
     },
     {
+        "question": "Can I pick the date?",
+        "answer": (
+            "Tell us the week you have in mind and we'll work out a date "
+            "that fits the schedule. The date and the film get settled in "
+            "the same conversation, so you don't need both decided before "
+            "you write."
+        ),
+    },
+    {
         "question": "What does my business actually get?",
         "answer": (
             "Your name on the big screen before the film, and in every "
