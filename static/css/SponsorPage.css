@@ -419,9 +419,24 @@
   border-color: var(--color-gold);
 }
 
+/* The two secondary-text elements in the table, split because one of them is
+ * a <td> and the other is not.
+ *
+ * .sponsor-table__variant is a <span> inside the title cell and has to be
+ * display:block to sit on its own line under the title.
+ *
+ * .sponsor-table__format is the FORMAT CELL ITSELF, and it was sharing that
+ * declaration. display:block takes a <td> out of the row: it stops being a
+ * table cell, gets wrapped in an anonymous one, and stops sharing the row's
+ * height — which is why the format column's borders drifted out of line with
+ * the rest of the row further down the table. A cell's display stays
+ * table-cell; only its type is restyled here. */
+.sponsor-table__variant {
+  display: block;
+}
+
 .sponsor-table__variant,
 .sponsor-table__format {
-  display: block;
   font-size: 0.85rem;
   color: var(--color-cream-muted);
 }
