@@ -1,9 +1,12 @@
 /* ============================================
    MEMBERSHIP FAQ — Editorial Q&A
 ============================================ */
+/* 1200px, not 800: the answers are now boxes in a grid rather than a single
+ * column of running text, so this matches .membership-tiers above it and the
+ * two sections share an edge. */
 .membership-faq {
   padding: var(--spacing-2xl) var(--spacing-md);
-  max-width: 800px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -52,31 +55,37 @@
   left: calc(100% + 16px);
 }
 
+/* Boxes, not a rule-separated list — the same treatment /sponsor/ uses for
+ * the same content, so the two FAQs read as one component across the site.
+ * See .sponsor-faq__list in SponsorPage.css; keep the two in step.
+ *
+ * Grid items stretch by default, so every card in a row shares the tallest
+ * one's height and the boxes line up whatever the answer lengths. */
 .membership-faq__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: var(--spacing-lg);
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
 }
 
 .membership-faq__item {
-  padding: var(--spacing-lg) 0;
-  border-bottom: 1px solid rgba(32, 57, 130, 0.18);
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-accent-dim);
+  background: var(--color-bg-charcoal);
 }
 
-.membership-faq__item:first-child {
-  border-top: 1px solid rgba(32, 57, 130, 0.18);
-}
-
+/* The diamond keeps its place here, unlike on /sponsor/: it is the marker
+   this page uses down the whole membership column, and inside a box it reads
+   as the card's own bullet rather than as list furniture. */
 .membership-faq__question {
   display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
+  align-items: baseline;
+  gap: var(--spacing-xs);
   font-family: var(--font-heading);
-  font-size: 1.2rem;
-  font-style: italic;
-  color: var(--color-gold-light);
-  margin: 0 0 var(--spacing-xs);
+  font-size: 1.15rem;
+  color: var(--color-gold);
+  margin: 0 0 var(--spacing-sm);
 }
 
 .membership-faq__diamond {
@@ -88,10 +97,12 @@
   box-shadow: 0 0 6px var(--color-gold-glow);
 }
 
+/* <dd> carries a browser default indent that would knock every answer out of
+ * line with the question above it. */
 .membership-faq__answer {
-  margin: 0 0 0 calc(7px + var(--spacing-sm));
+  margin: 0;
   font-family: var(--font-body);
-  font-size: 1.1rem;
-  line-height: 1.7;
-  color: var(--color-cream-muted);
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--color-cream);
 }

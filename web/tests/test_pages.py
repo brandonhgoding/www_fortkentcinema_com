@@ -1,3 +1,6 @@
+import html as html_lib
+import json
+import re
 from unittest import mock, skip
 
 from django.test import TestCase
@@ -5,6 +8,7 @@ from django.urls import reverse
 from django.contrib.staticfiles.finders import find
 
 from blog.models import BlogAuthor, BlogCategory, BlogPost
+from web.constants import RENTALS_FAQ
 
 
 class HomePageTests(TestCase):
@@ -318,8 +322,34 @@ class RentalsPageTests(TestCase):
         self.assertIn("rental-card--featured", html)
         self.assertIn("PRIVATE SCREENING", html)
         self.assertIn("LICENSED SCREENING", html)
-        self.assertIn("POLICIES", html)
+        self.assertIn("QUESTIONS WE GET", html)
         self.assertIn("READY TO BOOK?", html)
+
+    def test_every_rental_term_is_on_the_page(self):
+        """The terms used to be a bulleted POLICIES list; they are now
+        answers. They are contractual either way, so none may quietly go
+        missing behind a template edit."""
+        html = html_lib.unescape(self.client.get(reverse("rentals")).content.decode())
+        for item in RENTALS_FAQ:
+            self.assertIn(item["question"], html)
+            self.assertIn(item["answer"], html)
+
+    def test_rentals_emits_faq_schema_matching_the_visible_answers(self):
+        """Google penalises FAQ markup whose answers are not on the page, and
+        the head block and the visible <dl> are separate template blocks that
+        could drift. Both render RENTALS_FAQ."""
+        html = self.client.get(reverse("rentals")).content.decode()
+        blocks = [
+            json.loads(m)
+            for m in re.findall(
+                r'<script type="application/ld\+json">(.*?)</script>', html, re.S
+            )
+        ]
+        faq = next(b for b in blocks if b.get("@type") == "FAQPage")
+        self.assertEqual(
+            [q["name"] for q in faq["mainEntity"]],
+            [item["question"] for item in RENTALS_FAQ],
+        )
 
 
 @skip("About page temporarily hidden from nav/urls — re-enable when the /about route is restored")
