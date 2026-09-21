@@ -6,6 +6,30 @@
 {% block og_title %}Private Rentals | Fort Kent Cinema{% endblock %}
 {% block og_description %}Rent the whole theater at Fort Kent Cinema. One simple rate for private screenings and licensed events.{% endblock %}
 
+{% block extra_head %}
+{% comment %}
+RENTALS_FAQ (web/constants.py) renders as the visible FAQ further down this
+page as well. Google penalises FAQ markup whose answers are not on the page,
+so both renderings read from the one list — same as /membership/ and
+/sponsor/.
+{% endcomment %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {% for faq in faqs %}{
+      "@type": "Question",
+      "name": "{{ faq.question|escapejs }}",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "{{ faq.answer|escapejs }}"
+      }
+    }{% if not forloop.last %},{% endif %}{% endfor %}
+  ]
+}
+</script>
+{% endblock %}
 
 {% block content %}
   <div class="rentals-page">
@@ -82,45 +106,30 @@
         </div>
       </section>
 
-      {% comment %} Policies {% endcomment %}
-      <details class="rentals-policies">
-        <summary>POLICIES &amp; INFORMATION</summary>
-        <div class="rentals-policies-content">
-          <ul>
-            <li>
-              A 50% deposit is required to reserve your date. The remaining balance is due on the
-              day of the event.
-            </li>
-            <li>
-              Cancellations made 7+ days in advance receive a full refund. Cancellations within 7
-              days forfeit the deposit.
-            </li>
-            <li>
-              Outside food and drink are not permitted. All food and beverage must be purchased
-              through or arranged with Fort Kent Cinema.
-            </li>
-            <li>
-              The renting party is responsible for any damages to the theater or equipment during
-              the event.
-            </li>
-            <li>All events must end by 11:00 PM.</li>
-            <li>A signed rental agreement is required before confirmation of your booking.</li>
-            <li>
-              <strong>Private screenings</strong>: For invited family and friends only. You may
-              bring your own DVD or Blu-ray. No ticket sales or public advertising permitted.
-            </li>
-            <li>
-              <strong>Licensed screenings</strong>: Public, group, and fundraiser events require
-              properly licensed films. We can arrange licensing through our partners - fees vary by
-              film and will be quoted per film.
-            </li>
-            <li>
-              Decorations are allowed but must be approved in advance. No confetti, glitter, or
-              anything that may damage the seats or screen.
-            </li>
-          </ul>
-        </div>
-      </details>
+      {% comment %}
+        The rental terms, as questions.
+
+        They were nine bullets inside a collapsed "POLICIES & INFORMATION"
+        <details> — the things someone has to know before they call, hidden
+        behind a click and phrased as house rules. Nothing is lost: every
+        bullet is in RENTALS_FAQ (web/constants.py), which also feeds the
+        FAQPage markup in the head.
+      {% endcomment %}
+      <section class="rentals-section rentals-faq" id="faq"
+               aria-labelledby="rentals-faq-title">
+        <h2 class="rentals-section-title" id="rentals-faq-title">QUESTIONS WE GET</h2>
+        <p class="rentals-section-note">
+          The terms, before you ask &mdash; and the rental agreement says the same.
+        </p>
+        <dl class="rentals-faq__list">
+          {% for faq in faqs %}
+            <div class="rentals-faq__item">
+              <dt class="rentals-faq__question">{{ faq.question }}</dt>
+              <dd class="rentals-faq__answer">{{ faq.answer }}</dd>
+            </div>
+          {% endfor %}
+        </dl>
+      </section>
 
       {% comment %} CTA {% endcomment %}
       <div class="rentals-cta">

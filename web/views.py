@@ -28,6 +28,7 @@ from web.constants import (
     SPONSORED_SCREENING,
     MEMBERSHIP_FAQ,
     SAVOY_PLAYBILLS,
+    RENTALS_FAQ,
     SPONSORSHIP_FAQ,
     SPONSORSHIP_POPCORN_CAP,
     SPONSORSHIP_SHOWCASE,
@@ -291,6 +292,13 @@ class MembershipView(TemplateView):
 
 class RentalsView(TemplateView):
     template_name = "web/rentals.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        # One list, two renderings: the visible FAQ and the FAQPage markup in
+        # the head. Same arrangement as /membership/ and /sponsor/.
+        ctx["faqs"] = RENTALS_FAQ
+        return ctx
 
 
 class AboutView(TemplateView):

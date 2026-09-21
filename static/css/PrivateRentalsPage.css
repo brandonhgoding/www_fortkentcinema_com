@@ -163,68 +163,46 @@
 }
 
 /* Policies Section */
-.rentals-policies {
-  margin-bottom: var(--spacing-2xl);
-}
-
-.rentals-policies summary {
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  letter-spacing: 3px;
-  color: var(--color-gold);
-  cursor: pointer;
-  padding: var(--spacing-md);
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-gold-warm);
-  border-radius: var(--radius-md);
-  transition: all var(--transition-base);
-  list-style: none;
-}
-
-.rentals-policies summary::-webkit-details-marker {
-  display: none;
-}
-
-.rentals-policies summary::after {
-  content: '+';
-  float: right;
-  font-size: 1.5rem;
-  color: var(--color-gold);
-}
-
-.rentals-policies[open] summary::after {
-  content: '\2212';
-}
-
-.rentals-policies summary:hover {
-  background: var(--color-bg-charcoal);
-  box-shadow: 0 0 10px var(--color-gold-glow);
-}
-
-.rentals-policies-content {
-  padding: var(--spacing-lg);
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-gold-warm);
-  border-top: none;
-  border-radius: 0 0 var(--radius-md) var(--radius-md);
-}
-
-.rentals-policies-content ul {
-  list-style: none;
+/* Rental terms, as an FAQ.
+ *
+ * This replaces .rentals-policies — a <details> accordion whose summary was a
+ * gold bar and whose content was a bulleted list of house rules. The terms
+ * someone needs before they phone should not be behind a click, and the same
+ * content answers questions rather than declaring rules.
+ *
+ * Same box treatment as .sponsor-faq__list and .membership-faq__list; keep the
+ * three in step. Grid items stretch, so every card in a row shares the
+ * tallest one's height.
+ */
+.rentals-faq__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: var(--spacing-lg);
+  margin: 0;
   padding: 0;
 }
 
-.rentals-policies-content li {
-  padding: var(--spacing-xs) 0;
-  color: var(--color-cream-muted);
-  font-size: 1rem;
-  font-weight: 600;
-  line-height: 1.6;
-  border-bottom: 1px solid rgba(32, 57, 130, 0.15);
+.rentals-faq__item {
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-accent-dim);
+  background: var(--color-bg-charcoal);
 }
 
-.rentals-policies-content li:last-child {
-  border-bottom: none;
+.rentals-faq__question {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  color: var(--color-gold);
+  margin-bottom: var(--spacing-sm);
+}
+
+/* <dd> carries a browser default indent that would knock every answer out of
+ * line with the question above it. */
+.rentals-faq__answer {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--color-cream);
 }
 
 /* CTA Footer */

@@ -112,6 +112,71 @@ SITE_CONFIG["seo"] = {
     "map_url": "https://www.google.com/maps/search/?api=1&query=" + _MAP_QUERY,
 }
 
+# The rental policies, as questions.
+#
+# These were nine bullets inside a collapsed "POLICIES & INFORMATION"
+# <details> at the foot of /rentals/ — the terms someone has to know BEFORE
+# they call, hidden behind a click and written as house rules rather than as
+# answers. Every one of those bullets survives here, several folded together
+# where they answer the same question: the deposit and the signed agreement
+# are both "how do I hold a date", and damages and decorations are both "what
+# can we do to the room".
+#
+# Same contract as SPONSORSHIP_FAQ: nothing here is a new policy. If a term
+# changes it changes here, and the page and its FAQPage markup follow, because
+# both render this list.
+RENTALS_FAQ = [
+    {
+        "question": "How do I reserve a date?",
+        "answer": (
+            "A 50% deposit holds it. We'll send a rental agreement to sign — "
+            "the booking is confirmed once that's back — and the balance is "
+            "due on the day of the event."
+        ),
+    },
+    {
+        "question": "What if I have to cancel?",
+        "answer": (
+            "Cancel seven or more days ahead and the deposit is refunded in "
+            "full. Inside seven days the deposit is forfeited."
+        ),
+    },
+    {
+        "question": "How long do we get, and how late can we stay?",
+        "answer": (
+            "The base rate covers two hours, and each additional half-hour is "
+            "$50. Whatever the length, every event has to end by 11:00 PM."
+        ),
+    },
+    {
+        "question": "Can we bring our own food and drink?",
+        "answer": (
+            "No — food and drink have to be bought from us or arranged with "
+            "us beforehand. Popcorn for your group is already included in the "
+            "rate."
+        ),
+    },
+    {
+        "question": "Can we decorate?",
+        "answer": (
+            "Yes, as long as we've approved it in advance. No confetti, no "
+            "glitter, and nothing that could damage the seats or the screen. "
+            "The renting party covers any damage to the theater or the "
+            "equipment during the event."
+        ),
+    },
+    {
+        "question": "Can we sell tickets or advertise the event?",
+        "answer": (
+            "Not for a private screening — those are for invited family and "
+            "friends, with your own DVD or Blu-ray. Selling tickets or "
+            "promoting it publicly makes it a licensed screening: we arrange "
+            "the license through our partners and quote the film fee per "
+            "film, on top of the base rate."
+        ),
+    },
+]
+
 # Ported verbatim from the React SPA's src/data/membershipFaq.json.
 MEMBERSHIP_FAQ = [
     {
