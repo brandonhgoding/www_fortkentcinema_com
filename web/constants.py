@@ -188,6 +188,18 @@ MEMBERSHIP_FAQ = [
         "answer": "Family tiers cover the cardholder plus immediate family members. Just give your name at the box office.",
     },
     {
+        # The badge this answer points at is Engagement.is_free_for_members,
+        # which paints "Free for Members" on the home page listings and on the
+        # film's own page. The answer describes what the site already shows —
+        # it does not promise how often one is booked.
+        "question": "Which films are free for members?",
+        "answer": (
+            "The ones marked Free for Members — you'll see the badge on the "
+            "poster on the home page and on the film's own page. Give your "
+            "name at the box office, the same as any other visit."
+        ),
+    },
+    {
         "question": "How do I use my membership at the box office?",
         "answer": "Tell us your name. We'll look you up and apply your member benefits.",
     },
