@@ -331,12 +331,12 @@
   margin-bottom: var(--spacing-md);
 }
 
+/* Rivertown's mark is a circular badge, so it gets a square box big
+   enough for "community arts center" to stay legible. */
 .craft-partner__logo img {
   display: block;
-  width: auto;
-  height: auto;
-  max-width: 220px;
-  max-height: 88px;
+  width: 140px;
+  height: 140px;
 }
 
 /* ---- FAQ ---------------------------------------------------------- */

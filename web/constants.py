@@ -679,16 +679,15 @@ CRAFT_NIGHT = {
     # What people actually call them, for the second and third mention.
     "partner_short": "Rivertown",
     "partner_url": "https://www.rivertowncac.org/",
-    # Rivertown's logo, as a path under static/img/. Empty until they send
-    # us the file.
+    # Rivertown's logo, as a path under static/. The file they sent us: a
+    # 400x400 circular badge on a transparent ground, so the template sizes
+    # it square.
     #
-    # Deliberately NOT hotlinked from rivertowncac.org and deliberately not
-    # lifted off their site: a partner's mark is theirs to grant, separately
-    # from agreeing to the partnership, and it usually arrives with rules
-    # about clear space and which version goes on a light ground. Ask for
-    # the asset, then drop it in here — the template already renders the
-    # name alone when this is blank, so the page is correct either way.
-    "partner_logo": "",
+    # Deliberately NOT hotlinked from rivertowncac.org: a partner's mark is
+    # theirs to grant, separately from agreeing to the partnership, so we
+    # serve the copy they gave us. Blank it and the template renders the
+    # name alone, which is still a correct page.
+    "partner_logo": "img/rivertown-logo.png",
     # Alt text for it. A logo is a name, so the alt text is the name — not
     # "Rivertown logo", which reads the decoration aloud and not the fact.
     "partner_logo_alt": "Rivertown Community Arts Center",

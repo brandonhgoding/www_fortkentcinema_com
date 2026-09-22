@@ -202,11 +202,10 @@ page, so both renderings read from the one list — same as /rentals/ and
       {% comment %}
         Partner.
 
-        The logo is optional on purpose — CRAFT_NIGHT["partner_logo"] is
-        blank until Rivertown sends us the asset, and until then this
-        section is their name and a link, which is correct rather than
-        placeholder. See the constant for why we don't take it off their
-        site ourselves.
+        The logo is optional on purpose — with CRAFT_NIGHT["partner_logo"]
+        blank this section is their name and a link, which is correct
+        rather than placeholder. See the constant for why we serve the
+        copy Rivertown sent rather than one off their site.
       {% endcomment %}
       <section class="craft-section craft-partner">
         <h2 class="craft-section-title">ABOUT {{ craft_night.partner_short|upper }}</h2>
@@ -216,7 +215,7 @@ page, so both renderings read from the one list — same as /rentals/ and
              data-track="partner_click" data-track-location="craft_night_logo">
             <img src="{% static craft_night.partner_logo %}"
                  alt="{{ craft_night.partner_logo_alt }}"
-                 width="220" height="88" loading="lazy" decoding="async" />
+                 width="140" height="140" loading="lazy" decoding="async" />
           </a>
         {% endif %}
         <p class="craft-body">
