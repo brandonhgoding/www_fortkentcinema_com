@@ -24,30 +24,59 @@ def nav_destinations():
 
 
 class NavigationConfigTests(TestCase):
-    def test_four_primary_items_are_visible_before_the_dropdown(self):
-        # The nav collapses to a hamburger at 768px; more than four primary
-        # links is what strained the 768-900px range.
-        primary = [
-            i["label"] for i in SITE_CONFIG["navigation"] if not i.get("children")
-        ]
-        self.assertEqual(
-            primary, ["Now Showing", "Coming Soon", "Membership", "Rentals"]
-        )
+    def test_five_top_level_items_is_the_ceiling(self):
+        # The nav collapses to a hamburger at 768px, and a sixth top-level
+        # item is what strained the 768-900px range. A dropdown occupies one
+        # slot, the same as a link, so this counts menus and links together
+        # — that is what makes trading Rentals for Events width-neutral.
+        self.assertEqual(len(SITE_CONFIG["navigation"]), 5)
 
-    def test_secondary_pages_live_under_a_single_more_parent(self):
-        parents = [i for i in SITE_CONFIG["navigation"] if i.get("children")]
-        self.assertEqual(len(parents), 1)
-        self.assertEqual(parents[0]["label"], "More")
-        labels = [c["label"] for c in parents[0]["children"]]
+    def test_top_level_order(self):
+        labels = [i["label"] for i in SITE_CONFIG["navigation"]]
         self.assertEqual(
             labels,
-            ["Craft Night", "Sponsor", "History", "Blog", "Film Vote"],
+            ["Now Showing", "Coming Soon", "Membership", "Events", "More"],
         )
 
-    def test_dropdown_parent_has_no_href_of_its_own(self):
-        # "More" opens a menu; it must not be a navigable destination.
-        parent = next(i for i in SITE_CONFIG["navigation"] if i.get("children"))
-        self.assertNotIn("href", parent)
+    def test_events_holds_the_things_you_turn_up_to(self):
+        events = next(
+            i for i in SITE_CONFIG["navigation"] if i["label"] == "Events"
+        )
+        labels = [c["label"] for c in events["children"]]
+        self.assertEqual(labels, ["Craft Night"])
+
+    def test_rentals_moved_under_more_rather_than_out(self):
+        # Rentals lost its primary slot to Events; it must still be reachable,
+        # because it is a page that sells something.
+        more = next(i for i in SITE_CONFIG["navigation"] if i["label"] == "More")
+        labels = [c["label"] for c in more["children"]]
+        self.assertEqual(
+            labels,
+            ["Rentals", "Sponsor", "History", "Blog", "Film Vote"],
+        )
+        self.assertIn("/rentals/", nav_destinations())
+
+    def test_no_destination_was_lost_in_the_reshuffle(self):
+        # The reshuffle moves items between levels. Every page that was
+        # reachable from the nav must still be, whatever level it sits at.
+        for href in (
+            "/membership/",
+            "/rentals/",
+            "/craft-night/",
+            "/sponsor/",
+            "/history/",
+            "/blog/",
+            "/vote",
+        ):
+            self.assertIn(href, nav_destinations())
+
+    def test_dropdown_parents_have_no_href_of_their_own(self):
+        # A menu opens; it must not also be a navigable destination. Both
+        # "Events" and "More" are menus.
+        parents = [i for i in SITE_CONFIG["navigation"] if i.get("children")]
+        self.assertEqual(len(parents), 2)
+        for parent in parents:
+            self.assertNotIn("href", parent, parent["label"])
 
     def test_vote_href_omits_the_trailing_slash(self):
         # urls.py defines path("vote", ...) bare, unlike every other section
@@ -64,11 +93,17 @@ class NavigationRenderTests(TestCase):
         for href in nav_destinations():
             self.assertIn(f'href="{href}"', html)
 
-    def test_more_toggle_is_a_button_carrying_its_aria_state(self):
+    def test_each_dropdown_toggle_is_a_button_carrying_its_aria_state(self):
         html = nav_html(self.client.get(reverse("home")).content.decode())
-        self.assertIn("nav-dropdown-toggle", html)
-        self.assertIn('aria-haspopup="true"', html)
+        self.assertEqual(html.count("nav-dropdown-toggle"), 2)
+        self.assertEqual(html.count('aria-haspopup="true"'), 2)
         self.assertIn(":aria-expanded", html)
+
+    def test_each_dropdown_gets_its_own_alpine_scope(self):
+        """Two menus on one nav must not share `sub`, or opening either
+        opens both."""
+        html = nav_html(self.client.get(reverse("home")).content.decode())
+        self.assertEqual(html.count('x-data="{ sub: false }"'), 2)
 
     def test_dropdown_menu_opens_by_class_not_inline_display(self):
         # Alpine's x-show writes inline display:none, which the <=768px

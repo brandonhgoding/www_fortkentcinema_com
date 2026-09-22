@@ -21,20 +21,34 @@ SITE_CONFIG = {
     },
     "social": {"facebook": "https://facebook.com/fortkentcinema"},
     # Items with "children" render as a dropdown; everything else is a plain
-    # link. Four primary items is the ceiling — the nav collapses to a
-    # hamburger at 768px, and a fifth was what strained the 768-900px range.
+    # link. FIVE TOP-LEVEL ITEMS IS THE CEILING, counting each dropdown as
+    # one — the nav collapses to a hamburger at 768px, and a sixth is what
+    # strained the 768-900px range. A dropdown costs the same width as a
+    # link plus a caret, so trading a link for a menu is width-neutral;
+    # adding one is not.
     "navigation": [
         {"label": "Now Showing", "href": "#now-showing"},
         {"label": "Coming Soon", "href": "#coming-soon"},
         # Trailing slashes are required — these routes are defined with them, and
         # a bare /blog costs a 301 on every click and every crawl.
         {"label": "Membership", "href": "/membership/"},
-        {"label": "Rentals", "href": "/rentals/"},
+        {
+            # Events took the slot Rentals held. A rental is something you
+            # buy from us; an event is something you turn up to, and the
+            # things people turn up to had no home in the nav at all —
+            # Craft Night was buried under "More" with the sponsor form and
+            # the blog. Rentals moved down rather than out.
+            "label": "Events",
+            # No "href": this opens a menu, it is not a destination.
+            "children": [
+                {"label": "Craft Night", "href": "/craft-night/"},
+            ],
+        },
         {
             "label": "More",
             # No "href": this opens a menu, it is not a destination.
             "children": [
-                {"label": "Craft Night", "href": "/craft-night/"},
+                {"label": "Rentals", "href": "/rentals/"},
                 {"label": "Sponsor", "href": "/sponsor/"},
                 {"label": "History", "href": "/history/"},
                 # About page temporarily hidden:
