@@ -1,0 +1,414 @@
+/* Craft Cinema Night — /craft-night/
+ *
+ * Uses the layer-2 semantic tokens rather than the legacy aliases: this file
+ * is new, so there is nothing here to migrate later.
+ *
+ * The page is a light one like the rest of the site outside the hero, which
+ * is the point — a page about being able to SEE while the movie plays would
+ * read badly as a dark screen full of low-contrast type.
+ */
+
+.craft-page {
+  min-height: 100vh;
+  padding: var(--spacing-lg);
+  padding-top: calc(80px + var(--spacing-xl));
+  background: var(--color-surface);
+}
+
+.craft-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* ---- Header ------------------------------------------------------- */
+
+.craft-header {
+  text-align: center;
+  margin-bottom: var(--spacing-2xl);
+}
+
+.craft-back {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  letter-spacing: 2px;
+  color: var(--color-accent);
+  text-decoration: none;
+  margin-bottom: var(--spacing-md);
+}
+
+.craft-back:hover {
+  color: var(--color-accent-warm);
+}
+
+.craft-eyebrow {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-xs);
+}
+
+.craft-eyebrow a {
+  color: var(--color-accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--color-brass);
+}
+
+.craft-title {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  letter-spacing: 6px;
+  color: var(--color-accent);
+  margin-bottom: var(--spacing-sm);
+}
+
+.craft-subtitle {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+  max-width: 34em;
+  margin: 0 auto;
+}
+
+/* The next date, called out. This is what most visits come for. */
+.craft-next {
+  margin-top: var(--spacing-xl);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-brass);
+  border-radius: var(--radius-lg);
+  display: inline-block;
+  text-align: center;
+}
+
+.craft-next__label {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--color-brass-light);
+  margin-bottom: var(--spacing-xs);
+}
+
+.craft-next__date {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  color: var(--color-text);
+  line-height: 1.2;
+}
+
+.craft-next__time {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  letter-spacing: 1px;
+  color: var(--color-accent-warm);
+  margin-top: var(--spacing-xs);
+}
+
+.craft-next__film {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--color-text);
+  margin-top: var(--spacing-sm);
+}
+
+.craft-next__film a {
+  color: var(--color-accent);
+}
+
+.craft-next__film--tba {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+/* ---- Sections ----------------------------------------------------- */
+
+.craft-section {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.craft-section-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  letter-spacing: 4px;
+  color: var(--color-accent);
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 1px solid var(--color-brass);
+  margin-bottom: var(--spacing-md);
+}
+
+.craft-section-note {
+  font-family: var(--font-body);
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-md);
+}
+
+.craft-lede {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-md);
+}
+
+.craft-body {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-sm);
+  max-width: 62ch;
+}
+
+.craft-body a {
+  color: var(--color-accent);
+}
+
+/* ---- Admission ---------------------------------------------------- */
+
+.craft-prices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.craft-price {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-brass);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  text-align: center;
+}
+
+.craft-price--featured {
+  border-color: var(--color-accent);
+  border-width: 2px;
+}
+
+.craft-price__amount {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  line-height: 1;
+  color: var(--color-accent);
+}
+
+.craft-price__who {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin: var(--spacing-xs) 0 var(--spacing-sm);
+}
+
+.craft-price__note {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--color-text);
+}
+
+.craft-price__link {
+  display: inline-block;
+  margin-top: var(--spacing-sm);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--color-accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--color-brass);
+}
+
+/* ---- House rules -------------------------------------------------- */
+
+.craft-rules {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.craft-rules li {
+  font-family: var(--font-body);
+  font-size: 1.02rem;
+  line-height: 1.65;
+  color: var(--color-text);
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--color-surface-sunken);
+  max-width: 68ch;
+}
+
+.craft-rules li:last-child {
+  border-bottom: none;
+}
+
+.craft-rules strong {
+  color: var(--color-accent);
+}
+
+/* ---- Dates -------------------------------------------------------- */
+
+.craft-dates {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border: 1px solid var(--color-brass);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-surface-raised);
+}
+
+.craft-date {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-xs) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--color-surface-sunken);
+}
+
+.craft-date:last-child {
+  border-bottom: none;
+}
+
+.craft-date--next {
+  background: var(--color-surface-alt);
+}
+
+.craft-date__when {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-sm);
+}
+
+.craft-date__day {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  color: var(--color-text);
+}
+
+.craft-date__time {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  color: var(--color-accent-warm);
+}
+
+.craft-date__what {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--color-text);
+}
+
+.craft-date__what a {
+  color: var(--color-accent);
+}
+
+.craft-date__tba {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.craft-chip {
+  display: inline-block;
+  margin-left: var(--spacing-xs);
+  padding: 0.1em 0.5em;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  color: var(--color-brass-light);
+  border: 1px solid var(--color-brass);
+  border-radius: var(--radius-sm);
+}
+
+/* Partner logo. Sized by max-height rather than width so whatever
+ * proportion Rivertown's mark turns out to be, it sits on the same optical
+ * line as the heading above it. */
+.craft-partner__logo {
+  display: inline-block;
+  margin-bottom: var(--spacing-md);
+}
+
+.craft-partner__logo img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 220px;
+  max-height: 88px;
+}
+
+/* ---- FAQ ---------------------------------------------------------- */
+
+.craft-faq__list {
+  margin: 0;
+}
+
+.craft-faq__item {
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--color-surface-sunken);
+}
+
+.craft-faq__item:last-child {
+  border-bottom: none;
+}
+
+.craft-faq__question {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  color: var(--color-accent);
+  margin-bottom: var(--spacing-xs);
+}
+
+.craft-faq__answer {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--color-text);
+  margin: 0;
+  max-width: 68ch;
+}
+
+/* ---- CTA ---------------------------------------------------------- */
+
+.craft-cta {
+  text-align: center;
+  padding: var(--spacing-xl) var(--spacing-lg);
+  background: var(--color-surface-alt);
+  border-radius: var(--radius-lg);
+}
+
+.craft-cta-title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  letter-spacing: 4px;
+  color: var(--color-accent);
+  margin-bottom: var(--spacing-xs);
+}
+
+.craft-cta-text {
+  font-family: var(--font-body);
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-sm);
+}
+
+.craft-cta-contact a {
+  font-family: var(--font-body);
+  font-size: 1.15rem;
+  letter-spacing: 1px;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+@media (max-width: 600px) {
+  .craft-title {
+    font-size: 2rem;
+    letter-spacing: 3px;
+  }
+
+  .craft-date {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

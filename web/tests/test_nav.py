@@ -39,7 +39,10 @@ class NavigationConfigTests(TestCase):
         self.assertEqual(len(parents), 1)
         self.assertEqual(parents[0]["label"], "More")
         labels = [c["label"] for c in parents[0]["children"]]
-        self.assertEqual(labels, ["Sponsor", "History", "Blog", "Film Vote"])
+        self.assertEqual(
+            labels,
+            ["Craft Night", "Sponsor", "History", "Blog", "Film Vote"],
+        )
 
     def test_dropdown_parent_has_no_href_of_its_own(self):
         # "More" opens a menu; it must not be a navigable destination.

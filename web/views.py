@@ -24,6 +24,8 @@ from cinema.models import (
     StudioTitle,
 )
 from web.constants import (
+    CRAFT_NIGHT,
+    CRAFT_NIGHT_FAQ,
     FILM_HISTORY_VIDEO,
     SPONSORED_SCREENING,
     MEMBERSHIP_FAQ,
@@ -44,6 +46,7 @@ from web.services.cinema_data import (
     get_calendar_month,
     get_film_page,
 )
+from web.services.craft_night import get_craft_nights
 from web.services.showtimes import (
     today_eastern,
     format_showtime_date,
@@ -298,6 +301,36 @@ class RentalsView(TemplateView):
         # One list, two renderings: the visible FAQ and the FAQPage markup in
         # the head. Same arrangement as /membership/ and /sponsor/.
         ctx["faqs"] = RENTALS_FAQ
+        return ctx
+
+
+class CraftNightView(TemplateView):
+    """/craft-night/ — the standing monthly craft screening.
+
+    Two things on this page come from rows rather than from prose: the dates
+    (computed, because "last Tuesday" is a rule) and the film on each one
+    (read from the schedule, so this page and Now Showing cannot disagree).
+    See web/services/craft_night.py for why neither is typed in.
+
+    Most listed nights will have no film yet — the last Tuesday of the month
+    is further out than we book. That is the expected state, and the
+    template renders it as "not booked yet" rather than hiding the date.
+    """
+
+    template_name = "web/craft_night.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["craft_night"] = CRAFT_NIGHT
+        nights = get_craft_nights()
+        ctx["nights"] = nights
+        # The hero needs the next one on its own. nights is never empty —
+        # upcoming_nights() walks the calendar forward until it has enough —
+        # but the guard costs nothing and a 500 on the hero costs the page.
+        ctx["next_night"] = nights[0] if nights else None
+        # One list, two renderings: the visible FAQ and the FAQPage markup
+        # in the head. Same arrangement as /rentals/ and /sponsor/.
+        ctx["faqs"] = CRAFT_NIGHT_FAQ
         return ctx
 
 
