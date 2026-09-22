@@ -41,6 +41,11 @@ SITE_CONFIG = {
             "label": "Events",
             # No "href": this opens a menu, it is not a destination.
             "children": [
+                # Chronological by night of the month, not alphabetical:
+                # Heckle Night is the third Friday, Craft Night the last
+                # Tuesday. Two entries is the whole Events menu, so the
+                # order is cheap to hold and reads as a month.
+                {"label": "Heckle Night", "href": "/heckle-night/"},
                 {"label": "Craft Night", "href": "/craft-night/"},
             ],
         },
@@ -792,6 +797,158 @@ CRAFT_NIGHT_FAQ = [
         "answer": (
             "No. Come to the door. If a particular night looks like it's "
             "going to fill, we'll say so on Facebook first."
+        ),
+    },
+]
+
+
+# Heckle Night — /heckle-night/
+#
+# A bad public domain movie, monthly, that the room is invited to talk over.
+# The premise is MST3K's, and the page says so once to explain itself; the
+# name is not theirs and neither are the episodes, so nothing here borrows
+# either. "Heckle Night" is ours and describes the night literally.
+#
+# The film comes from the schedule, the same way Craft Night's does — see
+# web/services/heckle_night.py. What is NOT computable, and therefore lives
+# here, is the rule, the price and who the night is for.
+HECKLE_NIGHT = {
+    # The rule, and the first night it applies to.
+    #
+    # "Third Friday" is a rule so the calendar can answer it, for the same
+    # reason CRAFT_NIGHT's dates are computed: a typed list of dates goes
+    # stale in public, and it goes stale silently.
+    #
+    # starts_on is the part craft night did not need. This night has never
+    # run, so the rule alone would advertise a September date that no one
+    # has planned. Nothing before this date renders. October 16 2026 IS the
+    # third Friday of October, so the first night and the rule agree — if
+    # that start date is ever moved to a date the rule does not produce,
+    # the page will skip it and show the next real third Friday instead.
+    "starts_on": datetime.date(2026, 10, 16),
+    # The standing start time. Shown only where no real showtime is known:
+    # once a Friday is booked the page renders that Showtime's own start,
+    # so a moved show moves the page rather than contradicting it.
+    "start_label": "7:00 PM",
+    # Floor for "the evening slot" when matching a Friday's showtimes.
+    # Same floor craft night uses, and a floor rather than an exact 19:00
+    # match for the same reason: a show that shifts is still the show.
+    "evening_from": datetime.time(17, 0),
+    # $4 at the door, free if you're a member.
+    #
+    # The number matches what a member pays for a regular evening show
+    # ($8 general admission less the "$4 off evening tickets" /membership/
+    # promises), so the door price here is the member rate offered to
+    # everybody — and members go one better and come in free. That makes
+    # this the cheapest night of the month for everyone and the only free
+    # one for members, which is the right shape for a night whose whole
+    # problem is getting a crowd into the room.
+    #
+    # NOTE: $8 general evening admission is published on /craft-night/ and
+    # implied by /membership/'s benefit line. This $4 reads as "the member
+    # rate, for everyone" only while that stays true, so a reprice of
+    # evening admission has to look at this number too.
+    "general_price": 4,
+    # Members in free, every Heckle Night.
+    #
+    # The MECHANISM already exists and this page must not invent a second
+    # one: Engagement.is_free_for_members paints "Free for Members" on the
+    # home page listings and the film's own page, and MEMBERSHIP_FAQ
+    # already explains how to redeem it — give your name at the box office.
+    # This page states the standing policy; each booked Heckle Night
+    # engagement has to CARRY THAT FLAG or the badge and this page disagree
+    # in public. That is a booking step, not something the code can do.
+    #
+    # Deliberately NOT the monthly free-admission allowance (audience
+    # .FreeAdmission). That allowance is drawn down only when staff record
+    # a redemption, and nothing here records one — so a member coming to
+    # Heckle Night keeps whatever their tier gives them. The FAQ says so,
+    # because otherwise the counter has to improvise an answer.
+    "members_free": True,
+    # Who the night is for, stated on the page because in a small town the
+    # answer decides whether someone brings their kids. All ages means the
+    # room is asked to keep the jokes PG — which is a house rule, not a
+    # rating, and the film still carries whatever rating it carries.
+    "audience": "All ages",
+    # How many nights the page lists. Six, matching craft night: far enough
+    # out to read as a standing fixture, short enough to still be a list.
+    "months_ahead": 6,
+}
+
+# Rendered twice on /heckle-night/ — as the visible FAQ and as FAQPage
+# structured data in the head — from this one list. Same contract as
+# CRAFT_NIGHT_FAQ, SPONSORSHIP_FAQ and RENTALS_FAQ above: Google penalises
+# FAQ markup whose answers are not on the page.
+HECKLE_NIGHT_FAQ = [
+    {
+        "question": "I'm not funny. Should I come?",
+        "answer": (
+            "Yes. Half the room is there to laugh at the other half's "
+            "jokes, and that half has the easier job. Nobody is keeping "
+            "score."
+        ),
+    },
+    {
+        "question": "Can I just watch quietly?",
+        "answer": (
+            "You can, but the room won't be quiet, and that isn't a fault "
+            "in the room. If you want a normal screening, every other "
+            "showtime we run is one."
+        ),
+    },
+    {
+        "question": "Can I bring my kids?",
+        "answer": (
+            "Yes. Heckle Night is all ages, and we ask the room to keep "
+            "the jokes PG — it's a house rule rather than a rating, and "
+            "we'll say something if it drifts. The films themselves are "
+            "old, cheap and harmless."
+        ),
+    },
+    {
+        # Points at the mechanism the site already has rather than
+        # inventing a second one — see HECKLE_NIGHT["members_free"]. The
+        # last sentence is the one the box office needs: a free night does
+        # not spend a tier's monthly free admission.
+        "question": "I'm a member. What do I pay?",
+        "answer": (
+            "Nothing. Every Heckle Night is free for members — give your "
+            "name at the box office, the same as any other visit. If your "
+            "tier includes free admissions each month, this doesn't use "
+            "one up: the whole night is free for members, not just the "
+            "first few through the door."
+        ),
+    },
+    {
+        "question": "What movie plays?",
+        "answer": (
+            "Something old, cheap and gloriously bad, and always in the "
+            "public domain. The dates on this page fill in with the title "
+            "as soon as the booking is set, usually two or three weeks "
+            "ahead."
+        ),
+    },
+    {
+        "question": "Do I need a ticket in advance?",
+        "answer": (
+            "No. Come to the door. If a night looks like it's going to "
+            "fill, we'll say so on Facebook first."
+        ),
+    },
+    {
+        "question": "Is this Mystery Science Theater 3000?",
+        "answer": (
+            "No, and we're not affiliated with them. We mention the show "
+            "because it's the fastest way to explain what this night is. "
+            "The movies are ours to pick and the jokes are yours to make."
+        ),
+    },
+    {
+        "question": "How loud is too loud?",
+        "answer": (
+            "If the person two rows over can't hear the next line of the "
+            "movie, that's too loud. The film has to stay audible — it's "
+            "the straight man, and the jokes don't work without it."
         ),
     },
 ]

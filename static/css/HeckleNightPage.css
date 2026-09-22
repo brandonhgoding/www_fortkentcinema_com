@@ -1,0 +1,453 @@
+/* Heckle Night — /heckle-night/
+ *
+ * Uses the layer-2 semantic tokens rather than the legacy aliases: this file
+ * is new, so there is nothing here to migrate later.
+ *
+ * Deliberately the same skeleton as CraftNightPage.css — the two pages are
+ * the same object (a standing monthly night: rule, price, rules, dates,
+ * FAQ) and a reader who has seen one should recognise the other. They are
+ * not merged into one shared stylesheet because the two nights want
+ * opposite voices, and the differences below are exactly that: craft night
+ * is quiet and even, this one is loud where it is allowed to be.
+ *
+ * Where it departs from craft night, and why:
+ *   - the title is set in the condensed face, tight, in the marquee blue.
+ *     Craft night's is airy garamond with 6px of tracking. This is a page
+ *     about shouting at a screen; the masthead should read like one.
+ *   - the one house rule that matters gets a rule-of-its-own treatment
+ *     (.heckle-rules li:nth-child(2)), because "heckle the movie, not each
+ *     other" is the line the whole night depends on and a flat list buries
+ *     it in position two.
+ *   - one price card instead of a two-up grid, so it does not stretch to
+ *     a half-empty row.
+ */
+
+.heckle-page {
+  min-height: 100vh;
+  padding: var(--spacing-lg);
+  padding-top: calc(80px + var(--spacing-xl));
+  background: var(--color-surface);
+}
+
+.heckle-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* ---- Header ------------------------------------------------------- */
+
+.heckle-header {
+  text-align: center;
+  margin-bottom: var(--spacing-2xl);
+}
+
+.heckle-back {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  letter-spacing: 2px;
+  color: var(--color-accent);
+  text-decoration: none;
+  margin-bottom: var(--spacing-md);
+}
+
+.heckle-back:hover {
+  color: var(--color-accent-warm);
+}
+
+.heckle-eyebrow {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-xs);
+}
+
+/* Condensed and tight, where craft night is garamond and airy. Same page
+ * furniture, different volume. */
+.heckle-title {
+  font-family: var(--font-condensed);
+  font-size: 4rem;
+  line-height: 0.95;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--color-accent-warm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.heckle-subtitle {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  color: var(--color-text);
+  font-style: italic;
+  max-width: 34em;
+  margin: 0 auto;
+}
+
+/* The next date, called out. This is what most visits come for. */
+.heckle-next {
+  margin-top: var(--spacing-xl);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-brass);
+  border-radius: var(--radius-lg);
+  display: inline-block;
+  text-align: center;
+}
+
+.heckle-next__label {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--color-brass-light);
+  margin-bottom: var(--spacing-xs);
+}
+
+.heckle-next__date {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  color: var(--color-text);
+  line-height: 1.2;
+}
+
+.heckle-next__time {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  letter-spacing: 1px;
+  color: var(--color-accent-warm);
+  margin-top: var(--spacing-xs);
+}
+
+.heckle-next__film {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--color-text);
+  margin-top: var(--spacing-sm);
+}
+
+.heckle-next__film a {
+  color: var(--color-accent);
+}
+
+.heckle-next__film--tba {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+/* The price belongs in the hero on this page and not on craft night's.
+ * Craft night has two rates and a membership caveat, which is a section.
+ * This is one number, and it is half the pitch. */
+.heckle-next__price {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--color-brass-light);
+  margin-top: var(--spacing-sm);
+  padding-top: var(--spacing-xs);
+  border-top: 1px solid var(--color-surface-sunken);
+}
+
+/* ---- Sections ----------------------------------------------------- */
+
+.heckle-section {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.heckle-section-title {
+  font-family: var(--font-condensed);
+  font-size: 1.4rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 1px solid var(--color-brass);
+  margin-bottom: var(--spacing-md);
+}
+
+.heckle-section-note {
+  font-family: var(--font-body);
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-md);
+}
+
+.heckle-lede {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-md);
+}
+
+.heckle-body {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-sm);
+  max-width: 62ch;
+}
+
+.heckle-body a {
+  color: var(--color-accent);
+}
+
+/* ---- Admission ---------------------------------------------------- */
+
+/* Two rates, so craft night's auto-fit grid is the right shape after all.
+ * Capped at 720px rather than running the container's full 900px: two
+ * cards of a few lines each get stringy at 450px apiece. */
+.heckle-prices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--spacing-md);
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.heckle-price {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-brass);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  text-align: center;
+}
+
+/* Members, and free is the headline — this card is the one to look at. */
+.heckle-price--featured {
+  border-color: var(--color-accent);
+  border-width: 2px;
+}
+
+/* "Free" is a word where the other card has a numeral, so it is set a
+ * size down: at 3.5rem four letters out-measure "$4" badly enough that
+ * the cheaper-looking card is the one that shouts. */
+.heckle-price__amount {
+  font-family: var(--font-display);
+  font-size: 3.5rem;
+  line-height: 1;
+  color: var(--color-accent);
+}
+
+.heckle-price--featured .heckle-price__amount {
+  font-size: 2.75rem;
+  /* Nudged onto the same optical baseline as the numeral beside it. */
+  padding-top: 0.2em;
+}
+
+.heckle-price__who {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin: var(--spacing-xs) 0 var(--spacing-sm);
+}
+
+.heckle-price__note {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--color-text);
+}
+
+.heckle-price__link {
+  display: inline-block;
+  margin-top: var(--spacing-sm);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--color-accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--color-brass);
+}
+
+/* ---- House rules -------------------------------------------------- */
+
+.heckle-rules {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.heckle-rules li {
+  font-family: var(--font-body);
+  font-size: 1.02rem;
+  line-height: 1.65;
+  color: var(--color-text);
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--color-surface-sunken);
+  max-width: 68ch;
+}
+
+.heckle-rules li:last-child {
+  border-bottom: none;
+}
+
+.heckle-rules strong {
+  color: var(--color-accent);
+}
+
+/* "Heckle the movie, not each other" is the line the night depends on, and
+ * in a flat list it is just the second thing. Pulled out with a rule and a
+ * ground so a skimmer cannot miss it. Keyed on nth-child rather than a
+ * modifier class because the rules are prose in the template and the
+ * ORDER is the argument — if that line stops being second, it has stopped
+ * being the rule that matters and this should stop firing with it. */
+.heckle-rules li:nth-child(2) {
+  border-left: 3px solid var(--color-accent);
+  padding-left: var(--spacing-md);
+  background: var(--color-surface-alt);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+/* ---- Dates -------------------------------------------------------- */
+
+.heckle-dates {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border: 1px solid var(--color-brass);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-surface-raised);
+}
+
+.heckle-date {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-xs) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--color-surface-sunken);
+}
+
+.heckle-date:last-child {
+  border-bottom: none;
+}
+
+.heckle-date--next {
+  background: var(--color-surface-alt);
+}
+
+.heckle-date__when {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-sm);
+}
+
+.heckle-date__day {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  color: var(--color-text);
+}
+
+.heckle-date__time {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  color: var(--color-accent-warm);
+}
+
+.heckle-date__what {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--color-text);
+}
+
+.heckle-date__what a {
+  color: var(--color-accent);
+}
+
+.heckle-date__tba {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.heckle-chip {
+  display: inline-block;
+  margin-left: var(--spacing-xs);
+  padding: 0.1em 0.5em;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  color: var(--color-brass-light);
+  border: 1px solid var(--color-brass);
+  border-radius: var(--radius-sm);
+}
+
+/* ---- FAQ ---------------------------------------------------------- */
+
+.heckle-faq__list {
+  margin: 0;
+}
+
+.heckle-faq__item {
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--color-surface-sunken);
+}
+
+.heckle-faq__item:last-child {
+  border-bottom: none;
+}
+
+.heckle-faq__question {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  color: var(--color-accent);
+  margin-bottom: var(--spacing-xs);
+}
+
+.heckle-faq__answer {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--color-text);
+  margin: 0;
+  max-width: 68ch;
+}
+
+/* ---- CTA ---------------------------------------------------------- */
+
+.heckle-cta {
+  text-align: center;
+  padding: var(--spacing-xl) var(--spacing-lg);
+  background: var(--color-surface-alt);
+  border-radius: var(--radius-lg);
+}
+
+.heckle-cta-title {
+  font-family: var(--font-condensed);
+  font-size: 2rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  margin-bottom: var(--spacing-xs);
+}
+
+.heckle-cta-text {
+  font-family: var(--font-body);
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-sm);
+}
+
+.heckle-cta-contact a {
+  font-family: var(--font-body);
+  font-size: 1.15rem;
+  letter-spacing: 1px;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+@media (max-width: 600px) {
+  .heckle-title {
+    font-size: 2.75rem;
+  }
+
+  .heckle-date {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
