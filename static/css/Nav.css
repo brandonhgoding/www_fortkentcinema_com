@@ -195,7 +195,10 @@
   display: none;
   position: absolute;
   top: calc(100% + 12px);
-  right: 0;
+  /* Aligned to the toggle's LEFT edge. See the last-child rule below for
+     why this is not simply right: 0 for every menu. */
+  left: 0;
+  right: auto;
   min-width: 180px;
   flex-direction: column;
   gap: 0;
@@ -211,6 +214,33 @@
 
 .nav-dropdown-menu--open {
   display: flex;
+}
+
+/* The LAST menu right-aligns; every other one left-aligns.
+ *
+ * This used to be an unconditional `right: 0`, written when "More" was the
+ * only dropdown and was also the last item in the row — against the nav's
+ * right edge, right-alignment is the only option that cannot overflow the
+ * container, and a 180px panel hanging right from "More" would.
+ *
+ * "Events" then landed mid-row, where the same declaration reads as a bug:
+ * the panel extends 180px LEFT from a ~60px toggle, so it sits under
+ * "Membership" and points at the wrong thing. A menu should hang from the
+ * word that opened it.
+ *
+ * Keyed on :last-child rather than on a modifier class so it keeps holding
+ * if the nav is reshuffled again — which it just was. Both dropdowns are
+ * <li> children of .nav-links, so the selector needs nothing from the
+ * template.
+ *
+ * Only applies at >=769px: below that the panel is position:static inside
+ * the hamburger list and neither offset does anything.
+ */
+@media (min-width: 769px) {
+  .nav-dropdown:last-child .nav-dropdown-menu {
+    left: auto;
+    right: 0;
+  }
 }
 
 /* Hovering the parent opens it too — pointer users should not need a click. */
