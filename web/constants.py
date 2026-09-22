@@ -34,6 +34,7 @@ SITE_CONFIG = {
             "label": "More",
             # No "href": this opens a menu, it is not a destination.
             "children": [
+                {"label": "Craft Night", "href": "/craft-night/"},
                 {"label": "Sponsor", "href": "/sponsor/"},
                 {"label": "History", "href": "/history/"},
                 # About page temporarily hidden:
@@ -646,3 +647,138 @@ FILM_HISTORY_VIDEO = {
         "this page is built from."
     ),
 }
+
+
+# Craft Cinema Night — the last Tuesday of the month, with Rivertown
+# Community Arts Center.
+#
+# Lights dimmed rather than out, bring your own project, and Rivertown's
+# members pay our member rate. Rivertown has signed off on the partnership
+# and on being named here.
+#
+# The DATES are not in this dict, and deliberately so: they are computed
+# from the calendar in web/services/craft_night.py, because "last Tuesday of
+# the month" is a rule and a typed list of dates silently stops being true.
+# Same reason SPONSORSHIP_SHOWCASE carries no dates.
+CRAFT_NIGHT = {
+    "partner": "Rivertown Community Arts Center",
+    # What people actually call them, for the second and third mention.
+    "partner_short": "Rivertown",
+    "partner_url": "https://www.rivertowncac.org/",
+    # Rivertown's logo, as a path under static/img/. Empty until they send
+    # us the file.
+    #
+    # Deliberately NOT hotlinked from rivertowncac.org and deliberately not
+    # lifted off their site: a partner's mark is theirs to grant, separately
+    # from agreeing to the partnership, and it usually arrives with rules
+    # about clear space and which version goes on a light ground. Ask for
+    # the asset, then drop it in here — the template already renders the
+    # name alone when this is blank, so the page is correct either way.
+    "partner_logo": "",
+    # Alt text for it. A logo is a name, so the alt text is the name — not
+    # "Rivertown logo", which reads the decoration aloud and not the fact.
+    "partner_logo_alt": "Rivertown Community Arts Center",
+    # The standing start time. Shown only where no real showtime is known —
+    # once a Tuesday is booked, the page renders that Showtime's own start,
+    # so a moved show moves the page instead of contradicting it.
+    "start_label": "6:30 PM",
+    # Floor for "the evening slot" when matching a Tuesday's showtimes.
+    # A floor rather than an exact 18:30 match: a show that shifts to 7:00
+    # is still the evening show, and the page should follow it.
+    "evening_from": datetime.time(17, 0),
+    # Member and general evening admission. Both are stated because this
+    # page has to answer "what does it cost if I'm not a member" — the
+    # whole pitch is that everyone is welcome, and a page that prices only
+    # the member rate reads like a members-only night.
+    #
+    # NOTE: these two numbers are the same promise /membership/ makes as
+    # "$4 off evening tickets". If evening admission is ever repriced, that
+    # benefit line and these constants have to move together or the site
+    # contradicts itself in public.
+    "member_price": 4,
+    "general_price": 8,
+    # How many nights the page lists. Six is two quarters — far enough out
+    # to look like a standing fixture rather than a one-off, and short
+    # enough that the list is still a list rather than a calendar.
+    "months_ahead": 6,
+}
+
+# Rendered twice on /craft-night/ — as the visible FAQ and as FAQPage
+# structured data in the head — from this one list. Same contract as
+# SPONSORSHIP_FAQ and RENTALS_FAQ above: Google penalises FAQ markup whose
+# answers are not on the page.
+#
+# Nothing here is a new policy. The craft restrictions are the rental
+# decoration rule (no glitter, nothing that damages the seats) applied to a
+# room full of projects, and the $4 is the existing member rate rather than
+# a discount invented for this night.
+CRAFT_NIGHT_FAQ = [
+    {
+        "question": "Do I have to be a member to come?",
+        "answer": (
+            "No. Craft Cinema Night is a regular evening show and anyone can "
+            "buy a ticket at the door. Being a member — ours or Rivertown's "
+            "— is what gets you the $4 rate, not what gets you in."
+        ),
+    },
+    {
+        "question": "How do I get the $4 rate?",
+        "answer": (
+            "Tell us at the box office that you're a Rivertown member, or "
+            "give us your name if you're one of ours. It's the same $4 off "
+            "an evening ticket our members get any night of the week — this "
+            "is just the night it reaches Rivertown's members too."
+        ),
+    },
+    {
+        "question": "Do I have to bring a craft?",
+        "answer": (
+            "Not at all. Come and watch the movie. The only things different "
+            "about this night are the lighting and the company."
+        ),
+    },
+    {
+        "question": "What movie plays?",
+        "answer": (
+            "Whatever is in the 6:30 slot that Tuesday — it's a regular "
+            "showing, run a little differently. The dates on this page fill "
+            "in with the title as soon as the booking is set, which is "
+            "usually two or three weeks ahead."
+        ),
+    },
+    {
+        "question": "How dark does it get?",
+        "answer": (
+            "Dimmed, not dark. Low enough that the screen still looks like a "
+            "screen, bright enough to find your place in a row of stitches. "
+            "If your project needs more light than that, a small clip light "
+            "is fine — please keep it pointed at your lap."
+        ),
+    },
+    {
+        "question": "What can I bring, and what should I leave home?",
+        "answer": (
+            "Anything quiet that fits in your own seat: knitting, crochet, "
+            "cross stitch, embroidery, hand quilting, beadwork, a "
+            "sketchbook, a coloring book, a journal. Leave the paint, glue "
+            "and glitter at home, along with anything that needs a table, an "
+            "outlet or a blade near the upholstery. If you're not sure, call "
+            "us before you pack it."
+        ),
+    },
+    {
+        "question": "Can I bring my kids?",
+        "answer": (
+            "Yes — it's a public show and the film's rating is the film's "
+            "rating, the same as any other night. It tends to run quiet, so "
+            "it suits a child who has a project of their own to work on."
+        ),
+    },
+    {
+        "question": "Do I need a ticket in advance?",
+        "answer": (
+            "No. Come to the door. If a particular night looks like it's "
+            "going to fill, we'll say so on Facebook first."
+        ),
+    },
+]

@@ -3,6 +3,7 @@ from django.urls import path
 from .views import (
     # AboutView,  # About page temporarily hidden (re-enable with the /about path below)
     CalendarMonthView,
+    CraftNightView,
     HistoryView,
     HomeView,
     MembershipView,
@@ -23,6 +24,10 @@ urlpatterns = [
     path("", HomeView.as_view(), name="home"),
     path("membership/", MembershipView.as_view(), name="membership"),
     path("rentals/", RentalsView.as_view(), name="rentals"),
+    # Trailing slash, like the other section pages. "craft-night" rather
+    # than "craft-cinema-night": the event keeps its full name, the URL
+    # is the short thing people say and type.
+    path("craft-night/", CraftNightView.as_view(), name="craft_night"),
     path("sponsor/", SponsorView.as_view(), name="sponsor"),
     path("history/", HistoryView.as_view(), name="history"),
     path("sponsor/inquire", SponsorInquiryView.as_view(), name="sponsor_inquire"),

@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Craft Cinema Night | Fort Kent Cinema{% endblock %}
+{% block description %}Bring your knitting, your cross stitch, your sketchbook. The last Tuesday of every month at Fort Kent Cinema the lights stay dimmed instead of dark, so you can work while the movie plays. $4 for Rivertown Arts and Cinema Club members, $8 for everyone else.{% endblock %}
+{% block og_title %}Craft Cinema Night | Fort Kent Cinema{% endblock %}
+{% block og_description %}The last Tuesday of every month, with Rivertown Community Arts Center. Lights dimmed, not out — bring whatever you're working on.{% endblock %}
+
+{% block extra_head %}
+{% comment %}
+CRAFT_NIGHT_FAQ (web/constants.py) renders as the visible FAQ further down
+this page as well. Google penalises FAQ markup whose answers are not on the
+page, so both renderings read from the one list — same as /rentals/ and
+/sponsor/.
+{% endcomment %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {% for faq in faqs %}{
+      "@type": "Question",
+      "name": "{{ faq.question|escapejs }}",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "{{ faq.answer|escapejs }}"
+      }
+    }{% if not forloop.last %},{% endif %}{% endfor %}
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+  <div class="craft-page">
+    <div class="craft-container">
+
+      <header class="craft-header">
+        <a href="/" class="craft-back">&larr; Back to Home</a>
+        <p class="craft-eyebrow">
+          With
+          <a href="{{ craft_night.partner_url }}" target="_blank" rel="noopener"
+             data-track="partner_click" data-track-location="craft_night">
+            {{ craft_night.partner }}
+          </a>
+        </p>
+        <h1 class="craft-title">CRAFT CINEMA NIGHT</h1>
+        <p class="craft-subtitle">
+          The last Tuesday of every month, we turn the lights down instead of
+          off &mdash; so you can keep your hands busy while the movie plays.
+        </p>
+
+        {% if next_night %}
+          <div class="craft-next">
+            <p class="craft-next__label">Next one</p>
+            <p class="craft-next__date">
+              {{ next_night.label }}
+              <span class="craft-next__time">
+                {% if next_night.film %}{{ next_night.film.time }}{% else %}{{ craft_night.start_label }}{% endif %}
+              </span>
+            </p>
+            {% if next_night.film %}
+              <p class="craft-next__film">
+                {% if next_night.film.slug %}
+                  <a href="{% url 'movie_detail' slug=next_night.film.slug %}">{{ next_night.film.title }}</a>
+                {% else %}
+                  {{ next_night.film.title }}
+                {% endif %}
+                {% if next_night.film.rating %}<span class="craft-chip">{{ next_night.film.rating }}</span>{% endif %}
+                {% if next_night.film.runtime %}<span class="craft-chip">{{ next_night.film.runtime }}</span>{% endif %}
+              </p>
+            {% else %}
+              <p class="craft-next__film craft-next__film--tba">
+                Film to be announced &mdash; we book two to three weeks out.
+              </p>
+            {% endif %}
+          </div>
+        {% endif %}
+      </header>
+
+      {% comment %} What it is {% endcomment %}
+      <section class="craft-section">
+        <h2 class="craft-section-title">WHAT IT IS</h2>
+        <p class="craft-lede">A movie night for people who can&rsquo;t sit still with empty hands.</p>
+        <p class="craft-body">
+          Once a month we run a screening with the house lights dimmed rather
+          than killed &mdash; low enough for the picture to look right, bright
+          enough to find your place in a row of stitches. Bring whatever
+          you&rsquo;re working on. Knitting and crochet, cross stitch,
+          embroidery, hand quilting, beadwork, a sketchbook, a coloring book, a
+          journal. Sit with it for two hours and let someone else do the
+          entertaining.
+        </p>
+        <p class="craft-body">
+          We run this one with {{ craft_night.partner }}, a few streets over on
+          Market Street. Their members pay our member rate. Everyone else is
+          welcome at regular evening admission &mdash; you don&rsquo;t need to
+          belong to anything to come, and you don&rsquo;t need to bring a
+          project. Plenty of people just come for the movie.
+        </p>
+      </section>
+
+      {% comment %} Admission {% endcomment %}
+      <section class="craft-section">
+        <h2 class="craft-section-title">ADMISSION</h2>
+        <div class="craft-prices">
+          <div class="craft-price craft-price--featured">
+            <div class="craft-price__amount">${{ craft_night.member_price }}</div>
+            <h3 class="craft-price__who">Members</h3>
+            <p class="craft-price__note">
+              {{ craft_night.partner_short }} members and Fort Kent Cinema
+              members. Say so at the box office &mdash; it&rsquo;s the same
+              ${{ craft_night.member_price }} off an evening ticket our members
+              get any night.
+            </p>
+            <a href="{% url 'membership' %}" class="craft-price__link">See our memberships &rarr;</a>
+          </div>
+          <div class="craft-price">
+            <div class="craft-price__amount">${{ craft_night.general_price }}</div>
+            <h3 class="craft-price__who">Everyone else</h3>
+            <p class="craft-price__note">
+              Regular evening admission. No membership required, no project
+              required, no ticket needed in advance.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {% comment %} House rules {% endcomment %}
+      <section class="craft-section">
+        <h2 class="craft-section-title">HOW IT WORKS</h2>
+        <ul class="craft-rules">
+          <li>
+            <strong>The lights stay on, dimmed.</strong> Not a dark house.
+            You&rsquo;ll be able to see your work without a headlamp.
+          </li>
+          <li>
+            <strong>Bring your own project.</strong> We don&rsquo;t supply
+            materials and we don&rsquo;t teach. This is a room to work in, not
+            a class.
+          </li>
+          <li>
+            <strong>Keep it to your seat.</strong> If it fits on your lap and
+            in the seat beside you, it&rsquo;s fine. Sewing machines, easels
+            and anything that needs a table or an outlet are not going to work
+            in here.
+          </li>
+          <li>
+            <strong>Nothing wet, nothing loose.</strong> No paint, no glue, no
+            glitter &mdash; the same rule our rentals have, for the same
+            reason. Please keep blades away from the upholstery.
+          </li>
+          <li>
+            <strong>Quiet counts.</strong> Talk between friends is expected.
+            Anything that clatters is not.
+          </li>
+          <li>
+            <strong>Concessions are open as usual.</strong> Popcorn is, as
+            ever, a one-handed food.
+          </li>
+        </ul>
+      </section>
+
+      {% comment %}
+        The dates, and the film on each one.
+
+        Both computed — see web/services/craft_night.py. Most rows will show
+        no film, because the last Tuesday of the month is further out than we
+        book. That is the normal state and the row says so.
+      {% endcomment %}
+      <section class="craft-section" aria-labelledby="craft-dates-title">
+        <h2 class="craft-section-title" id="craft-dates-title">THE DATES</h2>
+        <p class="craft-section-note">
+          Last Tuesday of the month, {{ craft_night.start_label }}, year round.
+        </p>
+        <ol class="craft-dates">
+          {% for night in nights %}
+            <li class="craft-date{% if forloop.first %} craft-date--next{% endif %}">
+              <div class="craft-date__when">
+                <span class="craft-date__day">{{ night.label }}</span>
+                <span class="craft-date__time">
+                  {% if night.film %}{{ night.film.time }}{% else %}{{ craft_night.start_label }}{% endif %}
+                </span>
+              </div>
+              <div class="craft-date__what">
+                {% if night.film %}
+                  {% if night.film.slug %}
+                    <a href="{% url 'movie_detail' slug=night.film.slug %}">{{ night.film.title }}</a>
+                  {% else %}
+                    {{ night.film.title }}
+                  {% endif %}
+                  {% if night.film.rating %}<span class="craft-chip">{{ night.film.rating }}</span>{% endif %}
+                {% else %}
+                  <span class="craft-date__tba">Not booked yet</span>
+                {% endif %}
+              </div>
+            </li>
+          {% endfor %}
+        </ol>
+      </section>
+
+      {% comment %}
+        Partner.
+
+        The logo is optional on purpose — CRAFT_NIGHT["partner_logo"] is
+        blank until Rivertown sends us the asset, and until then this
+        section is their name and a link, which is correct rather than
+        placeholder. See the constant for why we don't take it off their
+        site ourselves.
+      {% endcomment %}
+      <section class="craft-section craft-partner">
+        <h2 class="craft-section-title">ABOUT {{ craft_night.partner_short|upper }}</h2>
+        {% if craft_night.partner_logo %}
+          <a class="craft-partner__logo"
+             href="{{ craft_night.partner_url }}" target="_blank" rel="noopener"
+             data-track="partner_click" data-track-location="craft_night_logo">
+            <img src="{% static craft_night.partner_logo %}"
+                 alt="{{ craft_night.partner_logo_alt }}"
+                 width="220" height="88" loading="lazy" decoding="async" />
+          </a>
+        {% endif %}
+        <p class="craft-body">
+          {{ craft_night.partner }} opened in 2024 and is the only arts center
+          in the St. John Valley &mdash; a nonprofit, membership-based studio
+          and gathering place on Market Street, with a pottery studio around
+          the corner. Open studios, classes for adults and kids, music,
+          writing, open mics.
+        </p>
+        <p class="craft-body">
+          <a href="{{ craft_night.partner_url }}" target="_blank" rel="noopener"
+             data-track="partner_click" data-track-location="craft_night_about">
+            rivertowncac.org &rarr;
+          </a>
+        </p>
+      </section>
+
+      {% comment %} FAQ {% endcomment %}
+      <section class="craft-section craft-faq" id="faq" aria-labelledby="craft-faq-title">
+        <h2 class="craft-section-title" id="craft-faq-title">QUESTIONS WE GET</h2>
+        <dl class="craft-faq__list">
+          {% for faq in faqs %}
+            <div class="craft-faq__item">
+              <dt class="craft-faq__question">{{ faq.question }}</dt>
+              <dd class="craft-faq__answer">{{ faq.answer }}</dd>
+            </div>
+          {% endfor %}
+        </dl>
+      </section>
+
+      <div class="craft-cta">
+        <h2 class="craft-cta-title">BRING YOUR PROJECT</h2>
+        <p class="craft-cta-text">
+          Questions about whether something will work in the room? Call us
+          before you pack it.
+        </p>
+        <div class="craft-cta-contact">
+          <a href="tel:+12072315287" data-track="phone_click" data-track-location="craft_night">(207) 231-5287</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+{% endblock %}
