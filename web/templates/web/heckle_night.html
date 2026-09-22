@@ -2,9 +2,9 @@
 {% load static %}
 
 {% block title %}Heckle Night | Fort Kent Cinema{% endblock %}
-{% block description %}Talking during the movie is the whole point. The third Friday of every month at Fort Kent Cinema we play a gloriously bad old movie and let the room tear it apart. $5, all ages, no ticket needed in advance.{% endblock %}
+{% block description %}Talking during the movie is the whole point. The third Friday of every month at Fort Kent Cinema we play a gloriously bad old movie and let the room tear it apart. $4, free for members, all ages.{% endblock %}
 {% block og_title %}Heckle Night | Fort Kent Cinema{% endblock %}
-{% block og_description %}The third Friday of every month. A bad old movie, a room full of people, and permission to talk back. $5, all ages.{% endblock %}
+{% block og_description %}The third Friday of every month. A bad old movie, a room full of people, and permission to talk back. $4, free for members, all ages.{% endblock %}
 
 {% block extra_head %}
 {% comment %}
@@ -68,7 +68,9 @@ page, so both renderings read from the one list — same as /craft-night/,
                 Film to be announced &mdash; we book two to three weeks out.
               </p>
             {% endif %}
-            <p class="heckle-next__price">${{ heckle_night.price }} at the door</p>
+            <p class="heckle-next__price">
+              ${{ heckle_night.general_price }} at the door{% if heckle_night.members_free %} &middot; Free for members{% endif %}
+            </p>
           </div>
         {% endif %}
       </header>
@@ -95,20 +97,38 @@ page, so both renderings read from the one list — same as /craft-night/,
       </section>
 
       {% comment %}
-        Admission. One number, one card — the whole pricing model for this
-        night, and a grid of two would be padding.
+        Admission. Two rates, members first, because free IS the headline.
+
+        "Free for members" is the badge the site already paints from
+        Engagement.is_free_for_members — this page states the standing
+        policy, and each booked night has to carry that flag or the two
+        disagree in public. See HECKLE_NIGHT["members_free"].
       {% endcomment %}
       <section class="heckle-section">
         <h2 class="heckle-section-title">ADMISSION</h2>
-        <div class="heckle-price">
-          <div class="heckle-price__amount">${{ heckle_night.price }}</div>
-          <h3 class="heckle-price__who">Everybody</h3>
-          <p class="heckle-price__note">
-            One price, no membership, no ticket needed in advance. Come to
-            the door. The films are old enough that nobody owns them any
-            more, so the night costs us nothing to book &mdash; which is
-            exactly why it can be priced to fill the room.
-          </p>
+        <div class="heckle-prices">
+          {% if heckle_night.members_free %}
+            <div class="heckle-price heckle-price--featured">
+              <div class="heckle-price__amount">Free</div>
+              <h3 class="heckle-price__who">Members</h3>
+              <p class="heckle-price__note">
+                Every Heckle Night, any tier. Give your name at the box
+                office, the same as any other visit &mdash; and it
+                doesn&rsquo;t use up a monthly free admission if your tier
+                has them.
+              </p>
+              <a href="{% url 'membership' %}" class="heckle-price__link">See our memberships &rarr;</a>
+            </div>
+          {% endif %}
+          <div class="heckle-price">
+            <div class="heckle-price__amount">${{ heckle_night.general_price }}</div>
+            <h3 class="heckle-price__who">Everyone else</h3>
+            <p class="heckle-price__note">
+              Half an evening ticket, and the same ${{ heckle_night.general_price }}
+              our members pay any other night of the week. No ticket needed
+              in advance &mdash; come to the door.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -202,9 +222,10 @@ page, so both renderings read from the one list — same as /craft-night/,
           convinced they are working.
         </p>
         <p class="heckle-body">
-          It also means the night costs us nothing to book, which is how a
-          seat here is ${{ heckle_night.price }} instead of what a first-run
-          ticket has to be.
+          It also means nobody has seen most of them, which is the other
+          half of the fun: the room is finding out what happens at the same
+          time you are, and a plot twist nobody saw coming gets the biggest
+          laugh of the night.
         </p>
       </section>
 

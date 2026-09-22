@@ -196,24 +196,45 @@
 
 /* ---- Admission ---------------------------------------------------- */
 
-/* One card, centred and capped, rather than craft night's auto-fit grid:
- * a single child in that grid stretches to the full 900px and reads as a
- * row with something missing from it. */
-.heckle-price {
-  max-width: 380px;
+/* Two rates, so craft night's auto-fit grid is the right shape after all.
+ * Capped at 720px rather than running the container's full 900px: two
+ * cards of a few lines each get stringy at 450px apiece. */
+.heckle-prices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--spacing-md);
+  max-width: 720px;
   margin: 0 auto;
+}
+
+.heckle-price {
   background: var(--color-surface-raised);
-  border: 2px solid var(--color-accent);
+  border: 1px solid var(--color-brass);
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);
   text-align: center;
 }
 
+/* Members, and free is the headline — this card is the one to look at. */
+.heckle-price--featured {
+  border-color: var(--color-accent);
+  border-width: 2px;
+}
+
+/* "Free" is a word where the other card has a numeral, so it is set a
+ * size down: at 3.5rem four letters out-measure "$4" badly enough that
+ * the cheaper-looking card is the one that shouts. */
 .heckle-price__amount {
   font-family: var(--font-display);
   font-size: 3.5rem;
   line-height: 1;
   color: var(--color-accent);
+}
+
+.heckle-price--featured .heckle-price__amount {
+  font-size: 2.75rem;
+  /* Nudged onto the same optical baseline as the numeral beside it. */
+  padding-top: 0.2em;
 }
 
 .heckle-price__who {
@@ -230,6 +251,16 @@
   font-size: 0.95rem;
   line-height: 1.6;
   color: var(--color-text);
+}
+
+.heckle-price__link {
+  display: inline-block;
+  margin-top: var(--spacing-sm);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--color-accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--color-brass);
 }
 
 /* ---- House rules -------------------------------------------------- */

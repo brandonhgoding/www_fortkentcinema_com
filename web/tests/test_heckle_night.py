@@ -22,7 +22,7 @@ from django.utils import timezone
 from django.utils.html import escape
 
 from cinema.models import Engagement, EngagementFilm, Film, Screen, Showtime
-from web.constants import HECKLE_NIGHT, HECKLE_NIGHT_FAQ
+from web.constants import CRAFT_NIGHT, HECKLE_NIGHT, HECKLE_NIGHT_FAQ
 from web.services.heckle_night import (
     get_heckle_nights,
     third_friday,
@@ -223,8 +223,42 @@ class HeckleNightPageTests(TestCase):
     def test_url_is_heckle_night(self):
         self.assertEqual(reverse("heckle_night"), "/heckle-night/")
 
-    def test_states_the_price(self):
-        self.assertContains(self.response, f"${HECKLE_NIGHT['price']}")
+    def test_states_the_door_price(self):
+        self.assertContains(self.response, f"${HECKLE_NIGHT['general_price']}")
+
+    def test_members_come_in_free(self):
+        """Free is the headline, so it has to be on the page as a word."""
+        self.assertTrue(HECKLE_NIGHT["members_free"])
+        content = self.response.content.decode()
+        self.assertIn("Free", content)
+        self.assertIn("free for members", content.lower())
+
+    def test_the_free_night_does_not_spend_a_monthly_allowance(self):
+        """The answer the box office needs, and the one the code implies.
+
+        Engagement.is_free_for_members is a badge; audience.FreeAdmission
+        is a separate allowance drawn down only when staff record a
+        redemption. Nothing here records one, so a member keeps whatever
+        their tier gives them — and the page has to say so, or the counter
+        improvises.
+        """
+        self.assertContains(self.response, "monthly free admission")
+
+    def test_members_are_pointed_at_the_membership_page(self):
+        """A free rate is an argument for joining; it should link."""
+        self.assertContains(self.response, reverse("membership"))
+
+    def test_the_door_price_is_the_member_evening_rate(self):
+        """$4 reads as "the member rate, for everybody" on the page.
+
+        That sentence is only true while evening admission is $8 less the
+        $4 /membership/ promises. If those move, this number is part of
+        the same repricing — see the note on HECKLE_NIGHT["general_price"].
+        """
+        self.assertEqual(
+            HECKLE_NIGHT["general_price"],
+            CRAFT_NIGHT["general_price"] - CRAFT_NIGHT["member_price"],
+        )
 
     def test_states_who_the_night_is_for(self):
         """In a small town this is the question that decides the evening."""

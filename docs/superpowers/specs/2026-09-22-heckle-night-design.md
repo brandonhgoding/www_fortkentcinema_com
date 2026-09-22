@@ -16,7 +16,7 @@ behind it, and the things that are still open.
 |---|---|---|
 | **Night** | Third Friday, 7:00 PM | Friday is when a small town already goes out, and this night does not work without a crowd. 7:00 rather than a late show because people drive in from across the Valley and winter is a real reason to stay home. Most of these films run 60–80 minutes, so the room is out by about 8:30. |
 | **First night** | Friday, October 16 2026 | Chosen by the owner. It is also genuinely the third Friday of October, so the first night and the standing rule agree — a test pins that, because a start date the rule does not produce would be skipped silently. |
-| **Price** | $5 flat | The film costs nothing to book, so the ticket can be cheap and the night still makes money. Cheap enough to be an impulse. |
+| **Price** | $4 at the door, **free for members** | $4 is exactly what a member pays for a regular evening show ($8 less the $4 `/membership/` promises), so the door price here is the member rate offered to everybody — and members go one better and come in free. Cheapest night of the month for everyone, only free one for members, which is the right shape for a night whose whole problem is filling the room. |
 | **Audience** | All ages, jokes kept PG | Bigger pool in a small town, and it lets the night be something a family can do. PG is a house rule, not a rating — the films carry whatever rating they carry, which for most of these is none at all. |
 | **Name** | Heckle Night | Describes the night literally, and is ours. MST3K is named twice on the page: once to explain the idea, once in the FAQ to disclaim the affiliation. Never in the title, the URL or the metadata. |
 
@@ -40,13 +40,20 @@ list and an FAQ.
 
 ## Still open
 
-- **A member pays $1 more here than on any other evening.** `/membership/`
-  promises "$4 off evening tickets" against $8 general admission, which
-  puts a member at $4. At $5 flat, Heckle Night is the one night of the
-  month a membership saves nothing. The FAQ answers this head on rather
-  than letting someone find out at the box office, but it is a real trade
-  and worth revisiting after the first night or two. Changing it is one
-  constant and one FAQ answer.
+- **Every booked Heckle Night has to be flagged `is_free_for_members`.**
+  This is the one manual step the code cannot do. The page states "free
+  for members" as standing policy; the *badge* on the home page and the
+  film page comes from `Engagement.is_free_for_members`, set per booking
+  in the dashboard. Miss it and the two disagree in public.
+- **The free night must not spend a monthly free admission.**
+  `audience.FreeAdmission` is a separate allowance, drawn down only when
+  staff record a redemption — nothing about a free night records one, so
+  a member keeps whatever their tier gives them. The FAQ says so, and the
+  box office needs to know it.
+- **$4 reads as "the member rate, for everybody"** only while evening
+  admission is $8 less a $4 member benefit. A reprice of evening
+  admission has to look at this number too; a test pins the relationship
+  so it cannot drift quietly.
 - **The films themselves.** Nothing is booked. Check the copyright status
   of each title before advertising it — "public domain" is claimed more
   often than it is true, and a restored print or its soundtrack can carry
@@ -54,6 +61,10 @@ list and an FAQ.
   *Plan 9 from Outer Space*, *Robot Monster*, *The Brain That Wouldn't
   Die*, *Teenagers from Outer Space*, *Attack of the Giant Leeches*, and
   *Santa Claus Conquers the Martians* for December.
+- **Nothing on the public page explains our side of the economics.**
+  Deliberately: what a booking costs us is not the customer's business,
+  and a page that argues "this is cheap because it's cheap for us" invites
+  the question on every other ticket we sell. The page sells the night.
 - **The first night needs a host.** An empty or scattered room will not
   heckle anything, and nobody wants to go first. Someone to get the first
   laughs, and a few friends who know they are there to start, is the

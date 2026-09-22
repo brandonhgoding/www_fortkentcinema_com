@@ -834,18 +834,37 @@ HECKLE_NIGHT = {
     # Same floor craft night uses, and a floor rather than an exact 19:00
     # match for the same reason: a show that shifts is still the show.
     "evening_from": datetime.time(17, 0),
-    # One price, everybody, and that is the whole pricing model for this
-    # night.
+    # $4 at the door, free if you're a member.
     #
-    # NOTE, and this is the sharp edge: $5 flat is MORE than a member pays
-    # for any other evening show. /membership/ promises "$4 off evening
-    # tickets" against $8 general admission, which puts a member at $4 —
-    # so a member turning up here pays a dollar over their usual rate. The
-    # FAQ answers that question head on rather than letting someone find
-    # out at the box office. If that trade is ever judged the wrong one,
-    # this is the single number to change, plus the answer that explains
-    # it.
-    "price": 5,
+    # The number matches what a member pays for a regular evening show
+    # ($8 general admission less the "$4 off evening tickets" /membership/
+    # promises), so the door price here is the member rate offered to
+    # everybody — and members go one better and come in free. That makes
+    # this the cheapest night of the month for everyone and the only free
+    # one for members, which is the right shape for a night whose whole
+    # problem is getting a crowd into the room.
+    #
+    # NOTE: $8 general evening admission is published on /craft-night/ and
+    # implied by /membership/'s benefit line. This $4 reads as "the member
+    # rate, for everyone" only while that stays true, so a reprice of
+    # evening admission has to look at this number too.
+    "general_price": 4,
+    # Members in free, every Heckle Night.
+    #
+    # The MECHANISM already exists and this page must not invent a second
+    # one: Engagement.is_free_for_members paints "Free for Members" on the
+    # home page listings and the film's own page, and MEMBERSHIP_FAQ
+    # already explains how to redeem it — give your name at the box office.
+    # This page states the standing policy; each booked Heckle Night
+    # engagement has to CARRY THAT FLAG or the badge and this page disagree
+    # in public. That is a booking step, not something the code can do.
+    #
+    # Deliberately NOT the monthly free-admission allowance (audience
+    # .FreeAdmission). That allowance is drawn down only when staff record
+    # a redemption, and nothing here records one — so a member coming to
+    # Heckle Night keeps whatever their tier gives them. The FAQ says so,
+    # because otherwise the counter has to improvise an answer.
+    "members_free": True,
     # Who the night is for, stated on the page because in a small town the
     # answer decides whether someone brings their kids. All ages means the
     # room is asked to keep the jokes PG — which is a house rule, not a
@@ -887,14 +906,17 @@ HECKLE_NIGHT_FAQ = [
         ),
     },
     {
-        "question": "I'm a member. Is it cheaper for me?",
+        # Points at the mechanism the site already has rather than
+        # inventing a second one — see HECKLE_NIGHT["members_free"]. The
+        # last sentence is the one the box office needs: a free night does
+        # not spend a tier's monthly free admission.
+        "question": "I'm a member. What do I pay?",
         "answer": (
-            "No — it's $5 for everybody, and we'd rather tell you here "
-            "than at the door. That's a dollar over the $4 our members pay "
-            "for a regular evening show, so this is the one night of the "
-            "month your membership doesn't save you money. It buys the "
-            "night instead: a film nobody has to book, priced so a full "
-            "room is the point."
+            "Nothing. Every Heckle Night is free for members — give your "
+            "name at the box office, the same as any other visit. If your "
+            "tier includes free admissions each month, this doesn't use "
+            "one up: the whole night is free for members, not just the "
+            "first few through the door."
         ),
     },
     {
