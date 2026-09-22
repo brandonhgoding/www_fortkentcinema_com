@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Heckle Night | Fort Kent Cinema{% endblock %}
+{% block description %}Talking during the movie is the whole point. The third Friday of every month at Fort Kent Cinema we play a gloriously bad old movie and let the room tear it apart. $5, all ages, no ticket needed in advance.{% endblock %}
+{% block og_title %}Heckle Night | Fort Kent Cinema{% endblock %}
+{% block og_description %}The third Friday of every month. A bad old movie, a room full of people, and permission to talk back. $5, all ages.{% endblock %}
+
+{% block extra_head %}
+{% comment %}
+HECKLE_NIGHT_FAQ (web/constants.py) renders as the visible FAQ further down
+this page as well. Google penalises FAQ markup whose answers are not on the
+page, so both renderings read from the one list — same as /craft-night/,
+/rentals/ and /sponsor/.
+{% endcomment %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {% for faq in faqs %}{
+      "@type": "Question",
+      "name": "{{ faq.question|escapejs }}",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "{{ faq.answer|escapejs }}"
+      }
+    }{% if not forloop.last %},{% endif %}{% endfor %}
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+  <div class="heckle-page">
+    <div class="heckle-container">
+
+      <header class="heckle-header">
+        <a href="/" class="heckle-back">&larr; Back to Home</a>
+        <p class="heckle-eyebrow">
+          Third Friday of the month &middot; {{ heckle_night.audience }}
+        </p>
+        <h1 class="heckle-title">HECKLE NIGHT</h1>
+        <p class="heckle-subtitle">
+          Talking during the movie is the whole point.
+        </p>
+
+        {% if next_night %}
+          <div class="heckle-next">
+            <p class="heckle-next__label">Next one</p>
+            <p class="heckle-next__date">
+              {{ next_night.label }}
+              <span class="heckle-next__time">
+                {% if next_night.film %}{{ next_night.film.time }}{% else %}{{ heckle_night.start_label }}{% endif %}
+              </span>
+            </p>
+            {% if next_night.film %}
+              <p class="heckle-next__film">
+                {% if next_night.film.slug %}
+                  <a href="{% url 'movie_detail' slug=next_night.film.slug %}">{{ next_night.film.title }}</a>
+                {% else %}
+                  {{ next_night.film.title }}
+                {% endif %}
+                {% if next_night.film.runtime %}<span class="heckle-chip">{{ next_night.film.runtime }}</span>{% endif %}
+              </p>
+            {% else %}
+              <p class="heckle-next__film heckle-next__film--tba">
+                Film to be announced &mdash; we book two to three weeks out.
+              </p>
+            {% endif %}
+            <p class="heckle-next__price">${{ heckle_night.price }} at the door</p>
+          </div>
+        {% endif %}
+      </header>
+
+      {% comment %} What it is {% endcomment %}
+      <section class="heckle-section">
+        <h2 class="heckle-section-title">WHAT IT IS</h2>
+        <p class="heckle-lede">The movie is the straight man. You&rsquo;re the comedy.</p>
+        <p class="heckle-body">
+          Once a month we put a gloriously bad old movie on the big screen,
+          bring the house lights halfway up, and let the room tear it apart.
+          Flying saucers on strings. Monsters in gorilla suits. Dialogue
+          nobody should ever have said out loud, said out loud anyway. You
+          are invited &mdash; encouraged, really &mdash; to talk back to all
+          of it.
+        </p>
+        <p class="heckle-body">
+          If you&rsquo;ve seen Mystery Science Theater 3000, you already know
+          how this works. If you haven&rsquo;t: a roomful of people watching a
+          terrible film together turns out to be funnier than the film ever
+          was, and that only happens in a room. It is the one kind of movie
+          night you cannot get at home on the couch.
+        </p>
+      </section>
+
+      {% comment %}
+        Admission. One number, one card — the whole pricing model for this
+        night, and a grid of two would be padding.
+      {% endcomment %}
+      <section class="heckle-section">
+        <h2 class="heckle-section-title">ADMISSION</h2>
+        <div class="heckle-price">
+          <div class="heckle-price__amount">${{ heckle_night.price }}</div>
+          <h3 class="heckle-price__who">Everybody</h3>
+          <p class="heckle-price__note">
+            One price, no membership, no ticket needed in advance. Come to
+            the door. The films are old enough that nobody owns them any
+            more, so the night costs us nothing to book &mdash; which is
+            exactly why it can be priced to fill the room.
+          </p>
+        </div>
+      </section>
+
+      {% comment %} House rules {% endcomment %}
+      <section class="heckle-section">
+        <h2 class="heckle-section-title">HOW IT WORKS</h2>
+        <ul class="heckle-rules">
+          <li>
+            <strong>Shout it out.</strong> Jokes, groans, running gags, sound
+            effects. The movie can take it; it has had decades of practice.
+          </li>
+          <li>
+            <strong>Heckle the movie, not each other.</strong> The one rule
+            that matters. Everyone in the room is on the same team, and the
+            film is the only thing in here without feelings.
+          </li>
+          <li>
+            <strong>Keep it PG.</strong> This night is {{ heckle_night.audience|lower }},
+            and there will be kids in the room. Aim the joke somewhere a
+            ten-year-old can follow it.
+          </li>
+          <li>
+            <strong>Short and sharp beats long.</strong> Get the laugh and
+            let the next person have a turn. A bit that outlasts the scene
+            stops being a bit.
+          </li>
+          <li>
+            <strong>Don&rsquo;t drown out the film.</strong> If the people two
+            rows over can&rsquo;t hear the next line, nobody gets to joke
+            about it.
+          </li>
+          <li>
+            <strong>Sit up front.</strong> Fill the front half before the back.
+            A room spread thin doesn&rsquo;t laugh, and this one needs to.
+          </li>
+        </ul>
+      </section>
+
+      {% comment %}
+        The dates, and the film on each one.
+
+        Both computed — see web/services/heckle_night.py. Most rows will
+        show no film, because the third Friday of the month is further out
+        than we book. That is the normal state and the row says so.
+
+        No rating chip here, unlike /craft-night/: these films predate the
+        rating system and the row would render an empty box on most of them.
+      {% endcomment %}
+      <section class="heckle-section" aria-labelledby="heckle-dates-title">
+        <h2 class="heckle-section-title" id="heckle-dates-title">THE DATES</h2>
+        <p class="heckle-section-note">
+          Third Friday of the month, {{ heckle_night.start_label }}. Most of
+          these run 60 to 80 minutes, so you&rsquo;re out by about half past
+          eight.
+        </p>
+        <ol class="heckle-dates">
+          {% for night in nights %}
+            <li class="heckle-date{% if forloop.first %} heckle-date--next{% endif %}">
+              <div class="heckle-date__when">
+                <span class="heckle-date__day">{{ night.label }}</span>
+                <span class="heckle-date__time">
+                  {% if night.film %}{{ night.film.time }}{% else %}{{ heckle_night.start_label }}{% endif %}
+                </span>
+              </div>
+              <div class="heckle-date__what">
+                {% if night.film %}
+                  {% if night.film.slug %}
+                    <a href="{% url 'movie_detail' slug=night.film.slug %}">{{ night.film.title }}</a>
+                  {% else %}
+                    {{ night.film.title }}
+                  {% endif %}
+                {% else %}
+                  <span class="heckle-date__tba">Not booked yet</span>
+                {% endif %}
+              </div>
+            </li>
+          {% endfor %}
+        </ol>
+      </section>
+
+      {% comment %} Why these films {% endcomment %}
+      <section class="heckle-section">
+        <h2 class="heckle-section-title">WHY THESE MOVIES</h2>
+        <p class="heckle-body">
+          Every Heckle Night film is in the public domain &mdash; made
+          decades ago, owned by nobody now, and ready for a second life as a
+          comedy. That is not a compromise, it is the whole premise. A film
+          has to be a little bit terrible before a room full of people can
+          improve it, and the ones that fell out of copyright are terrible in
+          the most generous possible way: earnest, cheap, and completely
+          convinced they are working.
+        </p>
+        <p class="heckle-body">
+          It also means the night costs us nothing to book, which is how a
+          seat here is ${{ heckle_night.price }} instead of what a first-run
+          ticket has to be.
+        </p>
+      </section>
+
+      {% comment %} FAQ {% endcomment %}
+      <section class="heckle-section heckle-faq" id="faq" aria-labelledby="heckle-faq-title">
+        <h2 class="heckle-section-title" id="heckle-faq-title">QUESTIONS WE GET</h2>
+        <dl class="heckle-faq__list">
+          {% for faq in faqs %}
+            <div class="heckle-faq__item">
+              <dt class="heckle-faq__question">{{ faq.question }}</dt>
+              <dd class="heckle-faq__answer">{{ faq.answer }}</dd>
+            </div>
+          {% endfor %}
+        </dl>
+      </section>
+
+      <div class="heckle-cta">
+        <h2 class="heckle-cta-title">BRING YOUR WORST</h2>
+        <p class="heckle-cta-text">
+          {% if next_night %}Next one is {{ next_night.label }}. {% endif %}Questions,
+          or a terrible film you think the room deserves? Call us.
+        </p>
+        <div class="heckle-cta-contact">
+          <a href="tel:+12072315287" data-track="phone_click" data-track-location="heckle_night">(207) 231-5287</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+{% endblock %}

@@ -4,6 +4,7 @@ from .views import (
     # AboutView,  # About page temporarily hidden (re-enable with the /about path below)
     CalendarMonthView,
     CraftNightView,
+    HeckleNightView,
     HistoryView,
     HomeView,
     MembershipView,
@@ -28,6 +29,10 @@ urlpatterns = [
     # than "craft-cinema-night": the event keeps its full name, the URL
     # is the short thing people say and type.
     path("craft-night/", CraftNightView.as_view(), name="craft_night"),
+    # Trailing slash like the other section pages. "heckle-night" rather
+    # than anything borrowing MST3K's name: the URL says what the night is
+    # and belongs to us.
+    path("heckle-night/", HeckleNightView.as_view(), name="heckle_night"),
     path("sponsor/", SponsorView.as_view(), name="sponsor"),
     path("history/", HistoryView.as_view(), name="history"),
     path("sponsor/inquire", SponsorInquiryView.as_view(), name="sponsor_inquire"),
