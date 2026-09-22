@@ -217,10 +217,9 @@ class CraftNightPageTests(TestCase):
 class PartnerLogoTests(TestCase):
     """The logo is optional, and the page has to be right without it.
 
-    CRAFT_NIGHT["partner_logo"] is blank until Rivertown hands us the
-    asset — their mark is theirs to grant, separately from agreeing to the
-    partnership. Both states are tested so the blank one is a supported
-    state rather than an untested one.
+    Rivertown sent us their mark, and CRAFT_NIGHT["partner_logo"] points
+    at our copy of it. Blanking it has to leave a correct page, so both
+    states are tested and the blank one stays supported.
     """
 
     def get(self, **overrides):
@@ -246,3 +245,9 @@ class PartnerLogoTests(TestCase):
     def test_we_do_not_hotlink_their_logo(self):
         """The asset must be ours to serve, not fetched off their site."""
         self.assertFalse(CRAFT_NIGHT["partner_logo"].startswith("http"))
+
+    def test_configured_logo_file_exists(self):
+        """A typo in the path would 500 the page under manifest storage."""
+        from django.contrib.staticfiles import finders
+
+        self.assertIsNotNone(finders.find(CRAFT_NIGHT["partner_logo"]))
