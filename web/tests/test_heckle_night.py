@@ -136,13 +136,19 @@ class HeckleNightLineupTests(TestCase):
         self.night = datetime.date(2026, 10, 16)
 
     def book(self, title, date, *, hour=19, minute=0, status="CONFIRMED",
-             cancelled=False, listed=True):
+             cancelled=False, listed=True, kind=Engagement.Kind.SPECIAL_EVENT):
+        """A Heckle Night booking by default — a SPECIAL_EVENT.
+
+        `kind` is a parameter rather than a constant because the whole
+        point of the lineup query is which kinds it refuses.
+        """
         film = Film.objects.create(title=title, runtime_minutes=79, rating="NR")
         engagement = Engagement.objects.create(
             screen=self.screen,
             start_date=date,
             end_date=date,
             status=status,
+            kind=kind,
             show_in_main_listings=listed,
         )
         EngagementFilm.objects.create(engagement=engagement, film=film, position=1)
@@ -192,13 +198,55 @@ class HeckleNightLineupTests(TestCase):
         self.book("Not Confirmed Yet", self.night, status="DRAFT")
         self.assertIsNone(self.nights()[0]["film"])
 
-    def test_hidden_engagement_is_not_a_lineup(self):
-        self.book("Private Event", self.night, listed=False)
-        self.assertIsNone(self.nights()[0]["film"])
-
     def test_showtime_on_another_day_is_ignored(self):
         self.book("Wrong Night", self.night - datetime.timedelta(days=1))
         self.assertIsNone(self.nights()[0]["film"])
+
+    def test_the_regular_friday_feature_is_not_heckle_night(self):
+        """The bug this filter exists to prevent.
+
+        A first-run feature in the Friday evening slot is a normal
+        screening. Announcing it here would invite a paying room to shout
+        at a film we licensed, which is a different and much worse night.
+        """
+        self.book("First Run Feature", self.night, kind=Engagement.Kind.REGULAR)
+        self.assertIsNone(self.nights()[0]["film"])
+
+    def test_a_special_event_is(self):
+        self.book("Plan 9 From Outer Space", self.night)
+        self.assertEqual(
+            self.nights()[0]["film"]["title"], "Plan 9 From Outer Space"
+        )
+
+    def test_no_other_kind_counts_either(self):
+        """CLASSIC and DOUBLE_FEATURE are near misses, and still misses.
+
+        A Heckle Night booking has one kind. A night booked as something
+        else reads "Not booked yet" on the page — visibly wrong, and
+        fixable — rather than quietly adopting the wrong film.
+        """
+        for kind in (Engagement.Kind.CLASSIC, Engagement.Kind.DOUBLE_FEATURE):
+            with self.subTest(kind=kind):
+                Engagement.objects.all().delete()
+                self.book("Close But Not It", self.night, kind=kind)
+                self.assertIsNone(self.nights()[0]["film"])
+
+    def test_a_private_event_is_still_not_advertised(self):
+        """show_in_main_listings now carries the privacy guard alone.
+
+        Private bookings are special events too. Unticking that box is
+        how one is marked private, and this page must not undo that.
+        """
+        self.book("Someone's Birthday Party", self.night, listed=False)
+        self.assertIsNone(self.nights()[0]["film"])
+
+    def test_the_regular_feature_does_not_win_over_the_event(self):
+        """Both on the same Friday evening, which is the realistic case:
+        one screen runs the first-run feature, the other runs this."""
+        self.book("First Run Feature", self.night, hour=19,
+                  kind=Engagement.Kind.REGULAR)
+        self.book("Robot Monster", self.night, hour=19, minute=30)
+        self.assertEqual(self.nights()[0]["film"]["title"], "Robot Monster")
 
     def test_query_count_does_not_grow_with_the_number_of_nights(self):
         """Bucketed in Python. Per-date filtering would be N queries.

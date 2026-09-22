@@ -34,12 +34,27 @@ list and an FAQ.
   Showtime rows Now Showing reads, so the page and the schedule cannot
   disagree. Most listed nights will show "Not booked yet", because the
   sixth Friday on the page is five months out. That is the normal state.
+- **And only special events count.** This is where the page parts company
+  with craft night. Craft night *adopts* whatever regular show is in that
+  Tuesday's evening slot — that is its premise. Heckle Night is its own
+  booking, so the query matches `Engagement.Kind.SPECIAL_EVENT` and
+  nothing else. Unfiltered, the page would have announced the Friday
+  first-run feature as the film the room is invited to shout at.
+  `CLASSIC` and `DOUBLE_FEATURE` are near misses and are still misses: a
+  night booked as the wrong kind reads "Not booked yet", which is visibly
+  wrong and fixable, rather than quietly showing the wrong film.
 - **One thing craft night did not need: a start date.** This night has
   never run, so the rule alone would have advertised a September Friday
   nobody planned. `HECKLE_NIGHT["starts_on"]` is a floor.
 
 ## Still open
 
+- **Every booked Heckle Night has to be a Special Event.** `kind` must be
+  `SPECIAL_EVENT` or the night does not appear on this page at all. Leave
+  "show in main listings" ticked — it defaults on in the dashboard, and
+  it is now the only thing keeping private bookings (which are special
+  events too) off this page. Clearing it is how a booking is marked
+  private, and this page respects that.
 - **Every booked Heckle Night has to be flagged `is_free_for_members`.**
   This is the one manual step the code cannot do. The page states "free
   for members" as standing policy; the *badge* on the home page and the

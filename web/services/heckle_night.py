@@ -8,6 +8,14 @@ having a next date. And what plays is not ours to type either: the film comes
 out of the same Engagement and Showtime rows Now Showing reads, so the page
 and the schedule cannot disagree.
 
+Where it DIVERGES from craft night, and this is the important difference:
+craft night adopts whatever regular show is already in that Tuesday's
+evening slot — that is its whole premise, a normal screening run a little
+differently. Heckle Night is not a normal screening. It is its own booking,
+so the lineup query matches Engagement.Kind.SPECIAL_EVENT only. Without
+that filter the page would cheerfully announce the Friday first-run feature
+as the film the room is invited to shout at.
+
 The one thing craft night did not need is a start date. Craft night was
 already running when its page shipped; this one has never run, and the rule
 on its own would happily advertise a third Friday that nobody has planned.
@@ -23,7 +31,7 @@ date or inventing a title.
 import calendar
 import datetime
 
-from cinema.models import Showtime
+from cinema.models import Engagement, Showtime
 from web.constants import HECKLE_NIGHT
 from web.services.cinema_data import _format_runtime, _format_showtime, _local_date
 from web.services.showtimes import CINEMA_TZ
@@ -71,15 +79,33 @@ def upcoming_nights(count=None, *, today=None):
 
 
 def evening_showtimes(dates):
-    """{date: Showtime} — the first evening performance on each of `dates`.
+    """{date: Showtime} — the first evening SPECIAL EVENT on each of `dates`.
 
     One query for the whole span, bucketed in Python, the same shape
     get_calendar_month() and craft night use. Filtering per date would be
     `count` queries for a page that renders six rows.
 
+    SPECIAL_EVENT and nothing else. A first-run feature in the Friday
+    evening slot is not Heckle Night and must never be announced as it,
+    which is what an unfiltered query did. CLASSIC and DOUBLE_FEATURE are
+    deliberately NOT matched either: a Heckle Night booking has one kind,
+    so a night booked as something else shows "Not booked yet" — visibly
+    wrong on the page — rather than quietly adopting the wrong film.
+
+    show_in_main_listings survives the change and is now carrying the
+    privacy guard on its own. Special events are the shape a private
+    booking takes, and unticking that box is how one is marked private;
+    a page that advertised those would be leaking them. Booked in the
+    dashboard the box defaults to on, so a public Heckle Night needs
+    nothing done to it — only a private event needs the box cleared.
+    (Engagement.default_visibility_for() would default special events to
+    hidden, but only the backfill command consults it, not the form.)
+
     "Evening" is a time-of-day floor rather than the exact advertised
     start: if a Friday's show moves to 7:30 the page should follow it, not
-    go blank because 19:00 matched nothing.
+    go blank because 19:00 matched nothing. It still earns its place with
+    the kind filter in front of it — a daytime special event on the same
+    Friday is somebody else's screening.
     """
     if not dates:
         return {}
@@ -95,6 +121,7 @@ def evening_showtimes(dates):
         Showtime.objects.filter(
             is_cancelled=False,
             engagement__status="CONFIRMED",
+            engagement__kind=Engagement.Kind.SPECIAL_EVENT,
             starts_at__gte=start,
             starts_at__lte=end,
         )
