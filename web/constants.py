@@ -826,14 +826,28 @@ HECKLE_NIGHT = {
     # that start date is ever moved to a date the rule does not produce,
     # the page will skip it and show the next real third Friday instead.
     "starts_on": datetime.date(2026, 10, 16),
-    # The standing start time. Shown only where no real showtime is known:
-    # once a Friday is booked the page renders that Showtime's own start,
-    # so a moved show moves the page rather than contradicting it.
+    # The start time, and it is now EXACT rather than a floor.
+    #
+    # A Heckle Night is the 7:00 PM special event on the third Friday. A
+    # special event at any other time that Friday is a different night and
+    # the page will not claim it. Craft night keeps its 17:00 floor,
+    # because craft night adopts a regular show and a regular show is
+    # allowed to move; this one does not adopt anything.
+    #
+    # Known and accepted cost: if a Heckle Night is ever booked for 7:30,
+    # this page goes blank for that date and says "Not booked yet" while
+    # the listings show the event. That is a crude rule and it is the rule
+    # we want for now — it fails visibly rather than silently, which is
+    # the same trade the SPECIAL_EVENT filter makes. The better version is
+    # a flag on the Engagement that says "this one is a Heckle Night", and
+    # that is a migration nobody needs yet.
+    #
+    # start_label is what the page PRINTS and start_time is what it
+    # MATCHES, so the two are now load-bearing together — a booking made
+    # at the printed time has to be a booking this finds. A test asserts
+    # they agree; change one and change the other.
     "start_label": "7:00 PM",
-    # Floor for "the evening slot" when matching a Friday's showtimes.
-    # Same floor craft night uses, and a floor rather than an exact 19:00
-    # match for the same reason: a show that shifts is still the show.
-    "evening_from": datetime.time(17, 0),
+    "start_time": datetime.time(19, 0),
     # $4 at the door, free if you're a member.
     #
     # The number matches what a member pays for a regular evening show

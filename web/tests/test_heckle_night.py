@@ -88,6 +88,19 @@ class StartDateTests(TestCase):
             nights, [datetime.date(2027, 3, 19), datetime.date(2027, 4, 16)]
         )
 
+    def test_the_printed_time_is_the_time_we_match(self):
+        """Now that the match is exact, these two are load-bearing together.
+
+        start_label is what the page tells people to turn up for;
+        start_time is the only booking it will find. A booking made at the
+        advertised time has to be one this page shows, so the label and
+        the matcher cannot be allowed to drift apart.
+        """
+        printed = datetime.datetime.strptime(
+            HECKLE_NIGHT["start_label"], "%I:%M %p"
+        ).time()
+        self.assertEqual(printed, HECKLE_NIGHT["start_time"])
+
     def test_the_start_date_is_a_date_the_rule_actually_produces(self):
         """Otherwise the page silently skips the night it was opened for.
 
@@ -136,15 +149,19 @@ class HeckleNightLineupTests(TestCase):
         self.night = datetime.date(2026, 10, 16)
 
     def book(self, title, date, *, hour=19, minute=0, status="CONFIRMED",
-             cancelled=False, listed=True, kind=Engagement.Kind.SPECIAL_EVENT):
-        """A Heckle Night booking by default — a SPECIAL_EVENT.
+             cancelled=False, listed=True, kind=Engagement.Kind.SPECIAL_EVENT,
+             screen=None):
+        """A Heckle Night booking by default — a 7:00 PM SPECIAL_EVENT.
 
-        `kind` is a parameter rather than a constant because the whole
-        point of the lineup query is which kinds it refuses.
+        `kind` and `screen` are parameters rather than constants because
+        the whole point of the lineup query is what it refuses, and
+        Showtime is unique on (screen, starts_at) — two things at 7:00 on
+        one Friday need two screens, which is also how it works in real
+        life.
         """
         film = Film.objects.create(title=title, runtime_minutes=79, rating="NR")
         engagement = Engagement.objects.create(
-            screen=self.screen,
+            screen=screen or self.screen,
             start_date=date,
             end_date=date,
             status=status,
@@ -154,7 +171,7 @@ class HeckleNightLineupTests(TestCase):
         EngagementFilm.objects.create(engagement=engagement, film=film, position=1)
         Showtime.objects.create(
             engagement=engagement,
-            screen=self.screen,
+            screen=screen or self.screen,
             starts_at=aware(date, hour, minute),
             is_cancelled=cancelled,
         )
@@ -177,18 +194,25 @@ class HeckleNightLineupTests(TestCase):
         self.assertTrue(all(row["film"] is None for row in rows))
         self.assertEqual(rows[0]["label"], "Friday, October 16")
 
-    def test_matinee_is_not_the_heckle_night_film(self):
-        """A 1pm showing on the same Friday is a different show."""
-        self.book("Matinee Only", self.night, hour=13)
-        self.assertIsNone(self.nights()[0]["film"])
+    def test_only_a_seven_oclock_event_is_heckle_night(self):
+        """Exact, not a floor — and the cost of that is a blank date.
 
-    def test_evening_is_a_floor_not_an_exact_time(self):
-        """A show that shifted to 7:30 is still the evening show."""
-        self.book("Moved Late", self.night, hour=19, minute=30)
+        A Heckle Night booked for 7:30 leaves this page saying "Not booked
+        yet" while the listings show the event. Crude on purpose: it fails
+        visibly rather than silently. The real fix is a flag on the
+        Engagement, not a cleverer query.
+        """
+        for hour, minute in ((19, 30), (18, 30), (20, 0), (13, 0)):
+            with self.subTest(at=f"{hour}:{minute:02d}"):
+                Engagement.objects.all().delete()
+                self.book("Wrong Time", self.night, hour=hour, minute=minute)
+                self.assertIsNone(self.nights()[0]["film"])
+
+    def test_seven_oclock_on_the_nose_is(self):
+        self.book("Robot Monster", self.night, hour=19, minute=0)
         first = self.nights()[0]
-        self.assertEqual(first["film"]["title"], "Moved Late")
-        # The page shows the real start, not the advertised 7:00.
-        self.assertEqual(first["film"]["time"], "7:30 PM")
+        self.assertEqual(first["film"]["title"], "Robot Monster")
+        self.assertEqual(first["film"]["time"], HECKLE_NIGHT["start_label"])
 
     def test_cancelled_showtime_is_not_a_lineup(self):
         self.book("Cancelled", self.night, cancelled=True)
@@ -241,11 +265,16 @@ class HeckleNightLineupTests(TestCase):
         self.assertIsNone(self.nights()[0]["film"])
 
     def test_the_regular_feature_does_not_win_over_the_event(self):
-        """Both on the same Friday evening, which is the realistic case:
-        one screen runs the first-run feature, the other runs this."""
-        self.book("First Run Feature", self.night, hour=19,
-                  kind=Engagement.Kind.REGULAR)
-        self.book("Robot Monster", self.night, hour=19, minute=30)
+        """Both at 7:00 on the same Friday, which is the realistic case:
+        one screen runs the first-run feature, the other runs this.
+
+        Two screens because Showtime is unique on (screen, starts_at) —
+        the same reason the real building needs two.
+        """
+        other = Screen.objects.create(name="The Annex", capacity=60)
+        self.book("First Run Feature", self.night,
+                  kind=Engagement.Kind.REGULAR, screen=other)
+        self.book("Robot Monster", self.night)
         self.assertEqual(self.nights()[0]["film"]["title"], "Robot Monster")
 
     def test_query_count_does_not_grow_with_the_number_of_nights(self):
