@@ -45,8 +45,8 @@ SITE_CONFIG = {
                 # Heckle Night is the third Friday, Craft Night the last
                 # Tuesday. Two entries is the whole Events menu, so the
                 # order is cheap to hold and reads as a month.
-                {"label": "Heckle Night", "href": "/heckle-night/"},
                 {"label": "Craft Night", "href": "/craft-night/"},
+		{"label": "Heckle Night", "href": "/heckle-night/"},
             ],
         },
         {
