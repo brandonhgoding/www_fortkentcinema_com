@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Open Mic Night | Fort Kent Cinema{% endblock %}
+{% block description %}Open mic every Monday at Fort Kent Cinema, 6:30 to 9 PM in the Century auditorium. Karaoke, original music, comedy, anything. Free to perform, free to watch, all ages.{% endblock %}
+{% block og_title %}Open Mic Night | Fort Kent Cinema{% endblock %}
+{% block og_description %}Every Monday, 6:30 PM. Karaoke, original music, comedy, anything. Sign up at the door. Free, all ages.{% endblock %}
+
+{% block extra_head %}
+{% comment %}
+OPEN_MIC_FAQ (web/constants.py) renders as the visible FAQ further down this
+page as well. Google penalises FAQ markup whose answers are not on the page,
+so both renderings read from the one list — same as /heckle-night/.
+{% endcomment %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {% for faq in faqs %}{
+      "@type": "Question",
+      "name": "{{ faq.question|escapejs }}",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "{{ faq.answer|escapejs }}"
+      }
+    }{% if not forloop.last %},{% endif %}{% endfor %}
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+  <div class="openmic-page">
+    <div class="openmic-container">
+
+      <header class="openmic-header">
+        <a href="/" class="openmic-back">&larr; Back to Home</a>
+        <p class="openmic-eyebrow">
+          Every {{ open_mic.day_label }} &middot; {{ open_mic.audience }} &middot; {{ open_mic.price_label }}
+        </p>
+        <h1 class="openmic-title">OPEN MIC</h1>
+        <p class="openmic-subtitle">
+          Karaoke, original music, comedy &mdash; anything goes.
+        </p>
+
+        <div class="openmic-next">
+          <p class="openmic-next__label">Next one</p>
+          <p class="openmic-next__date">
+            {% if next_is_tonight %}Tonight{% else %}{{ next_night|date:"l, F j" }}{% endif %}
+            <span class="openmic-next__time">
+              {{ open_mic.start_label }} to {{ open_mic.end_label }} &middot; doors {{ open_mic.doors_label }}
+            </span>
+          </p>
+          <p class="openmic-next__price">
+            Free to perform &middot; Free to watch
+          </p>
+        </div>
+      </header>
+
+      {% comment %} What it is {% endcomment %}
+      <section class="openmic-section">
+        <h2 class="openmic-section-title">WHAT IT IS</h2>
+        <p class="openmic-lede">One stage, one room, and whoever turns up.</p>
+        <p class="openmic-body">
+          Every {{ open_mic.day_label }} night we gather in {{ open_mic.room }}
+          for open mic. Sing karaoke. Play the song you wrote last week.
+          Try out some stand-up. Read a poem, do a magic trick,
+          or do something we haven&rsquo;t thought of. If you can do it on
+          a stage, it counts.
+        </p>
+        <p class="openmic-body">
+          First-timers and regulars get the same welcome, and the room is on
+          your side. Not performing? Come anyway. The audience is half of an
+          open mic.
+        </p>
+      </section>
+
+      {% comment %}
+        The schedule. The finish is "9 or when the sheet runs out" — 9:00
+        is a ceiling, not a promise. See OPEN_MIC["end_label"].
+      {% endcomment %}
+      <section class="openmic-section">
+        <h2 class="openmic-section-title">THE NIGHT</h2>
+        <ol class="openmic-schedule">
+          <li class="openmic-slot">
+            <span class="openmic-slot__time">{{ open_mic.doors_label }}</span>
+            <span class="openmic-slot__what">Doors open. Put your name on the sign-up sheet.</span>
+          </li>
+          <li class="openmic-slot">
+            <span class="openmic-slot__time">{{ open_mic.start_label }}</span>
+            <span class="openmic-slot__what">First act up, then down the list in sign-up order.</span>
+          </li>
+          <li class="openmic-slot">
+            <span class="openmic-slot__time">{{ open_mic.end_label }}</span>
+            <span class="openmic-slot__what">We wrap up, or earlier once everyone on the sheet has had a turn.</span>
+          </li>
+        </ol>
+      </section>
+
+      {% comment %} House rules {% endcomment %}
+      <section class="openmic-section">
+        <h2 class="openmic-section-title">HOW IT WORKS</h2>
+        <ul class="openmic-rules">
+          <li>
+            <strong>Sign up at the door.</strong> First come, first served.
+            There&rsquo;s nothing to book ahead.
+          </li>
+          <li>
+            <strong>Keep it PG.</strong> Open mic is {{ open_mic.audience|lower }},
+            and there may be kids in the room and on the stage. That goes
+            for song lyrics too.
+          </li>
+          <li>
+            <strong>Cheer for everyone.</strong> Everyone who gets up is
+            taking a chance. Clap for the nervous ones loudest.
+          </li>
+          <li>
+            <strong>Leave time for the next act.</strong> The sheet has to
+            fit before 9:00, so keep your set short and let the next person
+            have their turn.
+          </li>
+        </ul>
+      </section>
+
+      {% comment %} FAQ {% endcomment %}
+      <section class="openmic-section openmic-faq" id="faq" aria-labelledby="openmic-faq-title">
+        <h2 class="openmic-section-title" id="openmic-faq-title">QUESTIONS WE GET</h2>
+        <dl class="openmic-faq__list">
+          {% for faq in faqs %}
+            <div class="openmic-faq__item">
+              <dt class="openmic-faq__question">{{ faq.question }}</dt>
+              <dd class="openmic-faq__answer">{{ faq.answer }}</dd>
+            </div>
+          {% endfor %}
+        </dl>
+      </section>
+
+      <div class="openmic-cta">
+        <h2 class="openmic-cta-title">SEE YOU {{ open_mic.day_label|upper }}</h2>
+        <p class="openmic-cta-text">
+          {{ open_mic.doors_label }} doors, {{ open_mic.start_label }} start, 13 Hall Street. Questions? Call us.
+        </p>
+        <div class="openmic-cta-contact">
+          <a href="tel:+12072315287" data-track="phone_click" data-track-location="open_mic">(207) 231-5287</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+{% endblock %}

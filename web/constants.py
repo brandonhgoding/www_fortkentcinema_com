@@ -41,12 +41,12 @@ SITE_CONFIG = {
             "label": "Events",
             # No "href": this opens a menu, it is not a destination.
             "children": [
-                # Chronological by night of the month, not alphabetical:
-                # Heckle Night is the third Friday, Craft Night the last
-                # Tuesday. Two entries is the whole Events menu, so the
-                # order is cheap to hold and reads as a month.
+                # Open Mic first: it is weekly, so it is the soonest
+                # thing on the menu on any given day. Then the monthly
+                # nights in the order the owner set on 2026-09-23.
+                {"label": "Open Mic", "href": "/open-mic/"},
                 {"label": "Craft Night", "href": "/craft-night/"},
-		{"label": "Heckle Night", "href": "/heckle-night/"},
+                {"label": "Heckle Night", "href": "/heckle-night/"},
             ],
         },
         {
@@ -967,6 +967,93 @@ HECKLE_NIGHT_FAQ = [
     },
 ]
 
+
+# Open Mic — /open-mic/
+#
+# Every Monday in the Century auditorium: karaoke, original music, comedy,
+# anything. Unlike craft night and heckle night there is no film, so
+# nothing here comes from the schedule and no booking is needed for the
+# page to be right. The only computed thing is the next date — see
+# web/services/open_mic.py.
+#
+# The home page has advertised "Open Mic Every Monday, 6:30 PM, doors open
+# at 6:00" since the React port (templates/partials/cta_openmic.html). That
+# band and this page have to agree; a test holds them together.
+OPEN_MIC = {
+    # Monday, as datetime.date.weekday() counts it.
+    "weekday": 0,
+    "day_label": "Monday",
+    "room": "the Century auditorium",
+    "doors_label": "6:00 PM",
+    "start_label": "6:30 PM",
+    # The advertised finish. The night can end earlier when the sign-up
+    # sheet runs out, which the page says — 9:00 is a ceiling, not a
+    # promise. It is also the weekday closing time in SITE_CONFIG["hours"],
+    # so the night never outlasts the building.
+    "end_label": "9:00 PM",
+    # What upcoming_nights() rolls over at: until 9 PM on a Monday, the
+    # next open mic is tonight.
+    "end_time": datetime.time(21, 0),
+    # Free to perform and free to watch. No member angle, because there is
+    # nothing for membership to discount.
+    "price_label": "Free",
+    # All ages, so acts keep it PG — a house rule, the same one Heckle
+    # Night runs, not a rating.
+    "audience": "All ages",
+}
+
+# Rendered twice on /open-mic/ — visible FAQ and FAQPage structured data —
+# from this one list, the same contract as HECKLE_NIGHT_FAQ above.
+#
+# Only what the owner has actually decided goes in here: the night, the
+# times, free, sign-up sheet at the door, all ages and PG. Slot lengths,
+# what gear the room has and whether there is a karaoke library are NOT
+# decided, so no answer promises any of them.
+OPEN_MIC_FAQ = [
+    {
+        "question": "How do I get a slot?",
+        "answer": (
+            "Put your name on the sign-up sheet at the door when you "
+            "arrive. Acts go up in the order they signed, first come, "
+            "first served. There's no booking ahead."
+        ),
+    },
+    {
+        "question": "What can I do?",
+        "answer": (
+            "Anything. Karaoke, songs you wrote, covers, stand-up, poetry, "
+            "a magic trick. If you can do it on a stage, it counts."
+        ),
+    },
+    {
+        "question": "What does it cost?",
+        "answer": (
+            "Nothing. It's free to perform and free to come and watch."
+        ),
+    },
+    {
+        "question": "Can I just come and watch?",
+        "answer": (
+            "Please do. An open mic is only as good as its audience, and "
+            "the people on the sheet will be glad you came."
+        ),
+    },
+    {
+        "question": "Can kids come, or get up on stage?",
+        "answer": (
+            "Yes to both. Open mic is all ages, so we ask every act to "
+            "keep it PG. That's a house rule, and it covers song lyrics "
+            "too."
+        ),
+    },
+    {
+        "question": "When does it finish?",
+        "answer": (
+            "We start at 6:30 and go until 9:00 PM, or until everyone on "
+            "the sheet has had their turn, whichever comes first."
+        ),
+    },
+]
 
 # The donation CTA on the home page.
 #

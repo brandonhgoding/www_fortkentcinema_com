@@ -9,6 +9,7 @@ from .views import (
     HomeView,
     MembershipView,
     MovieDetailView,
+    OpenMicView,
     RentalsView,
     SponsorCatalogView,
     SponsorFilmOptionsView,
@@ -33,6 +34,7 @@ urlpatterns = [
     # than anything borrowing MST3K's name: the URL says what the night is
     # and belongs to us.
     path("heckle-night/", HeckleNightView.as_view(), name="heckle_night"),
+    path("open-mic/", OpenMicView.as_view(), name="open_mic"),
     path("sponsor/", SponsorView.as_view(), name="sponsor"),
     path("history/", HistoryView.as_view(), name="history"),
     path("sponsor/inquire", SponsorInquiryView.as_view(), name="sponsor_inquire"),

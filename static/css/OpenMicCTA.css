@@ -83,6 +83,20 @@
   color: var(--color-text-muted);
 }
 
+/* Into /open-mic/. Plain text link in the accent, like the price-card
+ * links on the event pages; the band stays a notice, not a button row. */
+.open-mic-cta__link {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--color-accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--color-brass);
+}
+
+.open-mic-cta__link:hover {
+  color: var(--color-accent-warm);
+}
+
 /* PHONE — this block was dead code until now: home.css hid .open-mic-cta
  * below 600px (see the note there), so the stacking here has never actually
  * rendered. It stays a compact recurring-event notice, not a hero: one

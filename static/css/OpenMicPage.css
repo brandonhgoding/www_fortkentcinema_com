@@ -1,0 +1,317 @@
+/* Open Mic — /open-mic/
+ *
+ * Heckle Night's skeleton (header, next-date card, sections, rules, FAQ,
+ * CTA) so the Events pages read as one family, minus the parts open mic has
+ * no use for: no price cards (it is free, which the hero says in one line)
+ * and no list of dates (it is every Monday; the next one is the only date
+ * worth printing). In their place, a three-row "the night" schedule.
+ */
+
+.openmic-page {
+  min-height: 100vh;
+  padding: var(--spacing-lg);
+  padding-top: calc(80px + var(--spacing-xl));
+  background: var(--color-surface);
+}
+
+.openmic-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* ---- Header ------------------------------------------------------- */
+
+.openmic-header {
+  text-align: center;
+  margin-bottom: var(--spacing-2xl);
+}
+
+.openmic-back {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  letter-spacing: 2px;
+  color: var(--color-accent);
+  text-decoration: none;
+  margin-bottom: var(--spacing-md);
+}
+
+.openmic-back:hover {
+  color: var(--color-accent-warm);
+}
+
+.openmic-eyebrow {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-xs);
+}
+
+.openmic-title {
+  font-family: var(--font-condensed);
+  font-size: 4rem;
+  line-height: 0.95;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--color-accent-warm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.openmic-subtitle {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  color: var(--color-text);
+  font-style: italic;
+  max-width: 34em;
+  margin: 0 auto;
+}
+
+/* The next Monday, called out. This is what most visits come for. */
+.openmic-next {
+  margin-top: var(--spacing-xl);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-brass);
+  border-radius: var(--radius-lg);
+  display: inline-block;
+  text-align: center;
+}
+
+.openmic-next__label {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--color-brass-light);
+  margin-bottom: var(--spacing-xs);
+}
+
+.openmic-next__date {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  color: var(--color-text);
+  line-height: 1.2;
+}
+
+.openmic-next__time {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  letter-spacing: 1px;
+  color: var(--color-accent-warm);
+  margin-top: var(--spacing-xs);
+}
+
+.openmic-next__film {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--color-text);
+  margin-top: var(--spacing-sm);
+}
+
+.openmic-next__film a {
+  color: var(--color-accent);
+}
+
+.openmic-next__film--tba {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+/* "Free" is half the pitch, so it sits in the hero rather than in a
+ * section of its own. */
+.openmic-next__price {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--color-brass-light);
+  margin-top: var(--spacing-sm);
+  padding-top: var(--spacing-xs);
+  border-top: 1px solid var(--color-surface-sunken);
+}
+
+/* ---- Sections ----------------------------------------------------- */
+
+.openmic-section {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.openmic-section-title {
+  font-family: var(--font-condensed);
+  font-size: 1.4rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 1px solid var(--color-brass);
+  margin-bottom: var(--spacing-md);
+}
+
+.openmic-section-note {
+  font-family: var(--font-body);
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-md);
+}
+
+.openmic-lede {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-md);
+}
+
+.openmic-body {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-sm);
+  max-width: 62ch;
+}
+
+.openmic-body a {
+  color: var(--color-accent);
+}
+
+/* ---- The night ---------------------------------------------------- */
+
+/* Three rows, doors to finish. Same bordered-list ground as heckle night's
+ * dates, since it is the same kind of thing: times down the left. */
+.openmic-schedule {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border: 1px solid var(--color-brass);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-surface-raised);
+}
+
+.openmic-slot {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--color-surface-sunken);
+}
+
+.openmic-slot:last-child {
+  border-bottom: none;
+}
+
+.openmic-slot__time {
+  flex: 0 0 6.5em;
+  font-family: var(--font-condensed);
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+  color: var(--color-accent-warm);
+}
+
+.openmic-slot__what {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--color-text);
+}
+
+/* ---- House rules -------------------------------------------------- */
+
+.openmic-rules {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.openmic-rules li {
+  font-family: var(--font-body);
+  font-size: 1.02rem;
+  line-height: 1.65;
+  color: var(--color-text);
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--color-surface-sunken);
+  max-width: 68ch;
+}
+
+.openmic-rules li:last-child {
+  border-bottom: none;
+}
+
+.openmic-rules strong {
+  color: var(--color-accent);
+}
+
+/* ---- FAQ ---------------------------------------------------------- */
+
+.openmic-faq__list {
+  margin: 0;
+}
+
+.openmic-faq__item {
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--color-surface-sunken);
+}
+
+.openmic-faq__item:last-child {
+  border-bottom: none;
+}
+
+.openmic-faq__question {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  color: var(--color-accent);
+  margin-bottom: var(--spacing-xs);
+}
+
+.openmic-faq__answer {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--color-text);
+  margin: 0;
+  max-width: 68ch;
+}
+
+/* ---- CTA ---------------------------------------------------------- */
+
+.openmic-cta {
+  text-align: center;
+  padding: var(--spacing-xl) var(--spacing-lg);
+  background: var(--color-surface-alt);
+  border-radius: var(--radius-lg);
+}
+
+.openmic-cta-title {
+  font-family: var(--font-condensed);
+  font-size: 2rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  margin-bottom: var(--spacing-xs);
+}
+
+.openmic-cta-text {
+  font-family: var(--font-body);
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-sm);
+}
+
+.openmic-cta-contact a {
+  font-family: var(--font-body);
+  font-size: 1.15rem;
+  letter-spacing: 1px;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+@media (max-width: 600px) {
+  .openmic-title {
+    font-size: 2.75rem;
+  }
+
+  .openmic-slot {
+    flex-direction: column;
+    gap: 0;
+  }
+}

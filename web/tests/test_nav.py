@@ -43,9 +43,9 @@ class NavigationConfigTests(TestCase):
             i for i in SITE_CONFIG["navigation"] if i["label"] == "Events"
         )
         labels = [c["label"] for c in events["children"]]
-        # Chronological through the month, not alphabetical: third Friday,
-        # then last Tuesday.
-        self.assertEqual(labels, ["Heckle Night", "Craft Night"])
+        # Weekly Open Mic first, then the monthly nights in the order the
+        # owner set on 2026-09-23.
+        self.assertEqual(labels, ["Open Mic", "Craft Night", "Heckle Night"])
 
     def test_rentals_moved_under_more_rather_than_out(self):
         # Rentals lost its primary slot to Events; it must still be reachable,
@@ -66,6 +66,7 @@ class NavigationConfigTests(TestCase):
             "/rentals/",
             "/craft-night/",
             "/heckle-night/",
+            "/open-mic/",
             "/sponsor/",
             "/history/",
             "/blog/",

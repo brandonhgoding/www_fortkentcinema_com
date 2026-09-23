@@ -29,6 +29,8 @@ from web.constants import (
     CRAFT_NIGHT_FAQ,
     HECKLE_NIGHT,
     HECKLE_NIGHT_FAQ,
+    OPEN_MIC,
+    OPEN_MIC_FAQ,
     FILM_HISTORY_VIDEO,
     SPONSORED_SCREENING,
     MEMBERSHIP_FAQ,
@@ -51,6 +53,7 @@ from web.services.cinema_data import (
 )
 from web.services.craft_night import get_craft_nights
 from web.services.heckle_night import get_heckle_nights
+from web.services.open_mic import upcoming_nights as upcoming_open_mics
 from web.services.showtimes import (
     today_eastern,
     format_showtime_date,
@@ -372,6 +375,29 @@ class HeckleNightView(TemplateView):
         # One list, two renderings: the visible FAQ and the FAQPage markup
         # in the head. Same arrangement as /craft-night/ and /rentals/.
         ctx["faqs"] = HECKLE_NIGHT_FAQ
+        return ctx
+
+
+class OpenMicView(TemplateView):
+    """/open-mic/ — every Monday in the Century auditorium.
+
+    No film and no booking behind it, so unlike the monthly nights the only
+    computed thing is the next date. See web/services/open_mic.py.
+    """
+
+    template_name = "web/open_mic.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["open_mic"] = OPEN_MIC
+        now = datetime.datetime.now(CINEMA_TZ)
+        next_night = upcoming_open_mics(1, now=now)[0]
+        ctx["next_night"] = next_night
+        # "Tonight" rather than a date, on a Monday before 9 PM.
+        ctx["next_is_tonight"] = next_night == now.date()
+        # One list, two renderings: the visible FAQ and the FAQPage markup
+        # in the head. Same arrangement as /heckle-night/ and /craft-night/.
+        ctx["faqs"] = OPEN_MIC_FAQ
         return ctx
 
 
