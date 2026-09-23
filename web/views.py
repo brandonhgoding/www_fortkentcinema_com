@@ -25,6 +25,7 @@ from cinema.models import (
 )
 from web.constants import (
     CRAFT_NIGHT,
+    DONATION,
     CRAFT_NIGHT_FAQ,
     HECKLE_NIGHT,
     HECKLE_NIGHT_FAQ,
@@ -83,6 +84,11 @@ class HomeView(TemplateView):
         # Self-expiring vote CTA: None unless a poll is OPEN, so the banner
         # retires itself when the round closes.
         ctx["vote_poll"] = vote_service.current_poll()
+
+        # Donation CTA. The partial renders nothing while DONATION["url"]
+        # is blank, which is how it shipped ahead of the Square item —
+        # a Donate button pointing nowhere never went live.
+        ctx["donation"] = DONATION
 
         # Home blog teaser: latest 6 posts, deterministically ordered. Six is
         # what the teaser grid lays out evenly — three across on a desktop,

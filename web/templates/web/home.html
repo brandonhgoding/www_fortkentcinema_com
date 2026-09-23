@@ -50,4 +50,14 @@
     {% include "partials/cta_sponsor.html" %}
   </div>
   {% include "partials/blog_teaser.html" %}
+  {% comment %}
+    Last on the page, deliberately. An ask for money reads very differently
+    after someone has seen what is playing, what is coming, what the place
+    has been since 1917 and what we have been writing about — and it is
+    kept away from the sponsor CTA in the pair above, which is the site's
+    other ask. Two asks side by side read as the site asking twice.
+
+    Renders nothing until DONATION["url"] is set; see the partial.
+  {% endcomment %}
+  {% include "partials/cta_donate.html" %}
 {% endblock %}

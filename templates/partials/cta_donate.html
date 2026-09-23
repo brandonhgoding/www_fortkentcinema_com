@@ -1,0 +1,34 @@
+{% comment %}
+  Donation CTA. `donation` comes from web.constants.DONATION via HomeView.
+
+  Renders NOTHING while donation.url is blank. That is how this shipped
+  before the Square item existed: a Donate button that goes nowhere is
+  worse than no button, and the guard means the link can be pasted into
+  the constant later without touching this file.
+
+  The disclaimer is not decoration and must not be dropped or hidden to
+  tidy the layout. Fort Kent Cinema is a for-profit business, so money
+  given here is not a charitable contribution — the page says that out
+  loud rather than letting the word "donate" imply otherwise. See the
+  note on DONATION in web/constants.py.
+{% endcomment %}
+{% if donation.url %}
+<section class="donate-cta" aria-labelledby="donate-cta-title">
+  <div class="donate-cta__content">
+    <h2 class="donate-cta__title" id="donate-cta-title">{{ donation.title }}</h2>
+    <p class="donate-cta__body">{{ donation.body }}</p>
+    <a
+      href="{{ donation.url }}"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="btn btn-ticket"
+      data-track="donate_click"
+      data-track-location="home"
+      aria-label="{{ donation.button }} (opens in new window)"
+    >
+      {{ donation.button }}
+    </a>
+    <p class="donate-cta__disclaimer">{{ donation.disclaimer }}</p>
+  </div>
+</section>
+{% endif %}
