@@ -16,6 +16,13 @@ so the lineup query matches Engagement.Kind.SPECIAL_EVENT only. Without
 that filter the page would cheerfully announce the Friday first-run feature
 as the film the room is invited to shout at.
 
+The same reasoning is why the start time is matched exactly rather than as
+a floor. Craft night's floor exists because a regular show may move and the
+page should follow it. Heckle Night follows nothing: it is the 7:00 PM
+special event on the third Friday, and anything else that day is somebody
+else's screening. Crude, and deliberately so — see the note on
+HECKLE_NIGHT["start_time"] for what it costs and what would replace it.
+
 The one thing craft night did not need is a start date. Craft night was
 already running when its page shipped; this one has never run, and the rule
 on its own would happily advertise a third Friday that nobody has planned.
@@ -78,8 +85,8 @@ def upcoming_nights(count=None, *, today=None):
     return nights
 
 
-def evening_showtimes(dates):
-    """{date: Showtime} — the first evening SPECIAL EVENT on each of `dates`.
+def heckle_showtimes(dates):
+    """{date: Showtime} — the 7:00 PM SPECIAL EVENT on each of `dates`.
 
     One query for the whole span, bucketed in Python, the same shape
     get_calendar_month() and craft night use. Filtering per date would be
@@ -101,11 +108,18 @@ def evening_showtimes(dates):
     (Engagement.default_visibility_for() would default special events to
     hidden, but only the backfill command consults it, not the form.)
 
-    "Evening" is a time-of-day floor rather than the exact advertised
-    start: if a Friday's show moves to 7:30 the page should follow it, not
-    go blank because 19:00 matched nothing. It still earns its place with
-    the kind filter in front of it — a daytime special event on the same
-    Friday is somebody else's screening.
+    The time is matched EXACTLY, not as a floor. A Heckle Night is the
+    7:00 PM event on the third Friday; a special event at any other time
+    that day is a different night and this page will not claim it. That
+    is crude on purpose and the cost is known: a Heckle Night booked for
+    7:30 makes this page say "Not booked yet" while the listings show the
+    event. It fails visibly rather than silently, which is the same trade
+    the SPECIAL_EVENT filter makes, and the honest fix is a flag on the
+    Engagement rather than a cleverer query.
+
+    Note this is the opposite of craft_night.evening_showtimes(), which
+    uses a floor precisely BECAUSE it adopts a regular show and a regular
+    show is allowed to move. Heckle Night adopts nothing.
     """
     if not dates:
         return {}
@@ -138,7 +152,7 @@ def evening_showtimes(dates):
         if local not in wanted or local in found:
             continue
         local_time = showtime.starts_at.astimezone(CINEMA_TZ).time()
-        if local_time < HECKLE_NIGHT["evening_from"]:
+        if local_time != HECKLE_NIGHT["start_time"]:
             continue
         found[local] = showtime
     return found
@@ -147,7 +161,7 @@ def evening_showtimes(dates):
 def get_heckle_nights(count=None, *, today=None):
     """The upcoming heckle nights, each with its film when one is booked."""
     nights = upcoming_nights(count, today=today)
-    showtimes = evening_showtimes(nights)
+    showtimes = heckle_showtimes(nights)
 
     rows = []
     for night in nights:
@@ -164,8 +178,10 @@ def get_heckle_nights(count=None, *, today=None):
                 "runtime": _format_runtime(
                     primary.runtime_minutes if primary else None
                 ),
-                # The real start, not the advertised one. If the schedule
-                # moved this Friday's show, the page moves with it.
+                # Always HECKLE_NIGHT["start_label"] in practice, since
+                # nothing else matches — formatted from the row rather
+                # than the constant so the two cannot drift apart
+                # unnoticed if the match ever loosens again.
                 "time": _format_showtime(showtime.starts_at),
             }
         rows.append(

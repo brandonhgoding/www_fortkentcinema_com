@@ -14,7 +14,7 @@ behind it, and the things that are still open.
 
 | | | Why |
 |---|---|---|
-| **Night** | Third Friday, 7:00 PM | Friday is when a small town already goes out, and this night does not work without a crowd. 7:00 rather than a late show because people drive in from across the Valley and winter is a real reason to stay home. Most of these films run 60–80 minutes, so the room is out by about 8:30. |
+| **Night** | Third Friday, 7:00 PM exactly | Friday is when a small town already goes out, and this night does not work without a crowd. 7:00 rather than a late show because people drive in from across the Valley and winter is a real reason to stay home. Most of these films run 60–80 minutes, so the room is out by about 8:30. |
 | **First night** | Friday, October 16 2026 | Chosen by the owner. It is also genuinely the third Friday of October, so the first night and the standing rule agree — a test pins that, because a start date the rule does not produce would be skipped silently. |
 | **Price** | $4 at the door, **free for members** | $4 is exactly what a member pays for a regular evening show ($8 less the $4 `/membership/` promises), so the door price here is the member rate offered to everybody — and members go one better and come in free. Cheapest night of the month for everyone, only free one for members, which is the right shape for a night whose whole problem is filling the room. |
 | **Audience** | All ages, jokes kept PG | Bigger pool in a small town, and it lets the night be something a family can do. PG is a house rule, not a rating — the films carry whatever rating they carry, which for most of these is none at all. |
@@ -49,6 +49,14 @@ list and an FAQ.
 
 ## Still open
 
+- **Every booked Heckle Night has to start at 7:00 PM exactly.** The
+  lineup match is an equality, not a window, so a night booked for 7:30
+  makes this page read "Not booked yet" while the listings show the
+  event. This is knowingly crude — it fails visibly rather than silently,
+  which is the same trade the kind filter makes. The real fix is a flag
+  on the Engagement saying "this one is a Heckle Night", which is a
+  migration nobody needs yet; until then the start time is the only
+  handle the query has.
 - **Every booked Heckle Night has to be a Special Event.** `kind` must be
   `SPECIAL_EVENT` or the night does not appear on this page at all. Leave
   "show in main listings" ticked — it defaults on in the dashboard, and
