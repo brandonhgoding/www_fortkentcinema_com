@@ -1,0 +1,111 @@
+/* Donation CTA — the last band on the home page.
+ *
+ * A centred column rather than GiftCardCTA's flex row, because this block
+ * has four things to say (title, the ask, the button, the disclaimer) and
+ * the gift card band has two. A row that wraps four children lands the
+ * disclaimer beside the button, where it reads as a caption on it.
+ *
+ * NO PHONE GATE. home.css explains at length why the SPA's below-600px
+ * display:none on the CTAs is gone and must not come back; this file
+ * carries a real phone layout instead, at the same 600px breakpoint.
+ */
+
+.donate-cta {
+  position: relative;
+  background: var(--color-surface-alt);
+  border-top: 1px solid var(--color-accent-warm);
+  padding: var(--spacing-2xl) var(--spacing-lg);
+  overflow: hidden;
+}
+
+/* Same spotlight idea as the gift-card band, and the same blue wash — a
+ * warm one reads as a smudge on this near-white ground. */
+.donate-cta::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 220px;
+  background: radial-gradient(ellipse at center, rgba(32, 57, 130, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.donate-cta__content {
+  position: relative;
+  max-width: 34rem;
+  margin: 0 auto;
+  text-align: center;
+}
+
+/* Step 2 of the type scale (global.css), matching .gift-card-cta__title —
+ * this is the same level of thing and should not be a third <h2> idea.
+ * Weight and line-height are stated rather than inherited: the UA's bold
+ * and body's 1.7 are both wrong on a display line. */
+.donate-cta__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--type-heading);
+  line-height: 1.15;
+  letter-spacing: var(--track-heading);
+  color: var(--color-accent);
+  margin: 0 0 var(--spacing-sm);
+}
+
+.donate-cta__body {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--color-text);
+  margin: 0 0 var(--spacing-lg);
+}
+
+/* The disclaimer is a legal statement, not fine print to be tucked away.
+ * Deliberately NOT shrunk to a caption size or dropped to a muted grey
+ * that fails contrast: --color-text-muted is 7.1:1 on the page ground,
+ * and 0.9rem is small but still body copy. It sits UNDER the button
+ * because that is the last thing read before the click. */
+.donate-cta__disclaimer {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+  margin: var(--spacing-md) 0 0;
+}
+
+@media (max-width: 600px) {
+  .donate-cta {
+    padding: var(--spacing-xl) var(--spacing-sm);
+  }
+
+  /* Same fixed-ellipse fix the other two bands needed: 600px is wider
+   * than the handset, so the wash clips square at the edges. */
+  .donate-cta::before {
+    width: 110%;
+    height: 140px;
+  }
+
+  /* No font-size or letter-spacing here: --type-heading and
+   * --track-heading already redefine themselves at 600px, so a hardcoded
+   * phone value would fight the scale instead of extending it. */
+  .donate-cta__title {
+    text-wrap: balance;
+  }
+
+  .donate-cta__body {
+    text-wrap: pretty;
+  }
+
+  /* 44px is the touch-target floor; this padding lands it at ~48px. The
+   * max-width keeps .btn-ticket's notch pseudo-elements (-6px either
+   * side) inside the section gutter rather than against the viewport. */
+  .donate-cta__content .btn {
+    width: 100%;
+    max-width: 320px;
+    min-height: 44px;
+    padding: 0.75rem var(--spacing-md);
+    font-size: 1rem;
+    letter-spacing: 2px;
+  }
+}

@@ -966,3 +966,50 @@ HECKLE_NIGHT_FAQ = [
         ),
     },
 ]
+
+
+# The donation CTA on the home page.
+#
+# SELF-EXPIRING IN REVERSE: the partial renders nothing while `url` is
+# blank, so this shipped before the Square item existed and a Donate button
+# pointing nowhere was never live. Paste the link in and the section
+# appears; blank it and the section leaves without a follow-up commit.
+# Same shape as SPONSORED_SCREENING and the vote CTA, which hide when
+# there is nothing on.
+#
+# WHAT THIS COPY MAY NOT SAY, and why the disclaimer is not optional:
+# Fort Kent Cinema is a for-profit business. Money given here is NOT a
+# charitable contribution and is NOT tax-deductible, so nothing on the
+# page or in the Square item may imply otherwise — no "nonprofit", no
+# "tax-deductible", no "501(c)(3)", no receipt language that reads like an
+# acknowledgement letter. The page says so in as many words instead of
+# leaving "donate" to imply it. If the cinema ever does form a nonprofit
+# arm, that is a different entity and a different constant, not an edit to
+# this one.
+DONATION = {
+    # Square's hosted link for the donation item. Blanking this string is
+    # still the off switch — the partial renders nothing without it — so a
+    # paused or replaced Square item takes a one-line edit, not a revert.
+    #
+    # Same merchant as the gift-card link in partials/cta_giftcard.html
+    # (MLWDCWWHFATH1), which is the cheap check that this points at our
+    # own account and not a pasted stranger's.
+    "url": "https://square.link/u/exFzsnMs",
+    "title": "KEEP THE SCREEN LIT",
+    # The ask is general operating support — "keeping the doors open" —
+    # so the copy argues from how long the screen has been here rather
+    # than from a project with a number attached. A specific need would
+    # make a stronger ask, and when there is one it belongs here.
+    "body": (
+        "There has been a screen on this lot since 1917. Keeping one "
+        "running in a town this size takes more than a good week at the "
+        "box office — if this place matters to you, you can put "
+        "something in directly."
+    ),
+    # Load-bearing, not fine print. See the note above.
+    "disclaimer": (
+        "We're a business, not a charity, so this isn't tax-deductible. "
+        "It just helps."
+    ),
+    "button": "Donate",
+}
