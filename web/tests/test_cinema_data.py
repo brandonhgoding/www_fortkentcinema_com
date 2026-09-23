@@ -210,3 +210,19 @@ class CalendarMonthTests(TestCase):
 
     def test_empty_month(self) -> None:
         self.assertEqual(get_calendar_month(2026, 0), {})  # January, no showtimes
+
+    def test_unannounced_runs_stay_off_the_calendar(self) -> None:
+        # A draft or cancelled booking keeps its showtimes un-cancelled, so
+        # the showtime flag alone would publish it.
+        for status, day in [("DRAFT", 5), ("CANCELLED", 6)]:
+            eng = make_engagement(self.screen, [make_film(status)], status=status,
+                                  start=datetime.date(2026, 6, 1),
+                                  end=datetime.date(2026, 6, 30))
+            Showtime.objects.create(engagement=eng, starts_at=aware(2026, 6, day, 19))
+        self.assertEqual(get_calendar_month(2026, 5), {})
+
+    def test_ended_runs_stay_on_past_months(self) -> None:
+        self.eng.status = "ENDED"
+        self.eng.save()
+        Showtime.objects.create(engagement=self.eng, starts_at=aware(2026, 6, 4, 19, 0))
+        self.assertIn(4, get_calendar_month(2026, 5))

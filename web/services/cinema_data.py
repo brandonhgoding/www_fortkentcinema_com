@@ -86,7 +86,12 @@ def get_now_showing():
 def get_calendar_month(year, month):
     """Non-cancelled showtimes whose local day falls in the month, grouped by
     day-of-month (int), deduped per day by title. `month` is 0-based (0=Jan).
-    Returns {} for an empty month."""
+    Returns {} for an empty month.
+
+    Only runs that were actually announced: a DRAFT booking's showtimes are
+    not cancelled one by one, so without the status filter an unannounced
+    booking would appear here. ENDED stays in, so past months still show
+    what played."""
     cal_month = month + 1
     last_day = calendar.monthrange(year, cal_month)[1]
     start = timezone.make_aware(datetime.datetime(year, cal_month, 1, 0, 0, 0))
@@ -94,6 +99,7 @@ def get_calendar_month(year, month):
 
     showtimes = (
         Showtime.objects.filter(is_cancelled=False, starts_at__gte=start, starts_at__lte=end)
+        .filter(engagement__status__in=["CONFIRMED", "ENDED"])
         .prefetch_related("engagement__engagement_films__film")
     )
 
