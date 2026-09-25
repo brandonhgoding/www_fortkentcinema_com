@@ -53,16 +53,16 @@ SITE_CONFIG = {
             "label": "More",
             # No "href": this opens a menu, it is not a destination.
             "children": [
+                {"label": "Blog", "href": "/blog/"},
+                {"label": "Film Vote", "href": "/vote"},
+                {"label": "History", "href": "/history/"},
                 {"label": "Rentals", "href": "/rentals/"},
                 {"label": "Sponsor", "href": "/sponsor/"},
-                {"label": "History", "href": "/history/"},
                 # About page temporarily hidden:
                 # {"label": "About", "href": "/about/"},
-                {"label": "Blog", "href": "/blog/"},
                 # Bare, unlike the section pages above — urls.py defines
                 # path("vote", ...) without a slash. APPEND_SLASH only adds
                 # slashes, so /vote/ is a hard 404, not a recoverable 301.
-                {"label": "Film Vote", "href": "/vote"},
             ],
         },
     ],
