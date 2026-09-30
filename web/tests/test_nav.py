@@ -49,12 +49,13 @@ class NavigationConfigTests(TestCase):
 
     def test_rentals_moved_under_more_rather_than_out(self):
         # Rentals lost its primary slot to Events; it must still be reachable,
-        # because it is a page that sells something.
+        # because it is a page that sells something. The menu is
+        # alphabetical, the order the owner set on 2026-09-25.
         more = next(i for i in SITE_CONFIG["navigation"] if i["label"] == "More")
         labels = [c["label"] for c in more["children"]]
         self.assertEqual(
             labels,
-            ["Rentals", "Sponsor", "History", "Blog", "Film Vote"],
+            ["Blog", "Film Vote", "History", "Rentals", "Sponsor"],
         )
         self.assertIn("/rentals/", nav_destinations())
 
