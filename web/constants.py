@@ -1116,11 +1116,9 @@ DONATION = {
 ADVANCE_TICKETS = {
     "url": "https://square.link/u/Qh1A0yq4",
     "film": "Avengers: Doomsday",
-    "eyebrow": "Advance tickets on sale now",
-    "body": (
-        "Opening night in Fort Kent is December 18. Get your seats now "
-        "and skip the line at the box office."
-    ),
+    "kicker": "Advance tickets on sale",
+    # The date the stub prints. Keep it in step with `until` below.
+    "opens": "Opens Friday, December 18",
     "button": "Buy Now",
     # Studio key art, 1600px and 800px wide. It already carries the title
     # treatment and the date, so the alt text says what it shows.
