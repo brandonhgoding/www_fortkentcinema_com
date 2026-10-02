@@ -67,13 +67,28 @@ class BlogCategory(SlugModelMixin):
         return self.name
 
 
+class BlogPostQuerySet(models.QuerySet):
+    def published(self):
+        """What the public site may show. Every public read goes through this —
+        the default manager still returns drafts, because the dashboard and
+        Film.review need to see them."""
+        return self.filter(status=BlogPost.Status.PUBLISHED)
+
+
 class BlogPost(SlugModelMixin):
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        PUBLISHED = "published", "Published"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=200)
     subtitle = models.CharField(max_length=200)
-    author = models.ForeignKey(BlogAuthor, on_delete=models.CASCADE)
-    category = models.ForeignKey(BlogCategory, on_delete=models.CASCADE)
+    # PROTECT, not CASCADE: deleting an author or category used to take every
+    # post filed under it along with it.
+    author = models.ForeignKey(BlogAuthor, on_delete=models.PROTECT)
+    category = models.ForeignKey(BlogCategory, on_delete=models.PROTECT)
     post_date = models.DateField()
+    # Markdown, rendered by blog.rendering.render_markdown.
     content = models.TextField()
     summary = models.TextField(blank=True, null=True)
     header_image = models.ImageField(
@@ -82,6 +97,14 @@ class BlogPost(SlugModelMixin):
         null=True,
         blank=True,
     )
+    # Defaults to published so rows made outside the dashboard (tests, the
+    # shell) behave as every post did before drafts existed. The dashboard
+    # editor starts each new post as a draft.
+    status = models.CharField(
+        max_length=10, choices=Status.choices, default=Status.PUBLISHED
+    )
+
+    objects = BlogPostQuerySet.as_manager()
 
     slug_field = "subtitle"
 
@@ -90,6 +113,10 @@ class BlogPost(SlugModelMixin):
 
     def __str__(self) -> str:
         return self.subtitle
+
+    @property
+    def is_published(self) -> bool:
+        return self.status == self.Status.PUBLISHED
 
     def get_absolute_url(self):
         from django.urls import reverse

@@ -76,9 +76,9 @@ class FilmAdmin(admin.ModelAdmin):
     search_fields = ("title", "tmdb_id", "imdb_id", "slug")
     list_filter = ("rating",)
     prepopulated_fields = {"slug": ("title",)}
-    # Link a film to our own review of it. `manage.py link_film_reviews` handles
-    # the obvious "A Review of <Film>" matches; this is for the rest.
-    autocomplete_fields = ("review",)
+    # Reviews are linked from the post editor in the dashboard, which is also
+    # the only place blog posts can be searched now.
+    readonly_fields = ("review",)
 
 
 @admin.register(Screen)

@@ -22,4 +22,7 @@ class SlugModelMixin(models.Model):
         super().save(*args, **kwargs)
 
     def generate_slug(self) -> str:
-        return cast(str, slugify(getattr(self, self.slug_field)))
+        # Trimmed to the column: a 200-character subtitle slugifies past the
+        # 100-character SlugField, which Postgres rejects outright.
+        max_length = self._meta.get_field("slug").max_length
+        return cast(str, slugify(getattr(self, self.slug_field)))[:max_length].strip("-")

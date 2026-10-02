@@ -179,6 +179,14 @@ class ReviewLinkTests(MoviePageFixture):
         html = self.client.get(f"/blog/{self.review.slug}").content.decode()
         self.assertIn(f"/movies/{self.showing.slug}", hrefs(html))
 
+    def test_draft_review_is_not_linked(self):
+        """A review being rewritten as a draft 404s publicly, so the film page
+        must not link to it."""
+        self.review.status = BlogPost.Status.DRAFT
+        self.review.save(update_fields=["status"])
+        html = self.client.get(f"/movies/{self.showing.slug}").content.decode()
+        self.assertNotIn("Read our review", html)
+
 
 class InternalLinkingTests(MoviePageFixture):
     def test_homepage_links_to_now_showing_movie_pages(self):

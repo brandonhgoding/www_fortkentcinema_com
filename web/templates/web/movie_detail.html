@@ -60,7 +60,7 @@ not the TMDB blurb — the local intent is what we can actually win.
             <a class="movie-page-link" href="https://www.youtube.com/watch?v={{ film.youtube_id }}"
                target="_blank" rel="noopener noreferrer">Watch the trailer</a>
           {% endif %}
-          {% if film.review %}
+          {% if film.review.is_published %}
             <a class="movie-page-link movie-page-link--review" href="{% url 'blog_detail' film.review.slug %}">
               Read our review &rarr;
             </a>

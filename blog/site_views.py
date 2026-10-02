@@ -12,7 +12,11 @@ class PostListView(ListView):
     template_name = "blog/post_list.html"
 
     def get_queryset(self):
-        return BlogPost.objects.select_related("author", "category").order_by("-post_date", "-id")
+        return (
+            BlogPost.objects.published()
+            .select_related("author", "category")
+            .order_by("-post_date", "-id")
+        )
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -31,6 +35,10 @@ class PostDetailView(DetailView):
     slug_url_kwarg = "slug"
     context_object_name = "post"
     template_name = "blog/post_detail.html"
+
+    def get_queryset(self):
+        # Drafts 404 here. Staff preview them from the dashboard instead.
+        return BlogPost.objects.published()
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -51,7 +59,11 @@ class PostDetailView(DetailView):
         doesn't consider important — the site's posts sat in "crawled, currently
         not indexed" for precisely that reason.
         """
-        siblings = BlogPost.objects.select_related("author", "category").exclude(pk=post.pk)
+        siblings = (
+            BlogPost.objects.published()
+            .select_related("author", "category")
+            .exclude(pk=post.pk)
+        )
 
         related = list(
             siblings.filter(category=post.category).order_by("-post_date", "-id")[

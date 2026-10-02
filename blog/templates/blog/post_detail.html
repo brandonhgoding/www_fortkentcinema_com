@@ -7,6 +7,7 @@
 {% block og_description %}{% if post.subtitle %}{{ post.subtitle }}{% else %}{{ post.content|excerpt:160 }}{% endif %}{% endblock %}
 {% block og_type %}article{% endblock %}
 {% block og_image %}{% if og_image_url %}{{ og_image_url }}{% else %}{{ block.super }}{% endif %}{% endblock %}
+{% block robots %}{% if preview %}noindex, nofollow{% else %}{{ block.super }}{% endif %}{% endblock %}
 
 {% block extra_head %}
 {% comment %}
@@ -53,6 +54,13 @@ post was last modified the day it was published.
 
 {% block content %}
 <div class="blog-detail-page" x-data="{ copied: false }">
+  {% if preview %}
+  {# Set only by the dashboard's draft preview (dashboard.blog_views.BlogPostPreviewView). #}
+  <div class="blog-preview-banner" role="status">
+    {% if post.is_published %}Preview. This post is live.{% else %}Draft preview. Only staff can see this page.{% endif %}
+    <a href="{% url 'dashboard:blog_post_edit' post.pk %}">Back to the editor</a>
+  </div>
+  {% endif %}
   {% if post.header_image %}
   <div class="blog-detail-hero">
     <img src="{{ post.header_image.url }}" alt="{{ post.title }}" class="blog-detail-hero-img" fetchpriority="high" />
@@ -75,7 +83,7 @@ post was last modified the day it was published.
         </div>
       </header>
       <div class="blog-detail-body">
-        {% for para in post.content|paragraphs %}<p>{{ para }}</p>{% endfor %}
+        {{ post.content|markdown }}
       </div>
       {% comment %} Reverse of Film.review — links the review back to the film it's about. {% endcomment %}
       {% for film in post.films.all %}

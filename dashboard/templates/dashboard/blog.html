@@ -1,0 +1,55 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% block title %}Blog · LeprinceOS{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/members.css' %}" /><link rel="stylesheet" href="{% static 'dashboard/css/blog.css' %}" />{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="header">
+    <div>
+      <h1 class="title">Blog</h1>
+      <p class="subtitle">{{ published_count }} published · {{ draft_count }} draft{{ draft_count|pluralize }}</p>
+    </div>
+    <div class="actions">
+      <a class="actionButton" href="{% url 'blog_list' %}" target="_blank" rel="noopener">View blog</a>
+      <a class="primaryButton" href="{% url 'dashboard:blog_post_create' %}">+ New Post</a>
+    </div>
+  </div>
+
+  <form class="memberFilters blogFilters" method="get" action="{% url 'dashboard:blog' %}">
+    <input class="input" type="search" name="q" value="{{ q }}" placeholder="Search titles" />
+    <select class="input" name="status">
+      {% for value, label in statuses %}
+      <option value="{{ value }}" {% if value == selected_status %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <select class="input" name="category">
+      <option value="">All categories</option>
+      {% for category in categories %}
+      <option value="{{ category.slug }}" {% if category.slug == selected_category %}selected{% endif %}>{{ category.name }}</option>
+      {% endfor %}
+    </select>
+    <button class="actionButton" type="submit">Filter</button>
+  </form>
+
+  {% include "dashboard/_blog_post_list.html" %}
+
+  <div class="blogBylines">
+    <section>
+      <div class="header panelHeader">
+        <h2 class="panelTitle">Authors</h2>
+        <button class="actionButton" hx-get="{% url 'dashboard:blog_author_create' %}"
+                hx-target="#drawer-content" @click="$store.drawer.show('New Author')">+ New Author</button>
+      </div>
+      {% include "dashboard/_blog_author_list.html" %}
+    </section>
+    <section>
+      <div class="header panelHeader">
+        <h2 class="panelTitle">Categories</h2>
+        <button class="actionButton" hx-get="{% url 'dashboard:blog_category_create' %}"
+                hx-target="#drawer-content" @click="$store.drawer.show('New Category')">+ New Category</button>
+      </div>
+      {% include "dashboard/_blog_category_list.html" %}
+    </section>
+  </div>
+</div>
+{% endblock %}

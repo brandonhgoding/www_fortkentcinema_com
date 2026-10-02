@@ -5,9 +5,12 @@ from audience.models import (
     MembershipTerm,
     MembershipTier,
 )
-from cinema.models import Engagement, Poll, Screen
+from blog.models import BlogAuthor, BlogCategory, BlogPost
+from cinema.models import Engagement, Film, Poll, Screen
 from django import forms
 from django.db.models import Q
+from django.utils import timezone
+from django.utils.text import slugify
 
 # Labels match the leprinceos SPA (note: "standard" sound shows "Standard",
 # not the model's "Standard Surround").
@@ -260,3 +263,123 @@ class MembershipBenefitForm(forms.ModelForm):
             "description": "Internal notes (not shown on the website)",
             "sort_order": "Sort order (variants of the same perk share a value)",
         }
+
+
+class BlogPostForm(forms.ModelForm):
+    """The post editor.
+
+    `status` is not a field here. The editor's buttons decide it (Save draft /
+    Publish / Unpublish), and the view sets it on the instance.
+    """
+
+    # Reverse of Film.review: which films this post is the review of. Almost
+    # always zero or one, but a re-release can share a review with the
+    # original, so it is a list.
+    films = forms.ModelMultipleChoiceField(
+        queryset=Film.objects.all(), required=False
+    )
+    # A CharField, not the model's SlugField, so "Opening Night!" is
+    # slugified by clean_slug rather than rejected.
+    slug = forms.CharField(
+        required=False, max_length=100, widget=forms.TextInput(attrs={"class": "input"})
+    )
+
+    class Meta:
+        model = BlogPost
+        fields = [
+            "title", "subtitle", "slug", "author", "category", "post_date",
+            "header_image", "content",
+        ]
+        widgets = {
+            "title": forms.TextInput(attrs={"class": "input"}),
+            "subtitle": forms.TextInput(attrs={"class": "input"}),
+            "author": forms.Select(attrs={"class": "input"}),
+            "category": forms.Select(attrs={"class": "input"}),
+            "post_date": forms.DateInput(
+                attrs={"class": "input", "type": "date"}, format="%Y-%m-%d"
+            ),
+            "header_image": forms.ClearableFileInput(attrs={"accept": "image/*"}),
+            "content": forms.Textarea(attrs={"class": "input markdownInput", "rows": 24}),
+        }
+        labels = {
+            "slug": "URL",
+            "post_date": "Post date",
+            "content": "Body",
+        }
+
+    def __init__(self, *args, publishing: bool = False, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        # A draft can be saved before the body is written. A post can't be
+        # published without one.
+        self.fields["content"].required = publishing
+        self.fields["author"].empty_label = "Select an author"
+        self.fields["category"].empty_label = "Select a category"
+        self.fields["post_date"].input_formats = ["%Y-%m-%d"]
+        # Not `instance.pk`: the UUID default fills that in before the first save.
+        if not self.instance._state.adding:
+            self.initial.setdefault("films", list(self.instance.films.all()))
+        else:
+            self.initial.setdefault("post_date", timezone.localdate())
+
+    def clean_slug(self) -> str:
+        return slugify(self.cleaned_data.get("slug") or "")
+
+    def clean(self):
+        cleaned = super().clean()
+        # A blank URL is filled from the subtitle, the same rule
+        # SlugModelMixin applies. Doing it here rather than in save() lets
+        # ModelForm's unique check run on the result, so a clash shows up as a
+        # field error instead of an IntegrityError.
+        if not cleaned.get("slug") and cleaned.get("subtitle"):
+            max_length = BlogPost._meta.get_field("slug").max_length
+            cleaned["slug"] = slugify(cleaned["subtitle"])[:max_length].strip("-")
+        return cleaned
+
+    def save(self, commit: bool = True) -> BlogPost:
+        post = super().save(commit=commit)
+        if commit:
+            self._save_films(post)
+        return post
+
+    def _save_films(self, post: BlogPost) -> None:
+        chosen = set(f.pk for f in self.cleaned_data.get("films") or [])
+        post.films.exclude(pk__in=chosen).update(review=None)
+        Film.objects.filter(pk__in=chosen).update(review=post)
+
+
+class _SlugOnCreateMixin:
+    """Author and category slugs are set from the name on first save and never
+    change after that. A duplicate name would therefore fail on the unique
+    slug. This check catches it first, while it can still be reported."""
+
+    duplicate_message = "That name is already taken."
+
+    def clean(self):
+        cleaned = super().clean()
+        if self.instance._state.adding and not self.errors:
+            candidate = self._meta.model(**cleaned)
+            slug = candidate.generate_slug()
+            if self._meta.model.objects.filter(slug=slug).exists():
+                raise forms.ValidationError(self.duplicate_message)
+        return cleaned
+
+
+class BlogAuthorForm(_SlugOnCreateMixin, forms.ModelForm):
+    duplicate_message = "There is already an author with that name."
+
+    class Meta:
+        model = BlogAuthor
+        fields = ["first_name", "last_name"]
+        widgets = {
+            "first_name": forms.TextInput(attrs={"class": "input"}),
+            "last_name": forms.TextInput(attrs={"class": "input"}),
+        }
+
+
+class BlogCategoryForm(_SlugOnCreateMixin, forms.ModelForm):
+    duplicate_message = "There is already a category with that name."
+
+    class Meta:
+        model = BlogCategory
+        fields = ["name"]
+        widgets = {"name": forms.TextInput(attrs={"class": "input"})}

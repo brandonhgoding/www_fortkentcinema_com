@@ -1,5 +1,4 @@
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 from .models import BlogAuthor, BlogCategory, BlogPost
 from .serializers import (
@@ -9,16 +8,16 @@ from .serializers import (
 )
 
 
-class BlogPostViewSet(viewsets.ModelViewSet):
+class BlogPostViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    API endpoint for blog posts.
-    - GET (list/retrieve): Public access
-    - POST/PUT/PATCH/DELETE: Requires authentication
+    API endpoint for published blog posts (read-only).
+
+    Posts are written in the dashboard. This used to be a ModelViewSet, which
+    let any logged-in account create, edit or delete posts.
     """
 
-    queryset = BlogPost.objects.all()
+    queryset = BlogPost.objects.published()
     serializer_class = BlogPostSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
     lookup_field = "slug"
 
 

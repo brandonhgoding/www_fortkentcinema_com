@@ -75,7 +75,7 @@ class StaticViewSitemap(Sitemap):
     def _content_lastmod(self, name):
         """The newest row behind a page, for the pages that have rows."""
         if name == "blog_list":
-            return BlogPost.objects.aggregate(at=Max("post_date"))["at"]
+            return BlogPost.objects.published().aggregate(at=Max("post_date"))["at"]
         if name == "home":
             # A booking landing is what changes Now Showing and Coming Soon.
             # Engagement has no updated_at, so this misses a later edit to an
@@ -90,7 +90,7 @@ class BlogPostSitemap(Sitemap):
     priority = 0.6
 
     def items(self):
-        return BlogPost.objects.all()
+        return BlogPost.objects.published()
 
     def lastmod(self, obj):
         return obj.post_date

@@ -1,0 +1,34 @@
+<div id="author-list">
+  {% if authors %}
+  <div class="tableWrapper">
+    <table class="table">
+      <thead><tr><th>Author</th><th>Posts</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for author in authors %}
+        <tr>
+          <td>{{ author.full_name }}</td>
+          <td>{{ author.post_count }}</td>
+          <td>
+            <div class="actions">
+              <button class="actionButton" hx-get="{% url 'dashboard:blog_author_edit' author.pk %}"
+                      hx-target="#drawer-content" @click="$store.drawer.show('Edit Author')">Edit</button>
+              {% if not author.post_count %}
+              <button class="actionButton deleteButton"
+                      hx-post="{% url 'dashboard:blog_author_delete' author.pk %}"
+                      hx-target="#author-list" hx-swap="outerHTML"
+                      data-dashboard-confirm='{"title":"Delete Author","message":"Delete {{ author.full_name|escapejs }}? They have no posts, so nothing else changes.","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <h3 class="empty-state-title">No authors yet</h3>
+    <p class="empty-state-description">Every post needs a byline. Add an author before writing one.</p>
+  </div>
+  {% endif %}
+</div>

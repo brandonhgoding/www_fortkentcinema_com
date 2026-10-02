@@ -110,6 +110,14 @@ document.body.addEventListener('htmx:afterSwap', (e) => {
   }
 });
 
+// Messages queued before a full-page redirect render into #flash-messages
+// (base_dashboard.html). Show them as toasts once the store exists.
+document.addEventListener('alpine:initialized', () => {
+  document.querySelectorAll('#flash-messages [data-kind]').forEach((el) => {
+    window.dashboardToast(el.dataset.kind || 'info', el.textContent);
+  });
+});
+
 // HX-Trigger bridge: close-drawer + dashboard-toast (kind/message).
 document.body.addEventListener('close-drawer', () => window.Alpine?.store('drawer').close());
 document.body.addEventListener('dashboard-toast', (e) => {
@@ -201,5 +209,79 @@ document.addEventListener('alpine:init', () => {
     times: [''],
     add() { this.times.push(''); },
     remove(i) { this.times.splice(i, 1); if (!this.times.length) this.times = ['']; },
+  }));
+});
+
+// Blog post editor (blog_editor.html).
+document.addEventListener('alpine:init', () => {
+  Alpine.data('blogEditor', () => ({
+    tab: 'write',
+    dirty: false,
+    submitting: false,
+    slugTouched: false,
+    subtitleLength: 0,
+    films: [],
+    imagePreview: null,
+    clearImage: false,
+    init() {
+      const el = document.getElementById('blog-initial-films');
+      this.films = el ? JSON.parse(el.textContent) : [];
+      this.subtitleLength = this.$refs.subtitle.value.length;
+      // The URL follows the subtitle only on a new post whose URL nobody has
+      // typed yet. Once a post is saved, its URL may already be shared.
+      this.slugTouched = this.$root.dataset.isNew !== 'true' || this.$refs.slug.value !== '';
+      window.addEventListener('beforeunload', (e) => {
+        if (this.dirty && !this.submitting) e.preventDefault();
+      });
+      // From the local combo option ($dispatch, bubbles) and from a TMDB
+      // import (HX-Trigger), the same pair engagementForm listens for.
+      document.body.addEventListener('film-selected', (e) => {
+        const f = e.detail || {};
+        if (!f.id || this.films.some((x) => x.id === f.id)) return;
+        this.films.push({ id: f.id, title: f.title, poster: f.poster || '' });
+        this.dirty = true;
+      });
+    },
+    markDirty(e) {
+      // Typing in the film search box is not an edit to the post.
+      if (e.target.name !== 'q') this.dirty = true;
+    },
+    onSubtitle() {
+      const value = this.$refs.subtitle.value;
+      this.subtitleLength = value.length;
+      if (!this.slugTouched) this.$refs.slug.value = this.slugify(value);
+    },
+    // Mirrors django.utils.text.slugify, which fills a blank URL server-side.
+    slugify(value) {
+      return value
+        .normalize('NFKD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[-\s]+/g, '-')
+        .slice(0, 100)
+        .replace(/^[-_]+|[-_]+$/g, '');
+    },
+    removeFilm(id) {
+      this.films = this.films.filter((f) => f.id !== id);
+      this.dirty = true;
+    },
+    pickImage(e) {
+      const file = e.target.files[0];
+      if (this.imagePreview) URL.revokeObjectURL(this.imagePreview);
+      this.imagePreview = file ? URL.createObjectURL(file) : null;
+      this.clearImage = false;
+    },
+    confirmUnpublish(button) {
+      window.dashboardConfirm({
+        title: 'Unpublish Post',
+        message: 'Take this post off the website? It becomes a draft again, and its film page stops linking to it.',
+        confirmLabel: 'Unpublish',
+      }).then((ok) => {
+        if (!ok) return;
+        this.submitting = true;
+        button.form.requestSubmit(button);
+      });
+    },
   }));
 });

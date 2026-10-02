@@ -111,7 +111,8 @@ class HomeView(TemplateView):
         # what the teaser grid lays out evenly — three across on a desktop,
         # two on a tablet, one on a phone — so no row is ever left half full.
         ctx["recent_posts"] = (
-            BlogPost.objects.select_related("author", "category")
+            BlogPost.objects.published()
+            .select_related("author", "category")
             .order_by("-post_date", "-id")[:6]
         )
 

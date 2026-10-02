@@ -1,0 +1,34 @@
+<div id="category-list">
+  {% if categories %}
+  <div class="tableWrapper">
+    <table class="table">
+      <thead><tr><th>Category</th><th>Posts</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for category in categories %}
+        <tr>
+          <td>{{ category.name }}</td>
+          <td>{{ category.post_count }}</td>
+          <td>
+            <div class="actions">
+              <button class="actionButton" hx-get="{% url 'dashboard:blog_category_edit' category.pk %}"
+                      hx-target="#drawer-content" @click="$store.drawer.show('Edit Category')">Edit</button>
+              {% if not category.post_count %}
+              <button class="actionButton deleteButton"
+                      hx-post="{% url 'dashboard:blog_category_delete' category.pk %}"
+                      hx-target="#category-list" hx-swap="outerHTML"
+                      data-dashboard-confirm='{"title":"Delete Category","message":"Delete {{ category.name|escapejs }}? It has no posts, so nothing else changes.","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <h3 class="empty-state-title">No categories yet</h3>
+    <p class="empty-state-description">Every post is filed under one, e.g. Reviews or News.</p>
+  </div>
+  {% endif %}
+</div>

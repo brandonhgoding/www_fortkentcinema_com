@@ -1,0 +1,173 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% block title %}{% if post %}{{ post.title }}{% else %}New Post{% endif %} · LeprinceOS{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/film_search_combo.css' %}" /><link rel="stylesheet" href="{% static 'dashboard/css/members.css' %}" /><link rel="stylesheet" href="{% static 'dashboard/css/blog.css' %}" />{% endblock %}
+{% block content %}
+{{ initial_films|json_script:"blog-initial-films" }}
+<div class="page" x-data="blogEditor" data-is-new="{% if post %}false{% else %}true{% endif %}">
+  <div class="header">
+    <div>
+      <a href="{% url 'dashboard:blog' %}" class="backLink">&larr; Back to Blog</a>
+      <h1 class="title">{% if post %}Edit Post{% else %}New Post{% endif %}</h1>
+      <p class="subtitle">
+        {% if post %}<span class="statusPill status-{{ post.status }}">{{ post.get_status_display }}</span>{% else %}<span class="statusPill status-draft">Draft</span>{% endif %}
+        <span x-show="dirty" x-cloak class="unsavedNote">Unsaved changes</span>
+      </p>
+    </div>
+    {# Button order matters: Enter in a text field submits with the first one, so it must never change the status. #}
+    <div class="actions">
+      {% if post %}
+        {% if post.is_published %}
+        <a class="actionButton" href="{% url 'blog_detail' post.slug %}" target="_blank" rel="noopener">View live</a>
+        {% else %}
+        <a class="actionButton" href="{% url 'dashboard:blog_post_preview' post.pk %}" target="_blank" rel="noopener">Preview</a>
+        {% endif %}
+      {% endif %}
+      {% if post.is_published %}
+      <button type="submit" form="post-form" class="primaryButton">Save Changes</button>
+      {% else %}
+      <button type="submit" form="post-form" name="status" value="draft" class="actionButton">Save Draft</button>
+      <button type="submit" form="post-form" name="status" value="published" class="primaryButton">Publish</button>
+      {% endif %}
+    </div>
+  </div>
+
+  <form id="post-form" method="post" enctype="multipart/form-data" class="blogEditor"
+        @input="markDirty($event)" @change="markDirty($event)" @submit="submitting = true"
+        @keydown.enter="if ($event.target.name === 'q') $event.preventDefault()">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="field-error">{{ form.non_field_errors|striptags }}</div>{% endif %}
+
+    <div class="editorMain">
+      <div class="formGroup">
+        <label for="{{ form.title.id_for_label }}">Title</label>
+        {{ form.title }}
+        {% if form.title.errors %}<div class="field-error">{{ form.title.errors|striptags }}</div>{% endif %}
+      </div>
+      <div class="formGroup">
+        <label for="{{ form.subtitle.id_for_label }}">Subtitle</label>
+        <input type="text" name="{{ form.subtitle.html_name }}" id="{{ form.subtitle.id_for_label }}" class="input"
+               maxlength="200" required value="{{ form.subtitle.value|default_if_none:'' }}"
+               x-ref="subtitle" @input="onSubtitle()" />
+        <p class="fieldHint">
+          Also the search-engine and link-preview description, so aim for under 160 characters.
+          <span class="charCount" :class="subtitleLength > 160 && 'charCount--over'" x-text="subtitleLength + ' / 160'"></span>
+        </p>
+        {% if form.subtitle.errors %}<div class="field-error">{{ form.subtitle.errors|striptags }}</div>{% endif %}
+      </div>
+
+      <div class="formGroup">
+        <div class="bodyLabelRow">
+          <label for="{{ form.content.id_for_label }}">{{ form.content.label }}</label>
+          <div class="editorTabs" role="tablist">
+            <button type="button" role="tab" class="editorTab" :class="tab === 'write' && 'editorTab--active'" :aria-selected="tab === 'write'" @click="tab = 'write'">Write</button>
+            <button type="button" role="tab" class="editorTab" :class="tab === 'preview' && 'editorTab--active'" :aria-selected="tab === 'preview'" @click="tab = 'preview'">Preview</button>
+          </div>
+        </div>
+        <div class="bodyPanes">
+          <div class="bodyPane" :class="tab !== 'write' && 'bodyPane--hidden'">
+            {# hx-params keeps the form's file input out of every keystroke's request. #}
+            <textarea name="{{ form.content.html_name }}" id="{{ form.content.id_for_label }}" class="input markdownInput" rows="24"
+                      hx-post="{% url 'dashboard:blog_markdown_preview' %}"
+                      hx-trigger="input changed delay:400ms"
+                      hx-params="content"
+                      hx-target="#markdown-preview"
+                      hx-swap="innerHTML">{{ form.content.value|default_if_none:"" }}</textarea>
+            <p class="fieldHint markdownHint">
+              Markdown: a blank line starts a paragraph · <code>**bold**</code> · <code>*italic*</code> ·
+              <code>[link text](https://…)</code> · <code># Heading</code> · <code>- list item</code> · <code>&gt; quote</code>
+            </p>
+          </div>
+          <div class="bodyPane" :class="tab !== 'preview' && 'bodyPane--hidden'">
+            <div id="markdown-preview" class="markdownPreview" aria-live="polite">{{ preview_html|safe }}</div>
+          </div>
+        </div>
+        {% if form.content.errors %}<div class="field-error">{{ form.content.errors|striptags }}</div>{% endif %}
+      </div>
+    </div>
+
+    <aside class="editorSide">
+      <div class="sideCard">
+        <div class="formGroup">
+          <label for="{{ form.author.id_for_label }}">Author</label>
+          {{ form.author }}
+          {% if form.author.errors %}<div class="field-error">{{ form.author.errors|striptags }}</div>{% endif %}
+        </div>
+        <div class="formGroup">
+          <label for="{{ form.category.id_for_label }}">Category</label>
+          {{ form.category }}
+          {% if form.category.errors %}<div class="field-error">{{ form.category.errors|striptags }}</div>{% endif %}
+        </div>
+        <p class="fieldHint">Missing one? Add authors and categories on the <a class="memberLink" href="{% url 'dashboard:blog' %}">Blog page</a>.</p>
+        <div class="formGroup">
+          <label for="{{ form.post_date.id_for_label }}">{{ form.post_date.label }}</label>
+          {{ form.post_date }}
+          {% if form.post_date.errors %}<div class="field-error">{{ form.post_date.errors|striptags }}</div>{% endif %}
+        </div>
+        <div class="formGroup">
+          <label for="{{ form.slug.id_for_label }}">{{ form.slug.label }}</label>
+          <div class="slugInput"><span class="slugPrefix">/blog/</span>
+            <input type="text" name="{{ form.slug.html_name }}" id="{{ form.slug.id_for_label }}" class="input"
+                   value="{{ form.slug.value|default_if_none:'' }}" maxlength="100"
+                   x-ref="slug" @input="slugTouched = true" />
+          </div>
+          {% if post.is_published %}
+          <p class="fieldHint fieldHint--warn">This post is live. Changing the URL breaks links already shared and loses its search ranking.</p>
+          {% else %}
+          <p class="fieldHint">Filled from the subtitle if left blank.</p>
+          {% endif %}
+          {% if form.slug.errors %}<div class="field-error">{{ form.slug.errors|striptags }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="sideCard">
+        <div class="formGroup">
+          <label for="{{ form.header_image.id_for_label }}">Header image</label>
+          <template x-if="imagePreview"><img :src="imagePreview" alt="" class="headerImagePreview" /></template>
+          {% if post.header_image %}
+          <img x-show="!imagePreview && !clearImage" src="{{ post.header_image.url }}" alt="" class="headerImagePreview" />
+          {% endif %}
+          <input type="file" name="{{ form.header_image.html_name }}" id="{{ form.header_image.id_for_label }}"
+                 accept="image/*" @change="pickImage($event)" />
+          {% if post.header_image %}
+          <label class="checkboxLabel"><input type="checkbox" name="{{ form.header_image.html_name }}-clear" x-model="clearImage" /> Remove image</label>
+          {% endif %}
+          <p class="fieldHint">Also the image shown when the post is shared. A post without one uses the generic cinema image.</p>
+          {% if form.header_image.errors %}<div class="field-error">{{ form.header_image.errors|striptags }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="sideCard">
+        <div class="formGroup">
+          <label>Reviews film</label>
+          <template x-for="f in films" :key="f.id">
+            <div class="filmChip">
+              <template x-if="f.poster"><img :src="f.poster" alt="" class="filmChipPoster" /></template>
+              <span class="filmChipTitle" x-text="f.title"></span>
+              <button type="button" class="filmChipRemove" @click="removeFilm(f.id)" :aria-label="'Unlink ' + f.title">&times;</button>
+              <input type="hidden" name="films" :value="f.id" />
+            </div>
+          </template>
+          {% include "dashboard/_film_search_combo.html" with combo_id="blog-film" %}
+          <p class="fieldHint">The film's page links to this post as "Read our review" once it is published.</p>
+          {% if form.films.errors %}<div class="field-error">{{ form.films.errors|striptags }}</div>{% endif %}
+        </div>
+      </div>
+
+      {% if post %}
+      <div class="sideCard sideCard--danger">
+        {% if post.is_published %}
+        <button type="submit" form="post-form" name="status" value="draft" class="actionButton"
+                @click.prevent="confirmUnpublish($el)">Unpublish</button>
+        <p class="fieldHint">Takes the post off the site and makes it a draft again. Any edits above are saved with it.</p>
+        {% endif %}
+        <button type="button" class="actionButton deleteButton"
+                hx-post="{% url 'dashboard:blog_post_delete' post.pk %}" hx-params="none"
+                @htmx:before-request="submitting = true"
+                data-dashboard-confirm='{"title":"Delete Post","message":"Delete \"{{ post.title|escapejs }}\"?{% if post.films.exists %} It is the review linked from a film page, which will lose the link.{% endif %} This cannot be undone.","confirmLabel":"Delete","variant":"danger"}'>Delete post</button>
+      </div>
+      {% endif %}
+    </aside>
+  </form>
+</div>
+{% endblock %}

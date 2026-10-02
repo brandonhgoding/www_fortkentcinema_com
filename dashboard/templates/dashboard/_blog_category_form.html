@@ -1,0 +1,14 @@
+<form id="category-form" class="form" hx-post="{{ form_action }}" hx-target="#drawer-content" hx-swap="innerHTML">
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="field-error">{{ form.non_field_errors|striptags }}</div>{% endif %}
+  <div class="formGroup">
+    <label for="{{ form.name.id_for_label }}">Name</label>
+    {{ form.name }}
+    {% if form.name.errors %}<div class="field-error">{{ form.name.errors|striptags }}</div>{% endif %}
+  </div>
+  {% if editing %}<p class="fieldHint">Renaming updates every post filed under it. The category's URL slug ({{ form.instance.slug }}) stays the same.</p>{% endif %}
+</form>
+<div id="drawer-footer" class="footer" hx-swap-oob="true">
+  <button type="button" class="cancelButton" @click="$store.drawer.close()">Cancel</button>
+  <button type="submit" form="category-form" class="submitButton">{{ submit_label }}</button>
+</div>

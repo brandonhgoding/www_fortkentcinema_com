@@ -1,0 +1,56 @@
+<div id="post-list">
+  {% if posts %}
+  <div class="tableWrapper">
+    <table class="table">
+      <thead>
+        <tr><th>Post</th><th>Category</th><th>Author</th><th>Date</th><th>Status</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for post in posts %}
+        <tr>
+          <td>
+            <div class="blogPostCell">
+              {% if post.header_image %}<img class="blogThumb" src="{{ post.header_image.url }}" alt="" loading="lazy" />
+              {% else %}<div class="blogThumb blogThumb--empty" title="No header image"></div>{% endif %}
+              <div>
+                <a class="memberLink blogPostTitle" href="{% url 'dashboard:blog_post_edit' post.pk %}">{{ post.title }}</a>
+                <span class="blogPostSubtitle">{{ post.subtitle }}</span>
+              </div>
+            </div>
+          </td>
+          <td>{{ post.category.name }}</td>
+          <td>{{ post.author }}</td>
+          <td>{{ post.post_date|date:"M j, Y" }}</td>
+          <td><span class="statusPill status-{{ post.status }}">{{ post.get_status_display }}</span></td>
+          <td>
+            <div class="actions">
+              <a class="actionButton" href="{% url 'dashboard:blog_post_edit' post.pk %}">Edit</a>
+              {% if post.is_published %}
+              <a class="actionButton" href="{% url 'blog_detail' post.slug %}" target="_blank" rel="noopener">View</a>
+              {% else %}
+              <a class="actionButton" href="{% url 'dashboard:blog_post_preview' post.pk %}" target="_blank" rel="noopener">Preview</a>
+              {% endif %}
+              <button class="actionButton deleteButton"
+                      hx-post="{% url 'dashboard:blog_post_delete' post.pk %}"
+                      hx-target="#post-list" hx-swap="outerHTML" hx-include=".blogFilters"
+                      data-dashboard-confirm='{"title":"Delete Post","message":"Delete \"{{ post.title|escapejs }}\"?{% if post.film_count %} It is the review linked from {{ post.film_count }} film page{{ post.film_count|pluralize }}, which will lose the link.{% endif %} This cannot be undone.","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% elif q or selected_status or selected_category %}
+  <div class="empty-state">
+    <h3 class="empty-state-title">No posts match</h3>
+    <p class="empty-state-description"><a class="memberLink" href="{% url 'dashboard:blog' %}">Clear the filters</a> to see every post.</p>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <h3 class="empty-state-title">No posts yet</h3>
+    <p class="empty-state-description">Posts start as drafts. Nothing appears on the site until you publish it.</p>
+    <a class="btn btn-primary" href="{% url 'dashboard:blog_post_create' %}">Write the first post</a>
+  </div>
+  {% endif %}
+</div>

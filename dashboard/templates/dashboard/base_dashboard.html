@@ -26,6 +26,10 @@
       <main :class="isFullscreen ? 'mainFullscreen' : 'main'">
         <div :class="isFullscreen ? 'containerFullscreen' : 'container'">
           {% include "dashboard/_toast.html" %}
+          {% if messages %}
+          {# Django messages from a full-page redirect (the blog editor); dashboard.js replays them as toasts. #}
+          <div id="flash-messages" hidden>{% for message in messages %}<span data-kind="{{ message.tags }}">{{ message }}</span>{% endfor %}</div>
+          {% endif %}
           {% block content %}{% endblock %}
         </div>
         <div class="keyboardHint" x-show="!isFullscreen" title="Press Alt+N to create new engagement">

@@ -9,6 +9,10 @@ psycopg2-binary==2.9.11
 # Media handling
 pillow==11.2.1
 
+# Blog post bodies (Markdown, sanitised)
+markdown==3.9
+nh3==0.3.1
+
 # Configuration
 python-decouple==3.8
 
