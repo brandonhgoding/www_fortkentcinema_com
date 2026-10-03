@@ -300,14 +300,18 @@ class RenewPrefillTests(TestCase):
         ).content.decode()
 
     def test_prefills_the_tier_and_a_continuing_start_date(self) -> None:
+        # Relative to today: renewal_start never goes earlier than today,
+        # so a fixed expiry date stops "continuing" once it is in the past.
+        today = timezone.localdate()
         MembershipTerm.objects.create(
             member=self.member, tier=a_tier("cinema-supporter"),
-            started_on=datetime.date(2026, 1, 1),
-            expires_on=datetime.date(2026, 12, 31),
+            started_on=today - datetime.timedelta(days=300),
+            expires_on=today + datetime.timedelta(days=20),
             price_paid=Decimal("120.00"),
         )
         html = self.renew_form()
-        self.assertIn('value="2027-01-01"', html)
+        continuing = today + datetime.timedelta(days=21)
+        self.assertIn(f'value="{continuing.isoformat()}"', html)
         self.assertIn(
             f'value="{a_tier("cinema-supporter").pk}" selected', html
         )
@@ -356,17 +360,19 @@ class RenewPrefillTests(TestCase):
         """It is not in the dropdown for a new term, so seeding it would
         render a select with nothing chosen and lose the intent silently."""
         tier = a_tier("family-plus")
+        today = timezone.localdate()
         MembershipTerm.objects.create(
             member=self.member, tier=tier,
-            started_on=datetime.date(2026, 1, 1),
-            expires_on=datetime.date(2026, 12, 31),
+            started_on=today - datetime.timedelta(days=300),
+            expires_on=today + datetime.timedelta(days=20),
             price_paid=Decimal("250.00"),
         )
         tier.show_on_membership_page = False
         tier.save(update_fields=["show_on_membership_page"])
 
         html = self.renew_form()
-        self.assertIn('value="2027-01-01"', html)
+        continuing = today + datetime.timedelta(days=21)
+        self.assertIn(f'value="{continuing.isoformat()}"', html)
         self.assertNotIn(f'value="{tier.pk}" selected', html)
 
     def test_the_renew_button_is_hidden_for_a_member_with_no_terms(self) -> None:
