@@ -396,6 +396,41 @@ class RenewPrefillTests(TestCase):
         self.assertIn(f'value="{continuing.isoformat()}"', html)
         self.assertNotIn(f'value="{tier.pk}" selected', html)
 
+    def test_a_retired_tier_makes_staff_choose_one(self) -> None:
+        """With nothing prefilled, the select must not fall through to the
+        first listed tier: it opens on an empty choice that cannot be
+        submitted."""
+        tier = a_tier("family-plus")
+        today = timezone.localdate()
+        MembershipTerm.objects.create(
+            member=self.member, tier=tier,
+            started_on=today - datetime.timedelta(days=300),
+            expires_on=today + datetime.timedelta(days=20),
+            price_paid=Decimal("250.00"),
+        )
+        tier.show_on_membership_page = False
+        tier.save(update_fields=["show_on_membership_page"])
+
+        html = self.renew_form()
+        self.assertIn('<option value="" selected>Choose a tier</option>', html)
+
+        resp = self.client.post(
+            reverse("dashboard:term_create", args=[self.member.pk]),
+            {"tier": "", "started_on": today.isoformat(),
+             "expires_on": "", "price_paid": "", "purchased_at": "", "notes": ""},
+        )
+        self.assertIn('id="term-form"', resp.content.decode())
+        self.assertEqual(self.member.terms.count(), 1)
+
+    def test_an_active_tier_has_no_empty_choice(self) -> None:
+        MembershipTerm.objects.create(
+            member=self.member, tier=a_tier("individual"),
+            started_on=timezone.localdate() - datetime.timedelta(days=300),
+            expires_on=timezone.localdate() + datetime.timedelta(days=20),
+            price_paid=Decimal("60.00"),
+        )
+        self.assertNotIn("Choose a tier", self.renew_form())
+
     def test_the_renew_button_is_hidden_for_a_member_with_no_terms(self) -> None:
         html = self.client.get(
             reverse("dashboard:member_detail", args=[self.member.pk])

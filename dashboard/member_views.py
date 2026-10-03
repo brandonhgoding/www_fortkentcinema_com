@@ -193,8 +193,8 @@ def _renewal_initial(member, request) -> dict:
     since the last one.
 
     A retired tier is not prefilled: `MembershipTermForm` drops retired
-    tiers from the dropdown for a new term, so seeding one would render a
-    select with nothing chosen and silently lose the intent.
+    tiers from the dropdown for a new term, so the form opens on its empty
+    "Choose a tier" option instead and staff must pick a replacement.
     """
     if request.GET.get("renew") != "1":
         return {}

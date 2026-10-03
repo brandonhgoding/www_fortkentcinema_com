@@ -118,7 +118,11 @@ class MemberForm(forms.ModelForm):
 class MembershipTermForm(forms.ModelForm):
     tier = forms.ModelChoiceField(
         queryset=MembershipTier.objects.all(),
-        empty_label=None,
+        # An explicit, unsubmittable first choice: without it the browser
+        # selects the first tier, so a form that prefilled no tier (a blank
+        # Add Term, or a renewal of a retired tier) would quietly save
+        # whichever tier sorts first.
+        empty_label="Choose a tier",
         widget=forms.Select(attrs={"class": "input"}),
     )
 
@@ -157,6 +161,8 @@ class MembershipTermForm(forms.ModelForm):
         if self.instance.pk and self.instance.tier_id:
             listed |= Q(pk=self.instance.tier_id)
         self.fields["tier"].queryset = MembershipTier.objects.filter(listed)
+        if self.instance.pk or self.initial.get("tier"):
+            self.fields["tier"].empty_label = None
 
     def clean(self):
         cleaned = super().clean()

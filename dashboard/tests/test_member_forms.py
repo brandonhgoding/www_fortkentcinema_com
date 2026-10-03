@@ -57,6 +57,13 @@ class MembershipTermFormTests(TestCase):
         term.save()
         self.assertEqual(term.expires_on, datetime.date(2027, 9, 10))
 
+    def test_a_new_term_has_no_tier_chosen_for_it(self) -> None:
+        """Staff pick the tier; the first one in the list is not a default."""
+        form = MembershipTermForm({"started_on": "2026-09-11"})
+        self.assertFalse(form.is_valid())
+        self.assertIn("tier", form.errors)
+        self.assertIn('<option value="" selected>', str(MembershipTermForm()["tier"]))
+
     def test_price_defaults_to_the_tier_price(self) -> None:
         form = MembershipTermForm(
             {"tier": a_tier().pk, "started_on": "2026-09-11"}
