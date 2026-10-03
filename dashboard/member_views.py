@@ -77,7 +77,12 @@ def member_roster(request):
     status = (params.get("status") or "").strip()
     valid = {value for value, _label in STATUS_FILTERS if value}
     members = list(members)
-    if status in valid:
+    if status == "active":
+        # Covered today, expiring soon included: the same members as the
+        # header's Member.objects.active() count. "Expiring soon" is a
+        # narrower filter of its own, not a different kind of member.
+        members = [m for m in members if m.is_active]
+    elif status in valid:
         members = [m for m in members if m.status == status]
     return members, q, status
 

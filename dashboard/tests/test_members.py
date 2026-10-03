@@ -95,6 +95,28 @@ class MemberListTests(TestCase):
         self.assertIn("Zzyzx", lapsed)
         self.assertNotIn("Rent", lapsed)
 
+    def test_active_filter_includes_expiring_members(self) -> None:
+        """Expiring soon is still active: the header count and the Active
+        filter's rows must agree."""
+        give_term(make_member("Long", "Wayoff", "long@example.com"), days_left=200)
+        give_term(make_member("Soon", "Nearly", "soon@example.com"), days_left=5)
+        make_member("No", "Zzyzx", "never@example.com")
+
+        html = self.client.get(
+            reverse("dashboard:members"), {"status": "active"}
+        ).content.decode()
+        self.assertIn("2 active members.", html)
+        self.assertIn("Wayoff", html)
+        self.assertIn("Nearly", html)
+        self.assertNotIn("Zzyzx", html)
+
+        body = self.client.get(
+            reverse("dashboard:members_export"), {"status": "active"}
+        ).content.decode()
+        self.assertIn("long@example.com", body)
+        self.assertIn("soon@example.com", body)
+        self.assertNotIn("never@example.com", body)
+
     def test_an_early_renewal_is_not_listed_as_expiring(self) -> None:
         today = timezone.localdate()
         member = make_member("Re", "Newwell", "renew@example.com")
