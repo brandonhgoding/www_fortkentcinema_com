@@ -69,6 +69,23 @@ class MembershipTierTests(TestCase):
         """Retiring is the deliberate act; being listed is the norm."""
         self.assertTrue(make_tier().show_on_membership_page)
 
+    def test_a_tier_lasts_at_least_a_month(self) -> None:
+        from django.core.exceptions import ValidationError
+
+        tier = MembershipTier(
+            slug="zero", name="Zero", price=10, duration_months=0,
+            checkout_url="https://square.link/u/zero",
+        )
+        with self.assertRaises(ValidationError) as caught:
+            tier.full_clean()
+        self.assertIn("duration_months", caught.exception.message_dict)
+
+    def test_the_database_refuses_a_zero_month_tier(self) -> None:
+        from django.db import IntegrityError, transaction
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            make_tier(duration_months=0)
+
     def test_price_is_a_whole_number(self) -> None:
         """$35, never $35.00 — the card renders it raw."""
         self.assertEqual(make_tier(price=35).price, 35)

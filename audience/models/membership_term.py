@@ -1,5 +1,7 @@
 import datetime
 
+from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
 
@@ -34,6 +36,7 @@ class MembershipTerm(models.Model):
     price_paid = models.DecimalField(
         max_digits=7,
         decimal_places=2,
+        validators=[MinValueValidator(0)],
         help_text="What actually changed hands, so a comped or discounted "
         "membership stays truthful and past revenue survives a price change.",
     )
@@ -48,9 +51,29 @@ class MembershipTerm(models.Model):
         ordering = ["-started_on", "-id"]
         verbose_name = "Membership term"
         verbose_name_plural = "Membership terms"
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(expires_on__gte=models.F("started_on")),
+                name="audience_membershipterm_expires_on_or_after_start",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(price_paid__gte=0),
+                name="audience_membershipterm_price_paid_not_negative",
+            ),
+        ]
 
     def __str__(self) -> str:
         return f"{self.tier}: {self.started_on} – {self.expires_on}"
+
+    def clean(self) -> None:
+        if (
+            self.started_on
+            and self.expires_on
+            and self.expires_on < self.started_on
+        ):
+            raise ValidationError(
+                {"expires_on": "Expiry cannot be before the start date."}
+            )
 
     @property
     def is_current(self) -> bool:

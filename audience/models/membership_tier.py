@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.db import models
 
 from .membership_benefit import MembershipBenefit
@@ -31,7 +32,9 @@ class MembershipTier(models.Model):
     price = models.PositiveIntegerField(
         help_text="Whole dollars. The page prints this raw, so 35 renders $35."
     )
-    duration_months = models.PositiveSmallIntegerField(default=12)
+    duration_months = models.PositiveSmallIntegerField(
+        default=12, validators=[MinValueValidator(1)]
+    )
     free_admissions_per_month = models.PositiveSmallIntegerField(
         default=0,
         help_text="Free admissions this tier includes each calendar month. "
@@ -59,6 +62,13 @@ class MembershipTier(models.Model):
         ordering = ["sort_order", "price"]
         verbose_name = "Membership tier"
         verbose_name_plural = "Membership tiers"
+        constraints = [
+            # A zero-month tier's default expiry is the day before it starts.
+            models.CheckConstraint(
+                condition=models.Q(duration_months__gte=1),
+                name="audience_membershiptier_duration_at_least_one_month",
+            ),
+        ]
 
     def __str__(self) -> str:
         return self.name

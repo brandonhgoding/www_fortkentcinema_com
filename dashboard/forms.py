@@ -179,10 +179,8 @@ class MembershipTermForm(forms.ModelForm):
             )
         if cleaned.get("price_paid") is None:
             cleaned["price_paid"] = tier.price
-
-        expires_on = cleaned.get("expires_on")
-        if started_on and expires_on and expires_on < started_on:
-            self.add_error("expires_on", "Expiry cannot be before the start date.")
+        # Expiry before start is MembershipTerm.clean()'s to report, so the
+        # admin inline refuses it too.
         return cleaned
 
 
@@ -239,6 +237,9 @@ class MembershipTierForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+        # The form field's min_value=0 (from PositiveSmallIntegerField)
+        # overwrites the widget's min="1"; the model refuses 0 anyway.
+        self.fields["duration_months"].widget.attrs["min"] = "1"
         # The slug is load-bearing outside this database — Square redirects
         # to /thanks?tier=<slug> and the Join button's GA4 tracking carries
         # it — so editing it after creation would break revenue attribution

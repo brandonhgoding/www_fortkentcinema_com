@@ -1,7 +1,8 @@
 import datetime
 from decimal import Decimal
 
-from django.db import IntegrityError
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError, transaction
 from django.test import TestCase
 from django.utils import timezone
 
@@ -79,6 +80,47 @@ class MembershipTermTests(TestCase):
         first = self._term(started_on=datetime.date(2026, 1, 1))
         second = self._term(started_on=datetime.date(2026, 1, 1))
         self.assertEqual(list(self.member.terms.all()), [second, first])
+
+    def test_expiry_before_start_is_invalid(self) -> None:
+        term = MembershipTerm(
+            member=self.member, tier=self.tier,
+            started_on=datetime.date(2026, 1, 2),
+            expires_on=datetime.date(2026, 1, 1),
+            price_paid=Decimal("60.00"),
+        )
+        with self.assertRaises(ValidationError) as caught:
+            term.full_clean()
+        self.assertIn("expires_on", caught.exception.message_dict)
+
+    def test_a_one_day_term_is_valid(self) -> None:
+        MembershipTerm(
+            member=self.member, tier=self.tier,
+            started_on=datetime.date(2026, 1, 1),
+            expires_on=datetime.date(2026, 1, 1),
+            price_paid=Decimal("0.00"),
+        ).full_clean()
+
+    def test_negative_price_paid_is_invalid(self) -> None:
+        term = MembershipTerm(
+            member=self.member, tier=self.tier,
+            started_on=datetime.date(2026, 1, 1),
+            expires_on=datetime.date(2026, 12, 31),
+            price_paid=Decimal("-1.00"),
+        )
+        with self.assertRaises(ValidationError) as caught:
+            term.full_clean()
+        self.assertIn("price_paid", caught.exception.message_dict)
+
+    def test_the_database_refuses_expiry_before_start(self) -> None:
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            self._term(
+                started_on=datetime.date(2026, 1, 2),
+                expires_on=datetime.date(2026, 1, 1),
+            )
+
+    def test_the_database_refuses_a_negative_price(self) -> None:
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            self._term(price_paid=Decimal("-1.00"))
 
     def test_deleting_a_member_deletes_their_terms(self) -> None:
         self._term()

@@ -163,6 +163,19 @@ class TierCreateTests(StaffTestCase):
         self.client.post(reverse("dashboard:tier_create"), payload)
         self.assertTrue(MembershipTier.objects.filter(slug="matinee-club").exists())
 
+    def test_duration_input_keeps_a_minimum_of_one_month(self) -> None:
+        html = self.client.get(reverse("dashboard:tier_create")).content.decode()
+        start = html.index('name="duration_months"')
+        tag = html[html.rindex("<input", 0, start) : html.index(">", start)]
+        self.assertIn('min="1"', tag)
+
+    def test_zero_month_tier_is_refused(self) -> None:
+        resp = self.client.post(
+            reverse("dashboard:tier_create"), tier_payload(duration_months="0")
+        )
+        self.assertIn("duration_months", resp.context["form"].errors)
+        self.assertFalse(MembershipTier.objects.filter(slug="matinee-club").exists())
+
 
 class TierEditTests(StaffTestCase):
     def setUp(self) -> None:
