@@ -142,9 +142,14 @@ class TermCreateTests(TestCase):
         """The model checks it now too; staff should still see one message."""
         resp = self.client.post(
             reverse("dashboard:term_create", args=[self.member.pk]),
-            {"tier": a_tier().pk, "started_on": "2026-09-11",
-             "expires_on": "2026-09-10", "price_paid": "", "purchased_at": "",
-             "notes": ""},
+            {
+                "tier": a_tier().pk,
+                "started_on": "2026-09-11",
+                "expires_on": "2026-09-10",
+                "price_paid": "",
+                "purchased_at": "",
+                "notes": "",
+            },
         )
         self.assertEqual(
             resp.context["form"].errors["expires_on"],
@@ -155,9 +160,14 @@ class TermCreateTests(TestCase):
     def test_negative_price_is_refused(self) -> None:
         resp = self.client.post(
             reverse("dashboard:term_create", args=[self.member.pk]),
-            {"tier": a_tier().pk, "started_on": "2026-09-11",
-             "expires_on": "", "price_paid": "-5.00", "purchased_at": "",
-             "notes": ""},
+            {
+                "tier": a_tier().pk,
+                "started_on": "2026-09-11",
+                "expires_on": "",
+                "price_paid": "-5.00",
+                "purchased_at": "",
+                "notes": "",
+            },
         )
         self.assertIn("price_paid", resp.context["form"].errors)
         self.assertEqual(MembershipTerm.objects.count(), 0)

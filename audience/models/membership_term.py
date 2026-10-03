@@ -66,11 +66,7 @@ class MembershipTerm(models.Model):
         return f"{self.tier}: {self.started_on} – {self.expires_on}"
 
     def clean(self) -> None:
-        if (
-            self.started_on
-            and self.expires_on
-            and self.expires_on < self.started_on
-        ):
+        if self.started_on and self.expires_on and self.expires_on < self.started_on:
             raise ValidationError(
                 {"expires_on": "Expiry cannot be before the start date."}
             )

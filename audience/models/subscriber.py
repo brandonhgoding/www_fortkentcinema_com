@@ -24,7 +24,7 @@ class SubscriberManager(models.Manager):
         email = (email or "").strip().lower()
         if not email:
             raise ValueError("email is required")
-        if len(email) > self.model.EMAIL_MAX_LENGTH:
+        if len(email) > Subscriber.EMAIL_MAX_LENGTH:
             # Postgres would refuse the INSERT with a DataError.
             raise ValueError("email is too long")
 

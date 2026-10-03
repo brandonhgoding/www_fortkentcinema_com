@@ -73,7 +73,10 @@ class MembershipTierTests(TestCase):
         from django.core.exceptions import ValidationError
 
         tier = MembershipTier(
-            slug="zero", name="Zero", price=10, duration_months=0,
+            slug="zero",
+            name="Zero",
+            price=10,
+            duration_months=0,
             checkout_url="https://square.link/u/zero",
         )
         with self.assertRaises(ValidationError) as caught:

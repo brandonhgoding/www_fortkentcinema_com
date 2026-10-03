@@ -1,4 +1,5 @@
 import datetime
+from typing import Any
 from unittest import mock
 
 from django.db.models import QuerySet
@@ -62,20 +63,21 @@ class SubscriberRecordTests(TestCase):
         real_get, real_first = QuerySet.get, QuerySet.first
         missed: list[str] = []
 
-        def get(qs, *args, **kwargs):
+        def get(qs: QuerySet, *args: Any, **kwargs: Any) -> Any:
             if qs.model is Subscriber and not missed:
                 missed.append("get")
                 raise Subscriber.DoesNotExist
             return real_get(qs, *args, **kwargs)
 
-        def first(qs):
+        def first(qs: QuerySet) -> Any:
             if qs.model is Subscriber and not missed:
                 missed.append("first")
                 return None
             return real_first(qs)
 
-        with mock.patch.object(QuerySet, "get", get), mock.patch.object(
-            QuerySet, "first", first
+        with (
+            mock.patch.object(QuerySet, "get", get),
+            mock.patch.object(QuerySet, "first", first),
         ):
             sub, created = Subscriber.objects.record(
                 "Race@Example.com", source="poll_vote"

@@ -83,7 +83,8 @@ class MembershipTermTests(TestCase):
 
     def test_expiry_before_start_is_invalid(self) -> None:
         term = MembershipTerm(
-            member=self.member, tier=self.tier,
+            member=self.member,
+            tier=self.tier,
             started_on=datetime.date(2026, 1, 2),
             expires_on=datetime.date(2026, 1, 1),
             price_paid=Decimal("60.00"),
@@ -94,7 +95,8 @@ class MembershipTermTests(TestCase):
 
     def test_a_one_day_term_is_valid(self) -> None:
         MembershipTerm(
-            member=self.member, tier=self.tier,
+            member=self.member,
+            tier=self.tier,
             started_on=datetime.date(2026, 1, 1),
             expires_on=datetime.date(2026, 1, 1),
             price_paid=Decimal("0.00"),
@@ -102,7 +104,8 @@ class MembershipTermTests(TestCase):
 
     def test_negative_price_paid_is_invalid(self) -> None:
         term = MembershipTerm(
-            member=self.member, tier=self.tier,
+            member=self.member,
+            tier=self.tier,
             started_on=datetime.date(2026, 1, 1),
             expires_on=datetime.date(2026, 12, 31),
             price_paid=Decimal("-1.00"),
@@ -319,13 +322,14 @@ class SameDayTermTests(TestCase):
         self.today = timezone.localdate()
 
     def _term(self, slug: str, start_offset: int, end_offset: int) -> MembershipTerm:
-        return MembershipTerm.objects.create(
+        term: MembershipTerm = MembershipTerm.objects.create(
             member=self.member,
             tier=MembershipTier.objects.get(slug=slug),
             started_on=self.today + datetime.timedelta(days=start_offset),
             expires_on=self.today + datetime.timedelta(days=end_offset),
             price_paid=Decimal("60.00"),
         )
+        return term
 
     def test_the_later_entry_wins_a_same_day_start(self) -> None:
         self._term("individual", -10, 355)
@@ -343,9 +347,7 @@ class SameDayTermTests(TestCase):
     def test_the_prefetched_roster_agrees(self) -> None:
         self._term("individual", -10, 355)
         later = self._term("family-plus", -10, 355)
-        member = Member.objects.prefetch_related("terms__tier").get(
-            pk=self.member.pk
-        )
+        member = Member.objects.prefetch_related("terms__tier").get(pk=self.member.pk)
         with self.assertNumQueries(0):
             self.assertEqual(member.current_term, later)
             self.assertEqual(member.free_admission_allowance, 4)

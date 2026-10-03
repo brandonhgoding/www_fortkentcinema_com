@@ -141,7 +141,7 @@ class MembershipTierAdminValidationTests(TestCase):
         )
         self.client.login(username="root", password="pw12345")
 
-    def payload(self, **overrides) -> dict:
+    def payload(self, **overrides: str) -> dict:
         return {
             "name": "Matinee Club",
             "slug": "matinee-club",
