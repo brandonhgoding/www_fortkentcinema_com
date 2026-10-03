@@ -124,7 +124,7 @@ class HomeMemberCountRenderTests(TestCase):
         html = self._html()
         self.assertIn('class="hero-members"', html)
         self.assertIn('<span class="hero-members-count">3</span>', html)
-        self.assertIn("members keep the lights on", html)
+        self.assertIn("members help to keep the lights on", html)
 
     def test_sits_under_the_hero_buttons(self, _ns: mock.Mock, _cs: mock.Mock) -> None:
         html = self._html()
@@ -135,7 +135,7 @@ class HomeMemberCountRenderTests(TestCase):
         Member.objects.exclude(pk=self.members[0].pk).delete()
         html = self._html()
         self.assertIn('<span class="hero-members-count">1</span>', html)
-        self.assertIn("member keeps the lights on", html)
+        self.assertIn("member helps to keep the lights on", html)
 
     def test_renders_nothing_with_no_active_members(
         self, _ns: mock.Mock, _cs: mock.Mock
