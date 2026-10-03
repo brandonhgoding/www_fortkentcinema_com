@@ -24,6 +24,9 @@ class SubscriberManager(models.Manager):
         email = (email or "").strip().lower()
         if not email:
             raise ValueError("email is required")
+        if len(email) > self.model.EMAIL_MAX_LENGTH:
+            # Postgres would refuse the INSERT with a DataError.
+            raise ValueError("email is too long")
 
         # get_or_create, not a lookup then create(): two simultaneous signups
         # for a new address both miss the lookup, and the second INSERT hits
@@ -47,7 +50,11 @@ class Subscriber(models.Model):
 
     objects: ClassVar[SubscriberManager] = SubscriberManager()
 
-    email = models.EmailField(unique=True)
+    # EmailField's default, spelled out because validate_email accepts up
+    # to 320 characters: anything taking addresses must check this too.
+    EMAIL_MAX_LENGTH: ClassVar[int] = 254
+
+    email = models.EmailField(unique=True, max_length=EMAIL_MAX_LENGTH)
     status = models.CharField(
         max_length=20,
         choices=SubscriberStatus.choices,

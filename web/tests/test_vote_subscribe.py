@@ -68,6 +68,20 @@ class VoteSubscribeTests(TestCase):
         self.assertIn("valid email", response.content.decode())
         self.assertEqual(Subscriber.objects.count(), 0)
 
+    def test_over_long_address_is_reported_not_saved(self) -> None:
+        """validate_email allows up to 320 characters; the column holds 254.
+
+        On Postgres the INSERT raised DataError and the form returned 500.
+        """
+        email = "a" * 64 + "@" + ".".join(["b" * 63] * 3) + ".com"
+        self.assertGreater(len(email), 254)
+        response = self.client.post(
+            reverse("vote_subscribe"), {"email": email}, HTTP_HX_REQUEST="true"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("valid email", response.content.decode())
+        self.assertEqual(Subscriber.objects.count(), 0)
+
     def test_blank_address_is_reported_not_saved(self) -> None:
         response = self.client.post(
             reverse("vote_subscribe"), {"email": "  "}, HTTP_HX_REQUEST="true"

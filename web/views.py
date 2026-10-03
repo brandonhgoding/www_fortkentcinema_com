@@ -4,7 +4,7 @@ import json
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.validators import validate_email
+from django.core.validators import MaxLengthValidator, validate_email
 from django.http import Http404, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -635,6 +635,9 @@ class VoteSubscribeView(View):
         email = (request.POST.get("email") or "").strip()
         try:
             validate_email(email)
+            # validate_email allows 320 characters; the column holds 254,
+            # and Postgres refuses the INSERT rather than truncating it.
+            MaxLengthValidator(Subscriber.EMAIL_MAX_LENGTH)(email)
         except ValidationError:
             return render(
                 request,

@@ -84,6 +84,12 @@ class SubscriberRecordTests(TestCase):
         self.assertEqual(sub.pk, winner.pk)
         self.assertEqual(Subscriber.objects.count(), 1)
 
+    def test_record_rejects_an_address_too_long_for_the_column(self) -> None:
+        email = "a" * 64 + "@" + ".".join(["b" * 63] * 3) + ".com"
+        with self.assertRaises(ValueError):
+            Subscriber.objects.record(email, source="poll_vote")
+        self.assertEqual(Subscriber.objects.count(), 0)
+
     def test_unsubscribe_tokens_are_unique(self) -> None:
         one, _ = Subscriber.objects.record("one@example.com", source="poll_vote")
         two, _ = Subscriber.objects.record("two@example.com", source="poll_vote")
