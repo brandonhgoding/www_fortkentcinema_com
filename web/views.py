@@ -12,7 +12,7 @@ from django.utils import timezone
 from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView
 
-from audience.models import MembershipTier, Subscriber
+from audience.models import Member, MembershipTier, Subscriber
 from blog.models import BlogPost
 from cinema import voting as vote_engine
 from cinema.models import (
@@ -120,6 +120,11 @@ class HomeView(TemplateView):
         # typed number, so the home page cannot drift away from the prices on
         # /sponsor/ when a tier is repriced.
         ctx["sponsorship_from_price"] = min(t["price"] for t in SPONSORSHIP_TIERS)
+
+        # Hero member count: people, not terms. Member.objects.active() is
+        # DISTINCT on the member, so a renewal overlapping the term it
+        # replaces still counts once, and .count() keeps it to one query.
+        ctx["member_count"] = Member.objects.active().count()
 
         # Hero marquee bulbs: 17 across top/bottom, 5 down each side (Hero.jsx).
         ctx["hero_top_bulbs"] = range(17)

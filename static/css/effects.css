@@ -37,7 +37,8 @@
 }
 
 .hero--pre-show .hero-tagline,
-.hero--pre-show .hero-cta {
+.hero--pre-show .hero-cta,
+.hero--pre-show .hero-members {
   animation: none;
   opacity: 0;
 }
@@ -50,6 +51,10 @@
 
 .hero--live .hero-cta {
   animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.45s both;
+}
+
+.hero--live .hero-members {
+  animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.7s both;
 }
 
 /* Cursor-aware bulbs: JS sets transform/box-shadow inline; this smooths them */
@@ -103,7 +108,8 @@
   }
 
   .hero--live .hero-tagline,
-  .hero--live .hero-cta {
+  .hero--live .hero-cta,
+  .hero--live .hero-members {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;

@@ -564,7 +564,8 @@ button {
 
   .marquee-container,
   .hero-tagline,
-  .hero-cta {
+  .hero-cta,
+  .hero-members {
     animation: none !important;
     opacity: 1 !important;
   }
