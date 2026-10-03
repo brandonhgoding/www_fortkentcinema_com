@@ -21,6 +21,7 @@ from audience.models import (
     MembershipBenefit,
     MembershipTerm,
     MembershipTier,
+    Subscriber,
 )
 
 
@@ -168,3 +169,68 @@ class MembershipTierAdminValidationTests(TestCase):
         del payload["show_on_membership_page"]
         self.client.post(reverse("admin:audience_membershiptier_add"), payload)
         self.assertTrue(MembershipTier.objects.filter(slug="matinee-club").exists())
+
+
+class EmailCaseAdminTests(TestCase):
+    """Emails are stored lowercase, so uniqueness must be judged lowercase.
+
+    The admin's default ModelForms check uniqueness before save() lowercases
+    the address, so "ADA@" against a stored "ada@" used to pass the check
+    and then hit the unique index: an IntegrityError and a 500.
+    """
+
+    def setUp(self) -> None:
+        User.objects.create_superuser(
+            username="root", email="root@example.com", password="pw12345"
+        )
+        self.client.login(username="root", password="pw12345")
+
+    def test_member_admin_reports_a_duplicate_in_another_case(self) -> None:
+        Member.objects.create(
+            first_name="Ada", last_name="Lovelace", email="ada@example.com"
+        )
+        resp = self.client.post(
+            reverse("admin:audience_member_add"),
+            {
+                "first_name": "Ada",
+                "last_name": "Again",
+                "email": "ADA@Example.com",
+                "phone": "",
+                "notes": "",
+                "terms-TOTAL_FORMS": "0",
+                "terms-INITIAL_FORMS": "0",
+                "terms-MIN_NUM_FORMS": "0",
+                "terms-MAX_NUM_FORMS": "1000",
+            },
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("email", resp.context["adminform"].form.errors)
+        self.assertEqual(Member.objects.count(), 1)
+
+    def test_subscriber_admin_reports_a_duplicate_in_another_case(self) -> None:
+        Subscriber.objects.record("ada@example.com", source="poll_vote")
+        resp = self.client.post(
+            reverse("admin:audience_subscriber_add"),
+            {
+                "email": "ADA@Example.com",
+                "status": "ACTIVE",
+                "source": "admin",
+                "consent_ip": "",
+                "unsubscribed_at_0": "",
+                "unsubscribed_at_1": "",
+            },
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("email", resp.context["adminform"].form.errors)
+        self.assertEqual(Subscriber.objects.count(), 1)
+
+    def test_full_clean_catches_it_for_any_model_form(self) -> None:
+        from django.core.exceptions import ValidationError
+
+        Member.objects.create(
+            first_name="Ada", last_name="Lovelace", email="ada@example.com"
+        )
+        member = Member(first_name="Ada", last_name="Again", email="ADA@Example.com")
+        with self.assertRaises(ValidationError) as caught:
+            member.full_clean()
+        self.assertIn("already exists", str(caught.exception.message_dict["email"]))

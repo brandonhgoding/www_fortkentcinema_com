@@ -1,4 +1,5 @@
 import uuid
+from collections.abc import Collection
 from typing import ClassVar
 
 from django.db import models
@@ -74,6 +75,12 @@ class Subscriber(models.Model):
 
     def __str__(self) -> str:
         return self.email
+
+    def clean_fields(self, exclude: Collection[str] | None = None) -> None:
+        # Normalise before validation so validate_unique, which a ModelForm
+        # runs before save(), compares the lowercased address. Same as Member.
+        self.email = (self.email or "").strip().lower()
+        super().clean_fields(exclude=exclude)
 
     def save(self, *args, **kwargs) -> None:
         self.email = (self.email or "").strip().lower()

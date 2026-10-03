@@ -1,4 +1,5 @@
 import datetime
+from collections.abc import Collection
 from typing import ClassVar
 
 from django.db import models
@@ -160,6 +161,13 @@ class Member(models.Model):
             for admission in self.free_admissions.all()
             if first <= admission.redeemed_on <= last
         )
+
+    def clean_fields(self, exclude: Collection[str] | None = None) -> None:
+        # Normalise before validation, not just in save(): every ModelForm
+        # (the admin's included) runs validate_unique first, and an exact-
+        # case lookup would let "ADA@" past a stored "ada@" into the index.
+        self.email = (self.email or "").strip().lower()
+        super().clean_fields(exclude=exclude)
 
     def save(self, *args, **kwargs) -> None:
         self.email = (self.email or "").strip().lower()
