@@ -1,3 +1,6 @@
+from unittest import mock
+
+from django.db.models import QuerySet
 from django.test import TestCase
 
 from audience.models import Subscriber, SubscriberStatus
@@ -44,6 +47,42 @@ class SubscriberRecordTests(TestCase):
     def test_record_rejects_blank_email(self) -> None:
         with self.assertRaises(ValueError):
             Subscriber.objects.record("   ", source="poll_vote")
+
+    def test_record_survives_a_concurrent_signup_for_the_same_address(self) -> None:
+        """Two simultaneous POSTs both see "no such address", both insert.
+
+        Simulated by committing the winner's row first and making this
+        call's existence lookup miss it once, as it would have a moment
+        earlier. The loser must get the winner's row back, not an
+        IntegrityError (which the vote page turned into a 500).
+        """
+        winner, _ = Subscriber.objects.record("race@example.com", source="other")
+        real_get, real_first = QuerySet.get, QuerySet.first
+        missed: list[str] = []
+
+        def get(qs, *args, **kwargs):
+            if qs.model is Subscriber and not missed:
+                missed.append("get")
+                raise Subscriber.DoesNotExist
+            return real_get(qs, *args, **kwargs)
+
+        def first(qs):
+            if qs.model is Subscriber and not missed:
+                missed.append("first")
+                return None
+            return real_first(qs)
+
+        with mock.patch.object(QuerySet, "get", get), mock.patch.object(
+            QuerySet, "first", first
+        ):
+            sub, created = Subscriber.objects.record(
+                "Race@Example.com", source="poll_vote"
+            )
+
+        self.assertTrue(missed)
+        self.assertFalse(created)
+        self.assertEqual(sub.pk, winner.pk)
+        self.assertEqual(Subscriber.objects.count(), 1)
 
     def test_unsubscribe_tokens_are_unique(self) -> None:
         one, _ = Subscriber.objects.record("one@example.com", source="poll_vote")

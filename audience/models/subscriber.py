@@ -25,11 +25,13 @@ class SubscriberManager(models.Manager):
         if not email:
             raise ValueError("email is required")
 
-        existing = self.filter(email=email).first()
-        if existing is not None:
-            return existing, False
-
-        return self.create(email=email, source=source, consent_ip=ip), True
+        # get_or_create, not a lookup then create(): two simultaneous signups
+        # for a new address both miss the lookup, and the second INSERT hits
+        # the unique index. get_or_create inserts inside a savepoint and
+        # re-fetches the winner's row on IntegrityError.
+        return self.get_or_create(
+            email=email, defaults={"source": source, "consent_ip": ip}
+        )
 
     def active(self) -> models.QuerySet["Subscriber"]:
         return self.filter(status=SubscriberStatus.ACTIVE)
