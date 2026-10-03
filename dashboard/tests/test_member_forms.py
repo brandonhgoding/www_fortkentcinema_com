@@ -55,7 +55,7 @@ class MembershipTermFormTests(TestCase):
         term = form.save(commit=False)
         term.member = self.member
         term.save()
-        self.assertEqual(term.expires_on, datetime.date(2027, 9, 11))
+        self.assertEqual(term.expires_on, datetime.date(2027, 9, 10))
 
     def test_price_defaults_to_the_tier_price(self) -> None:
         form = MembershipTermForm(

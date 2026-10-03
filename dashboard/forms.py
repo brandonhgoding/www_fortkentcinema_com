@@ -1,4 +1,3 @@
-from audience.dates import add_months
 from audience.models import (
     Member,
     MembershipBenefit,
@@ -167,7 +166,9 @@ class MembershipTermForm(forms.ModelForm):
             return cleaned
 
         if started_on and not cleaned.get("expires_on"):
-            cleaned["expires_on"] = add_months(started_on, tier.duration_months)
+            cleaned["expires_on"] = MembershipTerm.default_expiry(
+                started_on, tier.duration_months
+            )
         if cleaned.get("price_paid") is None:
             cleaned["price_paid"] = tier.price
 

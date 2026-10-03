@@ -58,4 +58,10 @@ class MembershipTerm(models.Model):
     def default_expiry(
         started_on: datetime.date, duration_months: int
     ) -> datetime.date:
-        return add_months(started_on, duration_months)
+        """The last covered day of a term of `duration_months`.
+
+        `expires_on` is inclusive, so a year from 1 March runs through the
+        last day of February, and its renewal starts on the anniversary
+        without overlapping it.
+        """
+        return add_months(started_on, duration_months) - datetime.timedelta(days=1)

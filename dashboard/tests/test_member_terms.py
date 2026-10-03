@@ -105,7 +105,7 @@ class TermCreateTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         term = MembershipTerm.objects.get()
         self.assertEqual(term.member, self.member)
-        self.assertEqual(term.expires_on, datetime.date(2027, 9, 11))
+        self.assertEqual(term.expires_on, datetime.date(2027, 9, 10))
         self.assertEqual(term.price_paid, Decimal("60.00"))
 
         triggers = json.loads(resp["HX-Trigger"])
@@ -249,10 +249,10 @@ class TermFormTierChoicesTests(TestCase):
             "started_on": "2026-03-01",
         })
         self.assertTrue(form.is_valid(), form.errors)
-        # 12 months, inclusive-through semantics preserved by add_months.
+        # 12 months, inclusive: good through the day before the anniversary.
         self.assertEqual(
             form.cleaned_data["expires_on"],
-            datetime.date(2027, 3, 1),
+            datetime.date(2027, 2, 28),
         )
 
         # Every seeded tier is 12 months, so the case above alone would
@@ -270,7 +270,7 @@ class TermFormTierChoicesTests(TestCase):
         self.assertTrue(form.is_valid(), form.errors)
         self.assertEqual(
             form.cleaned_data["expires_on"],
-            datetime.date(2026, 9, 1),
+            datetime.date(2026, 8, 31),
         )
 
     def test_price_defaults_from_the_selected_tier(self) -> None:
@@ -427,6 +427,25 @@ class OverlapFlagTests(TestCase):
             },
         ).content.decode()
         self.assertEqual(html.count("Overlaps"), 2)
+
+    def test_an_anniversary_renewal_with_default_dates_is_not_flagged(
+        self,
+    ) -> None:
+        """Default expiries must leave room for a renewal on the anniversary."""
+        for start in ("2025-03-01", "2026-03-01"):
+            self.client.post(
+                reverse("dashboard:term_create", args=[self.member.pk]),
+                {
+                    "tier": a_tier("individual").pk,
+                    "started_on": start,
+                    "expires_on": "",
+                    "price_paid": "",
+                    "purchased_at": "",
+                    "notes": "",
+                },
+            )
+        self.assertEqual(self.member.terms.count(), 2)
+        self.assertNotIn("Overlaps", self.detail_html())
 
     def test_the_flag_clears_when_the_duplicate_is_deleted(self) -> None:
         self.add_term(datetime.date(2026, 1, 1), datetime.date(2026, 12, 31))

@@ -79,10 +79,18 @@ class MembershipTermTests(TestCase):
         self.member.delete()
         self.assertEqual(MembershipTerm.objects.count(), 0)
 
-    def test_default_expiry_is_start_plus_the_tier_duration(self) -> None:
+    def test_default_expiry_is_the_day_before_the_anniversary(self) -> None:
+        # expires_on is inclusive, so 12 months from 11 Sep is through
+        # 10 Sep — not 11 Sep, which would be twelve months and a day.
         self.assertEqual(
             MembershipTerm.default_expiry(datetime.date(2026, 9, 11), 12),
-            datetime.date(2027, 9, 11),
+            datetime.date(2027, 9, 10),
+        )
+
+    def test_default_expiry_across_a_short_february(self) -> None:
+        self.assertEqual(
+            MembershipTerm.default_expiry(datetime.date(2026, 3, 1), 12),
+            datetime.date(2027, 2, 28),
         )
 
 
