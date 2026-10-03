@@ -43,7 +43,9 @@ class MembershipTerm(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["-started_on"]
+        # -id breaks ties between same-day starts, so "newest first" is
+        # the later entry rather than whatever order the database returns.
+        ordering = ["-started_on", "-id"]
         verbose_name = "Membership term"
         verbose_name_plural = "Membership terms"
 

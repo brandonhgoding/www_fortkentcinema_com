@@ -350,6 +350,27 @@ class RenewPrefillTests(TestCase):
         html = self.renew_form()
         self.assertIn(f'value="{timezone.localdate().isoformat()}"', html)
 
+    def test_continues_from_the_term_that_runs_latest(self) -> None:
+        """A short comp started inside a longer term must not become the
+        renewal's starting point or its tier."""
+        today = timezone.localdate()
+        MembershipTerm.objects.create(
+            member=self.member, tier=a_tier("family-plus"),
+            started_on=today - datetime.timedelta(days=200),
+            expires_on=today + datetime.timedelta(days=165),
+            price_paid=Decimal("250.00"),
+        )
+        MembershipTerm.objects.create(
+            member=self.member, tier=a_tier("individual"),
+            started_on=today - datetime.timedelta(days=100),
+            expires_on=today - datetime.timedelta(days=70),
+            price_paid=Decimal("0.00"),
+        )
+        html = self.renew_form()
+        continuing = today + datetime.timedelta(days=166)
+        self.assertIn(f'value="{continuing.isoformat()}"', html)
+        self.assertIn(f'value="{a_tier("family-plus").pk}" selected', html)
+
     def test_a_member_with_no_terms_gets_a_blank_form(self) -> None:
         resp = self.client.get(
             reverse("dashboard:term_create", args=[self.member.pk]), {"renew": "1"}

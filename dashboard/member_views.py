@@ -11,7 +11,7 @@ import json
 
 from audience.dates import month_bounds
 from audience.models import FreeAdmission, Member, MembershipTerm
-from audience.terms import overlapping_term_ids, renewal_start
+from audience.terms import latest_term, overlapping_term_ids, renewal_start
 from django.db import models
 from django.db.models import Count, Q
 from django.http import HttpResponse
@@ -183,8 +183,8 @@ class MemberDeleteView(StaffRequiredMixin, View):
 
 
 def _renewal_initial(member, request) -> dict:
-    """Prefill for the Renew button: same tier, starting where the last
-    term leaves off.
+    """Prefill for the Renew button: same tier, starting where the
+    latest-running term leaves off.
 
     Only for `?renew=1` — a blank Add Term form still opens blank, because
     the reason to add a term by hand is usually that it is *not* a
@@ -198,7 +198,7 @@ def _renewal_initial(member, request) -> dict:
     """
     if request.GET.get("renew") != "1":
         return {}
-    latest = member.terms.select_related("tier").first()  # ordering is -started_on
+    latest = latest_term(member.terms.select_related("tier"))
     if latest is None:
         return {}
     initial = {"started_on": renewal_start(latest, timezone.localdate())}

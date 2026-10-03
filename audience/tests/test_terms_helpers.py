@@ -4,7 +4,7 @@ import datetime
 from decimal import Decimal
 
 from audience.models import Member, MembershipTerm, MembershipTier
-from audience.terms import overlapping_term_ids, renewal_start
+from audience.terms import latest_term, overlapping_term_ids, renewal_start
 from django.test import TestCase
 
 
@@ -129,3 +129,39 @@ class RenewalStartTests(TestCase):
             renewal_start(term, datetime.date(2026, 9, 18)),
             datetime.date(2026, 9, 19),
         )
+
+
+class LatestTermTests(TestCase):
+    """The term a renewal continues from is the one that runs latest."""
+
+    def setUp(self) -> None:
+        self.member = Member.objects.create(
+            first_name="Ada", last_name="Lovelace", email="ada@example.com"
+        )
+        self.tier = MembershipTier.objects.get(slug="individual")
+
+    def test_no_terms(self) -> None:
+        self.assertIsNone(latest_term([]))
+
+    def test_a_short_comp_inside_a_long_term_does_not_win(self) -> None:
+        """A comp that started later but ends sooner is not what is renewed."""
+        long = make_term(
+            self.member, self.tier,
+            datetime.date(2026, 3, 17), datetime.date(2027, 3, 17),
+        )
+        make_term(
+            self.member, self.tier,
+            datetime.date(2026, 6, 25), datetime.date(2026, 7, 25),
+        )
+        self.assertEqual(latest_term(self.member.terms.all()), long)
+
+    def test_equal_expiry_prefers_the_later_entry(self) -> None:
+        make_term(
+            self.member, self.tier,
+            datetime.date(2026, 1, 1), datetime.date(2026, 12, 31),
+        )
+        second = make_term(
+            self.member, self.tier,
+            datetime.date(2026, 1, 1), datetime.date(2026, 12, 31),
+        )
+        self.assertEqual(latest_term(self.member.terms.all()), second)

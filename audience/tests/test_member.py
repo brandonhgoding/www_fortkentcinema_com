@@ -74,6 +74,12 @@ class MembershipTermTests(TestCase):
         newer = self._term(started_on=datetime.date(2026, 1, 1))
         self.assertEqual(list(self.member.terms.all()), [newer, older])
 
+    def test_same_start_date_orders_the_later_entry_first(self) -> None:
+        """A tiebreaker, so "newest first" never depends on the database."""
+        first = self._term(started_on=datetime.date(2026, 1, 1))
+        second = self._term(started_on=datetime.date(2026, 1, 1))
+        self.assertEqual(list(self.member.terms.all()), [second, first])
+
     def test_deleting_a_member_deletes_their_terms(self) -> None:
         self._term()
         self.member.delete()

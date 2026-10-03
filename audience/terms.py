@@ -35,6 +35,21 @@ def overlapping_term_ids(terms: Iterable) -> set[int]:
     return overlapping
 
 
+def latest_term(terms: Iterable):
+    """The term that runs latest, or None — what a renewal continues from.
+
+    Not the most recently *started* term: a short comp started inside a
+    longer paid term ends first, and renewing from it would prefill the
+    comp's tier and a start date months before the member's cover runs
+    out. Ties on expiry go to the later start, then the later entry.
+    """
+    return max(
+        terms,
+        key=lambda term: (term.expires_on, term.started_on, term.pk),
+        default=None,
+    )
+
+
 def renewal_start(latest, today: datetime.date) -> datetime.date:
     """When a renewal of `latest` should begin.
 
