@@ -17,7 +17,7 @@
               <span class="freeCount{% if member.free_used_this_month > member.free_admission_allowance %} freeCount--over{% endif %}">{{ member.free_used_this_month }} / {{ member.free_admission_allowance }}</span>
             {% else %}—{% endif %}
           </td>
-          <td>{% if member.current_term %}{{ member.current_term.expires_on|date:"M j, Y" }}{% else %}—{% endif %}</td>
+          <td>{{ member.covered_through|date:"M j, Y"|default:"—" }}</td>
           <td><span class="statusPill status-{{ member.status }}">{{ member.status_label }}</span></td>
           <td>
             <div class="actions">

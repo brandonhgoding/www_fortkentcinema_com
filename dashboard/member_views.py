@@ -27,6 +27,7 @@ STATUS_FILTERS = [
     ("", "All members"),
     ("active", "Active"),
     ("expiring", "Expiring soon"),
+    ("upcoming", "Not started yet"),
     ("lapsed", "Lapsed"),
 ]
 
@@ -328,7 +329,11 @@ class TermDeleteView(StaffRequiredMixin, View):
 
 
 class MemberExportView(StaffRequiredMixin, View):
-    """One row per member, from their most recent term.
+    """One row per member, from the term that runs latest.
+
+    The same term Renew continues from, so the row's dates describe the
+    cover that `status` is judged on rather than, say, a short comp that
+    started more recently.
 
     Matches the shape of the spreadsheet this replaces. A per-term export
     for revenue analysis would be a second view; this one answers "who are
@@ -347,7 +352,7 @@ class MemberExportView(StaffRequiredMixin, View):
             "tier", "started_on", "expires_on", "price_paid", "status",
         ])
         for member in members:
-            term = member.terms.first()  # ordering is -started_on
+            term = latest_term(member.terms.all())
             writer.writerow([
                 member.first_name,
                 member.last_name,

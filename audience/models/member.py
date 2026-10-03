@@ -80,12 +80,44 @@ class Member(models.Model):
         return self.current_term is not None
 
     @property
+    def covered_through(self) -> datetime.date | None:
+        """The last day of unbroken cover from today, or None if not covered.
+
+        Follows back-to-back and overlapping terms forward from the one
+        covering today, so an early renewal pushes the date out rather than
+        leaving the member "expiring" on the term it renews. A single day
+        without cover ends the chain. Walks the prefetched terms, like
+        `current_term`.
+        """
+        today = timezone.localdate()
+        covered: datetime.date | None = None
+        for term in sorted(self.terms.all(), key=lambda t: t.started_on):
+            if term.expires_on < today:
+                continue
+            reaches = (
+                today if covered is None else covered + datetime.timedelta(days=1)
+            )
+            if term.started_on > reaches:
+                break
+            covered = max(covered or term.expires_on, term.expires_on)
+        return covered
+
+    @property
     def status(self) -> str:
-        """One of "active", "expiring", "lapsed" — drives the roster pill."""
-        term = self.current_term
-        if term is None:
+        """One of "active", "expiring", "upcoming", "lapsed" — drives the
+        roster pill.
+
+        "expiring" is judged on `covered_through`, not the current term's
+        own expiry. "upcoming" is a member with no cover today but a term
+        still to start — booked ahead, not lapsed.
+        """
+        covered = self.covered_through
+        if covered is None:
+            today = timezone.localdate()
+            if any(term.started_on > today for term in self.terms.all()):
+                return "upcoming"
             return "lapsed"
-        days_left = (term.expires_on - timezone.localdate()).days
+        days_left = (covered - timezone.localdate()).days
         if days_left <= EXPIRING_SOON_DAYS:
             return "expiring"
         return "active"
@@ -93,6 +125,8 @@ class Member(models.Model):
     STATUS_LABELS: ClassVar[dict[str, str]] = {
         "active": "Active",
         "expiring": "Expiring soon",
+        # Same words as the term ledger's "future" window.
+        "upcoming": "Not started yet",
         "lapsed": "Lapsed",
     }
 

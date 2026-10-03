@@ -89,6 +89,32 @@ class WindowFilterTests(LedgerTestCase):
         self.assertNotIn("Pastly", html)
         self.assertNotIn("Nowden", html)
 
+    def test_expiring_skips_a_term_already_renewed(self) -> None:
+        """A renewal that continues the term means nobody is about to
+        lapse, so there is no one to chase."""
+        day = datetime.timedelta(days=1)
+        MembershipTerm.objects.create(
+            member=self.expiring.member,
+            tier=self.expiring.tier,
+            started_on=self.expiring.expires_on + day,
+            expires_on=self.expiring.expires_on + 365 * day,
+            price_paid=Decimal("60.00"),
+        )
+        gappy = self.term(
+            "Gapwell", "individual",
+            self.today - 350 * day, self.today + 10 * day,
+        )
+        MembershipTerm.objects.create(
+            member=gappy.member,
+            tier=gappy.tier,
+            started_on=gappy.expires_on + 2 * day,
+            expires_on=gappy.expires_on + 366 * day,
+            price_paid=Decimal("60.00"),
+        )
+        html = self.get(window="expiring")
+        self.assertNotIn("Soonby", html)
+        self.assertIn("Gapwell", html)
+
     def test_expired(self) -> None:
         html = self.get(window="expired")
         self.assertIn("Pastly", html)

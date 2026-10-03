@@ -152,6 +152,56 @@ class DerivedStatusTests(TestCase):
         self.assertEqual(self.member.current_term, new)
         self.assertNotEqual(self.member.current_term, old)
 
+    def test_an_early_renewal_is_not_expiring_soon(self) -> None:
+        """Cover runs on into the renewal, so the member is not about to
+        lapse, and the date that matters is the renewal's expiry."""
+        self._term(-345, 20)
+        self._term(21, 385)
+        self.assertEqual(self.member.status, "active")
+        self.assertEqual(
+            self.member.covered_through,
+            self.today + datetime.timedelta(days=385),
+        )
+
+    def test_an_overlapping_renewal_extends_cover(self) -> None:
+        self._term(-345, 20)
+        self._term(10, 375)
+        self.assertEqual(self.member.status, "active")
+
+    def test_cover_follows_a_chain_of_renewals(self) -> None:
+        self._term(-345, 5)
+        self._term(6, 20)
+        self._term(21, 400)
+        self.assertEqual(
+            self.member.covered_through,
+            self.today + datetime.timedelta(days=400),
+        )
+
+    def test_a_gap_before_the_renewal_still_expires_soon(self) -> None:
+        """A day without cover is a lapse, however short."""
+        self._term(-345, 20)
+        self._term(22, 386)
+        self.assertEqual(self.member.status, "expiring")
+        self.assertEqual(
+            self.member.covered_through,
+            self.today + datetime.timedelta(days=20),
+        )
+
+    def test_no_cover_today_means_no_covered_through(self) -> None:
+        self._term(-400, -1)
+        self.assertIsNone(self.member.covered_through)
+
+    def test_only_future_terms_is_not_started_yet_rather_than_lapsed(self) -> None:
+        self._term(10, 375)
+        self.assertFalse(self.member.is_active)
+        self.assertEqual(self.member.status, "upcoming")
+        self.assertEqual(self.member.status_label, "Not started yet")
+
+    def test_a_lapsed_member_with_a_booked_renewal_is_not_started_yet(self) -> None:
+        self._term(-400, -10)
+        self._term(10, 375)
+        self.assertEqual(self.member.status, "upcoming")
+
     def test_term_knows_whether_it_is_current(self) -> None:
         self.assertTrue(self._term(-1, 1).is_current)
         self.assertFalse(self._term(-10, -5).is_current)

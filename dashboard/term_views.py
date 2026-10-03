@@ -15,7 +15,7 @@ import csv
 import datetime
 
 from audience.models import MembershipTerm, MembershipTier
-from django.db.models import Q, Sum
+from django.db.models import Exists, OuterRef, Q, Sum
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
@@ -43,8 +43,19 @@ def _window_q(window: str, today: datetime.date) -> Q | None:
         "current": Q(started_on__lte=today, expires_on__gte=today),
         # A subset of "current" on purpose: a term that has already expired
         # is not expiring soon, it is expired.
+        # Also excludes a term the member has already renewed: one that
+        # another of their terms continues without a gap is not about to
+        # lapse, which is what Member.status judges too.
         "expiring": Q(
             started_on__lte=today, expires_on__gte=today, expires_on__lte=soon
+        )
+        & ~Exists(
+            MembershipTerm.objects.filter(
+                member=OuterRef("member"),
+                started_on__lte=OuterRef("expires_on")
+                + datetime.timedelta(days=1),
+                expires_on__gt=OuterRef("expires_on"),
+            )
         ),
         "expired": Q(expires_on__lt=today),
         "future": Q(started_on__gt=today),

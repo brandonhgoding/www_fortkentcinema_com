@@ -95,6 +95,51 @@ class MemberListTests(TestCase):
         self.assertIn("Zzyzx", lapsed)
         self.assertNotIn("Rent", lapsed)
 
+    def test_an_early_renewal_is_not_listed_as_expiring(self) -> None:
+        today = timezone.localdate()
+        member = make_member("Re", "Newwell", "renew@example.com")
+        give_term(member, days_left=10)
+        renewal = MembershipTerm.objects.create(
+            member=member, tier=a_tier(),
+            started_on=today + datetime.timedelta(days=11),
+            expires_on=today + datetime.timedelta(days=375),
+            price_paid=Decimal("60.00"),
+        )
+
+        expiring = self.client.get(
+            reverse("dashboard:members"), {"status": "expiring"}
+        ).content.decode()
+        self.assertNotIn("Newwell", expiring)
+
+        roster = self.client.get(reverse("dashboard:members")).content.decode()
+        self.assertNotIn("Expiring soon</span>", roster)
+        # The Expires column shows where cover ends, not the old term's end.
+        self.assertIn(f'{renewal.expires_on:%b} {renewal.expires_on.day}, ', roster)
+
+    def test_future_only_members_have_their_own_status(self) -> None:
+        today = timezone.localdate()
+        member = make_member("Up", "Comingly", "upcoming@example.com")
+        MembershipTerm.objects.create(
+            member=member, tier=a_tier(),
+            started_on=today + datetime.timedelta(days=10),
+            expires_on=today + datetime.timedelta(days=375),
+            price_paid=Decimal("60.00"),
+        )
+        make_member("No", "Zzyzx", "never@example.com")
+
+        upcoming = self.client.get(
+            reverse("dashboard:members"), {"status": "upcoming"}
+        ).content.decode()
+        self.assertIn("Comingly", upcoming)
+        self.assertNotIn("Zzyzx", upcoming)
+        self.assertIn('<option value="upcoming"', upcoming)
+        self.assertIn("Not started yet</span>", upcoming)
+
+        lapsed = self.client.get(
+            reverse("dashboard:members"), {"status": "lapsed"}
+        ).content.decode()
+        self.assertNotIn("Comingly", lapsed)
+
     def test_unknown_status_filter_is_ignored(self) -> None:
         give_term(make_member())
         html = self.client.get(
@@ -248,6 +293,46 @@ class MemberExportTests(TestCase):
         self.assertEqual(len(rows), 2)  # header + one member
         self.assertIn("cinema-supporter", rows[1])
         self.assertNotIn("individual", rows[1])
+
+    def test_an_early_renewal_exports_as_active_with_its_dates(self) -> None:
+        """The row's dates and status must describe the same membership."""
+        today = timezone.localdate()
+        member = make_member()
+        give_term(member, days_left=10)
+        renewal = MembershipTerm.objects.create(
+            member=member, tier=a_tier(),
+            started_on=today + datetime.timedelta(days=11),
+            expires_on=today + datetime.timedelta(days=375),
+            price_paid=Decimal("60.00"),
+        )
+        rows = self.client.get(
+            reverse("dashboard:members_export")
+        ).content.decode().splitlines()
+        self.assertTrue(rows[1].endswith(",active"), rows[1])
+        self.assertIn(renewal.expires_on.isoformat(), rows[1])
+
+    def test_a_comp_inside_a_longer_term_does_not_become_the_row(self) -> None:
+        """The row is the term that runs latest, as Renew uses, so an
+        expired comp is never exported beside an active status."""
+        today = timezone.localdate()
+        member = make_member()
+        MembershipTerm.objects.create(
+            member=member, tier=a_tier("family-plus"),
+            started_on=today - datetime.timedelta(days=200),
+            expires_on=today + datetime.timedelta(days=165),
+            price_paid=Decimal("250.00"),
+        )
+        MembershipTerm.objects.create(
+            member=member, tier=a_tier("individual"),
+            started_on=today - datetime.timedelta(days=100),
+            expires_on=today - datetime.timedelta(days=70),
+            price_paid=Decimal("0.00"),
+        )
+        rows = self.client.get(
+            reverse("dashboard:members_export")
+        ).content.decode().splitlines()
+        self.assertIn("family-plus", rows[1])
+        self.assertTrue(rows[1].endswith(",active"), rows[1])
 
     def test_a_member_with_no_terms_still_exports(self) -> None:
         make_member("No", "Terms", "never@example.com")
