@@ -1,7 +1,9 @@
+import datetime
 from unittest import mock
 
 from django.db.models import QuerySet
 from django.test import TestCase
+from django.utils import timezone
 
 from audience.models import Subscriber, SubscriberStatus
 
@@ -94,3 +96,62 @@ class SubscriberRecordTests(TestCase):
         one, _ = Subscriber.objects.record("one@example.com", source="poll_vote")
         two, _ = Subscriber.objects.record("two@example.com", source="poll_vote")
         self.assertNotEqual(one.unsubscribe_token, two.unsubscribe_token)
+
+
+class SubscriberStatusConsistencyTests(TestCase):
+    """status and unsubscribed_at must agree on every save path, not just
+    unsubscribe() — staff editing Status in the admin included."""
+
+    def setUp(self) -> None:
+        self.sub, _ = Subscriber.objects.record("a@example.com", source="poll_vote")
+
+    def test_setting_the_status_directly_stamps_the_opt_out(self) -> None:
+        self.sub.status = SubscriberStatus.UNSUBSCRIBED
+        self.sub.save()
+        self.sub.refresh_from_db()
+        self.assertIsNotNone(self.sub.unsubscribed_at)
+
+    def test_a_partial_save_of_the_status_stamps_it_too(self) -> None:
+        self.sub.status = SubscriberStatus.UNSUBSCRIBED
+        self.sub.save(update_fields=["status"])
+        self.sub.refresh_from_db()
+        self.assertIsNotNone(self.sub.unsubscribed_at)
+
+    def test_an_existing_opt_out_time_is_kept(self) -> None:
+        when = timezone.now() - datetime.timedelta(days=3)
+        self.sub.status = SubscriberStatus.UNSUBSCRIBED
+        self.sub.unsubscribed_at = when
+        self.sub.save()
+        self.sub.refresh_from_db()
+        self.assertEqual(self.sub.unsubscribed_at, when)
+
+    def test_resubscribing_clears_the_opt_out_time(self) -> None:
+        self.sub.unsubscribe()
+        self.sub.status = SubscriberStatus.ACTIVE
+        self.sub.save()
+        self.sub.refresh_from_db()
+        self.assertIsNone(self.sub.unsubscribed_at)
+
+    def test_the_admin_stamps_an_opt_out(self) -> None:
+        from django.contrib.auth.models import User
+        from django.urls import reverse
+
+        User.objects.create_superuser(
+            username="root", email="root@example.com", password="pw12345"
+        )
+        self.client.login(username="root", password="pw12345")
+        resp = self.client.post(
+            reverse("admin:audience_subscriber_change", args=[self.sub.pk]),
+            {
+                "email": "a@example.com",
+                "status": "UNSUBSCRIBED",
+                "source": "poll_vote",
+                "consent_ip": "",
+                "unsubscribed_at_0": "",
+                "unsubscribed_at_1": "",
+            },
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.sub.refresh_from_db()
+        self.assertEqual(self.sub.status, SubscriberStatus.UNSUBSCRIBED)
+        self.assertIsNotNone(self.sub.unsubscribed_at)

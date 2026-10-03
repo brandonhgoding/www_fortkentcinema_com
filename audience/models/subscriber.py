@@ -93,6 +93,18 @@ class Subscriber(models.Model):
 
     def save(self, *args, **kwargs) -> None:
         self.email = (self.email or "").strip().lower()
+        # status and unsubscribed_at must agree however the row is saved —
+        # the admin's Status dropdown bypasses unsubscribe(). An opt-out
+        # keeps any time already recorded; a re-subscribe (staff acting on
+        # fresh consent) clears it, so an active row never reads as opted out.
+        if self.status == SubscriberStatus.UNSUBSCRIBED:
+            if self.unsubscribed_at is None:
+                self.unsubscribed_at = timezone.now()
+        else:
+            self.unsubscribed_at = None
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None and "status" in update_fields:
+            kwargs["update_fields"] = {*update_fields, "unsubscribed_at"}
         super().save(*args, **kwargs)
 
     def unsubscribe(self) -> None:
