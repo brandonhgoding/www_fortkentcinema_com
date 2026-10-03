@@ -170,6 +170,20 @@ class RetiredTierTests(TestCase):
         self.assertIn("value: 250", html)
 
 
+class MissingCheckoutLinkTests(TestCase):
+    def test_a_tier_without_a_link_renders_no_dead_join_button(self) -> None:
+        """Validation keeps this from happening; the card must not trust it.
+
+        An empty href reloads the page and still fires the join-click event.
+        """
+        from audience.models import MembershipTier
+
+        MembershipTier.objects.create(slug="no-link", name="No Link", price=10)
+        html = self.client.get(reverse("membership")).content.decode()
+        self.assertNotIn('href=""', html)
+        self.assertNotIn('data-track-tier="no-link"', html)
+
+
 class ThanksValueSourceTests(TestCase):
     def test_value_comes_from_the_database_not_the_query_string(self) -> None:
         html = self.client.get(

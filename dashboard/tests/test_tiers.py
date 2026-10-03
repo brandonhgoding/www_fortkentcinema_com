@@ -25,7 +25,7 @@ def tier_payload(**overrides) -> dict:
         "price": "45",
         "duration_months": "12",
         "free_admissions_per_month": "1",
-        "checkout_url": "",
+        "checkout_url": "https://square.link/u/matinee",
         "featured": "",
         "is_family_tier": "",
         "show_on_membership_page": "on",
@@ -147,6 +147,22 @@ class TierCreateTests(StaffTestCase):
         self.assertTrue(trigger["close-drawer"])
         self.assertEqual(trigger["dashboard-toast"]["kind"], "success")
 
+    def test_a_listed_tier_needs_a_payment_link(self) -> None:
+        """Otherwise the public card's Join button goes nowhere."""
+        resp = self.client.post(
+            reverse("dashboard:tier_create"), tier_payload(checkout_url="")
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("checkout_url", resp.context["form"].errors)
+        self.assertIn("needs its Square payment link", resp.content.decode())
+        self.assertFalse(MembershipTier.objects.filter(slug="matinee-club").exists())
+
+    def test_an_unlisted_tier_can_wait_for_its_payment_link(self) -> None:
+        payload = tier_payload(checkout_url="")
+        del payload["show_on_membership_page"]
+        self.client.post(reverse("dashboard:tier_create"), payload)
+        self.assertTrue(MembershipTier.objects.filter(slug="matinee-club").exists())
+
 
 class TierEditTests(StaffTestCase):
     def setUp(self) -> None:
@@ -216,6 +232,17 @@ class TierListingTests(StaffTestCase):
             reverse("dashboard:tier_listing", args=[self.tier.pk])
         )
         self.assertNotIn("close-drawer", resp.headers["HX-Trigger"])
+
+    def test_a_tier_without_a_payment_link_cannot_be_restored(self) -> None:
+        """Restoring would list a card whose Join button goes nowhere."""
+        tier = MembershipTier.objects.create(
+            slug="draft", name="Draft", price=10, show_on_membership_page=False
+        )
+        resp = self.client.post(reverse("dashboard:tier_listing", args=[tier.pk]))
+        tier.refresh_from_db()
+        self.assertFalse(tier.show_on_membership_page)
+        trigger = json.loads(resp.headers["HX-Trigger"])
+        self.assertEqual(trigger["dashboard-toast"]["kind"], "error")
 
 
 class TierDeleteTests(StaffTestCase):

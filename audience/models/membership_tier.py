@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 
 from .membership_benefit import MembershipBenefit
@@ -61,3 +62,14 @@ class MembershipTier(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+    def clean(self) -> None:
+        # A listed tier's card is a Join button pointing at checkout_url;
+        # without one it renders href="" and goes nowhere.
+        if self.show_on_membership_page and not self.checkout_url:
+            raise ValidationError(
+                {
+                    "checkout_url": "A tier listed on the membership page "
+                    "needs its Square payment link."
+                }
+            )

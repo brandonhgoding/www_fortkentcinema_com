@@ -26,7 +26,9 @@
       {% endfor %}
     </ul>
   {% endif %}
-  <a href="{{ tier.checkout_url }}" target="_blank" rel="noopener noreferrer"
-     class="btn btn-secondary tier-card__cta"
-     data-track="membership_join_click" data-track-tier="{{ tier.slug }}">Join</a>
+  {% if tier.checkout_url %}
+    <a href="{{ tier.checkout_url }}" target="_blank" rel="noopener noreferrer"
+       class="btn btn-secondary tier-card__cta"
+       data-track="membership_join_click" data-track-tier="{{ tier.slug }}">Join</a>
+  {% endif %}
 </article>

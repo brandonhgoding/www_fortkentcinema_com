@@ -131,3 +131,40 @@ class AudienceAdminSmokeTests(TestCase):
         self.assertRenders("admin:audience_freeadmission_changelist")
         self.assertRenders("admin:audience_freeadmission_add")
         self.assertRenders("admin:audience_freeadmission_change", admission.pk)
+
+
+class MembershipTierAdminValidationTests(TestCase):
+    def setUp(self) -> None:
+        User.objects.create_superuser(
+            username="root", email="root@example.com", password="pw12345"
+        )
+        self.client.login(username="root", password="pw12345")
+
+    def payload(self, **overrides) -> dict:
+        return {
+            "name": "Matinee Club",
+            "slug": "matinee-club",
+            "eyebrow": "",
+            "description": "",
+            "price": "45",
+            "duration_months": "12",
+            "free_admissions_per_month": "0",
+            "checkout_url": "",
+            "show_on_membership_page": "on",
+            "sort_order": "0",
+            **overrides,
+        }
+
+    def test_a_listed_tier_needs_a_checkout_link(self) -> None:
+        resp = self.client.post(
+            reverse("admin:audience_membershiptier_add"), self.payload()
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("checkout_url", resp.context["adminform"].form.errors)
+        self.assertFalse(MembershipTier.objects.filter(slug="matinee-club").exists())
+
+    def test_a_retired_tier_saves_without_one(self) -> None:
+        payload = self.payload()
+        del payload["show_on_membership_page"]
+        self.client.post(reverse("admin:audience_membershiptier_add"), payload)
+        self.assertTrue(MembershipTier.objects.filter(slug="matinee-club").exists())
