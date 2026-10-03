@@ -207,7 +207,9 @@ def _renewal_initial(member, request) -> dict:
     latest = latest_term(member.terms.select_related("tier"))
     if latest is None:
         return {}
-    initial = {"started_on": renewal_start(latest, timezone.localdate())}
+    initial: dict[str, object] = {
+        "started_on": renewal_start(latest, timezone.localdate())
+    }
     if latest.tier.show_on_membership_page:
         initial["tier"] = latest.tier_id
     return initial

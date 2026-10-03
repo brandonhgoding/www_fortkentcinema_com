@@ -101,8 +101,10 @@ class WindowFilterTests(LedgerTestCase):
             price_paid=Decimal("60.00"),
         )
         gappy = self.term(
-            "Gapwell", "individual",
-            self.today - 350 * day, self.today + 10 * day,
+            "Gapwell",
+            "individual",
+            self.today - 350 * day,
+            self.today + 10 * day,
         )
         MembershipTerm.objects.create(
             member=gappy.member,

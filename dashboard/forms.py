@@ -1,3 +1,5 @@
+from typing import cast
+
 from audience.models import (
     Member,
     MembershipBenefit,
@@ -162,7 +164,7 @@ class MembershipTermForm(forms.ModelForm):
             listed |= Q(pk=self.instance.tier_id)
         self.fields["tier"].queryset = MembershipTier.objects.filter(listed)
         if self.instance.pk or self.initial.get("tier"):
-            self.fields["tier"].empty_label = None
+            cast(forms.ModelChoiceField, self.fields["tier"]).empty_label = None
 
     def clean(self):
         cleaned = super().clean()

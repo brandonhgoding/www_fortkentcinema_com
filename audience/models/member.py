@@ -94,9 +94,7 @@ class Member(models.Model):
         for term in sorted(self.terms.all(), key=lambda t: t.started_on):
             if term.expires_on < today:
                 continue
-            reaches = (
-                today if covered is None else covered + datetime.timedelta(days=1)
-            )
+            reaches = today if covered is None else covered + datetime.timedelta(days=1)
             if term.started_on > reaches:
                 break
             covered = max(covered or term.expires_on, term.expires_on)

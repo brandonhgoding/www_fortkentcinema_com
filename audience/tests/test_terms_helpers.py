@@ -146,22 +146,30 @@ class LatestTermTests(TestCase):
     def test_a_short_comp_inside_a_long_term_does_not_win(self) -> None:
         """A comp that started later but ends sooner is not what is renewed."""
         long = make_term(
-            self.member, self.tier,
-            datetime.date(2026, 3, 17), datetime.date(2027, 3, 17),
+            self.member,
+            self.tier,
+            datetime.date(2026, 3, 17),
+            datetime.date(2027, 3, 17),
         )
         make_term(
-            self.member, self.tier,
-            datetime.date(2026, 6, 25), datetime.date(2026, 7, 25),
+            self.member,
+            self.tier,
+            datetime.date(2026, 6, 25),
+            datetime.date(2026, 7, 25),
         )
         self.assertEqual(latest_term(self.member.terms.all()), long)
 
     def test_equal_expiry_prefers_the_later_entry(self) -> None:
         make_term(
-            self.member, self.tier,
-            datetime.date(2026, 1, 1), datetime.date(2026, 12, 31),
+            self.member,
+            self.tier,
+            datetime.date(2026, 1, 1),
+            datetime.date(2026, 12, 31),
         )
         second = make_term(
-            self.member, self.tier,
-            datetime.date(2026, 1, 1), datetime.date(2026, 12, 31),
+            self.member,
+            self.tier,
+            datetime.date(2026, 1, 1),
+            datetime.date(2026, 12, 31),
         )
         self.assertEqual(latest_term(self.member.terms.all()), second)

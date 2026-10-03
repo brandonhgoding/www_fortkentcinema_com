@@ -9,6 +9,10 @@ which is what lives here.
 
 import datetime
 from collections.abc import Iterable
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from audience.models import MembershipTerm
 
 
 def overlapping_term_ids(terms: Iterable) -> set[int]:
@@ -35,7 +39,7 @@ def overlapping_term_ids(terms: Iterable) -> set[int]:
     return overlapping
 
 
-def latest_term(terms: Iterable):
+def latest_term(terms: Iterable["MembershipTerm"]) -> "MembershipTerm | None":
     """The term that runs latest, or None — what a renewal continues from.
 
     Not the most recently *started* term: a short comp started inside a

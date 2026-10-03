@@ -304,7 +304,8 @@ class RenewPrefillTests(TestCase):
         # so a fixed expiry date stops "continuing" once it is in the past.
         today = timezone.localdate()
         MembershipTerm.objects.create(
-            member=self.member, tier=a_tier("cinema-supporter"),
+            member=self.member,
+            tier=a_tier("cinema-supporter"),
             started_on=today - datetime.timedelta(days=300),
             expires_on=today + datetime.timedelta(days=20),
             price_paid=Decimal("120.00"),
@@ -355,13 +356,15 @@ class RenewPrefillTests(TestCase):
         renewal's starting point or its tier."""
         today = timezone.localdate()
         MembershipTerm.objects.create(
-            member=self.member, tier=a_tier("family-plus"),
+            member=self.member,
+            tier=a_tier("family-plus"),
             started_on=today - datetime.timedelta(days=200),
             expires_on=today + datetime.timedelta(days=165),
             price_paid=Decimal("250.00"),
         )
         MembershipTerm.objects.create(
-            member=self.member, tier=a_tier("individual"),
+            member=self.member,
+            tier=a_tier("individual"),
             started_on=today - datetime.timedelta(days=100),
             expires_on=today - datetime.timedelta(days=70),
             price_paid=Decimal("0.00"),
@@ -383,7 +386,8 @@ class RenewPrefillTests(TestCase):
         tier = a_tier("family-plus")
         today = timezone.localdate()
         MembershipTerm.objects.create(
-            member=self.member, tier=tier,
+            member=self.member,
+            tier=tier,
             started_on=today - datetime.timedelta(days=300),
             expires_on=today + datetime.timedelta(days=20),
             price_paid=Decimal("250.00"),
@@ -403,7 +407,8 @@ class RenewPrefillTests(TestCase):
         tier = a_tier("family-plus")
         today = timezone.localdate()
         MembershipTerm.objects.create(
-            member=self.member, tier=tier,
+            member=self.member,
+            tier=tier,
             started_on=today - datetime.timedelta(days=300),
             expires_on=today + datetime.timedelta(days=20),
             price_paid=Decimal("250.00"),
@@ -416,15 +421,22 @@ class RenewPrefillTests(TestCase):
 
         resp = self.client.post(
             reverse("dashboard:term_create", args=[self.member.pk]),
-            {"tier": "", "started_on": today.isoformat(),
-             "expires_on": "", "price_paid": "", "purchased_at": "", "notes": ""},
+            {
+                "tier": "",
+                "started_on": today.isoformat(),
+                "expires_on": "",
+                "price_paid": "",
+                "purchased_at": "",
+                "notes": "",
+            },
         )
         self.assertIn('id="term-form"', resp.content.decode())
         self.assertEqual(self.member.terms.count(), 1)
 
     def test_an_active_tier_has_no_empty_choice(self) -> None:
         MembershipTerm.objects.create(
-            member=self.member, tier=a_tier("individual"),
+            member=self.member,
+            tier=a_tier("individual"),
             started_on=timezone.localdate() - datetime.timedelta(days=300),
             expires_on=timezone.localdate() + datetime.timedelta(days=20),
             price_paid=Decimal("60.00"),

@@ -122,7 +122,8 @@ class MemberListTests(TestCase):
         member = make_member("Re", "Newwell", "renew@example.com")
         give_term(member, days_left=10)
         renewal = MembershipTerm.objects.create(
-            member=member, tier=a_tier(),
+            member=member,
+            tier=a_tier(),
             started_on=today + datetime.timedelta(days=11),
             expires_on=today + datetime.timedelta(days=375),
             price_paid=Decimal("60.00"),
@@ -136,13 +137,14 @@ class MemberListTests(TestCase):
         roster = self.client.get(reverse("dashboard:members")).content.decode()
         self.assertNotIn("Expiring soon</span>", roster)
         # The Expires column shows where cover ends, not the old term's end.
-        self.assertIn(f'{renewal.expires_on:%b} {renewal.expires_on.day}, ', roster)
+        self.assertIn(f"{renewal.expires_on:%b} {renewal.expires_on.day}, ", roster)
 
     def test_future_only_members_have_their_own_status(self) -> None:
         today = timezone.localdate()
         member = make_member("Up", "Comingly", "upcoming@example.com")
         MembershipTerm.objects.create(
-            member=member, tier=a_tier(),
+            member=member,
+            tier=a_tier(),
             started_on=today + datetime.timedelta(days=10),
             expires_on=today + datetime.timedelta(days=375),
             price_paid=Decimal("60.00"),
@@ -322,14 +324,17 @@ class MemberExportTests(TestCase):
         member = make_member()
         give_term(member, days_left=10)
         renewal = MembershipTerm.objects.create(
-            member=member, tier=a_tier(),
+            member=member,
+            tier=a_tier(),
             started_on=today + datetime.timedelta(days=11),
             expires_on=today + datetime.timedelta(days=375),
             price_paid=Decimal("60.00"),
         )
-        rows = self.client.get(
-            reverse("dashboard:members_export")
-        ).content.decode().splitlines()
+        rows = (
+            self.client.get(reverse("dashboard:members_export"))
+            .content.decode()
+            .splitlines()
+        )
         self.assertTrue(rows[1].endswith(",active"), rows[1])
         self.assertIn(renewal.expires_on.isoformat(), rows[1])
 
@@ -339,20 +344,24 @@ class MemberExportTests(TestCase):
         today = timezone.localdate()
         member = make_member()
         MembershipTerm.objects.create(
-            member=member, tier=a_tier("family-plus"),
+            member=member,
+            tier=a_tier("family-plus"),
             started_on=today - datetime.timedelta(days=200),
             expires_on=today + datetime.timedelta(days=165),
             price_paid=Decimal("250.00"),
         )
         MembershipTerm.objects.create(
-            member=member, tier=a_tier("individual"),
+            member=member,
+            tier=a_tier("individual"),
             started_on=today - datetime.timedelta(days=100),
             expires_on=today - datetime.timedelta(days=70),
             price_paid=Decimal("0.00"),
         )
-        rows = self.client.get(
-            reverse("dashboard:members_export")
-        ).content.decode().splitlines()
+        rows = (
+            self.client.get(reverse("dashboard:members_export"))
+            .content.decode()
+            .splitlines()
+        )
         self.assertIn("family-plus", rows[1])
         self.assertTrue(rows[1].endswith(",active"), rows[1])
 
