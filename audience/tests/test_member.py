@@ -301,3 +301,57 @@ class MemberManagerTests(TestCase):
             price_paid=Decimal("60.00"),
         )
         self.assertEqual(Member.objects.active().count(), 1)
+
+
+class SameDayTermTests(TestCase):
+    """Terms that start on the same day, or overlap, have one winner.
+
+    current_term walks terms in Meta.ordering (-started_on, -id), and the
+    status pill, free-admission allowance and roster tier all read through
+    it. Without the -id tiebreaker the winner was whatever order the
+    database returned.
+    """
+
+    def setUp(self) -> None:
+        self.member = Member.objects.create(
+            first_name="Ada", last_name="Lovelace", email="ada@example.com"
+        )
+        self.today = timezone.localdate()
+
+    def _term(self, slug: str, start_offset: int, end_offset: int) -> MembershipTerm:
+        return MembershipTerm.objects.create(
+            member=self.member,
+            tier=MembershipTier.objects.get(slug=slug),
+            started_on=self.today + datetime.timedelta(days=start_offset),
+            expires_on=self.today + datetime.timedelta(days=end_offset),
+            price_paid=Decimal("60.00"),
+        )
+
+    def test_the_later_entry_wins_a_same_day_start(self) -> None:
+        self._term("individual", -10, 355)
+        later = self._term("family-plus", -10, 355)
+        self.assertEqual(self.member.current_term, later)
+        self.assertEqual(self.member.free_admission_allowance, 4)
+
+    def test_the_later_entry_wins_whichever_tier_it_is(self) -> None:
+        """Entry order, not tier or pk accident, decides."""
+        self._term("family-plus", -10, 355)
+        later = self._term("individual", -10, 355)
+        self.assertEqual(self.member.current_term, later)
+        self.assertEqual(self.member.free_admission_allowance, 0)
+
+    def test_the_prefetched_roster_agrees(self) -> None:
+        self._term("individual", -10, 355)
+        later = self._term("family-plus", -10, 355)
+        member = Member.objects.prefetch_related("terms__tier").get(
+            pk=self.member.pk
+        )
+        with self.assertNumQueries(0):
+            self.assertEqual(member.current_term, later)
+            self.assertEqual(member.free_admission_allowance, 4)
+
+    def test_a_renewal_wins_over_the_term_it_overlaps(self) -> None:
+        self._term("individual", -300, 65)
+        renewal = self._term("cinema-supporter", -5, 360)
+        self.assertEqual(self.member.current_term, renewal)
+        self.assertEqual(self.member.free_admission_allowance, 1)
