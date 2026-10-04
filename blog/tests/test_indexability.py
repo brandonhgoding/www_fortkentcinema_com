@@ -169,6 +169,19 @@ class RelatedPostsTests(TestCase):
         related = self.client.get(f"/blog/{post.slug}").context["related_posts"]
         self.assertEqual(related, [*self.news_posts[2:0:-1], self.review_posts[4]])
 
+    def related_heading(self, post):
+        html = self.client.get(f"/blog/{post.slug}").content.decode()
+        m = re.search(r'id="blog-related-title">\s*(.*?)\s*</h2>', html, re.S)
+        return m.group(1)
+
+    def test_heading_names_the_category_when_every_post_is_from_it(self):
+        self.assertEqual(self.related_heading(self.review_posts[0]), "MORE FROM REVIEWS")
+
+    def test_heading_is_generic_when_the_block_is_backfilled(self):
+        """News has two siblings, so the third card is a review. "More from
+        News" over it would be wrong."""
+        self.assertEqual(self.related_heading(self.news_posts[0]), "MORE POSTS")
+
     def test_related_posts_backfill_when_category_is_thin(self):
         """A lone post in its category must still get 3 related posts, or it
         stays orphaned."""

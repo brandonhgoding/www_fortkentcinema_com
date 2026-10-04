@@ -47,7 +47,12 @@ class PostDetailView(DetailView):
             self.request.build_absolute_uri(post.header_image.url)
             if post.header_image else None
         )
-        ctx["related_posts"] = self._related_posts(post)
+        related = ctx["related_posts"] = self._related_posts(post)
+        # "More from <Category>" only when the block isn't backfilled from
+        # other categories.
+        ctx["related_all_same_category"] = all(
+            p.category_id == post.category_id for p in related
+        )
         # Only films with a page to link to. A review can be linked to a film
         # we never booked, and /movies/<slug> 404s for those.
         ctx["reviewed_films"] = post.films.with_page()

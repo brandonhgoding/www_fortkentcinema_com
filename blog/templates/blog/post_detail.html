@@ -95,7 +95,7 @@ post was last modified the day it was published.
     {% if related_posts %}
     <section class="blog-related" aria-labelledby="blog-related-title">
       <h2 class="blog-related-title" id="blog-related-title">
-        {% if post.category %}MORE FROM {{ post.category.name|upper }}{% else %}MORE POSTS{% endif %}
+        {% if post.category and related_all_same_category %}MORE FROM {{ post.category.name|upper }}{% else %}MORE POSTS{% endif %}
       </h2>
       <div class="blog-related-grid">
         {% for related in related_posts %}
