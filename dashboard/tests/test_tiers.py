@@ -106,6 +106,35 @@ class TierListTests(StaffTestCase):
         self.assertIn(reverse("dashboard:tier_listing", args=[tier.pk]), html)
 
 
+class CatalogueOrderTests(StaffTestCase):
+    """Both lists follow sort_order, as the public page does.
+
+    Their annotations add a GROUP BY, which drops `Meta.ordering`.
+    """
+
+    def test_tiers_follow_sort_order(self) -> None:
+        # Created last and priced highest: only sort_order puts it first.
+        MembershipTier.objects.create(
+            slug="patron", name="Patron", price=999, sort_order=1,
+            checkout_url="https://square.link/u/patron",
+        )
+        resp = self.client.get(reverse("dashboard:tiers"))
+        self.assertEqual(
+            [t.slug for t in resp.context["tiers"]],
+            ["patron", "silver-screen", "individual", "cinema-supporter",
+             "family", "family-plus"],
+        )
+
+    def test_benefits_follow_sort_order_then_name(self) -> None:
+        MembershipBenefit.objects.create(name="Zzz first anyway", sort_order=1)
+        resp = self.client.get(reverse("dashboard:tiers"))
+        self.assertEqual(
+            [b.name for b in resp.context["benefits"]],
+            [b.name for b in MembershipBenefit.objects.order_by("sort_order", "name")],
+        )
+        self.assertEqual(resp.context["benefits"][0].name, "Zzz first anyway")
+
+
 class TierCreateTests(StaffTestCase):
     def test_creates_a_tier(self) -> None:
         resp = self.client.post(reverse("dashboard:tier_create"), tier_payload())

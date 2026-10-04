@@ -391,6 +391,49 @@ class MemberExportTests(TestCase):
         )
 
 
+class RosterOrderTests(TestCase):
+    """The roster sorts by last name, then first name, wherever it is read.
+
+    The free-admission annotation adds a GROUP BY, and Django drops
+    `Meta.ordering` from grouped queries — so the order has to be explicit.
+    """
+
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+        # Created out of order, so insertion (pk) order is not the answer.
+        make_member("Ann", "Young", "ann@example.com")
+        make_member("Zed", "Adams", "zed@example.com")
+        make_member("Bob", "Adams", "bob@example.com")
+        self.expected = ["Bob Adams", "Zed Adams", "Ann Young"]
+
+    def test_members_page(self) -> None:
+        resp = self.client.get(reverse("dashboard:members"))
+        self.assertEqual(
+            [m.full_name for m in resp.context["members"]], self.expected
+        )
+
+    def test_htmx_refresh_after_a_change(self) -> None:
+        resp = self.client.post(
+            reverse("dashboard:member_create"),
+            {"first_name": "Cy", "last_name": "Mann", "email": "cy@example.com"},
+        )
+        self.assertEqual(
+            [m.full_name for m in resp.context["members"]],
+            ["Bob Adams", "Zed Adams", "Cy Mann", "Ann Young"],
+        )
+
+    def test_csv_export(self) -> None:
+        rows = (
+            self.client.get(reverse("dashboard:members_export"))
+            .content.decode()
+            .splitlines()[1:]
+        )
+        self.assertEqual(
+            [" ".join(row.split(",")[:2]) for row in rows], self.expected
+        )
+
+
 class MemberRosterQueryCountTests(TestCase):
     """Pin the roster's query count so the tier N+1 can't come back quietly.
 

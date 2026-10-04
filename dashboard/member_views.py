@@ -52,18 +52,24 @@ def member_roster(request):
     """
     params = request.POST if request.method == "POST" else request.GET
     first, last = month_bounds(*this_month())
-    members = Member.objects.prefetch_related("terms__tier").annotate(
-        # distinct=True: free_admissions is the only multi-valued relation
-        # joined into this query today, so it doesn't change the count —
-        # but it makes the count immune to join fan-out if `?q=` ever
-        # matches a multi-valued relation (e.g. terms__tier__name) or the
-        # status filter moves into SQL, either of which would otherwise
-        # silently multiply this count.
-        free_used_this_month=Count(
-            "free_admissions",
-            filter=Q(free_admissions__redeemed_on__range=(first, last)),
-            distinct=True,
+    members = (
+        Member.objects.prefetch_related("terms__tier")
+        .annotate(
+            # distinct=True: free_admissions is the only multi-valued relation
+            # joined into this query today, so it doesn't change the count —
+            # but it makes the count immune to join fan-out if `?q=` ever
+            # matches a multi-valued relation (e.g. terms__tier__name) or the
+            # status filter moves into SQL, either of which would otherwise
+            # silently multiply this count.
+            free_used_this_month=Count(
+                "free_admissions",
+                filter=Q(free_admissions__redeemed_on__range=(first, last)),
+                distinct=True,
+            )
         )
+        # Explicit: Django drops Meta.ordering from a GROUP BY query, and
+        # the annotation above makes this one.
+        .order_by(*Member._meta.ordering)
     )
 
     q = (params.get("q") or "").strip()
