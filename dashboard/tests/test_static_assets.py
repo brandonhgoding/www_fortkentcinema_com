@@ -76,3 +76,55 @@ class StyleConsistencyTests(TestCase):
     def test_base_loads_components_sheet(self) -> None:
         base = (TEMPLATES_DIR / "base_dashboard.html").read_text()
         self.assertIn("dashboard/css/components.css", base)
+
+
+class DrawerFormPatternTests(TestCase):
+    """Every drawer form follows the one pattern in components.css: fields
+    in a .form, then Cancel and the primary action in the drawer footer."""
+
+    DRAWER_FORMS = sorted(
+        p
+        for p in TEMPLATES_DIR.glob("_*.html")
+        if p.name != "_drawer.html" and 'id="drawer-footer"' in p.read_text()
+    )
+
+    def test_the_drawer_forms_are_the_ones_we_know(self) -> None:
+        # So that a new drawer form is counted, and gets the checks below.
+        self.assertEqual(len(self.DRAWER_FORMS), 12, [p.name for p in self.DRAWER_FORMS])
+
+    def test_footer_is_cancel_then_the_primary_submit_for_the_form(self) -> None:
+        for path in self.DRAWER_FORMS:
+            html = path.read_text()
+            with self.subTest(template=path.name):
+                form_id = re.search(r'<form id="([^"]+)" class="form"', html)
+                self.assertIsNotNone(form_id, 'the form needs an id and class="form"')
+                footer = html.split('id="drawer-footer"', 1)[1]
+                buttons = re.findall(r"<button [^>]*>", footer)
+                self.assertEqual(len(buttons), 2, buttons)
+                self.assertIn('class="btn btn-secondary"', buttons[0])
+                self.assertIn("$store.drawer.close()", buttons[0])
+                self.assertIn('type="submit"', buttons[1])
+                self.assertIn(f'form="{form_id.group(1)}"', buttons[1])
+                self.assertIn('class="btn btn-primary"', buttons[1])
+
+    def test_no_submit_button_or_as_p_inside_the_form(self) -> None:
+        for path in self.DRAWER_FORMS:
+            body = path.read_text().split('id="drawer-footer"', 1)[0]
+            with self.subTest(template=path.name):
+                self.assertNotIn('type="submit"', body)
+                self.assertNotIn(".as_p", body)
+
+    def test_every_label_names_its_control(self) -> None:
+        for path in [*self.DRAWER_FORMS, TEMPLATES_DIR / "_field.html"]:
+            with self.subTest(template=path.name):
+                for label in re.findall(r"<label\b[^>]*>", path.read_text()):
+                    self.assertIn("for=", label)
+
+    def test_components_sheet_defines_the_pattern(self) -> None:
+        css = (CSS_DIR / "components.css").read_text()
+        for selector in (
+            ".formSection", ".formSectionTitle", ".formIntro", ".formAlert",
+            ".fieldOptional", ".fieldHint", "fieldset.formGroup", ".repeatList",
+            "[aria-invalid='true']",
+        ):
+            self.assertIn(selector, css)
