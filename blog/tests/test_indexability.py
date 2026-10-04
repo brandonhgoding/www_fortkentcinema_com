@@ -118,6 +118,14 @@ class PaginationCanonicalTests(TestCase):
         self.assertTrue(self.canonical(html).endswith("/blog/?page=2"))
 
 
+def related_hrefs(html):
+    """The hrefs inside the related-posts block only. The nav, back link and
+    footer link to /blog/ on every post, so counting /blog/ hrefs page-wide
+    passes even with the block gone."""
+    m = re.search(r'<section class="blog-related".*?</section>', html, re.S)
+    return hrefs(m.group(0)) if m else []
+
+
 class RelatedPostsTests(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -125,14 +133,25 @@ class RelatedPostsTests(TestCase):
         cls.reviews = BlogCategory.objects.create(name="Reviews")
         cls.news = BlogCategory.objects.create(name="News")
         cls.review_posts = make_posts(5, cls.reviews, cls.author, prefix="Review")
+        # Newer than every review, so "most recent first" alone would pick
+        # these. Preferring the same category has to beat that.
+        cls.news_posts = [
+            BlogPost.objects.create(
+                title=f"News {i}",
+                subtitle=f"News number {i}",
+                author=cls.author,
+                category=cls.news,
+                post_date=datetime.date(2025, 1, 1) + datetime.timedelta(days=i),
+                content="...",
+            )
+            for i in range(3)
+        ]
 
     def test_post_detail_links_to_sibling_posts(self):
         post = self.review_posts[0]
         html = self.client.get(f"/blog/{post.slug}").content.decode()
-        sibling_links = [
-            h for h in hrefs(html) if h.startswith("/blog/") and h != f"/blog/{post.slug}"
-        ]
-        self.assertGreaterEqual(len(sibling_links), 3)
+        expected = [f"/blog/{p.slug}" for p in self.review_posts[4:1:-1]]
+        self.assertEqual(related_hrefs(html), expected)
 
     def test_related_posts_exclude_the_post_itself(self):
         post = self.review_posts[0]
@@ -140,9 +159,15 @@ class RelatedPostsTests(TestCase):
         self.assertNotIn(post, related)
 
     def test_related_posts_prefer_same_category(self):
+        """Not `all(...)` over the list: that passes on an empty one."""
         post = self.review_posts[0]
         related = self.client.get(f"/blog/{post.slug}").context["related_posts"]
-        self.assertTrue(all(p.category == self.reviews for p in related))
+        self.assertEqual(related, self.review_posts[4:1:-1])
+
+    def test_thin_category_is_backfilled_with_other_posts(self):
+        post = self.news_posts[0]
+        related = self.client.get(f"/blog/{post.slug}").context["related_posts"]
+        self.assertEqual(related, [*self.news_posts[2:0:-1], self.review_posts[4]])
 
     def test_related_posts_backfill_when_category_is_thin(self):
         """A lone post in its category must still get 3 related posts, or it
