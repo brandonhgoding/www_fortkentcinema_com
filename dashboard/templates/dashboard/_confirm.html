@@ -1,15 +1,15 @@
-<div class="overlay" x-show="$store.confirm.open" x-cloak
+<div class="confirmOverlay" x-show="$store.confirm.open" x-cloak
      @keydown.escape.window="$store.confirm.open && $store.confirm.cancel()"
      @click="$store.confirm.cancel()">
-  <div class="dialog" @click.stop role="alertdialog" aria-modal="true"
+  <div class="confirmDialog" @click.stop role="alertdialog" aria-modal="true"
        aria-labelledby="confirm-dialog-title" aria-describedby="confirm-dialog-message" tabindex="-1">
-    <div class="header">
-      <h2 id="confirm-dialog-title" class="title" x-text="$store.confirm.title"></h2>
+    <div class="confirmHeader">
+      <h2 id="confirm-dialog-title" class="confirmTitle" x-text="$store.confirm.title"></h2>
     </div>
-    <div class="body">
-      <p id="confirm-dialog-message" class="message" x-text="$store.confirm.message"></p>
+    <div class="confirmBody">
+      <p id="confirm-dialog-message" class="confirmMessage" x-text="$store.confirm.message"></p>
     </div>
-    <div class="footer">
+    <div class="confirmFooter">
       <button type="button" class="cancelButton" data-confirm-cancel @click="$store.confirm.cancel()">Cancel</button>
       <button type="button" class="confirmButton" :class="{ danger: $store.confirm.variant==='danger' }"
               data-confirm-ok @click="$store.confirm.accept()" x-text="$store.confirm.confirmLabel"></button>

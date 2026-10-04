@@ -1,7 +1,7 @@
 /* src/contexts/ConfirmDialog.module.css */
 
 /* Overlay */
-.overlay {
+.confirmOverlay {
   position: fixed;
   inset: 0;
   background: var(--surface-overlay);
@@ -24,7 +24,7 @@
 }
 
 /* Dialog Panel */
-.dialog {
+.confirmDialog {
   background: var(--surface-elevated);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xl);
@@ -46,7 +46,7 @@
 }
 
 /* Header */
-.header {
+.confirmHeader {
   padding: var(--space-lg) var(--space-lg) 0;
   position: relative;
   padding-bottom: var(--space-md);
@@ -54,7 +54,7 @@
 }
 
 /* Brass accent under header */
-.header::after {
+.confirmHeader::after {
   content: '';
   position: absolute;
   bottom: -1px;
@@ -65,7 +65,7 @@
   border-radius: 1px;
 }
 
-.title {
+.confirmTitle {
   font-family: var(--font-serif);
   font-size: var(--text-xl);
   font-weight: 600;
@@ -75,11 +75,11 @@
 }
 
 /* Body */
-.body {
+.confirmBody {
   padding: var(--space-lg);
 }
 
-.message {
+.confirmMessage {
   font-size: var(--text-sm);
   color: var(--text-secondary);
   line-height: 1.6;
@@ -87,7 +87,7 @@
 }
 
 /* Footer */
-.footer {
+.confirmFooter {
   display: flex;
   justify-content: flex-end;
   gap: var(--space-sm);
@@ -161,11 +161,11 @@
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .overlay {
+  .confirmOverlay {
     animation: none;
   }
 
-  .dialog {
+  .confirmDialog {
     animation: none;
   }
 }

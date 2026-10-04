@@ -1,6 +1,6 @@
 /* src/components/FilmSearchCombo/FilmSearchCombo.module.css */
 
-.container {
+.filmCombo {
   position: relative;
   width: 100%;
 }

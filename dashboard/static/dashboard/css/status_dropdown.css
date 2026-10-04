@@ -51,25 +51,8 @@
   transform: rotate(180deg);
 }
 
-/* Loading Spinner */
-.spinner {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border: 2px solid currentColor;
-  border-top-color: transparent;
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 /* Dropdown Menu */
-.dropdown {
+.statusMenu {
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
@@ -161,7 +144,7 @@
 
 /* Responsive */
 @media (max-width: 640px) {
-  .dropdown {
+  .statusMenu {
     min-width: 180px;
   }
 
@@ -172,7 +155,7 @@
 
 /* Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
-  .dropdown {
+  .statusMenu {
     animation: none;
   }
 
@@ -180,10 +163,6 @@
     transition: none;
   }
 
-  .spinner {
-    animation: none;
-    border-top-color: currentColor;
-  }
 
   .statusButton:hover {
     transform: none;
