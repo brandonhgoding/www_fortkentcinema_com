@@ -10,7 +10,15 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # Added without auto_now_add first: with it, AddField stamps every
+        # existing row with the time the migration ran, which would pass for
+        # the day each old draft was started. Existing posts stay null.
         migrations.AddField(
+            model_name="blogpost",
+            name="created_at",
+            field=models.DateTimeField(null=True),
+        ),
+        migrations.AlterField(
             model_name="blogpost",
             name="created_at",
             field=models.DateTimeField(auto_now_add=True, null=True),
