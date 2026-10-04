@@ -89,9 +89,13 @@ document.addEventListener('alpine:init', () => {
 });
 
 // After a fragment is swapped into the drawer content, focus the first field.
+// Every form starts with its hidden CSRF input, which cannot take focus, so
+// a bare 'input' selector matched that and focused nothing.
 document.body.addEventListener('htmx:afterSwap', (e) => {
   if (e.detail.target && e.detail.target.id === 'drawer-content') {
-    const first = e.detail.target.querySelector('input, select, textarea');
+    const first = e.detail.target.querySelector(
+      'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])'
+    );
     first?.focus();
   }
 });
