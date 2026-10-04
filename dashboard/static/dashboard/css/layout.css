@@ -24,7 +24,7 @@
   padding: 0 1rem;
   background-color: var(--charcoal);
   z-index: 1000;
-  border-bottom: 1px solid rgba(184, 149, 108, 0.1);
+  border-bottom: 1px solid var(--brass-glow);
 }
 
 @media (min-width: 1025px) {
@@ -70,7 +70,7 @@
 .mobileBrand {
   font-family: var(--font-serif);
   color: var(--brass);
-  font-size: 1.25rem;
+  font-size: var(--text-xl);
   font-weight: 400;
   text-decoration: none;
   letter-spacing: 0.02em;
@@ -103,17 +103,6 @@
   animation: fade-in-up 0.35s ease-out;
 }
 
-@keyframes fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 @media (min-width: 640px) {
   .container {
     padding: 0 1.5rem;
@@ -144,7 +133,7 @@
   transition: all var(--transition-normal);
   z-index: 100;
   pointer-events: none;
-  border: 1px solid rgba(184, 149, 108, 0.1);
+  border: 1px solid var(--brass-glow);
 }
 
 .keyboardHint:hover {

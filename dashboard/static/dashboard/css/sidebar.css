@@ -2,7 +2,7 @@
 .sidebarOverlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--surface-overlay);
   z-index: 1001;
   backdrop-filter: blur(2px);
   animation: overlay-in 0.2s ease-out;
@@ -81,7 +81,7 @@
 .sidebarLogo {
   font-family: var(--font-serif);
   color: var(--brass);
-  font-size: 1.5rem;
+  font-size: var(--text-2xl);
   font-weight: 400;
   text-decoration: none;
   display: block;
@@ -108,11 +108,11 @@
   padding: 0.625rem 1rem;
   margin: 0 0.5rem 0.125rem;
   font-family: var(--font-sans);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-weight: 500;
   color: var(--text-light-muted);
   text-decoration: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: all 0.2s ease;
   position: relative;
 }
@@ -181,7 +181,7 @@
 }
 
 .sidebarUsername {
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-weight: 500;
   color: var(--paper);
 }
@@ -193,11 +193,11 @@
   width: 100%;
   padding: 0.5rem 0.75rem;
   font-family: var(--font-sans);
-  font-size: 0.8125rem;
+  font-size: var(--text-sm);
   color: var(--text-light-muted);
   background: none;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.2s ease;
 }

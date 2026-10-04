@@ -80,6 +80,7 @@
 /* Dropdown Items */
 .dropdownItem {
   width: 100%;
+  font-family: var(--font-sans);
   padding: var(--space-sm) var(--space-md);
   background: none;
   border: none;
@@ -149,7 +150,7 @@
   }
 
   .statusDescription {
-    font-size: 11px;
+    line-height: 1.3;
   }
 }
 
