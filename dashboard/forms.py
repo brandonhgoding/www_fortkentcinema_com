@@ -299,6 +299,9 @@ class BlogPostForm(forms.ModelForm):
     slug = forms.CharField(
         required=False, max_length=100, widget=forms.TextInput(attrs={"class": "input"})
     )
+    # Only offered on a plain-text (pre-editor) post. body_format itself is
+    # not a form field, so saving a plain post keeps it plain.
+    use_markdown = forms.BooleanField(required=False, label="Switch to Markdown")
 
     class Meta:
         model = BlogPost
@@ -351,6 +354,8 @@ class BlogPostForm(forms.ModelForm):
         return cleaned
 
     def save(self, commit: bool = True) -> BlogPost:
+        if self.cleaned_data.get("use_markdown"):
+            self.instance.body_format = BlogPost.BodyFormat.MARKDOWN
         post = super().save(commit=commit)
         if commit:
             self._save_films(post)

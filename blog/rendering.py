@@ -1,12 +1,16 @@
-"""Render a post's Markdown body to the HTML the public site prints.
+"""Render a post's body to the HTML the public site prints.
 
-Posts were plain text split on blank lines until the dashboard editor
-arrived. That format is already valid Markdown — a blank line still starts a
-new paragraph — so old posts render the same.
+A post's body is in one of two formats (BlogPost.body_format):
 
-Only staff write posts, but the output is still sanitised against a short
-allow-list. A stray `<script>` pasted in from somewhere else should come out
-as nothing.
+- plain: posts from before the dashboard editor. Plain text, one paragraph
+  per blank line, autoescaped, exactly as the old template loop printed it.
+  It is not Markdown: parsed as Markdown, a line opening with '#' became a
+  heading, "1986." started a list, and "<favorite snack>" was dropped.
+- markdown: everything written in the editor since.
+
+Only staff write posts, but Markdown output is still sanitised against a
+short allow-list. A stray `<script>` pasted in from somewhere else should come
+out as nothing.
 """
 
 import re
@@ -15,9 +19,12 @@ from xml.etree.ElementTree import Element
 
 import markdown
 import nh3
-from django.utils.html import strip_tags
+from django.utils.html import escape, strip_tags
 from markdown.extensions import Extension
 from markdown.treeprocessors import Treeprocessor
+
+PLAIN = "plain"
+MARKDOWN = "markdown"
 
 ALLOWED_TAGS = {
     "p", "br", "strong", "em", "a", "ul", "ol", "li", "blockquote",
@@ -56,16 +63,39 @@ def render_markdown(text: str | None) -> str:
     return nh3.clean(html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES)
 
 
-def plain_excerpt(text: str | None, max_length: int = 150) -> str:
-    """The first paragraph as plain text, for cards and meta descriptions.
+def plain_paragraphs(text: str | None) -> list[str]:
+    """A plain-text body's paragraphs: split on blank lines, blanks dropped."""
+    return [p for p in _normalize(text).split("\n\n") if p.strip()]
 
-    A leading heading is skipped, since it makes a poor summary, and the
+
+def render_plain(text: str | None) -> str:
+    """The pre-Markdown body: `<p>` per paragraph, autoescaped, no separators.
+    Byte for byte what `{% for para in post.content|paragraphs %}<p>{{ para }}</p>{% endfor %}`
+    printed."""
+    return "".join(f"<p>{escape(p)}</p>" for p in plain_paragraphs(text))
+
+
+def render_body(text: str | None, body_format: str) -> str:
+    if body_format == PLAIN:
+        return render_plain(text)
+    return render_markdown(text)
+
+
+def first_paragraph(text: str | None, body_format: str) -> str:
+    """The text a card or meta description is cut from, before truncation.
+
+    Plain: the first blank-line paragraph, as typed, which is what cards
+    always showed for those posts.
+
+    Markdown: the first paragraph with any text in it, as plain text. A
+    leading heading is skipped, since it makes a poor summary, and the
     Markdown syntax is stripped. Without that, `**` and `[links](...)` would
-    show up in search results.
-
-    A paragraph with no text left after sanitising (an opening image, a
-    linked image, `&nbsp;`, `<br>`) is skipped too.
+    show up in search results. A paragraph with no text left after
+    sanitising (an opening image, a linked image, `&nbsp;`, `<br>`) is
+    skipped too.
     """
+    if body_format == PLAIN:
+        return _normalize(text).split("\n\n")[0]
     html = render_markdown(text)
     if not html:
         return ""
@@ -73,10 +103,19 @@ def plain_excerpt(text: str | None, max_length: int = 150) -> str:
         " ".join(unescape(strip_tags(p)).split())
         for p in re.findall(r"<p>(.*?)</p>", html, re.S)
     )
-    first = next(
+    return next(
         (p for p in paragraphs if p),
         " ".join(unescape(strip_tags(html)).split()),
     )
+
+
+def truncate_excerpt(first: str, max_length: int = 150) -> str:
     if len(first) <= max_length:
         return first
     return first[:max_length].strip() + "..."
+
+
+def plain_excerpt(text: str | None, max_length: int = 150) -> str:
+    """A Markdown body's first paragraph as plain text, for cards and meta
+    descriptions. See first_paragraph."""
+    return truncate_excerpt(first_paragraph(text, MARKDOWN), max_length)

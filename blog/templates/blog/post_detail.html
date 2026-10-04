@@ -2,9 +2,9 @@
 {% load static %}{% load blog_extras %}
 
 {% block title %}{{ post.title }} | Fort Kent Cinema{% endblock %}
-{% block description %}{% if post.subtitle %}{{ post.subtitle }}{% else %}{{ post.content|excerpt:160 }}{% endif %}{% endblock %}
+{% block description %}{% if post.subtitle %}{{ post.subtitle }}{% else %}{{ post|post_excerpt:160 }}{% endif %}{% endblock %}
 {% block og_title %}{{ post.title }}{% endblock %}
-{% block og_description %}{% if post.subtitle %}{{ post.subtitle }}{% else %}{{ post.content|excerpt:160 }}{% endif %}{% endblock %}
+{% block og_description %}{% if post.subtitle %}{{ post.subtitle }}{% else %}{{ post|post_excerpt:160 }}{% endif %}{% endblock %}
 {% block og_type %}article{% endblock %}
 {% block og_image %}{% if og_image_url %}{{ og_image_url }}{% else %}{{ block.super }}{% endif %}{% endblock %}
 {% block robots %}{% if preview %}noindex, nofollow{% else %}{{ block.super }}{% endif %}{% endblock %}
@@ -83,7 +83,7 @@ post was last modified the day it was published.
         </div>
       </header>
       <div class="blog-detail-body">
-        {{ post.content|markdown }}
+        {{ post|post_body }}
       </div>
       {% comment %} Reverse of Film.review — links the review back to the film it's about. {% endcomment %}
       {% for film in reviewed_films %}

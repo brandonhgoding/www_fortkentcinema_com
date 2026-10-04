@@ -12,7 +12,7 @@ rather than a login.
 import json
 
 from blog.models import BlogAuthor, BlogCategory, BlogPost
-from blog.rendering import render_markdown
+from blog.rendering import render_body
 from blog.site_views import PostDetailView
 from cinema.models import Film
 from django.contrib import messages
@@ -111,6 +111,14 @@ def _initial_films(form: BlogPostForm) -> list[dict]:
     ]
 
 
+def _body_format(form: BlogPostForm) -> str:
+    """The format the editor previews in: the post's own, unless staff ticked
+    Switch to Markdown on a plain post."""
+    if form["use_markdown"].value():
+        return BlogPost.BodyFormat.MARKDOWN
+    return form.instance.body_format
+
+
 def _render_editor(request, form: BlogPostForm, post: BlogPost | None):
     return render(
         request,
@@ -119,7 +127,7 @@ def _render_editor(request, form: BlogPostForm, post: BlogPost | None):
             "form": form,
             "post": post,
             "initial_films": _initial_films(form),
-            "preview_html": render_markdown(form["content"].value()),
+            "preview_html": render_body(form["content"].value(), _body_format(form)),
         },
     )
 
@@ -209,10 +217,16 @@ class BlogPostDeleteView(StaffRequiredMixin, View):
 
 class MarkdownPreviewView(StaffRequiredMixin, View):
     """The editor's live preview. It uses the same renderer as the public page,
-    so the preview cannot drift from what gets published."""
+    so the preview cannot drift from what gets published.
+
+    A plain-text post sends body_format=plain, plus use_markdown once staff
+    tick Switch to Markdown. Anything else previews as Markdown."""
 
     def post(self, request):
-        return HttpResponse(render_markdown(request.POST.get("content", "")))
+        body_format = request.POST.get("body_format")
+        if request.POST.get("use_markdown") or body_format != BlogPost.BodyFormat.PLAIN:
+            body_format = BlogPost.BodyFormat.MARKDOWN
+        return HttpResponse(render_body(request.POST.get("content", ""), body_format))
 
 
 class BlogPostPreviewView(StaffRequiredMixin, PostDetailView):

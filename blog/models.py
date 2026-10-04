@@ -7,6 +7,7 @@ from django.db import models, transaction
 from django.utils import timezone
 from django.utils.text import slugify
 
+from . import rendering
 from .mixins import SlugModelMixin
 
 HEADER_IMAGE_DIR = "blog/images/"
@@ -87,6 +88,10 @@ class BlogPost(SlugModelMixin):
         DRAFT = "draft", "Draft"
         PUBLISHED = "published", "Published"
 
+    class BodyFormat(models.TextChoices):
+        PLAIN = rendering.PLAIN, "Plain text"
+        MARKDOWN = rendering.MARKDOWN, "Markdown"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=200)
     subtitle = models.CharField(max_length=200)
@@ -95,8 +100,13 @@ class BlogPost(SlugModelMixin):
     author = models.ForeignKey(BlogAuthor, on_delete=models.PROTECT)
     category = models.ForeignKey(BlogCategory, on_delete=models.PROTECT)
     post_date = models.DateField()
-    # Markdown, rendered by blog.rendering.render_markdown.
+    # Rendered by blog.rendering.render_body, in body_format.
     content = models.TextField()
+    # Posts from before the dashboard editor are plain text, and render
+    # exactly as they always did. Everything written since is Markdown.
+    body_format = models.CharField(
+        max_length=10, choices=BodyFormat.choices, default=BodyFormat.MARKDOWN
+    )
     summary = models.TextField(blank=True, null=True)
     header_image = models.ImageField(
         upload_to=blog_header_image_path,
@@ -162,6 +172,10 @@ class BlogPost(SlugModelMixin):
         """
         if self.created_at and self.post_date == timezone.localdate(self.created_at):
             self.post_date = timezone.localdate()
+
+    @property
+    def is_plain(self) -> bool:
+        return self.body_format == self.BodyFormat.PLAIN
 
     @property
     def is_published(self) -> bool:

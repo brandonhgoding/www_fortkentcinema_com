@@ -49,9 +49,9 @@ class ExcerptTests(SimpleTestCase):
 
 
 class MarkdownTests(SimpleTestCase):
-    def test_legacy_plain_text_renders_as_paragraphs(self):
-        """Posts written before the editor were plain text split on blank
-        lines. They must come out exactly as the old `paragraphs` loop did."""
+    def test_blank_lines_start_paragraphs(self):
+        """Posts from before the editor are body_format=plain and never reach
+        this renderer; see test_body_format."""
         html = render_markdown("First para.\n\nSecond para.\n\n\n\nThird.")
         self.assertEqual(html.count("<p>"), 3)
         self.assertIn("<p>First para.</p>", html)

@@ -70,13 +70,33 @@
             <textarea name="{{ form.content.html_name }}" id="{{ form.content.id_for_label }}" class="input markdownInput" rows="24"
                       hx-post="{% url 'dashboard:blog_markdown_preview' %}"
                       hx-trigger="input changed delay:400ms"
-                      hx-params="content"
+                      hx-params="content,body_format,use_markdown"
                       hx-target="#markdown-preview"
                       hx-swap="innerHTML">{{ form.content.value|default_if_none:"" }}</textarea>
+            {% if post.is_plain %}
+            {# A pre-editor post. It stays plain text unless staff switch it; body_format here only steers the live preview. #}
+            <div x-data="{ useMarkdown: {% if form.use_markdown.value %}true{% else %}false{% endif %} }">
+              <input type="hidden" name="body_format" value="plain" />
+              <p class="fieldHint" x-show="!useMarkdown">
+                Plain text (legacy): shown exactly as typed, one paragraph per blank line. Markdown syntax is not applied.
+              </p>
+              <label class="checkboxLabel">
+                <input type="checkbox" name="{{ form.use_markdown.html_name }}" x-model="useMarkdown"
+                       hx-post="{% url 'dashboard:blog_markdown_preview' %}" hx-trigger="change"
+                       hx-params="content,body_format,use_markdown" hx-target="#markdown-preview" hx-swap="innerHTML" />
+                {{ form.use_markdown.label }}
+              </label>
+              <p class="fieldHint markdownHint" x-show="useMarkdown" x-cloak>
+                Markdown: a blank line starts a paragraph · <code>**bold**</code> · <code>*italic*</code> ·
+                <code>[link text](https://…)</code> · <code># Heading</code> · <code>- list item</code> · <code>&gt; quote</code>
+              </p>
+            </div>
+            {% else %}
             <p class="fieldHint markdownHint">
               Markdown: a blank line starts a paragraph · <code>**bold**</code> · <code>*italic*</code> ·
               <code>[link text](https://…)</code> · <code># Heading</code> · <code>- list item</code> · <code>&gt; quote</code>
             </p>
+            {% endif %}
           </div>
           <div class="bodyPane" :class="tab !== 'preview' && 'bodyPane--hidden'">
             <div id="markdown-preview" class="markdownPreview" aria-live="polite">{{ preview_html|safe }}</div>

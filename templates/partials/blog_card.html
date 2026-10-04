@@ -28,7 +28,7 @@
     {% if post.subtitle %}
     <p class="blog-card-subtitle">{{ post.subtitle }}</p>
     {% endif %}
-    <p class="blog-card-excerpt">{{ post.content|excerpt }}</p>
+    <p class="blog-card-excerpt">{{ post|post_excerpt }}</p>
     <div class="blog-card-meta">
       {% if post.author %}
       <span class="blog-card-author">{{ post.author.first_name }} {{ post.author.last_name }}</span>

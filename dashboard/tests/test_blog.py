@@ -367,6 +367,61 @@ class PublishDateTests(BlogFixture):
         )
 
 
+class BodyFormatTests(BlogFixture):
+    """Posts from before the editor are plain text. Editing one must not turn
+    it into Markdown behind the author's back."""
+
+    def plain_post(self) -> BlogPost:
+        return self.make_post(
+            content="# of times: three.\n\nMy <favorite snack>.",
+            body_format=BlogPost.BodyFormat.PLAIN,
+        )
+
+    def test_editing_a_plain_post_keeps_it_plain(self) -> None:
+        post = self.plain_post()
+        self.client.post(
+            reverse("dashboard:blog_post_edit", args=[post.pk]),
+            self.payload(slug=post.slug, content="# still plain"),
+        )
+        post.refresh_from_db()
+        self.assertEqual(post.content, "# still plain")
+        self.assertEqual(post.body_format, BlogPost.BodyFormat.PLAIN)
+
+    def test_a_plain_post_can_be_switched_to_markdown(self) -> None:
+        post = self.plain_post()
+        self.client.post(
+            reverse("dashboard:blog_post_edit", args=[post.pk]),
+            self.payload(slug=post.slug, use_markdown="on"),
+        )
+        post.refresh_from_db()
+        self.assertEqual(post.body_format, BlogPost.BodyFormat.MARKDOWN)
+
+    def test_editor_marks_a_plain_post_and_previews_it_as_plain(self) -> None:
+        resp = self.client.get(reverse("dashboard:blog_post_edit", args=[self.plain_post().pk]))
+        self.assertContains(resp, "Plain text (legacy)")
+        self.assertContains(resp, 'name="use_markdown"')
+        self.assertEqual(
+            resp.context["preview_html"],
+            "<p># of times: three.</p><p>My &lt;favorite snack&gt;.</p>",
+        )
+
+    def test_editor_has_no_legacy_note_for_markdown_posts(self) -> None:
+        resp = self.client.get(reverse("dashboard:blog_post_edit", args=[self.make_post().pk]))
+        self.assertNotContains(resp, "Plain text (legacy)")
+        resp = self.client.get(reverse("dashboard:blog_post_create"))
+        self.assertNotContains(resp, "Plain text (legacy)")
+
+    def test_live_preview_follows_the_format(self) -> None:
+        url = reverse("dashboard:blog_markdown_preview")
+        plain = self.client.post(url, {"content": "# hi", "body_format": "plain"})
+        self.assertEqual(plain.content.decode(), "<p># hi</p>")
+        switched = self.client.post(
+            url, {"content": "# hi", "body_format": "plain", "use_markdown": "on"}
+        )
+        self.assertEqual(switched.content.decode(), "<h2>hi</h2>")
+        self.assertEqual(self.client.post(url, {"content": "# hi"}).content.decode(), "<h2>hi</h2>")
+
+
 class PreviewTests(BlogFixture):
     def test_draft_preview_renders_the_public_template_noindexed(self) -> None:
         post = self.make_post(status=BlogPost.Status.DRAFT, content="# Verdict\n\n**Yes.**")

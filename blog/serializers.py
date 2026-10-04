@@ -43,6 +43,7 @@ class BlogPostSerializer(serializers.ModelSerializer):
             "category",
             "post_date",
             "content",
+            "body_format",
             "slug",
             "header_image",
         ]
