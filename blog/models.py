@@ -107,6 +107,10 @@ class BlogPost(SlugModelMixin):
     body_format = models.CharField(
         max_length=10, choices=BodyFormat.choices, default=BodyFormat.MARKDOWN
     )
+    # The body's first paragraph as plain text, untruncated: what cards and
+    # meta descriptions are cut from. Set in save(), so a listing doesn't
+    # render every post's Markdown on every request to get it.
+    lead_text = models.TextField(blank=True, default="", editable=False)
     summary = models.TextField(blank=True, null=True)
     header_image = models.ImageField(
         upload_to=blog_header_image_path,
@@ -149,6 +153,10 @@ class BlogPost(SlugModelMixin):
             self._stored_header_image = self.header_image.name or ""
 
     def save(self, *args, **kwargs) -> None:
+        self.lead_text = rendering.first_paragraph(self.content, self.body_format)
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None and {"content", "body_format"} & set(update_fields):
+            kwargs["update_fields"] = {*update_fields, "lead_text"}
         super().save(*args, **kwargs)
         if "header_image" not in self.__dict__:
             return  # deferred and untouched

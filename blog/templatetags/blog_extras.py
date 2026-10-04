@@ -2,7 +2,6 @@ from django import template
 from django.utils.safestring import mark_safe
 
 from blog.rendering import (
-    first_paragraph,
     plain_excerpt,
     render_body,
     render_markdown,
@@ -31,5 +30,6 @@ def post_body(post):
 
 @register.filter
 def post_excerpt(post, max_length=150):
-    """A post's excerpt in its own format: plain posts keep the old one."""
-    return truncate_excerpt(first_paragraph(post.content, post.body_format), max_length)
+    """A post's excerpt in its own format: plain posts keep the old one. Cut
+    from BlogPost.lead_text, worked out when the post was saved."""
+    return truncate_excerpt(post.lead_text, max_length)
