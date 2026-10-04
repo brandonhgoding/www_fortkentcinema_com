@@ -1,0 +1,2 @@
+{% comment %}Errors for a whole drawer form, above its first field. Pass `errors`: a list of messages or a form's non_field_errors.{% endcomment %}
+{% if errors %}<div class="formAlert" role="alert">{% for error in errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}

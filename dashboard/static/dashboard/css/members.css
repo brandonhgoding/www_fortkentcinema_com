@@ -31,20 +31,6 @@ tr.currentTerm td {
   background: var(--surface-secondary);
 }
 
-/* The perk picker. Scrolls rather than pushing the drawer footer off the
- * bottom once the catalogue grows past a handful of perks. */
-.checkList {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-  max-height: 14rem;
-  overflow-y: auto;
-  padding: 0.75rem;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  background: var(--surface-elevated);
-}
-
 .tierName {
   display: block;
   font-weight: 600;

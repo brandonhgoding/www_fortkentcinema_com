@@ -78,6 +78,10 @@ document.addEventListener('alpine:init', () => {
     title: '',
     show(title = '') {
       this.title = title;
+      // Empty the drawer so the last form never shows under the new title
+      // while this one loads. The opener's hx-get swaps in the new form.
+      document.getElementById('drawer-content')?.replaceChildren();
+      document.getElementById('drawer-footer')?.replaceChildren();
       this.open = true;
       document.body.style.overflow = 'hidden';
     },
@@ -106,6 +110,24 @@ document.addEventListener('alpine:initialized', () => {
   document.querySelectorAll('#flash-messages [data-kind]').forEach((el) => {
     window.dashboardToast(el.dataset.kind || 'info', el.textContent);
   });
+});
+
+// Busy state for a drawer form's own request (not the film search inside
+// it): mark the drawer busy and disable the footer buttons so a double click
+// cannot submit twice. An invalid submit swaps in a fresh footer; a save
+// closes the drawer. Either way, afterRequest clears the state. It checks the
+// drawer rather than the form, because by then the swap has detached the form.
+document.body.addEventListener('htmx:beforeRequest', (e) => {
+  const elt = e.detail.elt;
+  if (!(elt instanceof HTMLFormElement) || !elt.closest('#drawer-content')) return;
+  elt.closest('.drawer')?.setAttribute('aria-busy', 'true');
+  document.querySelectorAll('#drawer-footer button').forEach((b) => { b.disabled = true; });
+});
+document.body.addEventListener('htmx:afterRequest', () => {
+  const drawer = document.querySelector('.drawer[aria-busy]');
+  if (!drawer) return;
+  drawer.removeAttribute('aria-busy');
+  document.querySelectorAll('#drawer-footer button').forEach((b) => { b.disabled = false; });
 });
 
 // HX-Trigger bridge: close-drawer + dashboard-toast (kind/message).

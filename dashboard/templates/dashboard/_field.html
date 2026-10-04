@@ -1,0 +1,11 @@
+{% comment %}One field of a drawer form, written by the {% field %} tag (templatetags/dashboard_extras.py).{% endcomment %}
+<div class="formGroup">
+  {% if is_check %}
+  <label class="checkboxLabel" for="{{ id }}">{{ widget }} {{ label }}</label>
+  {% else %}
+  <label for="{{ id }}">{{ label }}{% if optional %}<span class="fieldOptional">optional</span>{% endif %}</label>
+  {{ widget }}
+  {% endif %}
+  {% if errors %}<p class="field-error" id="{{ id }}-error">{{ errors|join:" " }}</p>{% endif %}
+  {% if hint %}<p class="fieldHint" id="{{ id }}-hint">{{ hint }}</p>{% endif %}
+</div>

@@ -89,6 +89,13 @@
   border-radius: var(--radius-sm);
 }
 
+/* Out-specifies the form controls' fixed height and chevron room below. */
+select.input.inputCompact:not([multiple]) {
+  height: auto;
+  padding-right: 2rem;
+  background-position: right 0.5rem center;
+}
+
 .filterLabel {
   display: flex;
   align-items: center;
@@ -125,12 +132,79 @@
   text-decoration: underline;
 }
 
-/* ===== Forms ===== */
+/* ===== Forms =====
+   One pattern for every drawer form, and the blog editor shares its
+   fields. In a drawer:
+
+     form.form
+       .formAlert          errors that belong to no one field, first
+       .formIntro          one line on what the form does, when it needs it
+       .formSection        a group with an optional serif .formSectionTitle;
+                           sections after the first sit under a hairline.
+                           Only long forms (tier, engagement) use them.
+         .formRow          two short, related fields side by side (first
+                           and last name, start and end date). Never a
+                           textarea, a checkbox or a long URL.
+           .formGroup      label, control, then error, then hint
+             .fieldOptional  "optional" after the label; required fields
+                             carry no marker, since most fields are required
+             .fieldHint      grey line under the control
+             .field-error    red line under the control (dashboard.css)
+         fieldset.formGroup with a legend, for a set of checkboxes or radios
+
+   The {% field %} tag (templatetags/dashboard_extras.py) writes a
+   .formGroup for one Django field, tying the hint and error to the control
+   with aria-describedby. Buttons live in the drawer footer, Cancel then
+   the primary action, right-aligned (drawer.css). */
 .form {
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
   max-width: 100%;
+}
+
+.formSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  min-width: 0;
+}
+
+.formSection + .formSection {
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Sits closer to its first field than the fields sit to each other. */
+.formSectionTitle {
+  margin-bottom: calc(var(--space-sm) * -1);
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.formIntro {
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+/* Errors for the whole form: a clash, a missing film, a bad date range. */
+.formAlert {
+  padding: 0.75rem var(--space-md);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--status-cancelled);
+  background: var(--status-cancelled-bg);
+  border: 1px solid color-mix(in srgb, var(--status-cancelled) 20%, transparent);
+  border-radius: var(--radius-md);
+}
+
+.formAlert p + p {
+  margin-top: var(--space-xs);
 }
 
 .formGroup {
@@ -140,11 +214,31 @@
   min-width: 0;
 }
 
-.formGroup label {
+/* A set of checkboxes or radios: a fieldset whose legend is the label. */
+fieldset.formGroup {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.formGroup label,
+.formGroup legend {
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-primary);
   letter-spacing: -0.01em;
+}
+
+/* A legend sits outside the fieldset's flex gap. */
+.formGroup legend {
+  padding: 0;
+  margin-bottom: var(--space-sm);
+}
+
+.fieldOptional {
+  margin-left: var(--space-xs);
+  font-weight: 400;
+  color: var(--text-secondary);
 }
 
 .formRow {
@@ -171,6 +265,25 @@
     box-shadow var(--transition-fast);
 }
 
+/* One height for text, number, date, time and select controls: browsers
+   otherwise draw date and time inputs and selects a few pixels taller or
+   shorter than a text input beside them. */
+input.input,
+select.input:not([multiple]) {
+  height: 2.875rem;
+}
+
+/* The browser's select arrow differs per platform and sat flush against
+   the border. A drawn chevron in --text-secondary instead. */
+select.input:not([multiple]) {
+  appearance: none;
+  padding-right: 2.5rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none' stroke='%235c5c5c' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.875rem center;
+  background-size: 12px;
+}
+
 .input:hover,
 .textarea:hover {
   border-color: var(--border-strong);
@@ -180,12 +293,24 @@
 .textarea:focus {
   outline: none;
   border-color: var(--brass);
-  box-shadow: 0 0 0 3px var(--brass-glow);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brass) 28%, transparent);
+}
+
+/* aria-invalid is set by the {% field %} tag on a field with an error. */
+.input[aria-invalid='true'],
+.textarea[aria-invalid='true'] {
+  border-color: var(--status-cancelled);
+}
+
+.input[aria-invalid='true']:focus,
+.textarea[aria-invalid='true']:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--status-cancelled) 18%, transparent);
 }
 
 .input:disabled,
 .textarea:disabled {
-  opacity: 0.6;
+  color: var(--text-secondary);
+  background: var(--surface-secondary);
   cursor: not-allowed;
 }
 
@@ -223,7 +348,7 @@ textarea.input,
   height: 18px;
   flex-shrink: 0;
   cursor: pointer;
-  accent-color: var(--brass);
+  accent-color: var(--brass-dark);
 }
 
 /* A lone checkbox beside a labelled field in a two-column row drops to
@@ -235,7 +360,67 @@ textarea.input,
 .fieldHint {
   margin: var(--space-xs) 0 0;
   font-size: var(--text-xs);
-  color: var(--text-tertiary);
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+/* Under a control the group's gap already spaces them; pull the hint and
+   the error in so they read as part of the field above. */
+.formGroup > .fieldHint,
+.formGroup > .field-error {
+  margin-top: calc(var(--space-xs) * -1);
+}
+
+/* The perk picker: scrolls rather than pushing the form down once the
+   catalogue grows past a handful of perks. */
+.checkList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  max-height: 14rem;
+  overflow-y: auto;
+  padding: 0.75rem var(--space-md);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--surface-elevated);
+}
+
+/* Rows the user adds and removes (bulk showtimes): the control, then a
+   square remove button; an "add another" slot closes the list. */
+.repeatList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.repeatRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.repeatRow .input {
+  flex: 1;
+}
+
+/* A dashed brass slot rather than a button, because it stands in for the
+   row it is about to create. */
+.repeatAdd {
+  height: 2.875rem;
+  padding: 0 var(--space-md);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--brass-dark);
+  background: transparent;
+  border: 1px dashed var(--brass);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.repeatAdd:hover {
+  background: var(--brass-glow);
 }
 
 /* ===== Phone card list =====
