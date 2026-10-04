@@ -15,6 +15,7 @@ import csv
 import datetime
 
 from audience.models import MembershipTerm, MembershipTier
+from audience.models.member import EXPIRING_SOON_DAYS
 from django.db.models import Exists, OuterRef, Q, Sum
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -22,11 +23,6 @@ from django.utils import timezone
 from django.views import View
 
 from .mixins import StaffRequiredMixin
-
-# How far ahead "Expiring soon" looks. Matches Member.EXPIRING_SOON_DAYS,
-# which colours the roster pill, so the two screens agree about which
-# memberships are nearly up.
-EXPIRING_SOON_DAYS = 30
 
 WINDOW_FILTERS = [
     ("", "All terms"),

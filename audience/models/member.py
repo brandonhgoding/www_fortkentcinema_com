@@ -7,8 +7,10 @@ from django.utils import timezone
 
 from audience.dates import month_bounds
 
-# How close to expiry a membership starts showing an amber pill. Affects the
-# colour of a badge and nothing else — no mail is sent.
+# How close to expiry a membership counts as "Expiring soon": the roster's
+# amber pill and the term ledger's Expiring window both read this, so the
+# two screens agree about which memberships are nearly up. Affects what
+# staff see and nothing else — no mail is sent.
 EXPIRING_SOON_DAYS = 30
 
 
