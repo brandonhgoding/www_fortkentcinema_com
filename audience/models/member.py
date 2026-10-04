@@ -86,6 +86,31 @@ class Member(models.Model):
         )
         return list(self.terms.all())
 
+    def _from_terms(self, name: str, compute):
+        """`compute(today)`, worked out once per set of prefetched terms.
+
+        A roster row reads current_term and covered_through a dozen times
+        between the pill, the tier column and the allowance; walking the
+        terms every time was a quarter of the page's render. The answer is
+        kept only while it can still be right: for the same prefetched
+        result (reload_terms() or refresh_from_db() replaces it) and the
+        same date. Without a prefetch every read queries anyway, so nothing
+        is kept and a term added since is always seen.
+        """
+        today = timezone.localdate()
+        prefetched = getattr(self, "_prefetched_objects_cache", {}).get("terms")
+        if prefetched is None:
+            return compute(today)
+        memo = self.__dict__.setdefault("_terms_memo", {})
+        hit = memo.get(name)
+        # `is`, not id(): the memo holds the old result alive, so a fresh
+        # prefetch can never be mistaken for it.
+        if hit is not None and hit[0] is prefetched and hit[1] == today:
+            return hit[2]
+        value = compute(today)
+        memo[name] = (prefetched, today, value)
+        return value
+
     @property
     def current_term(self):
         """The term covering today, or None.
@@ -96,11 +121,11 @@ class Member(models.Model):
         Terms are ordered newest-first, so a renewal wins over the term it
         overlaps.
         """
-        today = timezone.localdate()
-        for term in self.terms.all():
-            if term.covers(today):
-                return term
-        return None
+
+        def compute(today):
+            return next((t for t in self.terms.all() if t.covers(today)), None)
+
+        return self._from_terms("current_term", compute)
 
     @property
     def is_active(self) -> bool:
@@ -113,10 +138,12 @@ class Member(models.Model):
         Follows back-to-back and overlapping terms forward from the one
         covering today, so an early renewal pushes the date out rather than
         leaving the member "expiring" on the term it renews. A single day
-        without cover ends the chain. Walks the prefetched terms, like
-        `current_term`.
+        without cover ends the chain. Walks the prefetched terms, and is
+        kept between reads, like `current_term`.
         """
-        today = timezone.localdate()
+        return self._from_terms("covered_through", self._covered_through)
+
+    def _covered_through(self, today: datetime.date) -> datetime.date | None:
         covered: datetime.date | None = None
         for term in sorted(self.terms.all(), key=lambda t: t.started_on):
             if term.expires_on < today:

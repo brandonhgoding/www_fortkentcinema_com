@@ -6,7 +6,7 @@ from django.db import IntegrityError, transaction
 from django.test import TestCase
 from django.utils import timezone
 
-from audience.models import Member, MembershipTerm, MembershipTier
+from audience.models import Member, MembershipTerm, MembershipTier, MemberStatus
 
 
 class MemberFieldTests(TestCase):
@@ -378,3 +378,69 @@ class SameDayTermTests(TestCase):
         renewal = self._term("cinema-supporter", -5, 360)
         self.assertEqual(self.member.current_term, renewal)
         self.assertEqual(self.member.free_admission_allowance, 1)
+
+
+class DerivedValueCacheTests(TestCase):
+    """current_term and covered_through are read many times per roster row,
+    so a member with prefetched terms works each out once — and only for
+    as long as those prefetched terms and today's date stay the same."""
+
+    def setUp(self) -> None:
+        self.today = timezone.localdate()
+        self.tier = MembershipTier.objects.get(slug="individual")
+        member = Member.objects.create(
+            first_name="Ada", last_name="Lovelace", email="ada@example.com"
+        )
+        self._term(member, -400, -40)
+        self._term(member, -10, 300)
+        self.member = Member.objects.prefetch_related("terms__tier").get(pk=member.pk)
+
+    def _term(self, member, start_offset: int, end_offset: int) -> MembershipTerm:
+        return MembershipTerm.objects.create(
+            member=member,
+            tier=self.tier,
+            started_on=self.today + datetime.timedelta(days=start_offset),
+            expires_on=self.today + datetime.timedelta(days=end_offset),
+            price_paid=Decimal("60.00"),
+        )
+
+    def test_prefetched_terms_are_walked_once(self) -> None:
+        from unittest import mock
+
+        with mock.patch.object(
+            MembershipTerm, "covers", autospec=True, side_effect=MembershipTerm.covers
+        ) as covers:
+            self.member.current_term
+            first = covers.call_count
+            for _ in range(5):
+                self.member.current_term
+                self.member.is_active
+                self.member.free_admission_allowance
+                self.member.status
+                self.member.status_label
+        self.assertGreater(first, 0)
+        self.assertEqual(covers.call_count, first)
+
+    def test_reloading_the_terms_recomputes(self) -> None:
+        self.assertEqual(self.member.status, MemberStatus.ACTIVE)
+        self.member.terms.all().delete()
+        self.member.reload_terms()
+        self.assertIsNone(self.member.current_term)
+        self.assertIsNone(self.member.covered_through)
+        self.assertEqual(self.member.status, MemberStatus.LAPSED)
+
+    def test_a_new_day_recomputes(self) -> None:
+        from unittest import mock
+
+        self.assertIsNotNone(self.member.current_term)
+        later = self.today + datetime.timedelta(days=301)
+        with mock.patch("django.utils.timezone.localdate", return_value=later):
+            self.assertIsNone(self.member.current_term)
+            self.assertEqual(self.member.status, MemberStatus.LAPSED)
+
+    def test_without_a_prefetch_every_read_is_fresh(self) -> None:
+        member = Member.objects.get(pk=self.member.pk)
+        self.assertEqual(member.status, MemberStatus.ACTIVE)
+        member.terms.all().delete()
+        self.assertIsNone(member.current_term)
+        self.assertEqual(member.status, MemberStatus.LAPSED)
