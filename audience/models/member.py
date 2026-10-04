@@ -22,11 +22,6 @@ class MemberManager(models.Manager):
         on = on or timezone.localdate()
         return self.filter(MembershipTerm.covering(on, via="terms__")).distinct()
 
-    def lapsed(self, on: datetime.date | None = None) -> models.QuerySet["Member"]:
-        """Everyone else, including members who never had a term."""
-        on = on or timezone.localdate()
-        return self.exclude(pk__in=self.active(on).values("pk"))
-
 
 class Member(models.Model):
     """A cardholder.

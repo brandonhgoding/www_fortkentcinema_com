@@ -316,18 +316,6 @@ class MemberManagerTests(TestCase):
     def test_active_returns_only_covered_members(self) -> None:
         self.assertEqual(list(Member.objects.active()), [self.active])
 
-    def test_lapsed_includes_members_with_no_terms(self) -> None:
-        self.assertEqual(
-            sorted(m.email for m in Member.objects.lapsed()),
-            ["lapsed@example.com", "never@example.com"],
-        )
-
-    def test_active_and_lapsed_partition_the_roster(self) -> None:
-        self.assertEqual(
-            Member.objects.active().count() + Member.objects.lapsed().count(),
-            Member.objects.count(),
-        )
-
     def test_a_member_with_two_terms_is_not_listed_twice(self) -> None:
         MembershipTerm.objects.create(
             member=self.active,
