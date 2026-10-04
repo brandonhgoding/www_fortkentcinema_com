@@ -85,9 +85,7 @@ class MembershipTerm(models.Model):
         `via` spans a relation in one filter() call, e.g. via="terms__" on
         Member, so both bounds apply to the same term.
         """
-        return models.Q(
-            **{f"{via}started_on__lte": on, f"{via}expires_on__gte": on}
-        )
+        return models.Q(**{f"{via}started_on__lte": on, f"{via}expires_on__gte": on})
 
     @property
     def is_current(self) -> bool:
@@ -110,10 +108,10 @@ class MembershipTerm(models.Model):
         try:
             anniversary = add_months(started_on, duration_months)
         except OverflowError:
-            months_to_new_year_10000 = (
-                datetime.MAXYEAR + 1 - started_on.year
-            ) * 12 - (started_on.month - 1)
-            if started_on.day == 1 and duration_months == months_to_new_year_10000:
+            to_year_10000 = (datetime.MAXYEAR - started_on.year) * 12 + (
+                13 - started_on.month
+            )
+            if started_on.day == 1 and duration_months == to_year_10000:
                 return datetime.date.max
             raise
         return anniversary - datetime.timedelta(days=1)

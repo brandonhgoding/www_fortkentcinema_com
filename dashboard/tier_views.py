@@ -26,17 +26,17 @@ def catalogue_context() -> dict:
     `term_count` decides whether Delete is offered at all, so it is
     annotated rather than counted per row in the template. The annotations
     make these GROUP BY queries, from which Django drops `Meta.ordering`,
-    so each list restates its model's order.
+    so each list restates its model's Meta.ordering.
     """
     return {
         "tiers": MembershipTier.objects.annotate(
             term_count=Count("terms", distinct=True)
         )
-        .order_by(*MembershipTier._meta.ordering)
+        .order_by("sort_order", "price")
         .prefetch_related("benefits"),
         "benefits": MembershipBenefit.objects.annotate(
             tier_count=Count("membershiptier", distinct=True)
-        ).order_by(*MembershipBenefit._meta.ordering),
+        ).order_by("sort_order", "name"),
     }
 
 

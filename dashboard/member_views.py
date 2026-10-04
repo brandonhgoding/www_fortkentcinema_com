@@ -47,8 +47,7 @@ def member_roster(request):
     params = request.POST if request.method == "POST" else request.GET
     first, last = month_bounds(*this_month())
     members = (
-        Member.objects.prefetch_related("terms__tier")
-        .annotate(
+        Member.objects.prefetch_related("terms__tier").annotate(
             # The month goes in the JOIN's ON clause, so only this month's
             # redemptions are joined; a Count(filter=...) would join every
             # redemption ever recorded and discard most of them.
@@ -66,7 +65,7 @@ def member_roster(request):
         )
         # Explicit: Django drops Meta.ordering from a GROUP BY query, and
         # the annotation above makes this one.
-        .order_by(*Member._meta.ordering)
+        .order_by("last_name", "first_name")  # Member.Meta.ordering
     )
 
     q = (params.get("q") or "").strip()

@@ -409,9 +409,7 @@ class RosterOrderTests(TestCase):
 
     def test_members_page(self) -> None:
         resp = self.client.get(reverse("dashboard:members"))
-        self.assertEqual(
-            [m.full_name for m in resp.context["members"]], self.expected
-        )
+        self.assertEqual([m.full_name for m in resp.context["members"]], self.expected)
 
     def test_htmx_refresh_after_a_change(self) -> None:
         resp = self.client.post(
@@ -429,9 +427,7 @@ class RosterOrderTests(TestCase):
             .content.decode()
             .splitlines()[1:]
         )
-        self.assertEqual(
-            [" ".join(row.split(",")[:2]) for row in rows], self.expected
-        )
+        self.assertEqual([" ".join(row.split(",")[:2]) for row in rows], self.expected)
 
 
 class MemberRosterQueryCountTests(TestCase):

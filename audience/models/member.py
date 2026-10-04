@@ -1,6 +1,6 @@
 import datetime
-from collections.abc import Collection
-from typing import ClassVar
+from collections.abc import Callable, Collection
+from typing import ClassVar, TypeVar, cast
 
 from django.db import models
 from django.utils import timezone
@@ -14,6 +14,8 @@ from .membership_term import MembershipTerm
 # two screens agree about which memberships are nearly up. Affects what
 # staff see and nothing else — no mail is sent.
 EXPIRING_SOON_DAYS = 30
+
+T = TypeVar("T")
 
 
 class MemberStatus(models.TextChoices):
@@ -86,7 +88,7 @@ class Member(models.Model):
         )
         return list(self.terms.all())
 
-    def _from_terms(self, name: str, compute):
+    def _from_terms(self, name: str, compute: Callable[[datetime.date], T]) -> T:
         """`compute(today)`, worked out once per set of prefetched terms.
 
         A roster row reads current_term and covered_through a dozen times
@@ -106,13 +108,13 @@ class Member(models.Model):
         # `is`, not id(): the memo holds the old result alive, so a fresh
         # prefetch can never be mistaken for it.
         if hit is not None and hit[0] is prefetched and hit[1] == today:
-            return hit[2]
+            return cast(T, hit[2])
         value = compute(today)
         memo[name] = (prefetched, today, value)
         return value
 
     @property
-    def current_term(self):
+    def current_term(self) -> MembershipTerm | None:
         """The term covering today, or None.
 
         Iterates the related manager rather than filtering in SQL so that a
@@ -122,7 +124,7 @@ class Member(models.Model):
         overlaps.
         """
 
-        def compute(today):
+        def compute(today: datetime.date) -> MembershipTerm | None:
             return next((t for t in self.terms.all() if t.covers(today)), None)
 
         return self._from_terms("current_term", compute)

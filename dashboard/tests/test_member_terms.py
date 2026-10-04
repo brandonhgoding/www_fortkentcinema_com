@@ -494,7 +494,8 @@ class EndOfTimeTermTests(TestCase):
 
     def test_renewing_a_term_that_runs_to_date_max(self) -> None:
         MembershipTerm.objects.create(
-            member=self.member, tier=a_tier("individual"),
+            member=self.member,
+            tier=a_tier("individual"),
             started_on=datetime.date(2026, 1, 1),
             expires_on=datetime.date.max,
             price_paid=Decimal("60.00"),

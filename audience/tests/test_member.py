@@ -171,8 +171,11 @@ class EndOfTimeTests(TestCase):
             (today - datetime.timedelta(days=5), today + datetime.timedelta(days=50)),
         ]:
             MembershipTerm.objects.create(
-                member=self.member, tier=self.tier, started_on=start,
-                expires_on=end, price_paid=Decimal("60.00"),
+                member=self.member,
+                tier=self.tier,
+                started_on=start,
+                expires_on=end,
+                price_paid=Decimal("60.00"),
             )
         self.assertEqual(self.member.covered_through, datetime.date.max)
         self.assertEqual(self.member.status, "active")

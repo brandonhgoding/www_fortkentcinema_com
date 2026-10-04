@@ -115,14 +115,23 @@ class CatalogueOrderTests(StaffTestCase):
     def test_tiers_follow_sort_order(self) -> None:
         # Created last and priced highest: only sort_order puts it first.
         MembershipTier.objects.create(
-            slug="patron", name="Patron", price=999, sort_order=1,
+            slug="patron",
+            name="Patron",
+            price=999,
+            sort_order=1,
             checkout_url="https://square.link/u/patron",
         )
         resp = self.client.get(reverse("dashboard:tiers"))
         self.assertEqual(
             [t.slug for t in resp.context["tiers"]],
-            ["patron", "silver-screen", "individual", "cinema-supporter",
-             "family", "family-plus"],
+            [
+                "patron",
+                "silver-screen",
+                "individual",
+                "cinema-supporter",
+                "family",
+                "family-plus",
+            ],
         )
 
     def test_benefits_follow_sort_order_then_name(self) -> None:

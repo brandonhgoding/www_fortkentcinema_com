@@ -91,12 +91,15 @@ class OverlappingTermIdsTests(TestCase):
         """An unsaved term has no pk to return; it must not add None, nor
         flag a saved term that only it overlaps."""
         saved = make_term(
-            self.member, self.tier,
-            datetime.date(2026, 1, 1), datetime.date(2026, 12, 31),
+            self.member,
+            self.tier,
+            datetime.date(2026, 1, 1),
+            datetime.date(2026, 12, 31),
         )
         unsaved = [
             MembershipTerm(
-                member=self.member, tier=self.tier,
+                member=self.member,
+                tier=self.tier,
                 started_on=datetime.date(2026, 6, 1),
                 expires_on=datetime.date(2027, 5, 31),
                 price_paid=Decimal("60.00"),

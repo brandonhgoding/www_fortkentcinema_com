@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
@@ -113,7 +113,7 @@ class MembershipTier(models.Model):
                 }
             )
 
-    def save(self, *args, **kwargs) -> None:
+    def save(self, *args: Any, **kwargs: Any) -> None:
         # The forms and admin already lock the field; this catches code.
         update_fields = kwargs.get("update_fields")
         if (update_fields is None or "slug" in update_fields) and (

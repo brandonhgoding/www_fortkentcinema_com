@@ -1,4 +1,8 @@
+from typing import cast
+
 from django.contrib import admin
+from django.db.models import QuerySet
+from django.http import HttpRequest
 
 from .models import (
     FreeAdmission,
@@ -67,10 +71,13 @@ class MembershipTermInline(admin.TabularInline):
     model = MembershipTerm
     extra = 0
 
-    def get_queryset(self, request):
+    def get_queryset(self, request: HttpRequest) -> QuerySet[MembershipTerm]:
         # Each row is labelled with MembershipTerm.__str__, which names the
         # tier: one query per term without this.
-        return super().get_queryset(request).select_related("tier")
+        return cast(
+            "QuerySet[MembershipTerm]",
+            super().get_queryset(request).select_related("tier"),
+        )
 
 
 @admin.register(Member)

@@ -262,9 +262,9 @@ class MembershipTermInlineQueryTests(TestCase):
             username="root", email="root@example.com", password="pw12345"
         )
         terms = list(
-            MembershipTermInline(Member, site).get_queryset(request).filter(
-                member=member
-            )
+            MembershipTermInline(Member, site)
+            .get_queryset(request)
+            .filter(member=member)
         )
         with self.assertNumQueries(0):
             [str(term) for term in terms]

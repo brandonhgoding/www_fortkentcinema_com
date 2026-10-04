@@ -14,28 +14,28 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('audience', '0010_membership_value_checks'),
+        ("audience", "0010_membership_value_checks"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='membershipbenefit',
-            name='updated_at',
+            model_name="membershipbenefit",
+            name="updated_at",
             field=models.DateTimeField(null=True),
         ),
         migrations.AddField(
-            model_name='membershiptier',
-            name='updated_at',
+            model_name="membershiptier",
+            name="updated_at",
             field=models.DateTimeField(null=True),
         ),
         migrations.AlterField(
-            model_name='membershipbenefit',
-            name='updated_at',
+            model_name="membershipbenefit",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, null=True),
         ),
         migrations.AlterField(
-            model_name='membershiptier',
-            name='updated_at',
+            model_name="membershiptier",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, null=True),
         ),
     ]

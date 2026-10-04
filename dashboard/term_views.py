@@ -43,14 +43,16 @@ def _window_q(window: str, today: datetime.date) -> Q | None:
         # Also excludes a term the member has already renewed: one that
         # another of their terms continues without a gap is not about to
         # lapse, which is what Member.status judges too.
-        "expiring": MembershipTerm.covering(today)
-        & Q(expires_on__lte=soon)
-        & ~Exists(
-            MembershipTerm.objects.filter(
-                member=OuterRef("member"),
-                started_on__lte=OuterRef("expires_on") + datetime.timedelta(days=1),
-                expires_on__gt=OuterRef("expires_on"),
-            )
+        "expiring": Q(
+            ~Exists(
+                MembershipTerm.objects.filter(
+                    member=OuterRef("member"),
+                    started_on__lte=OuterRef("expires_on") + datetime.timedelta(days=1),
+                    expires_on__gt=OuterRef("expires_on"),
+                )
+            ),
+            MembershipTerm.covering(today),
+            expires_on__lte=soon,
         ),
         "expired": Q(expires_on__lt=today),
         "future": Q(started_on__gt=today),

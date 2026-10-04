@@ -57,7 +57,9 @@ def latest_term(terms: Iterable["MembershipTerm"]) -> "MembershipTerm | None":
     )
 
 
-def renewal_start(latest, today: datetime.date) -> datetime.date | None:
+def renewal_start(
+    latest: "MembershipTerm", today: datetime.date
+) -> datetime.date | None:
     """When a renewal of `latest` should begin.
 
     An early renewal continues from the day after the current term expires,
