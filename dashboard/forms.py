@@ -342,13 +342,12 @@ class BlogPostForm(forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean()
-        # A blank URL is filled from the subtitle, the same rule
-        # SlugModelMixin applies. Doing it here rather than in save() lets
-        # ModelForm's unique check run on the result, so a clash shows up as a
-        # field error instead of an IntegrityError.
+        # A blank URL is filled from the subtitle by SlugModelMixin's own
+        # rule. Doing it here rather than in save() lets ModelForm's unique
+        # check run on the result, so a clash shows up as a field error
+        # instead of an IntegrityError.
         if not cleaned.get("slug") and cleaned.get("subtitle"):
-            max_length = BlogPost._meta.get_field("slug").max_length
-            cleaned["slug"] = slugify(cleaned["subtitle"])[:max_length].strip("-")
+            cleaned["slug"] = self.instance.generate_slug(cleaned["subtitle"])
         return cleaned
 
     def save(self, commit: bool = True) -> BlogPost:

@@ -217,6 +217,18 @@ class CreatePostTests(BlogFixture):
         self.assertLessEqual(len(slug), 100)
         self.assertFalse(slug.endswith("-"))
 
+    def test_unsluggable_subtitle_gets_a_fallback_slug(self) -> None:
+        """An all-emoji or Cyrillic subtitle slugified to '', which then broke
+        every reverse('blog_detail') on the site."""
+        self.make_post(subtitle="Кино")  # already holds "post"
+        self.client.post(
+            reverse("dashboard:blog_post_create"),
+            self.payload(subtitle="★★★★☆", status="published"),
+        )
+        post = BlogPost.objects.get(subtitle="★★★★☆")
+        self.assertEqual(post.slug, "post-2")
+        self.assertEqual(self.client.get(reverse("dashboard:blog")).status_code, 200)
+
     def test_links_films_to_the_review(self) -> None:
         other = Film.objects.create(title="Dune: Part One (re-release)")
         self.client.post(

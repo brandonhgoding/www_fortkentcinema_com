@@ -45,6 +45,7 @@ class BlogAuthor(SlugModelMixin):
     last_name = models.CharField(max_length=100)
 
     slug_field = "full_name"
+    slug_fallback = "author"
 
     @property
     def full_name(self) -> str:
@@ -59,6 +60,7 @@ class BlogCategory(SlugModelMixin):
     name = models.CharField(max_length=100)
 
     slug_field = "name"
+    slug_fallback = "category"
 
     class Meta:
         verbose_name_plural = "Blog categories"
@@ -107,6 +109,7 @@ class BlogPost(SlugModelMixin):
     objects = BlogPostQuerySet.as_manager()
 
     slug_field = "subtitle"
+    slug_fallback = "post"
 
     class Meta:
         ordering = ["-post_date"]
