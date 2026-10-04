@@ -76,7 +76,7 @@ TICKET_PRICES = {
     "adult": 8,
     "senior": 7,
     "child": 6,
-    "matinee": 7,
+    "matinee": 6,
     "member": 4,
     "matinee_until": datetime.time(16, 0),
 }
