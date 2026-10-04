@@ -17,6 +17,6 @@
     <button class="btn btn-primary"
             hx-get="{% url 'dashboard:poll_announce' poll.pk %}"
             hx-target="#drawer-content" hx-swap="innerHTML"
-            @click="drawerOpen = true">Announce Winner</button>
+            @click="$store.drawer.show('Announce Winner')">Announce Winner</button>
   {% endif %}
 </div>

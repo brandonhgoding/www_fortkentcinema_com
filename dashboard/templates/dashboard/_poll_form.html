@@ -1,5 +1,5 @@
 <form class="pollForm" hx-post="{{ action_url }}" hx-target="#poll-list" hx-swap="outerHTML"
-      @htmx:after-request="drawerOpen = false">
+      @htmx:after-request="$event.detail.successful && $store.drawer.close()">
   {% csrf_token %}
   {{ form.as_p }}
   <button type="submit" class="btn btn-primary">{{ submit_label }}</button>

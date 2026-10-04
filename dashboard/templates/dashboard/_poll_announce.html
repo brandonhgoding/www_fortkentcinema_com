@@ -7,7 +7,7 @@
 {% endcomment %}
 <form class="pollForm" hx-post="{% url 'dashboard:poll_announce' poll.pk %}"
       hx-target="#poll-status" hx-swap="outerHTML"
-      @htmx:after-request="drawerOpen = false">
+      @htmx:after-request="$event.detail.successful && $store.drawer.close()">
   {% csrf_token %}
   <div class="formGroup" role="radiogroup" aria-labelledby="announce-winner-label">
   <label id="announce-winner-label">Winner</label>

@@ -11,7 +11,7 @@
     </div>
     <button class="btn btn-primary" hx-get="{% url 'dashboard:poll_create' %}"
             hx-target="#drawer-content" hx-swap="innerHTML"
-            @click="drawerOpen = true">New Poll</button>
+            @click="$store.drawer.show('New Poll')">+ New Poll</button>
   </div>
   {% include "dashboard/_poll_list.html" %}
 </div>
