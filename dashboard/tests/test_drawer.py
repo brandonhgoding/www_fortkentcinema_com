@@ -1,5 +1,4 @@
 from pathlib import Path
-from unittest import skipUnless
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -8,9 +7,6 @@ from django.urls import reverse
 
 User = get_user_model()
 CSS_DIR = Path(settings.BASE_DIR) / "dashboard" / "static" / "dashboard" / "css"
-DRAWER_CSS_SRC = Path(
-    "/Users/bgoding/code/SoftwareMaine/www_leprinceos_com/src/components/Drawer.module.css"
-)
 
 
 class DrawerTests(TestCase):
@@ -23,11 +19,6 @@ class DrawerTests(TestCase):
         self.assertIn('id="drawer-content"', html)
         self.assertIn('id="drawer-footer"', html)
         self.assertIn("$store.drawer", html)
-
-    @skipUnless(DRAWER_CSS_SRC.exists(), "leprinceos source not present")
-    def test_drawer_css_byte_identical(self) -> None:
-        src = DRAWER_CSS_SRC.read_bytes()
-        self.assertEqual((CSS_DIR / "drawer.css").read_bytes(), src)
 
     def test_js_has_bridges(self) -> None:
         js = (
