@@ -54,12 +54,16 @@ def latest_term(terms: Iterable["MembershipTerm"]) -> "MembershipTerm | None":
     )
 
 
-def renewal_start(latest, today: datetime.date) -> datetime.date:
+def renewal_start(latest, today: datetime.date) -> datetime.date | None:
     """When a renewal of `latest` should begin.
 
     An early renewal continues from the day after the current term expires,
     so the member keeps every day they paid for. A renewal taken after a
     lapse starts today instead — back-dating it would burn the new term
     against months the member was not a member.
+
+    None when `latest` runs to date.max: there is no day after it.
     """
+    if latest.expires_on >= datetime.date.max:
+        return None
     return max(latest.expires_on + datetime.timedelta(days=1), today)

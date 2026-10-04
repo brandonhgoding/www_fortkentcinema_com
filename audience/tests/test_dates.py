@@ -37,3 +37,8 @@ class AddMonthsTests(SimpleTestCase):
             add_months(datetime.date(2026, 9, 11), 0),
             datetime.date(2026, 9, 11),
         )
+
+    def test_past_the_last_representable_year_is_an_overflow(self) -> None:
+        # The same exception date + timedelta raises, so callers handle one.
+        with self.assertRaises(OverflowError):
+            add_months(datetime.date(9999, 6, 1), 12)

@@ -174,9 +174,16 @@ class MembershipTermForm(forms.ModelForm):
             return cleaned
 
         if started_on and not cleaned.get("expires_on"):
-            cleaned["expires_on"] = MembershipTerm.default_expiry(
-                started_on, tier.duration_months
-            )
+            try:
+                cleaned["expires_on"] = MembershipTerm.default_expiry(
+                    started_on, tier.duration_months
+                )
+            except OverflowError:
+                self.add_error(
+                    "expires_on",
+                    f"A {tier.duration_months}-month term from this date runs "
+                    "past 31 December 9999. Enter an expiry date.",
+                )
         if cleaned.get("price_paid") is None:
             cleaned["price_paid"] = tier.price
         # Expiry before start is MembershipTerm.clean()'s to report, so the

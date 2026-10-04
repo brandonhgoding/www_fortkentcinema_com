@@ -95,6 +95,8 @@ class Member(models.Model):
         for term in sorted(self.terms.all(), key=lambda t: t.started_on):
             if term.expires_on < today:
                 continue
+            if covered == datetime.date.max:
+                break  # Nothing can extend it, and the day after overflows.
             reaches = today if covered is None else covered + datetime.timedelta(days=1)
             if term.started_on > reaches:
                 break

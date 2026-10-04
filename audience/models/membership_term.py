@@ -84,5 +84,18 @@ class MembershipTerm(models.Model):
         `expires_on` is inclusive, so a year from 1 March runs through the
         last day of February, and its renewal starts on the anniversary
         without overlapping it.
+
+        Raises OverflowError when that day is past date.max. A term whose
+        anniversary would be 1 January 10000 still gets date.max, the eve
+        of a day that cannot be represented.
         """
-        return add_months(started_on, duration_months) - datetime.timedelta(days=1)
+        try:
+            anniversary = add_months(started_on, duration_months)
+        except OverflowError:
+            months_to_new_year_10000 = (
+                datetime.MAXYEAR + 1 - started_on.year
+            ) * 12 - (started_on.month - 1)
+            if started_on.day == 1 and duration_months == months_to_new_year_10000:
+                return datetime.date.max
+            raise
+        return anniversary - datetime.timedelta(days=1)

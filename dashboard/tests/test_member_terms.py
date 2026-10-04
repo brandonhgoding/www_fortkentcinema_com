@@ -484,6 +484,38 @@ class RenewPrefillTests(TestCase):
         self.assertNotIn("renew=1", html)
 
 
+class EndOfTimeTermTests(TestCase):
+    """A term at or near date.max must not turn Renew or Add Term into a 500."""
+
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+        self.member = make_member()
+
+    def test_renewing_a_term_that_runs_to_date_max(self) -> None:
+        MembershipTerm.objects.create(
+            member=self.member, tier=a_tier("individual"),
+            started_on=datetime.date(2026, 1, 1),
+            expires_on=datetime.date.max,
+            price_paid=Decimal("60.00"),
+        )
+        resp = self.client.get(
+            reverse("dashboard:term_create", args=[self.member.pk]), {"renew": "1"}
+        )
+        self.assertEqual(resp.status_code, 200)
+        # No day is left to start from, so the start date is left to staff.
+        self.assertIsNone(resp.context["form"].initial.get("started_on"))
+
+    def test_a_default_expiry_past_date_max_is_a_form_error(self) -> None:
+        resp = self.client.post(
+            reverse("dashboard:term_create", args=[self.member.pk]),
+            {"tier": a_tier().pk, "started_on": "9999-06-01"},
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("expires_on", resp.context["form"].errors)
+        self.assertFalse(self.member.terms.exists())
+
+
 class OverlapFlagTests(TestCase):
     """Double-entered renewals look exactly like early ones to the model,
     so the roster flags the pair instead of refusing the save."""

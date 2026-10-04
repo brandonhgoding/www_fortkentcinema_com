@@ -259,3 +259,22 @@ class ExportTests(LedgerTestCase):
         resp = self.client.get(reverse("dashboard:terms_export"))
         self.assertEqual(resp["Content-Type"], "text/csv")
         self.assertIn("membership-terms.csv", resp["Content-Disposition"])
+
+
+class EndOfTimeTests(LedgerTestCase):
+    def test_a_term_running_to_date_max_renders_in_every_window(self) -> None:
+        self.term("Forever", "individual", self.today, datetime.date.max)
+        for window in ("", "current", "expiring", "expired", "future"):
+            with self.subTest(window=window):
+                resp = self.client.get(reverse("dashboard:terms"), {"window": window})
+                self.assertEqual(resp.status_code, 200)
+
+    def test_the_roster_and_member_page_render_it(self) -> None:
+        term = self.term("Forever", "individual", self.today, datetime.date.max)
+        for url in (
+            reverse("dashboard:members"),
+            reverse("dashboard:member_detail", args=[term.member_id]),
+            reverse("dashboard:members_export"),
+        ):
+            with self.subTest(url=url):
+                self.assertEqual(self.client.get(url).status_code, 200)

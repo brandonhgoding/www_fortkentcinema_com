@@ -145,6 +145,39 @@ class MembershipTermTests(TestCase):
         )
 
 
+class EndOfTimeTests(TestCase):
+    """Terms at or near date.max — a typo'd year, or a deliberate "forever"."""
+
+    def setUp(self) -> None:
+        self.member = Member.objects.create(
+            first_name="Ada", last_name="Lovelace", email="ada@example.com"
+        )
+        self.tier = MembershipTier.objects.get(slug="individual")
+
+    def test_default_expiry_can_be_the_last_representable_day(self) -> None:
+        self.assertEqual(
+            MembershipTerm.default_expiry(datetime.date(9999, 1, 1), 12),
+            datetime.date.max,
+        )
+
+    def test_default_expiry_past_the_last_day_is_an_overflow(self) -> None:
+        with self.assertRaises(OverflowError):
+            MembershipTerm.default_expiry(datetime.date(9999, 6, 1), 12)
+
+    def test_cover_running_to_date_max_does_not_crash_the_status(self) -> None:
+        today = timezone.localdate()
+        for start, end in [
+            (today - datetime.timedelta(days=10), datetime.date.max),
+            (today - datetime.timedelta(days=5), today + datetime.timedelta(days=50)),
+        ]:
+            MembershipTerm.objects.create(
+                member=self.member, tier=self.tier, started_on=start,
+                expires_on=end, price_paid=Decimal("60.00"),
+            )
+        self.assertEqual(self.member.covered_through, datetime.date.max)
+        self.assertEqual(self.member.status, "active")
+
+
 class DerivedStatusTests(TestCase):
     def setUp(self) -> None:
         self.member = Member.objects.create(

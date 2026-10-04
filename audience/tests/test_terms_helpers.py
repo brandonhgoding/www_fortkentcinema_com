@@ -173,3 +173,17 @@ class LatestTermTests(TestCase):
             datetime.date(2026, 12, 31),
         )
         self.assertEqual(latest_term(self.member.terms.all()), second)
+
+
+class RenewalStartAtTheEndOfTimeTests(TestCase):
+    def test_a_term_running_to_date_max_has_no_renewal_start(self) -> None:
+        member = Member.objects.create(
+            first_name="Ada", last_name="Lovelace", email="ada@example.com"
+        )
+        term = make_term(
+            member,
+            MembershipTier.objects.get(slug="individual"),
+            datetime.date(2026, 1, 1),
+            datetime.date.max,
+        )
+        self.assertIsNone(renewal_start(term, datetime.date(2026, 9, 18)))

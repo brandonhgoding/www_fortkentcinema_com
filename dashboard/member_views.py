@@ -213,9 +213,12 @@ def _renewal_initial(member, request) -> dict:
     latest = latest_term(member.terms.select_related("tier"))
     if latest is None:
         return {}
-    initial: dict[str, object] = {
-        "started_on": renewal_start(latest, timezone.localdate())
-    }
+    initial: dict[str, object] = {}
+    # None for a term running to date.max: no day follows it, so staff
+    # choose the start date themselves.
+    started_on = renewal_start(latest, timezone.localdate())
+    if started_on is not None:
+        initial["started_on"] = started_on
     if latest.tier.show_on_membership_page:
         initial["tier"] = latest.tier_id
     return initial

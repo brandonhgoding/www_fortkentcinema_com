@@ -10,9 +10,15 @@ import datetime
 
 
 def add_months(start: datetime.date, months: int) -> datetime.date:
-    """Return `start` advanced by `months`, clamped to the target month's length."""
+    """Return `start` advanced by `months`, clamped to the target month's length.
+
+    Raises OverflowError past date.max (or before date.min), the same
+    error `date + timedelta` raises, so callers have one thing to catch.
+    """
     month_index = start.month - 1 + months
     year = start.year + month_index // 12
+    if not datetime.MINYEAR <= year <= datetime.MAXYEAR:
+        raise OverflowError("date value out of range")
     month = month_index % 12 + 1
     day = min(start.day, calendar.monthrange(year, month)[1])
     return datetime.date(year, month, day)
