@@ -19,15 +19,13 @@ python-decouple==3.8
 # Static serving
 whitenoise==6.7.0
 
-# ASGI/WSGI server (optional)
-uvicorn==0.34.3
+# WSGI server
 gunicorn==23.0.0
 
 # Dependencies of above packages
 asgiref==3.8.1
 certifi==2025.6.15
 charset-normalizer==3.4.2
-h11==0.16.0
 idna==3.10
 requests==2.32.4
 sqlparse==0.5.3
