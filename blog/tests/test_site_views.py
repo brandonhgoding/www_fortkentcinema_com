@@ -110,3 +110,10 @@ class BlogDetailTests(TestCase):
         html = self.client.get(reverse("blog_detail", args=[self.post.slug])).content.decode()
         self.assertIn("<p>First paragraph.</p>", html)
         self.assertIn("<p>Second paragraph.</p>", html)
+
+    def test_trailing_slash_redirects_to_canonical_url(self):
+        """/blog/<slug>/ used to 404. People and other sites add the slash."""
+        resp = self.client.get(f"/blog/{self.post.slug}/")
+        self.assertRedirects(
+            resp, f"/blog/{self.post.slug}", status_code=301, target_status_code=200
+        )
