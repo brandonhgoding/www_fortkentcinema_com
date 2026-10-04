@@ -181,7 +181,8 @@ class BlogPost(SlugModelMixin):
         max_length=10, choices=Status.choices, default=Status.PUBLISHED
     )
     # When the row was made: for a dashboard post, the day its draft was
-    # started. Null for posts from before this field existed.
+    # started. Null for posts published before this field existed; drafts
+    # from then have the start of their post_date (migration 0023).
     created_at = models.DateTimeField(auto_now_add=True, null=True)
 
     objects = BlogPostQuerySet.as_manager()
@@ -232,8 +233,9 @@ class BlogPost(SlugModelMixin):
         The editor pre-fills today on a new post, so an untouched date is the
         draft-start day, and a post drafted on the 1st and published on the
         20th would go out dated the 1st. Any other date was set on purpose (a
-        backdated review, say) and stays. A post from before created_at
-        existed can't be told apart, so it keeps its date too.
+        backdated review, say) and stays. Drafts from before created_at
+        existed were given the start of their post_date by migration 0023;
+        published posts from then have none, and are never re-dated here.
         """
         if self.created_at and self.post_date == timezone.localdate(self.created_at):
             self.post_date = timezone.localdate()

@@ -2,6 +2,7 @@
 
 import datetime
 import json
+from zoneinfo import ZoneInfo
 
 from blog.models import BlogAuthor, BlogCategory, BlogPost
 from cinema.models import Film
@@ -365,6 +366,64 @@ class PublishDateTests(BlogFixture):
         self.assertEqual(
             timezone.localdate(BlogPost.objects.get().created_at), timezone.localdate()
         )
+
+
+class BackfillDraftStartTests(BlogFixture):
+    """Drafts from before created_at existed had it null, so publishing one
+    kept the day it was started. Migration 0023 takes the start of
+    post_date, which the editor pre-filled, as the day each one was started.
+    """
+
+    def backfill(self) -> None:
+        from importlib import import_module
+
+        from django.apps import apps
+
+        import_module("blog.migrations.0023_backfill_draft_created_at").backfill(apps, None)
+
+    def make_legacy(self, status, post_date) -> BlogPost:
+        post = self.make_post(status=status, post_date=post_date)
+        BlogPost.objects.filter(pk=post.pk).update(created_at=None)
+        return post
+
+    def test_legacy_draft_is_dated_the_day_it_was_published(self) -> None:
+        post = self.make_legacy(BlogPost.Status.DRAFT, datetime.date(2026, 9, 1))
+        self.backfill()
+        post.refresh_from_db()
+        self.assertEqual(
+            post.created_at,
+            datetime.datetime(2026, 9, 1, tzinfo=ZoneInfo("America/New_York")),
+        )
+        self.assertEqual(timezone.localdate(post.created_at), datetime.date(2026, 9, 1))
+
+        self.client.post(
+            reverse("dashboard:blog_post_edit", args=[post.pk]),
+            self.payload(slug=post.slug, status="published", post_date="2026-09-01"),
+        )
+        post.refresh_from_db()
+        self.assertTrue(post.is_published)
+        self.assertEqual(post.post_date, timezone.localdate())
+
+    def test_published_posts_stay_null(self) -> None:
+        post = self.make_legacy(BlogPost.Status.PUBLISHED, datetime.date(2020, 5, 1))
+        self.backfill()
+        post.refresh_from_db()
+        self.assertIsNone(post.created_at)
+
+    def test_drafts_that_already_have_a_start_are_untouched(self) -> None:
+        post = self.make_post(status=BlogPost.Status.DRAFT, post_date=datetime.date(2026, 9, 1))
+        started = post.created_at
+        self.backfill()
+        post.refresh_from_db()
+        self.assertEqual(post.created_at, started)
+
+    def test_backfill_does_not_touch_other_fields(self) -> None:
+        post = self.make_legacy(BlogPost.Status.DRAFT, datetime.date(2026, 9, 1))
+        before = BlogPost.objects.values().get(pk=post.pk)
+        self.backfill()
+        after = BlogPost.objects.values().get(pk=post.pk)
+        before.pop("created_at"), after.pop("created_at")
+        self.assertEqual(before, after)
 
 
 class BodyFormatTests(BlogFixture):
