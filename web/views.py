@@ -418,10 +418,6 @@ class OpenMicView(TemplateView):
         return ctx
 
 
-class AboutView(TemplateView):
-    template_name = "web/about.html"
-
-
 class ThanksView(TemplateView):
     """/thanks?tier=<slug> — where Square redirects after a payment succeeds.
 

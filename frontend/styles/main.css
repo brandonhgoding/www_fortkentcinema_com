@@ -52,7 +52,6 @@
 
 /* 5. Pages — last, so a page can override a component. */
 @import '../../static/css/home.css';
-@import '../../static/css/AboutPage.css';
 @import '../../static/css/MembershipPage.css';
 @import '../../static/css/MembershipHero.css';
 @import '../../static/css/MembershipBenefits.css';

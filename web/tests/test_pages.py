@@ -1,7 +1,7 @@
 import html as html_lib
 import json
 import re
-from unittest import mock, skip
+from unittest import mock
 
 from django.test import TestCase
 from django.urls import reverse
@@ -350,18 +350,6 @@ class RentalsPageTests(TestCase):
             [q["name"] for q in faq["mainEntity"]],
             [item["question"] for item in RENTALS_FAQ],
         )
-
-
-@skip("About page temporarily hidden from nav/urls — re-enable when the /about route is restored")
-class AboutPageTests(TestCase):
-    def test_about_200_and_content(self):
-        resp = self.client.get(reverse("about"))
-        self.assertEqual(resp.status_code, 200)
-        self.assertTemplateUsed(resp, "web/about.html")
-        html = resp.content.decode()
-        self.assertIn("OUR STORY", html)
-        self.assertIn("Savoy", html)     # from the real history copy
-        self.assertIn("about-page", html)
 
 
 class SeoTagTests(TestCase):

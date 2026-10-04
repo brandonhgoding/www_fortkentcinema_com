@@ -1,7 +1,6 @@
 from django.urls import path
 
 from .views import (
-    # AboutView,  # About page temporarily hidden (re-enable with the /about path below)
     CalendarMonthView,
     CraftNightView,
     HeckleNightView,
@@ -49,7 +48,6 @@ urlpatterns = [
         SponsorFilmOptionsView.as_view(),
         name="sponsor_films",
     ),
-    # path("about/", AboutView.as_view(), name="about"),  # About page temporarily hidden — re-enable this + the AboutView import to restore /about
     # Square redirects here after a successful payment. noindex, unlinked,
     # and deliberately absent from the sitemap.
     path("thanks", ThanksView.as_view(), name="thanks"),

@@ -61,8 +61,6 @@ SITE_CONFIG = {
                 {"label": "History", "href": "/history/"},
                 {"label": "Rentals", "href": "/rentals/"},
                 {"label": "Sponsor", "href": "/sponsor/"},
-                # About page temporarily hidden:
-                # {"label": "About", "href": "/about/"},
             ],
         },
     ],

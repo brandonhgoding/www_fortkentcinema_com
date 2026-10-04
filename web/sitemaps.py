@@ -40,7 +40,6 @@ class StaticViewSitemap(Sitemap):
     priority = 0.7
 
     def items(self):
-        # "about" temporarily removed while the About page is hidden
         return [
             "home",
             "membership",

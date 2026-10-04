@@ -22,16 +22,13 @@
           </a>
         </address>
         {% comment %}
-          This slot held an "About Us" link until the /about route was
-          disabled (see web/urls.py). /history/ takes it over rather than
-          leaving a hole: it was reachable from one place sitewide — the nav's
-          "More" dropdown — and a page nothing links to is a page Google will
-          not index. Restoring /about later means a second link here, not
-          evicting this one.
+          /history/ was reachable from one place sitewide — the nav's "More"
+          dropdown — and a page nothing links to is a page Google will not
+          index, so it gets a footer link too.
         {% endcomment %}
         <a href="/history/" class="footer-about-link">Our History</a>
         {% comment %}
-          Exactly the same reason as /history/ above, and the same fix: the
+          The same reason as /history/ above, and the same fix: the
           nav's "More" dropdown was /sponsor/'s only link sitewide, which is
           one link from one template, all of it below a menu nobody opens.
           This and the homepage CTA are the other two. Do not remove one
