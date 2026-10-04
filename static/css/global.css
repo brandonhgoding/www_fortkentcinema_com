@@ -680,7 +680,9 @@ button {
    the highest-value page on the domain whenever the screen is dark. An empty
    section is an invitation to act, not a status message.
 
-   The two blocks are structurally identical (lead / body / link list) but keep
+   The blog list uses the same block (.blog-empty) when nothing is published.
+
+   The blocks are structurally identical (lead / body / link list) but keep
    separate class names because they belong to different components. They are
    grouped here, in BASE, rather than duplicated into NowShowing.css and
    ComingSoon.css — one pattern, one definition. Neither component sheet styles
@@ -688,7 +690,8 @@ button {
 ============================================ */
 
 .no-showtimes,
-.coming-empty {
+.coming-empty,
+.blog-empty {
   max-width: 34rem;
   margin: 0 auto;
   padding: var(--spacing-xl) var(--spacing-md);
@@ -706,7 +709,8 @@ button {
 }
 
 .no-showtimes__lead,
-.coming-empty__lead {
+.coming-empty__lead,
+.blog-empty__lead {
   font-family: var(--font-display);
   font-size: var(--type-lead);
   font-weight: 700;
@@ -716,7 +720,8 @@ button {
 }
 
 .no-showtimes__body,
-.coming-empty__body {
+.coming-empty__body,
+.blog-empty__body {
   font-family: var(--font-body);
   color: var(--color-text-muted);
   /* Under 80 characters at this size; serif lead above, sans body below. */
@@ -729,7 +734,8 @@ button {
  * because <ul> carries a default marker and indent that would pull the
  * centred layout off axis. */
 .no-showtimes__links,
-.coming-empty__links {
+.coming-empty__links,
+.blog-empty__links {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -740,7 +746,8 @@ button {
 }
 
 .no-showtimes__links a,
-.coming-empty__links a {
+.coming-empty__links a,
+.blog-empty__links a {
   display: inline-flex;
   align-items: center;
   /* 44px touch target — these are the only things to tap in an empty section. */
@@ -763,22 +770,29 @@ button {
   color: var(--color-accent-warm);
 }
 
+.blog-empty__links a:hover {
+  color: var(--color-accent-warm);
+}
+
 .no-showtimes__links a:focus-visible,
-.coming-empty__links a:focus-visible {
+.coming-empty__links a:focus-visible,
+.blog-empty__links a:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 3px;
 }
 
 @media (max-width: 600px) {
   .no-showtimes,
-  .coming-empty {
+  .coming-empty,
+  .blog-empty {
     padding: var(--spacing-lg) var(--spacing-sm);
   }
 
   /* Stacked, not wrapped: four links wrapping across a 390px screen produce a
    * ragged two-and-a-half-line block. One per row reads as a menu. */
   .no-showtimes__links,
-  .coming-empty__links {
+  .coming-empty__links,
+  .blog-empty__links {
     flex-direction: column;
     gap: 0;
   }

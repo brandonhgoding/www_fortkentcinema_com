@@ -40,6 +40,21 @@ class BlogListTests(TestCase):
         self.assertIn('href="/blog/?page=2"', html)
 
 
+class BlogListEmptyTests(TestCase):
+    def test_no_published_posts_shows_an_empty_state(self):
+        """It rendered an empty grid and "Showing 0–0 of 0 posts"."""
+        author = BlogAuthor.objects.create(first_name="Ada", last_name="Lovelace")
+        cat = BlogCategory.objects.create(name="News")
+        BlogPost.objects.create(
+            title="Draft", subtitle="draft", author=author, category=cat,
+            post_date="2026-01-01", content="...", status=BlogPost.Status.DRAFT,
+        )
+        html = self.client.get(reverse("blog_list")).content.decode()
+        self.assertIn('class="blog-empty"', html)
+        self.assertNotIn("of 0 posts", html)
+        self.assertNotIn('class="blog-list-grid"', html)
+
+
 class BlogListSameDatePaginationTests(TestCase):
     """Regression test for undefined ordering when many posts share a
     day-granular post_date: without a unique tiebreaker (-id), the DB is

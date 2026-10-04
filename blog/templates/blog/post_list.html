@@ -23,6 +23,7 @@ ended up orphaned. Page 1 keeps the bare /blog/ canonical so we don't mint a
       <h1 class="blog-list-title">BLOG</h1>
       <p class="blog-list-subtitle">News, reviews, and updates from Fort Kent Cinema</p>
     </div>
+    {% if posts %}
     <div class="blog-list-grid" data-spotlight>
       {% include "blog/_post_cards.html" %}
     </div>
@@ -30,6 +31,29 @@ ended up orphaned. Page 1 keeps the bare /blog/ canonical so we don't mint a
       Showing {{ page_obj.start_index }}&ndash;{{ page_obj.end_index }} of {{ paginator.count }} posts
     </div>
     {% include "blog/_pagination.html" %}
+    {% else %}
+    {# Same lead / body / links pattern as the home page's empty Now Showing and Coming Soon. #}
+    <div class="blog-empty">
+      <p class="blog-empty__lead">No posts yet.</p>
+      <p class="blog-empty__body">
+        Reviews, news and announcements from the cinema go up here as they
+        are written.
+      </p>
+      <ul class="blog-empty__links">
+        <li><a href="/#now-showing">See what is showing</a></li>
+        {% if site_config.social.facebook %}
+        <li>
+          <a href="{{ site_config.social.facebook }}"
+             target="_blank" rel="noopener noreferrer"
+             data-track="facebook_click" data-track-location="blog_empty">
+            Follow us on Facebook
+          </a>
+        </li>
+        {% endif %}
+        <li><a href="/history/">Read the history, back to 1917</a></li>
+      </ul>
+    </div>
+    {% endif %}
   </div>
 </div>
 {% endblock %}
