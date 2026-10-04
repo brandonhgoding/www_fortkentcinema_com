@@ -67,6 +67,11 @@ class MarkdownTests(SimpleTestCase):
         self.assertNotIn("onclick", html)
         self.assertNotIn("<img", html)
 
+    def test_numbered_list_keeps_its_start(self):
+        """A list continued after a paragraph ("3. ...") must not restart at 1."""
+        html = render_markdown("3. Third\n4. Fourth")
+        self.assertIn('<ol start="3">', html)
+
     def test_filter_marks_output_safe(self):
         self.assertIn("<p>hi</p>", str(markdown("hi")))
 

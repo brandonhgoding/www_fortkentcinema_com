@@ -23,7 +23,7 @@ ALLOWED_TAGS = {
     "p", "br", "strong", "em", "a", "ul", "ol", "li", "blockquote",
     "h2", "h3", "h4", "h5", "h6", "hr", "code", "pre",
 }
-ALLOWED_ATTRIBUTES = {"a": {"href", "title"}}
+ALLOWED_ATTRIBUTES = {"a": {"href", "title"}, "ol": {"start"}}
 
 
 class _DemoteHeadings(Treeprocessor):
