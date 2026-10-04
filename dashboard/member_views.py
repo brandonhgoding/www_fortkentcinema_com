@@ -13,7 +13,7 @@ from audience.dates import month_bounds
 from audience.models import FreeAdmission, Member, MembershipTerm, MemberStatus
 from audience.terms import latest_term, overlapping_term_ids, renewal_start
 from django.db import models
-from django.db.models import Count, Prefetch, Q
+from django.db.models import Count, FilteredRelation, Prefetch, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
@@ -49,17 +49,20 @@ def member_roster(request):
     members = (
         Member.objects.prefetch_related("terms__tier")
         .annotate(
-            # distinct=True: free_admissions is the only multi-valued relation
-            # joined into this query today, so it doesn't change the count —
-            # but it makes the count immune to join fan-out if `?q=` ever
-            # matches a multi-valued relation (e.g. terms__tier__name) or the
-            # status filter moves into SQL, either of which would otherwise
-            # silently multiply this count.
-            free_used_this_month=Count(
+            # The month goes in the JOIN's ON clause, so only this month's
+            # redemptions are joined; a Count(filter=...) would join every
+            # redemption ever recorded and discard most of them.
+            redeemed_this_month=FilteredRelation(
                 "free_admissions",
-                filter=Q(free_admissions__redeemed_on__range=(first, last)),
-                distinct=True,
-            )
+                condition=Q(free_admissions__redeemed_on__range=(first, last)),
+            ),
+            # distinct=True: this is the only multi-valued relation joined
+            # into this query today, so it doesn't change the count — but it
+            # makes the count immune to join fan-out if `?q=` ever matches a
+            # multi-valued relation (e.g. terms__tier__name) or the status
+            # filter moves into SQL, either of which would otherwise
+            # silently multiply this count.
+            free_used_this_month=Count("redeemed_this_month", distinct=True),
         )
         # Explicit: Django drops Meta.ordering from a GROUP BY query, and
         # the annotation above makes this one.

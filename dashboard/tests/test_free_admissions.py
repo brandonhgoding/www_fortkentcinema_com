@@ -170,6 +170,28 @@ class BothCountingPathsAgreeTests(StaffClient):
         self.assertEqual(annotated[member.pk], 2)
 
 
+class RosterCountJoinTests(StaffClient):
+    """The roster's count joins only this month's redemptions.
+
+    Filtering the Count after the join would pull every redemption ever
+    recorded into the grouped query — a table that only grows.
+    """
+
+    def test_the_month_is_in_the_join_condition(self) -> None:
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        give_term(make_member(), "family-plus")
+        with CaptureQueriesContext(connection) as ctx:
+            self.client.get(reverse("dashboard:members"))
+        roster_sql = next(
+            q["sql"] for q in ctx.captured_queries if "COUNT(DISTINCT" in q["sql"]
+        )
+        join = roster_sql.split("JOIN", 1)[1].split("GROUP BY", 1)[0]
+        on_clause = join.split("WHERE", 1)[0]
+        self.assertIn("redeemed_on", on_clause)
+
+
 class RedeemTests(StaffClient):
     def setUp(self) -> None:
         super().setUp()
