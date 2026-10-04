@@ -1,3 +1,4 @@
+import unicodedata
 from typing import cast
 
 from audience.models import (
@@ -367,19 +368,37 @@ class BlogPostForm(forms.ModelForm):
         Film.objects.filter(pk__in=chosen).update(review=post)
 
 
+def _normalized_name(text: str) -> str:
+    """A name compared for duplicates: case, Unicode form and runs of
+    whitespace don't count."""
+    return " ".join(unicodedata.normalize("NFKC", text).casefold().split())
+
+
 class _SlugOnCreateMixin:
     """Author and category slugs are set from the name on first save and never
     change after that. A duplicate name would therefore fail on the unique
-    slug. This check catches it first, while it can still be reported."""
+    slug. This check catches it first, while it can still be reported.
+
+    Names are compared as names, not only as slugs. A name with no ASCII
+    letters or digits ('★★★') gets a fallback slug made unique (author,
+    author-2), so a slug check alone let the same name in twice. The slug
+    check stays for names that differ but slugify alike ('Café', 'Cafe').
+    """
 
     duplicate_message = "That name is already taken."
 
     def clean(self):
         cleaned = super().clean()
         if self.instance._state.adding and not self.errors:
-            candidate = self._meta.model(**cleaned)
-            slug = candidate.generate_slug()
-            if self._meta.model.objects.filter(slug=slug).exists():
+            model = self._meta.model
+            candidate = model(**cleaned)
+            # Authors and categories number in the dozens, so comparing in
+            # Python is cheaper than teaching the database the same rule.
+            name = _normalized_name(getattr(candidate, model.slug_field))
+            if any(_normalized_name(getattr(other, model.slug_field)) == name
+                   for other in model.objects.all()):
+                raise forms.ValidationError(self.duplicate_message)
+            if model.objects.filter(slug=candidate.generate_slug()).exists():
                 raise forms.ValidationError(self.duplicate_message)
         return cleaned
 

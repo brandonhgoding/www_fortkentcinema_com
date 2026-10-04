@@ -463,6 +463,49 @@ class AuthorCategoryTests(BlogFixture):
         self.assertContains(resp, "already an author with that name")
         self.assertEqual(BlogAuthor.objects.count(), 1)
 
+    def test_duplicate_symbol_author_name_is_a_form_error(self) -> None:
+        """Names with no ASCII letters get a unique fallback slug (author,
+        author-2), so a slug comparison never saw a clash: the same name went
+        in twice."""
+        url = reverse("dashboard:blog_author_create")
+        self.client.post(url, {"first_name": "★★★", "last_name": "☆"})
+        resp = self.client.post(url, {"first_name": "★★★", "last_name": "☆"})
+        self.assertContains(resp, "already an author with that name")
+        self.assertEqual(BlogAuthor.objects.filter(first_name="★★★").count(), 1)
+
+    def test_duplicate_author_name_ignores_case_and_spacing(self) -> None:
+        resp = self.client.post(
+            reverse("dashboard:blog_author_create"),
+            {"first_name": " ADA ", "last_name": "lovelace"},
+        )
+        self.assertContains(resp, "already an author with that name")
+        self.assertEqual(BlogAuthor.objects.count(), 1)
+
+    def test_distinct_symbol_author_names_each_get_a_slug(self) -> None:
+        url = reverse("dashboard:blog_author_create")
+        self.client.post(url, {"first_name": "★★★", "last_name": "☆"})
+        self.client.post(url, {"first_name": "♥♥", "last_name": "☆"})
+        self.assertEqual(
+            sorted(BlogAuthor.objects.exclude(pk=self.author.pk).values_list("slug", flat=True)),
+            ["author", "author-2"],
+        )
+
+    def test_duplicate_symbol_category_name_is_a_form_error(self) -> None:
+        url = reverse("dashboard:blog_category_create")
+        self.client.post(url, {"name": "★★★"})
+        resp = self.client.post(url, {"name": "★★★ "})
+        self.assertContains(resp, "already a category with that name")
+        self.assertEqual(BlogCategory.objects.filter(name__startswith="★").count(), 1)
+
+    def test_distinct_symbol_category_names_each_get_a_slug(self) -> None:
+        url = reverse("dashboard:blog_category_create")
+        self.client.post(url, {"name": "★★★"})
+        self.client.post(url, {"name": "♥♥♥"})
+        self.assertEqual(
+            sorted(BlogCategory.objects.filter(slug__startswith="category").values_list("slug", flat=True)),
+            ["category", "category-2"],
+        )
+
     def test_rename_category_keeps_slug(self) -> None:
         self.client.post(
             reverse("dashboard:blog_category_edit", args=[self.category.pk]),
