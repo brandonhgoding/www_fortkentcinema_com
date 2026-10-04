@@ -1,4 +1,5 @@
 from rest_framework import viewsets
+from rest_framework.pagination import LimitOffsetPagination
 
 from .models import BlogAuthor, BlogCategory, BlogPost
 from .serializers import (
@@ -6,6 +7,11 @@ from .serializers import (
     BlogPostAuthorSerializer,
     BlogPostSerializer,
 )
+
+
+class BlogPostPagination(LimitOffsetPagination):
+    # Without a cap, ?limit=100000 serialises every post in one response.
+    max_limit = 50
 
 
 class BlogPostViewSet(viewsets.ReadOnlyModelViewSet):
@@ -16,8 +22,15 @@ class BlogPostViewSet(viewsets.ReadOnlyModelViewSet):
     let any logged-in account create, edit or delete posts.
     """
 
-    queryset = BlogPost.objects.published()
+    # -id breaks ties between posts on the same day. Without it the database
+    # may order them differently for each page's LIMIT/OFFSET query.
+    queryset = (
+        BlogPost.objects.published()
+        .select_related("author", "category")
+        .order_by("-post_date", "-id")
+    )
     serializer_class = BlogPostSerializer
+    pagination_class = BlogPostPagination
     lookup_field = "slug"
 
 
