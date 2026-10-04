@@ -168,7 +168,6 @@ class BlogPost(SlugModelMixin):
     # meta descriptions are cut from. Set in save(), so a listing doesn't
     # render every post's Markdown on every request to get it.
     lead_text = models.TextField(blank=True, default="", editable=False)
-    summary = models.TextField(blank=True, null=True)
     header_image = models.ImageField(
         upload_to=blog_header_image_path,
         null=True,

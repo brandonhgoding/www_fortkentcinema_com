@@ -95,3 +95,13 @@ class SlugFallbackTests(TestCase):
     def test_unsluggable_author_and_category_names_fall_back(self) -> None:
         self.assertEqual(BlogAuthor.objects.create(first_name="🎬", last_name="").slug, "author")
         self.assertEqual(BlogCategory.objects.create(name="Кино").slug, "category")
+
+
+class UnusedFieldTests(TestCase):
+    def test_summary_is_gone(self) -> None:
+        """BlogPost.summary was never shown, edited or served by the API.
+        Cards and meta descriptions come from lead_text."""
+        from django.core.exceptions import FieldDoesNotExist
+
+        with self.assertRaises(FieldDoesNotExist):
+            BlogPost._meta.get_field("summary")
