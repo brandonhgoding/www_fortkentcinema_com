@@ -1,8 +1,7 @@
 """Calendar arithmetic for membership terms.
 
-Hand-rolled rather than pulled from dateutil: that package is only present
-as a transitive dependency of the optional boto3 stack, and this is the one
-calculation we need.
+Hand-rolled rather than pulled in from a third-party date library: this is
+the one calculation we need, and it is not worth a dependency.
 """
 
 import calendar

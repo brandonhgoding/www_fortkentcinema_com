@@ -20,7 +20,6 @@ TESTING = "test" in sys.argv
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config("SECRET_KEY")
 DEBUG = config("DEBUG", default=False, cast=bool)
-ENABLE_CDN = config("ENABLE_CDN", default=False, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv())
 
 # Analytics. Empty by default *on purpose*: the gtag snippet only renders when
@@ -50,11 +49,6 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
 ]
-
-if ENABLE_CDN:
-    INSTALLED_APPS += [
-        "storages",
-    ]
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -198,9 +192,7 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https?://(www\.)?fortkentcinema\.com$",
 ]
-CORS_ALLOWED_ORIGINS = [
-    "https://d123abc.cloudfront.net",
-]
+CORS_ALLOWED_ORIGINS: list[str] = []
 
 CACHES = {
     "default": {
