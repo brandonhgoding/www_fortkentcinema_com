@@ -13,7 +13,7 @@ from audience.dates import month_bounds
 from audience.models import FreeAdmission, Member, MembershipTerm, MemberStatus
 from audience.terms import latest_term, overlapping_term_ids, renewal_start
 from django.db import models
-from django.db.models import Count, Q
+from django.db.models import Count, Prefetch, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
@@ -231,9 +231,11 @@ def _term_list_context(member) -> dict:
     Re-reads the terms rather than trusting a prefetch on `member`: this
     runs right after a term was added, edited or deleted, and a prefetched
     cache from before the write would render the list the staffer just
-    changed.
+    changed. The read becomes the member's prefetch, so the status pill
+    and everything else on the page use these rows rather than querying
+    again.
     """
-    terms = list(member.terms.select_related("tier"))
+    terms = member.reload_terms()
     return {
         "member": member,
         "terms": terms,
@@ -263,9 +265,9 @@ def _term_list_response(request, member, toast_message):
 
 class MemberDetailView(StaffRequiredMixin, View):
     def get(self, request, pk):
+        # Terms are read once, by _term_list_context below.
         member = get_object_or_404(
-            Member.objects.prefetch_related("terms__tier", "free_admissions"),
-            pk=pk,
+            Member.objects.prefetch_related(_admissions_with_recorder()), pk=pk
         )
         return render(
             request,
@@ -394,6 +396,14 @@ class FreeAdmissionRedeemView(StaffRequiredMixin, View):
         )
 
 
+def _admissions_with_recorder() -> Prefetch:
+    """A member's redemptions with who recorded each, which the panel
+    prints on every row."""
+    return Prefetch(
+        "free_admissions", queryset=FreeAdmission.objects.select_related("recorded_by")
+    )
+
+
 def _free_admission_months(member):
     """This member's redemptions, newest month first.
 
@@ -424,9 +434,9 @@ def _free_admission_months(member):
 
 def _free_admission_list_response(request, member, toast_message):
     """Success response: OOB-swap the panel and toast."""
-    member = Member.objects.prefetch_related("terms__tier", "free_admissions").get(
-        pk=member.pk
-    )
+    member = Member.objects.prefetch_related(
+        "terms__tier", _admissions_with_recorder()
+    ).get(pk=member.pk)
     html = render(
         request,
         "dashboard/_free_admission_list.html",

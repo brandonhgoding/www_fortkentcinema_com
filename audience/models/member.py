@@ -70,6 +70,22 @@ class Member(models.Model):
     def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}".strip()
 
+    def reload_terms(self) -> list[MembershipTerm]:
+        """Read this member's terms, with their tiers, from the database.
+
+        Replaces any terms prefetched before a write, and keeps the fresh
+        read as the prefetch, so the properties below answer from the same
+        rows as the caller instead of querying again.
+        """
+        getattr(self, "_prefetched_objects_cache", {}).pop("terms", None)
+        models.prefetch_related_objects(
+            [self],
+            models.Prefetch(
+                "terms", queryset=MembershipTerm.objects.select_related("tier")
+            ),
+        )
+        return list(self.terms.all())
+
     @property
     def current_term(self):
         """The term covering today, or None.

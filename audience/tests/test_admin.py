@@ -234,3 +234,37 @@ class EmailCaseAdminTests(TestCase):
         with self.assertRaises(ValidationError) as caught:
             member.full_clean()
         self.assertIn("already exists", str(caught.exception.message_dict["email"]))
+
+
+class MembershipTermInlineQueryTests(TestCase):
+    """The inline labels each row with MembershipTerm.__str__, which reads
+    the tier — one query per term unless the inline selects it."""
+
+    def test_rows_carry_their_tier(self) -> None:
+        from django.contrib.admin.sites import site
+        from django.test import RequestFactory
+
+        from audience.admin import MembershipTermInline
+
+        member = Member.objects.create(
+            first_name="Solange", last_name="Pelletier", email="s.p@example.com"
+        )
+        for year in (2024, 2025, 2026):
+            MembershipTerm.objects.create(
+                member=member,
+                tier=MembershipTier.objects.get(slug="individual"),
+                started_on=datetime.date(year, 1, 1),
+                expires_on=datetime.date(year, 12, 31),
+                price_paid=Decimal("60.00"),
+            )
+        request = RequestFactory().get("/")
+        request.user = User.objects.create_superuser(
+            username="root", email="root@example.com", password="pw12345"
+        )
+        terms = list(
+            MembershipTermInline(Member, site).get_queryset(request).filter(
+                member=member
+            )
+        )
+        with self.assertNumQueries(0):
+            [str(term) for term in terms]

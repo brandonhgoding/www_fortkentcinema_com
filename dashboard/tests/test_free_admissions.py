@@ -441,3 +441,41 @@ class DeleteRedemptionTests(StaffClient):
     def test_requires_staff(self) -> None:
         self.client.logout()
         self.assertEqual(self.client.post(self.url).status_code, 302)
+
+
+class MemberPageQueryCountTests(StaffClient):
+    """The member page answers every row from a fixed number of queries.
+
+    It used to read the terms twice (a prefetch, then a fresh select for
+    the term list) and fetch each redemption's recorded_by separately.
+    Five now: session, user, the member, their redemptions with who
+    recorded them, and their terms with each tier.
+    """
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.member = make_member()
+        self.url = reverse("dashboard:member_detail", args=[self.member.pk])
+
+    def add_rows(self, n: int) -> None:
+        today = timezone.localdate()
+        for i in range(n):
+            recorder = User.objects.create_user(
+                username=f"recorder-{FreeAdmission.objects.count()}"
+            )
+            FreeAdmission.objects.create(member=self.member, recorded_by=recorder)
+            MembershipTerm.objects.create(
+                member=self.member,
+                tier=MembershipTier.objects.get(slug="cinema-supporter"),
+                started_on=today - datetime.timedelta(days=400 * (i + 1)),
+                expires_on=today - datetime.timedelta(days=400 * i + 40),
+                price_paid=Decimal("120.00"),
+            )
+
+    def test_query_count_is_fixed(self) -> None:
+        self.add_rows(1)
+        with self.assertNumQueries(5):
+            self.client.get(self.url)
+        self.add_rows(4)
+        with self.assertNumQueries(5):
+            self.client.get(self.url)
