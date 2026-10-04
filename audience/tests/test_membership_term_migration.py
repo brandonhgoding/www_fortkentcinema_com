@@ -13,23 +13,44 @@ Runs against a real schema-mutating migration, hence TransactionTestCase
 rather than TestCase — a plain TestCase wraps each test in a transaction
 that fights schema changes.
 
-TransactionTestCase's teardown flushes every table, so the catalogue seeded
-by migration 0004 does not survive this test class — it is gone for the
-remainder of the test run. That is harmless today only because Django runs
-TransactionTestCase classes after all plain TestCase classes, and nothing
-after this one in the run needs the seeded catalogue. A future
-TransactionTestCase or LiveServerTestCase that exercises /membership/ or the
-dashboard roster and needs MembershipTier rows to already exist must set
-`serialized_rollback = True` on itself, or it will fail with an inexplicable
-MembershipTier.DoesNotExist.
+Two things keep this class from poisoning the rest of the run, which it
+once did:
+
+* It always puts the database back at the latest migration of every app,
+  read from the loader rather than hard-coded. Migrating audience back to
+  0004 unapplies everything after it, not just 0005; restoring only to
+  0005 left later TransactionTestCase and LiveServerTestCase classes on a
+  schema missing columns, and a `--keepdb` database stranded there.
+
+* It creates the catalogue rows it needs instead of trusting 0004's seed
+  to still be there. Every TransactionTestCase flushes on teardown, so
+  under `--reverse`, `--shuffle`, or with the e2e live-server tests ahead
+  of it, the seeded tiers are already gone by the time this runs.
+  `serialized_rollback` would not fix that under `--keepdb`, which
+  serializes whatever a previous run's flush left — nothing.
+
+* It puts the seeded catalogue back after its own teardown flush. Plain
+  TestCase classes rely on those rows, and under `--keepdb` the next run
+  starts from whatever this class left behind.
 """
 
 import datetime
 from decimal import Decimal
+from importlib import import_module
 
+from django.apps import apps as django_apps
 from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
 from django.test import TransactionTestCase
+
+SEED = import_module("audience.migrations.0004_seed_membership_catalogue")
+ALLOWANCES = import_module("audience.migrations.0007_seed_free_admission_allowances")
+
+
+def latest_migrations(executor: MigrationExecutor) -> list[tuple[str, str]]:
+    """Every app's leaf migration — where the test run expects the schema."""
+    executor.loader.build_graph()
+    return executor.loader.graph.leaf_nodes()
 
 
 class MembershipTermMigrationTests(TransactionTestCase):
@@ -37,17 +58,39 @@ class MembershipTermMigrationTests(TransactionTestCase):
     migrate_to = [("audience", "0005_membershipterm_tier_fk")]
 
     def setUp(self) -> None:
-        executor = MigrationExecutor(connection)
-        # If a reverse-direction assertion below ever fails, leave the
-        # database migrated forward again rather than stranding the schema
-        # at 0004 for the rest of the run.
-        self.addCleanup(lambda: executor.migrate(self.migrate_to))
-        executor.migrate(self.migrate_from)
-        executor.loader.build_graph()
+        self.executor = MigrationExecutor(connection)
+        # Registered before anything can fail, so even an error in the
+        # middle of a migration leaves the next test on the current schema.
+        self.addCleanup(self.restore_latest_schema)
 
-        old_apps = executor.loader.project_state(self.migrate_from).apps
+    def _fixture_teardown(self) -> None:
+        # TransactionTestCase empties every table here; reseed what the
+        # migrations seeded, as a freshly migrated database would have it.
+        super()._fixture_teardown()
+        SEED.seed(django_apps, None)
+        ALLOWANCES.set_allowances(django_apps, None)
+
+    def restore_latest_schema(self) -> None:
+        executor = MigrationExecutor(connection)
+        executor.migrate(latest_migrations(executor))
+
+    def migrate(self, targets):
+        self.executor.migrate(targets)
+        self.executor.loader.build_graph()
+        return self.executor.loader.project_state(targets).apps
+
+    def build_rows_at_0004(self) -> None:
+        old_apps = self.migrate(self.migrate_from)
+        Tier = old_apps.get_model("audience", "MembershipTier")
         Member = old_apps.get_model("audience", "Member")
         MembershipTerm = old_apps.get_model("audience", "MembershipTerm")
+
+        # The catalogue as 0004 seeds it, recreated where a flush removed
+        # it. Every tier, not just the two the terms use: restoring the
+        # schema runs 0007, which refuses to proceed without its tiers.
+        for spec in SEED.TIERS:
+            fields = {k: v for k, v in spec.items() if k not in ("slug", "benefits")}
+            Tier.objects.get_or_create(slug=spec["slug"], defaults=fields)
 
         member = Member.objects.create(
             first_name="Ada", last_name="Byron", email="ada@example.com"
@@ -67,15 +110,12 @@ class MembershipTermMigrationTests(TransactionTestCase):
             price_paid=Decimal("150.00"),
         ).pk
 
-        self.executor = executor
+    def round_trip(self) -> None:
+        self.build_rows_at_0004()
 
-    def test_forward_then_backward_round_trips_the_tier_data(self) -> None:
         # Forward: 0004 -> 0005. slug_to_fk should match each term's slug
         # string to the seeded MembershipTier and preserve everything else.
-        self.executor.migrate(self.migrate_to)
-        self.executor.loader.build_graph()
-
-        new_apps = self.executor.loader.project_state(self.migrate_to).apps
+        new_apps = self.migrate(self.migrate_to)
         Term = new_apps.get_model("audience", "MembershipTerm")
         Tier = new_apps.get_model("audience", "MembershipTier")
 
@@ -97,10 +137,7 @@ class MembershipTermMigrationTests(TransactionTestCase):
         # Backward: 0005 -> 0004. fk_to_slug must write the real slugs back
         # into the restored CharField — this is the assertion that would
         # have caught the NOT NULL crash in RemoveField's reversal.
-        self.executor.migrate(self.migrate_from)
-        self.executor.loader.build_graph()
-
-        old_apps = self.executor.loader.project_state(self.migrate_from).apps
+        old_apps = self.migrate(self.migrate_from)
         OldTerm = old_apps.get_model("audience", "MembershipTerm")
 
         old_term_a = OldTerm.objects.get(pk=self.term_a_pk)
@@ -111,7 +148,20 @@ class MembershipTermMigrationTests(TransactionTestCase):
         self.assertEqual(old_term_a.price_paid, Decimal("35.00"))
         self.assertEqual(old_term_b.price_paid, Decimal("150.00"))
 
-        # Leave the database migrated forward again so this test doesn't
-        # strand later tests (or the next migrate) at an old schema.
-        self.executor.migrate(self.migrate_to)
-        self.executor.loader.build_graph()
+    def test_forward_then_backward_round_trips_the_tier_data(self) -> None:
+        self.round_trip()
+
+    def test_round_trip_does_not_need_the_seed_to_survive_a_flush(self) -> None:
+        # What an earlier TransactionTestCase's teardown leaves behind.
+        from audience.models import MembershipBenefit, MembershipTier
+
+        MembershipTier.objects.all().delete()
+        MembershipBenefit.objects.all().delete()
+        self.round_trip()
+
+    def test_restores_every_app_to_its_latest_migration(self) -> None:
+        self.round_trip()
+        self.restore_latest_schema()
+
+        executor = MigrationExecutor(connection)
+        self.assertEqual(executor.migration_plan(latest_migrations(executor)), [])
