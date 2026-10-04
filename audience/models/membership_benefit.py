@@ -24,6 +24,8 @@ class MembershipBenefit(models.Model):
         default=0,
         help_text="Lower sorts first. Variants of the same perk share a value.",
     )
+    # Same as MembershipTier.updated_at: dates /membership/ in the sitemap.
+    updated_at = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         ordering = ["sort_order", "name"]

@@ -144,7 +144,9 @@ class TierListingView(StaffRequiredMixin, View):
                 close=False,
             )
         tier.show_on_membership_page = not tier.show_on_membership_page
-        tier.save(update_fields=["show_on_membership_page"])
+        # updated_at too: auto_now only reaches the columns being written,
+        # and retiring or restoring a tier changes the public page.
+        tier.save(update_fields=["show_on_membership_page", "updated_at"])
         verb = "restored" if tier.show_on_membership_page else "retired"
         return _catalogue_response(request, f"{tier.name} {verb}", close=False)
 

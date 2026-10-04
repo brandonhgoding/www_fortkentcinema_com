@@ -260,6 +260,13 @@ class TierListingTests(StaffTestCase):
         self.assertFalse(self.tier.show_on_membership_page)
         self.assertTrue(MembershipTier.objects.filter(pk=self.tier.pk).exists())
 
+    def test_retiring_stamps_updated_at(self) -> None:
+        """It changes the public page, so the sitemap must see it."""
+        self.assertIsNone(self.tier.updated_at)  # seeded before the field
+        self.client.post(reverse("dashboard:tier_listing", args=[self.tier.pk]))
+        self.tier.refresh_from_db()
+        self.assertIsNotNone(self.tier.updated_at)
+
     def test_retire_then_restore_round_trips(self) -> None:
         url = reverse("dashboard:tier_listing", args=[self.tier.pk])
         self.client.post(url)

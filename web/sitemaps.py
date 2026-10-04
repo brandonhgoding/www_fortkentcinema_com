@@ -1,5 +1,6 @@
 import datetime
 
+from audience.models import MembershipBenefit, MembershipTier
 from blog.models import BlogPost
 from cinema.models import Engagement, Film, Poll, PollStatus
 from django.contrib.sitemaps import Sitemap
@@ -20,7 +21,9 @@ from django.utils import timezone
 # not when you restyle it, and never to make it look fresh.
 STATIC_PAGE_LASTMOD = {
     "home": datetime.date(2026, 8, 25),
-    "membership": datetime.date(2026, 8, 22),
+    # The FAQ's "which films are free for members" answer. The tier cards
+    # are rows, dated by _content_lastmod below.
+    "membership": datetime.date(2026, 9, 20),
     "rentals": datetime.date(2026, 7, 13),
     "craft_night": datetime.date(2026, 9, 21),
     "heckle_night": datetime.date(2026, 9, 22),
@@ -57,10 +60,11 @@ class StaticViewSitemap(Sitemap):
     def lastmod(self, name):
         """The later of when the page was edited and when its content moved.
 
-        Two of these are windows onto rows that change with nobody touching
+        Three of these are windows onto rows that change with nobody touching
         the template — a new post moves /blog/, a new booking moves the
-        homepage — so a fixed date goes stale the moment either happens. The
-        rest are prose, and only move when someone edits them.
+        homepage, a price or perk edit moves /membership/ — so a fixed date
+        goes stale the moment any of them happens. The rest are prose, and
+        only move when someone edits them.
 
         Returns None rather than a guess for a page listed in neither place.
         An omitted lastmod is a missing signal; a wrong one discredits the
@@ -81,6 +85,19 @@ class StaticViewSitemap(Sitemap):
             # Engagement has no updated_at, so this misses a later edit to an
             # existing run — understating is the safe direction to be wrong.
             at = Engagement.objects.aggregate(at=Max("created_at"))["at"]
+            return timezone.localtime(at).date() if at else None
+        if name == "membership":
+            # Every tier, retired ones included: retiring one takes its card
+            # off the page. Perks only count while a listed tier carries
+            # them. Deleting a row leaves no timestamp behind, so a deletion
+            # alone is missed — understating again.
+            stamps = [
+                MembershipTier.objects.aggregate(at=Max("updated_at"))["at"],
+                MembershipBenefit.objects.filter(
+                    membershiptier__show_on_membership_page=True
+                ).aggregate(at=Max("updated_at"))["at"],
+            ]
+            at = max((s for s in stamps if s), default=None)
             return timezone.localtime(at).date() if at else None
         return None
 

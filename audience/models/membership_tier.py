@@ -57,6 +57,9 @@ class MembershipTier(models.Model):
     sort_order = models.IntegerField(
         default=0, help_text="Lower sorts first on the membership page."
     )
+    # Dates /membership/ in the sitemap. Null on rows untouched since the
+    # field arrived, rather than claiming they all changed on deploy day.
+    updated_at = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         ordering = ["sort_order", "price"]
