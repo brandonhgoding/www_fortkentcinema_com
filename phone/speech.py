@@ -119,7 +119,7 @@ def _clock(t: datetime.time) -> str:
 def hours_and_prices_speech() -> str:
     hours = _spoken_list(
         [
-            f"{block['days'].replace(' - ', ' through ')}, "
+            f"{block['days'].replace(' - ', ' through ').replace(' & ', ' and ')}, "
             f"{block['open']} to {block['close']}"
             for block in SITE_CONFIG["hours"].values()
         ]

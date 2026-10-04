@@ -1,8 +1,10 @@
 import datetime
+from unittest.mock import patch
 
 from cinema.models import Screen
 from django.test import TestCase
 from phone.speech import hours_and_prices_speech, showtimes_speech
+from web.constants import SITE_CONFIG, TICKET_PRICES
 
 from .helpers import add_showtime, at, make_engagement
 
@@ -99,14 +101,37 @@ class ShowtimesSpeechTests(TestCase):
             self.assertNotIn(title, speech)
 
 
+# Fixed values, so this pins the wording rather than today's prices and hours:
+# a reprice in web/constants.py shouldn't fail the suite.
+HOURS = {
+    "weekday": {"days": "Monday - Thursday", "open": "4:00 PM", "close": "9:00 PM"},
+    "weekend": {"days": "Saturday & Sunday", "open": "2:00 PM", "close": "10:00 PM"},
+}
+PRICES = {
+    "adult": 8,
+    "senior": 7,
+    "child": 6,
+    "matinee": 5,
+    "member": 4,
+    "matinee_until": datetime.time(16, 0),
+}
+
+
 class HoursAndPricesSpeechTests(TestCase):
+    @patch.dict(TICKET_PRICES, PRICES)
+    @patch.dict(SITE_CONFIG, {"hours": HOURS})
     def test_reads_hours_and_every_price(self) -> None:
         self.assertEqual(
             hours_and_prices_speech(),
             "We're at 13 Hall Street in Fort Kent, and we're open "
             "Monday through Thursday, 4:00 PM to 9:00 PM and "
-            "Friday through Sunday, 2:00 PM to 10:00 PM. "
+            "Saturday and Sunday, 2:00 PM to 10:00 PM. "
             "Tickets are $8 for adults, $7 for seniors, and $6 for children. "
-            "Matinees, for shows starting at 4:00 PM or earlier, are $7. "
+            "Matinees, for shows starting at 4:00 PM or earlier, are $5. "
             "Members pay $4 for any show, and some shows are free for members.",
         )
+
+    def test_reads_the_live_prices(self) -> None:
+        speech = hours_and_prices_speech()
+        self.assertIn(f"${TICKET_PRICES['adult']} for adults", speech)
+        self.assertIn(f"are ${TICKET_PRICES['matinee']}.", speech)

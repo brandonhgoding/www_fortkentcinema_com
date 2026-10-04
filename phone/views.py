@@ -7,7 +7,7 @@ host and scheme it signed — and ngrok and production need no config here.
 
 from django.http import HttpRequest, HttpResponse
 from django.urls import reverse
-from twilio.twiml.voice_response import VoiceResponse
+from twilio.twiml.voice_response import Gather, VoiceResponse
 
 from .decorators import twilio_webhook
 from .models import CallLog, Voicemail
@@ -23,6 +23,15 @@ GOODBYE = "Thanks for calling Fort Kent Cinema. Goodbye."
 # repeated once after a miss, then goodbye.
 LAST_ATTEMPT = 2
 VOICEMAIL_MAX_SECONDS = 120
+
+# Amazon Polly voice for everything the line says. Every <Say> goes through
+# _say() so the whole call is one voice; swapping it is this one line (e.g.
+# "Polly.Matthew-Neural" for the more natural, slightly pricier version).
+VOICE = "Polly.Matthew"
+
+
+def _say(verb: VoiceResponse | Gather, text: str) -> None:
+    verb.say(text, voice=VOICE)
 
 
 def _twiml(response: VoiceResponse) -> HttpResponse:
@@ -43,7 +52,7 @@ def _call_log(request: HttpRequest) -> CallLog:
 def _add_menu(response: VoiceResponse, attempt: int) -> None:
     action = f"{reverse('phone:menu')}?attempt={attempt}"
     gather = response.gather(num_digits=1, action=action, timeout=6)
-    gather.say(MENU)
+    _say(gather, MENU)
     # Reached only when the caller presses nothing: the menu view sees no
     # Digits and treats it as a miss.
     response.redirect(action)
@@ -60,7 +69,7 @@ def _attempt(request: HttpRequest) -> int:
 def incoming_call(request: HttpRequest) -> HttpResponse:
     _call_log(request)
     response = VoiceResponse()
-    response.say(GREETING)
+    _say(response, GREETING)
     _add_menu(response, attempt=1)
     return _twiml(response)
 
@@ -73,14 +82,17 @@ def menu(request: HttpRequest) -> HttpResponse:
 
     response = VoiceResponse()
     if digit in ("1", "2"):
-        response.say(showtimes_speech() if digit == "1" else hours_and_prices_speech())
+        _say(
+            response, showtimes_speech() if digit == "1" else hours_and_prices_speech()
+        )
         # Offer the menu again so a caller can hear prices after showtimes,
         # but as the last attempt: silence now means they're done.
         _add_menu(response, attempt=LAST_ATTEMPT)
     elif digit == "3":
-        response.say(
+        _say(
+            response,
             "Please leave your name, number and message after the beep. "
-            "Press pound when you're finished."
+            "Press pound when you're finished.",
         )
         response.record(
             max_length=VOICEMAIL_MAX_SECONDS,
@@ -92,15 +104,16 @@ def menu(request: HttpRequest) -> HttpResponse:
         )
         # Twilio skips the action and falls through here when nothing was
         # recorded (the caller stayed silent).
-        response.say(f"We didn't get a message. {GOODBYE}")
+        _say(response, f"We didn't get a message. {GOODBYE}")
         response.hangup()
     elif attempt < LAST_ATTEMPT:
-        response.say(
-            "Sorry, that's not an option." if digit else "Sorry, I didn't catch that."
+        _say(
+            response,
+            "Sorry, that's not an option." if digit else "Sorry, I didn't catch that.",
         )
         _add_menu(response, attempt=attempt + 1)
     else:
-        response.say(GOODBYE)
+        _say(response, GOODBYE)
         response.hangup()
     return _twiml(response)
 
@@ -131,7 +144,7 @@ def voicemail_recorded(request: HttpRequest) -> HttpResponse:
             duration_seconds=int(duration) if duration.isdigit() else None,
         )
     response = VoiceResponse()
-    response.say(f"Thanks, we got your message. {GOODBYE}")
+    _say(response, f"Thanks, we got your message. {GOODBYE}")
     response.hangup()
     return _twiml(response)
 

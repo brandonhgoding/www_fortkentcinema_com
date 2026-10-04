@@ -1,8 +1,12 @@
+import re
 from unittest.mock import patch
+from xml.sax.saxutils import escape
 
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from phone.models import CallLog, Voicemail, VoicemailStatus
+from phone.speech import hours_and_prices_speech
+from phone.views import VOICE
 
 from .helpers import TOKEN, post_signed
 
@@ -23,6 +27,22 @@ class PhoneTestCase(TestCase):
     def press(self, digits: str, attempt: int = 1) -> str:
         data = {"Digits": digits} if digits else {}
         return self.call("menu", data, query=f"?attempt={attempt}")
+
+
+class VoiceTests(PhoneTestCase):
+    def test_every_spoken_line_uses_the_configured_voice(self) -> None:
+        self.call("incoming_call")
+        twimls = [
+            self.call("incoming_call"),
+            *(self.press(d) for d in ("1", "2", "3", "9")),
+            self.press("", attempt=2),
+            self.call("voicemail_recorded"),
+        ]
+        for twiml in twimls:
+            says = re.findall(r"<Say[^>]*>", twiml)
+            self.assertTrue(says)
+            for say in says:
+                self.assertIn(f'voice="{VOICE}"', say)
 
 
 class IncomingCallTests(PhoneTestCase):
@@ -54,9 +74,7 @@ class MenuTests(PhoneTestCase):
         self.assertIn('action="/phone/menu/?attempt=2"', twiml)
 
     def test_2_reads_hours_and_prices(self) -> None:
-        twiml = self.press("2")
-        self.assertIn("Monday through Thursday", twiml)
-        self.assertIn("$8 for adults", twiml)
+        self.assertIn(escape(hours_and_prices_speech()), self.press("2"))
 
     def test_3_records_a_transcribed_voicemail_of_at_most_two_minutes(self) -> None:
         twiml = self.press("3")

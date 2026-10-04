@@ -22,10 +22,17 @@ import json
 import re
 from unittest import mock
 
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
+from django.utils.html import escape
 
-from web.constants import SITE_CONFIG, SPONSORSHIP_TIERS
+from web.constants import (
+    _WEEK,
+    OPENING_HOURS_SPECIFICATION,
+    SITE_CONFIG,
+    SPONSORSHIP_TIERS,
+    _expand_days,
+)
 
 SECTION_MARKERS = (
     "hero",
@@ -183,7 +190,7 @@ class FooterHoursTests(TestCase):
         self.assertIn('class="footer-column footer-hours"', footer)
         self.assertIn('class="footer-heading"', footer)
         for period in SITE_CONFIG["hours"].values():
-            self.assertIn(period["days"], footer)
+            self.assertIn(escape(period["days"]), footer)
             self.assertIn(period["open"], footer)
             self.assertIn(period["close"], footer)
 
@@ -228,15 +235,19 @@ class OpeningHoursSchemaTests(TestCase):
             # 24h ISO, not the "4:00 PM" the config carries for humans.
             self.assertRegex(spec["opens"], r"^\d{2}:\d{2}$")
             self.assertRegex(spec["closes"], r"^\d{2}:\d{2}$")
-        weekday = specs[0]
+        # Derived from SITE_CONFIG rather than restated here, so changing the
+        # hours doesn't fail this test; _expand_days is pinned separately.
         self.assertEqual(
-            weekday["dayOfWeek"], ["Monday", "Tuesday", "Wednesday", "Thursday"]
+            [
+                {k: spec[k] for k in ("dayOfWeek", "opens", "closes")}
+                for spec in specs
+            ],
+            OPENING_HOURS_SPECIFICATION,
         )
-        self.assertEqual(weekday["opens"], "16:00")
-        self.assertEqual(weekday["closes"], "21:00")
-        self.assertEqual(specs[1]["dayOfWeek"], ["Friday", "Saturday", "Sunday"])
-        self.assertEqual(specs[1]["opens"], "14:00")
-        self.assertEqual(specs[1]["closes"], "22:00")
+        for spec in specs:
+            for day in spec["dayOfWeek"]:
+                self.assertIn(day, _WEEK)
+
 
     def test_has_map_points_at_the_configured_address(self):
         self.assertIn("Hall+Street", self.theater()["hasMap"])
@@ -244,6 +255,34 @@ class OpeningHoursSchemaTests(TestCase):
     def test_image_is_absolute(self):
         self.assertRegex(self.theater()["image"], r"^https?://")
 
+
+class ExpandDaysTests(SimpleTestCase):
+    def test_range(self):
+        self.assertEqual(
+            _expand_days("Monday - Thursday"),
+            ["Monday", "Tuesday", "Wednesday", "Thursday"],
+        )
+
+    def test_range_wraps_the_week(self):
+        self.assertEqual(
+            _expand_days("Saturday - Monday"), ["Saturday", "Sunday", "Monday"]
+        )
+
+    def test_single_day(self):
+        self.assertEqual(_expand_days("Friday"), ["Friday"])
+
+    def test_days_joined_with_ampersand(self):
+        self.assertEqual(_expand_days("Saturday & Sunday"), ["Saturday", "Sunday"])
+
+    def test_days_and_ranges_joined_with_commas(self):
+        self.assertEqual(
+            _expand_days("Monday, Wednesday - Friday"),
+            ["Monday", "Wednesday", "Thursday", "Friday"],
+        )
+
+    def test_misspelt_day_raises(self):
+        with self.assertRaises(ValueError):
+            _expand_days("Saturday & Sundy")
 
 class EmptyStateTests(TestCase):
     @mock.patch("web.views.get_coming_soon", return_value=[])

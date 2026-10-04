@@ -1,4 +1,5 @@
 import datetime
+import re
 from urllib.parse import quote_plus
 
 # Ported verbatim from the React SPA's src/data/siteConfig.json.
@@ -70,7 +71,7 @@ SITE_CONFIG = {
 # A matinee is a show starting at `matinee_until` or earlier. The member price
 # applies to every show, except runs marked `is_free_for_members`.
 #
-# NOTE: OPEN_MIC's "member_price"/"general_price" and /membership/'s "$4 off
+# NOTE: CRAFT_NIGHT's and HECKLE_NIGHT's prices and /membership/'s "$4 off
 # evening tickets" restate these numbers; a reprice has to move them together.
 TICKET_PRICES = {
     "adult": 8,
@@ -103,15 +104,19 @@ def _expand_days(label):
 
     The hours blocks are written for humans ("Friday - Sunday"); schema.org
     wants the days named one by one. Ranges wrap, so "Saturday - Monday"
-    would work too.
+    would work too. Days and ranges can be joined with "&" or ",", as in
+    "Saturday & Sunday" or "Monday, Wednesday - Friday". A misspelt day
+    raises at import rather than publishing a day Google can't read.
     """
-    parts = [part.strip() for part in label.split("-")]
-    if len(parts) == 1:
-        return [parts[0]]
-    start, end = _WEEK.index(parts[0]), _WEEK.index(parts[-1])
-    if start <= end:
-        return _WEEK[start : end + 1]
-    return _WEEK[start:] + _WEEK[: end + 1]
+    days = []
+    for piece in re.split(r"[&,]", label):
+        parts = [part.strip() for part in piece.split("-")]
+        start, end = _WEEK.index(parts[0]), _WEEK.index(parts[-1])
+        if start <= end:
+            days += _WEEK[start : end + 1]
+        else:
+            days += _WEEK[start:] + _WEEK[: end + 1]
+    return days
 
 
 def _iso_time(label):
