@@ -79,18 +79,23 @@ class MembershipTermMigrationTests(TransactionTestCase):
         self.executor.loader.build_graph()
         return self.executor.loader.project_state(targets).apps
 
-    def build_rows_at_0004(self) -> None:
-        old_apps = self.migrate(self.migrate_from)
-        Tier = old_apps.get_model("audience", "MembershipTier")
-        Member = old_apps.get_model("audience", "Member")
-        MembershipTerm = old_apps.get_model("audience", "MembershipTerm")
+    @staticmethod
+    def ensure_seeded_tiers(apps) -> None:
+        """The tiers 0004 seeds, recreated where a flush removed them.
 
-        # The catalogue as 0004 seeds it, recreated where a flush removed
-        # it. Every tier, not just the two the terms use: restoring the
-        # schema runs 0007, which refuses to proceed without its tiers.
+        Every tier, not just the ones a test's terms use: restoring the
+        schema runs 0007, which refuses to proceed without its tiers.
+        """
+        Tier = apps.get_model("audience", "MembershipTier")
         for spec in SEED.TIERS:
             fields = {k: v for k, v in spec.items() if k not in ("slug", "benefits")}
             Tier.objects.get_or_create(slug=spec["slug"], defaults=fields)
+
+    def build_rows_at_0004(self) -> None:
+        old_apps = self.migrate(self.migrate_from)
+        Member = old_apps.get_model("audience", "Member")
+        MembershipTerm = old_apps.get_model("audience", "MembershipTerm")
+        self.ensure_seeded_tiers(old_apps)
 
         member = Member.objects.create(
             first_name="Ada", last_name="Byron", email="ada@example.com"
@@ -165,3 +170,30 @@ class MembershipTermMigrationTests(TransactionTestCase):
 
         executor = MigrationExecutor(connection)
         self.assertEqual(executor.migration_plan(latest_migrations(executor)), [])
+
+    def test_reversing_refuses_a_slug_too_long_for_the_old_column(self) -> None:
+        """MembershipTier.slug allows 50 characters; 0004's tier column held
+        32. Postgres refused the write with a bare DataError; the reverse
+        now says which tiers are in the way before it writes anything."""
+        self.ensure_seeded_tiers(django_apps)
+        from audience.models import Member, MembershipTerm, MembershipTier
+
+        long_slug = "a-membership-tier-slug-well-past-32-chars"
+        tier = MembershipTier.objects.create(slug=long_slug, name="Long", price=1)
+        MembershipTerm.objects.create(
+            member=Member.objects.create(
+                first_name="Ada", last_name="Byron", email="ada@example.com"
+            ),
+            tier=tier,
+            started_on=datetime.date(2026, 1, 1),
+            expires_on=datetime.date(2026, 12, 31),
+            price_paid=Decimal("1.00"),
+        )
+
+        with self.assertRaisesMessage(RuntimeError, long_slug):
+            self.executor.migrate(self.migrate_from)
+
+        # Refused inside 0005's own transaction: nothing was half-written,
+        # and the restore puts the schema back.
+        self.restore_latest_schema()
+        self.assertEqual(MembershipTerm.objects.get().tier.slug, long_slug)

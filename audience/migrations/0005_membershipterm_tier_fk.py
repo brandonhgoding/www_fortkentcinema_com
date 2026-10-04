@@ -32,6 +32,27 @@ def slug_to_fk(apps, schema_editor):
 
 def fk_to_slug(apps, schema_editor):
     Term = apps.get_model("audience", "MembershipTerm")
+
+    # The old column is varchar(32); MembershipTier.slug allows 50. Postgres
+    # would refuse a longer slug with a bare DataError, and truncating it
+    # would leave a term pointing at a tier that does not exist. Refuse
+    # instead, naming the tiers, before writing anything.
+    max_length = Term._meta.get_field("tier").max_length
+    too_long = sorted(
+        {
+            slug
+            for slug in Term.objects.values_list("tier_fk__slug", flat=True)
+            if slug and len(slug) > max_length
+        }
+    )
+    if too_long:
+        raise RuntimeError(
+            f"Cannot reverse 0005: membership terms use tier slugs longer than "
+            f"the {max_length} characters the old tier column holds: "
+            f"{too_long}. Shorten those slugs first (and the Square redirects "
+            "and analytics that carry them), or keep this migration applied."
+        )
+
     for term in Term.objects.select_related("tier_fk").iterator():
         term.tier = term.tier_fk.slug if term.tier_fk else ""
         term.save(update_fields=["tier"])
