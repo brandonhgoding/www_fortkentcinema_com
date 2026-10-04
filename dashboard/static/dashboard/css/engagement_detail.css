@@ -148,50 +148,6 @@
   color: var(--text-tertiary);
 }
 
-/* Bulk-add drawer */
-.bulkInfo {
-  padding: 0.75rem var(--space-md);
-  background: var(--surface-secondary);
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
-  color: var(--text-primary);
-}
-
-.timeSlots {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-}
-
-.timeSlot {
-  display: flex;
-  gap: var(--space-sm);
-  align-items: center;
-}
-
-.timeSlot .input {
-  flex: 1;
-}
-
-/* "Add another time": a dashed brass slot rather than a button, because
-   it stands in for the row it is about to create. */
-.addTimeButton {
-  padding: var(--space-sm);
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--brass-dark);
-  background: transparent;
-  border: 1px dashed var(--brass);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: background var(--transition-fast);
-}
-
-.addTimeButton:hover {
-  background: var(--brass-glow);
-}
-
 /* Phone card list for showtimes */
 .cardList .card {
   padding: 0;

@@ -1,35 +1,14 @@
+{% load dashboard_extras %}
 <form id="member-form" class="form" hx-post="{{ form_action }}" hx-target="#drawer-content" hx-swap="innerHTML">
   {% csrf_token %}
-  {% if form.non_field_errors %}<div class="field-error">{{ form.non_field_errors }}</div>{% endif %}
+  {% include "dashboard/_form_alert.html" with errors=form.non_field_errors %}
   <div class="formRow">
-    <div class="formGroup">
-      <label for="{{ form.first_name.id_for_label }}">First Name</label>
-      {{ form.first_name }}
-      {% if form.first_name.errors %}<div class="field-error">{{ form.first_name.errors|striptags }}</div>{% endif %}
-    </div>
-    <div class="formGroup">
-      <label for="{{ form.last_name.id_for_label }}">Last Name</label>
-      {{ form.last_name }}
-      {% if form.last_name.errors %}<div class="field-error">{{ form.last_name.errors|striptags }}</div>{% endif %}
-    </div>
+    {% field form.first_name label="First name" %}
+    {% field form.last_name label="Last name" %}
   </div>
-  <div class="formRow">
-    <div class="formGroup">
-      <label for="{{ form.email.id_for_label }}">Email</label>
-      {{ form.email }}
-      {% if form.email.errors %}<div class="field-error">{{ form.email.errors|striptags }}</div>{% endif %}
-    </div>
-    <div class="formGroup">
-      <label for="{{ form.phone.id_for_label }}">Phone</label>
-      {{ form.phone }}
-    </div>
-  </div>
-  <div class="formRow">
-    <div class="formGroup">
-      <label for="{{ form.notes.id_for_label }}">Notes</label>
-      {{ form.notes }}
-    </div>
-  </div>
+  {% field form.email label="Email" %}
+  {% field form.phone label="Phone" %}
+  {% field form.notes label="Notes" %}
 </form>
 <div id="drawer-footer" class="drawerFooter" hx-swap-oob="true">
   <button type="button" class="btn btn-secondary" @click="$store.drawer.close()">Cancel</button>

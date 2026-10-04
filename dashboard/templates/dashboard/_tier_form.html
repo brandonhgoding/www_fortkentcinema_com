@@ -1,79 +1,46 @@
+{% load dashboard_extras %}
 <form id="tier-form" class="form" hx-post="{{ form_action }}" hx-target="#drawer-content" hx-swap="innerHTML">
   {% csrf_token %}
-  {% if form.non_field_errors %}<div class="field-error">{{ form.non_field_errors }}</div>{% endif %}
-  <div class="formRow">
-    <div class="formGroup">
-      <label for="{{ form.name.id_for_label }}">Name</label>
-      {{ form.name }}
-      {% if form.name.errors %}<div class="field-error">{{ form.name.errors|striptags }}</div>{% endif %}
+  {% include "dashboard/_form_alert.html" with errors=form.non_field_errors %}
+  <div class="formSection">
+    <h3 class="formSectionTitle">Tier</h3>
+    <div class="formRow">
+      {% field form.name label="Name" %}
+      {% field form.slug label="Slug" %}
     </div>
-    <div class="formGroup">
-      <label for="{{ form.slug.id_for_label }}">Slug</label>
-      {{ form.slug }}
-      <p class="fieldHint">{{ form.slug.help_text }}</p>
-      {% if form.slug.errors %}<div class="field-error">{{ form.slug.errors|striptags }}</div>{% endif %}
+    <div class="formRow">
+      {% field form.price label="Price (whole dollars)" hint="" %}
+      {% field form.duration_months label="Length (months)" hint="Fills in a new term's expiry date." %}
     </div>
+    {% field form.free_admissions_per_month label="Free admissions per month" hint="Resets on the 1st; unused ones don't carry over." %}
+    {% field form.checkout_url label="Square payment link" hint="" %}
   </div>
-  <div class="formRow">
-    <div class="formGroup">
-      <label for="{{ form.eyebrow.id_for_label }}">Eyebrow</label>
-      {{ form.eyebrow }}
-      <p class="fieldHint">Small line above the name. Blank renders "Patron Card".</p>
-      {% if form.eyebrow.errors %}<div class="field-error">{{ form.eyebrow.errors|striptags }}</div>{% endif %}
-    </div>
-    <div class="formGroup">
-      <label for="{{ form.price.id_for_label }}">Price (whole dollars)</label>
-      {{ form.price }}
-      {% if form.price.errors %}<div class="field-error">{{ form.price.errors|striptags }}</div>{% endif %}
-    </div>
+
+  <div class="formSection">
+    <h3 class="formSectionTitle">Membership page</h3>
+    {% field form.eyebrow label="Eyebrow" hint='Small line above the name. Blank renders "Patron Card".' %}
+    <fieldset class="formGroup"{% if form.benefits.errors %} aria-describedby="{{ form.benefits.auto_id }}_error"{% endif %}>
+      <legend>Perks listed on the membership page</legend>
+      <div class="checkList">
+        {% for choice in form.benefits %}
+        <label class="checkboxLabel" for="{{ choice.id_for_label }}">{{ choice.tag }} {{ choice.choice_label }}</label>
+        {% empty %}
+        <p class="fieldHint">No perks defined yet — add some below the tier table.</p>
+        {% endfor %}
+      </div>
+      {% if form.benefits.errors %}<p class="field-error" id="{{ form.benefits.auto_id }}_error">{{ form.benefits.errors|join:" " }}</p>{% endif %}
+    </fieldset>
+    <fieldset class="formGroup">
+      <legend>Display</legend>
+      {% field form.show_on_membership_page label="List on the public membership page" hint="Turn off to retire a tier. Its past terms keep pointing at it." %}
+      {% field form.featured label='Show the "Best Value" ribbon' hint="" %}
+      {% field form.is_family_tier label='Show the "For Families" ribbon' hint="" %}
+    </fieldset>
+    {% field form.sort_order label="Sort order" hint="Lower sorts first on the membership page." %}
   </div>
-  <div class="formRow">
-    <div class="formGroup">
-      <label for="{{ form.duration_months.id_for_label }}">Length (months)</label>
-      {{ form.duration_months }}
-      <p class="fieldHint">Fills in a new term's expiry date.</p>
-      {% if form.duration_months.errors %}<div class="field-error">{{ form.duration_months.errors|striptags }}</div>{% endif %}
-    </div>
-    <div class="formGroup">
-      <label for="{{ form.free_admissions_per_month.id_for_label }}">Free admissions per month</label>
-      {{ form.free_admissions_per_month }}
-      <p class="fieldHint">Resets on the 1st; unused ones don't carry over.</p>
-      {% if form.free_admissions_per_month.errors %}<div class="field-error">{{ form.free_admissions_per_month.errors|striptags }}</div>{% endif %}
-    </div>
-  </div>
-  <div class="formGroup">
-    <label for="{{ form.checkout_url.id_for_label }}">Square payment link</label>
-    {{ form.checkout_url }}
-    {% if form.checkout_url.errors %}<div class="field-error">{{ form.checkout_url.errors|striptags }}</div>{% endif %}
-  </div>
-  <div class="formGroup">
-    <label>Perks listed on the membership page</label>
-    <div class="checkList">
-      {% for choice in form.benefits %}
-      <label class="checkboxLabel">{{ choice.tag }} {{ choice.choice_label }}</label>
-      {% empty %}
-      <p class="fieldHint">No perks defined yet — add some below the tier table.</p>
-      {% endfor %}
-    </div>
-    {% if form.benefits.errors %}<div class="field-error">{{ form.benefits.errors|striptags }}</div>{% endif %}
-  </div>
-  <div class="formRow">
-    <div class="formGroup">
-      <label class="checkboxLabel">{{ form.featured }} Show the "Best Value" ribbon</label>
-      <label class="checkboxLabel">{{ form.is_family_tier }} Show the "For Families" ribbon</label>
-      <label class="checkboxLabel">{{ form.show_on_membership_page }} List on the public membership page</label>
-    </div>
-    <div class="formGroup">
-      <label for="{{ form.sort_order.id_for_label }}">Sort order</label>
-      {{ form.sort_order }}
-      <p class="fieldHint">Lower sorts first on the membership page.</p>
-      {% if form.sort_order.errors %}<div class="field-error">{{ form.sort_order.errors|striptags }}</div>{% endif %}
-    </div>
-  </div>
-  <div class="formGroup">
-    <label for="{{ form.description.id_for_label }}">Internal notes</label>
-    {{ form.description }}
-    <p class="fieldHint">For staff. Not rendered on the website.</p>
+
+  <div class="formSection">
+    {% field form.description label="Internal notes" hint="For staff. Not rendered on the website." %}
   </div>
 </form>
 <div id="drawer-footer" class="drawerFooter" hx-swap-oob="true">

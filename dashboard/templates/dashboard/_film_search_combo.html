@@ -1,7 +1,7 @@
 <div class="filmCombo" x-data="filmCombo" @click.outside="open = false">
   <div class="searchWrapper">
     <input type="text" class="input" placeholder="Search for a film..."
-           name="q" autocomplete="off"
+           name="q" autocomplete="off"{% if input_id %} id="{{ input_id }}"{% endif %}
            aria-autocomplete="list" :aria-expanded="open"
            @focus="open = true"
            @keydown.arrow-down.prevent="move(1)"
@@ -17,5 +17,5 @@
     </div>
     <div id="{{ combo_id|default:'film-combo' }}-results" class="dropdown" role="listbox" x-show="open" x-cloak></div>
   </div>
-  <p class="helpText" x-show="!open">Search your films or find new ones on TMDB.</p>
+  <p class="helpText fieldHint" x-show="!open">Search your films or find new ones on TMDB.</p>
 </div>

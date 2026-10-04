@@ -83,30 +83,3 @@
   font-size: var(--text-sm);
   color: var(--text-secondary);
 }
-
-/* Poll and announce drawers render Django's form.as_p. */
-.pollForm {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-lg);
-}
-
-.pollForm p {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-}
-
-.pollForm label {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.pollForm .checkboxLabel {
-  font-weight: 400;
-}
-
-.pollForm .btn {
-  align-self: flex-start;
-}

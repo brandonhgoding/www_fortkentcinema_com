@@ -1,65 +1,72 @@
+{% load dashboard_extras %}
 {{ initial_films|json_script:"engagement-initial-films" }}
 <form id="engagement-form" class="form" hx-post="{{ form_action }}" hx-target="#drawer-content" hx-swap="innerHTML"
       x-data="engagementForm()" data-initial-kind="{{ form.kind.value|default:'REGULAR' }}">
   {% csrf_token %}
-  {% if form.non_field_errors or film_error %}<div class="field-error">{{ form.non_field_errors|striptags }} {{ film_error }}</div>{% endif %}
+  {% include "dashboard/_form_alert.html" with errors=form.non_field_errors %}
 
-  <div class="formGroup">
-    <label for="{{ form.kind.id_for_label }}">Type</label>
-    <select id="{{ form.kind.id_for_label }}" name="kind" class="input" x-model="kind" @change="onKindChange()">
-      {% for value, label in kind_options %}<option value="{{ value }}" {% if form.kind.value == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
-    </select>
+  <div class="formSection">
+    <h3 class="formSectionTitle">Film</h3>
+    <div class="formGroup">
+      <label for="{{ form.kind.id_for_label }}">Type</label>
+      <select id="{{ form.kind.id_for_label }}" name="kind" class="input" x-model="kind" @change="onKindChange()">
+        {% for value, label in kind_options %}<option value="{{ value }}" {% if form.kind.value == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+
+    <!-- Film picker -->
+    <div class="formGroup">
+      <label for="engagement-film-search" x-text="kind === 'DOUBLE_FEATURE' ? 'Films (in play order)' : 'Film'">Film</label>
+      <template x-if="kind === 'DOUBLE_FEATURE' && films.length">
+        <ol class="filmList">
+          <template x-for="(f, idx) in films" :key="f.id">
+            <li class="filmListItem">
+              <span class="filmListOrder" x-text="idx + 1"></span>
+              <template x-if="f.poster"><img :src="f.poster" alt="" class="posterThumb" /></template>
+              <span class="filmListTitle" x-text="f.title"></span>
+              <button type="button" class="btn btn-danger btn-sm" @click="removeFilm(f.id)">Remove</button>
+            </li>
+          </template>
+        </ol>
+      </template>
+      <template x-if="kind !== 'DOUBLE_FEATURE' && films.length">
+        <div class="selectedFilm"><span class="checkIcon" aria-hidden="true">✓</span><span x-text="'Selected: ' + films[0].title"></span></div>
+      </template>
+      {% include "dashboard/_film_search_combo.html" with combo_id="engagement-film" input_id="engagement-film-search" %}
+      {% if film_error %}<p class="field-error" id="engagement-film-error" role="alert">{{ film_error }}</p>{% endif %}
+      <template x-if="kind === 'DOUBLE_FEATURE' && films.length < 2">
+        <p class="fieldHint">Add at least two films for a double feature.</p>
+      </template>
+      <template x-for="f in films" :key="'in-' + f.id"><input type="hidden" name="films" :value="f.id" /></template>
+    </div>
+
+    <div x-show="kind !== 'REGULAR'">
+      {% field form.event_title label="Event title" %}
+    </div>
   </div>
 
-  <!-- Film picker -->
-  <div class="formGroup">
-    <label x-text="kind === 'DOUBLE_FEATURE' ? 'Films (in play order)' : 'Film'"></label>
-    <template x-if="kind === 'DOUBLE_FEATURE' && films.length">
-      <ol class="filmList">
-        <template x-for="(f, idx) in films" :key="f.id">
-          <li class="filmListItem">
-            <span class="filmListOrder" x-text="idx + 1"></span>
-            <template x-if="f.poster"><img :src="f.poster" alt="" class="posterThumb" /></template>
-            <span class="filmListTitle" x-text="f.title"></span>
-            <button type="button" class="btn btn-danger btn-sm" @click="removeFilm(f.id)">Remove</button>
-          </li>
-        </template>
-      </ol>
-    </template>
-    <template x-if="kind !== 'DOUBLE_FEATURE' && films.length">
-      <div class="selectedFilm"><span class="checkIcon">✓</span><span x-text="'Selected: ' + films[0].title"></span></div>
-    </template>
-    {% include "dashboard/_film_search_combo.html" with combo_id="engagement-film" %}
-    <template x-if="kind === 'DOUBLE_FEATURE' && films.length < 2">
-      <p class="fieldHint">Add at least two films for a double feature.</p>
-    </template>
-    <template x-for="f in films" :key="'in-' + f.id"><input type="hidden" name="films" :value="f.id" /></template>
+  <div class="formSection">
+    <h3 class="formSectionTitle">Booking</h3>
+    {% field form.screen label="Screen" %}
+    <div class="formRow">
+      {% field form.start_date label="Start date" %}
+      {% field form.end_date label="End date" %}
+    </div>
+    <div class="formRow">
+      {% field form.presentation_format label="Format" %}
+      {% field form.status label="Status" %}
+    </div>
   </div>
 
-  <div class="formGroup" x-show="kind !== 'REGULAR'">
-    <label for="{{ form.event_title.id_for_label }}">Event Title (optional)</label>
-    {{ form.event_title }}
+  <div class="formSection">
+    <h3 class="formSectionTitle">Listing</h3>
+    {% field form.show_in_main_listings label="Show in main listings" %}
+    {% field form.is_free_for_members label="Free for members" %}
   </div>
 
-  <div class="formGroup">
-    <label for="{{ form.screen.id_for_label }}">Screen</label>
-    {{ form.screen }}
-    {% if form.screen.errors %}<div class="field-error">{{ form.screen.errors|striptags }}</div>{% endif %}
+  <div class="formSection">
+    {% field form.notes label="Notes" %}
   </div>
-
-  <div class="formRow">
-    <div class="formGroup"><label for="{{ form.start_date.id_for_label }}">Start Date</label>{{ form.start_date }}{% if form.start_date.errors %}<div class="field-error">{{ form.start_date.errors|striptags }}</div>{% endif %}</div>
-    <div class="formGroup"><label for="{{ form.end_date.id_for_label }}">End Date</label>{{ form.end_date }}{% if form.end_date.errors %}<div class="field-error">{{ form.end_date.errors|striptags }}</div>{% endif %}</div>
-  </div>
-
-  <div class="formRow">
-    <div class="formGroup"><label for="{{ form.presentation_format.id_for_label }}">Format</label>{{ form.presentation_format }}</div>
-    <div class="formGroup"><label for="{{ form.status.id_for_label }}">Status</label>{{ form.status }}</div>
-  </div>
-
-  <div class="formGroup"><label class="checkboxLabel">{{ form.show_in_main_listings }} Show in main listings</label></div>
-  <div class="formGroup"><label class="checkboxLabel">{{ form.is_free_for_members }} Free for members</label></div>
-  <div class="formGroup"><label for="{{ form.notes.id_for_label }}">Notes</label>{{ form.notes }}</div>
 </form>
 <div id="drawer-footer" class="drawerFooter" hx-swap-oob="true">
   <button type="button" class="btn btn-secondary" @click="$store.drawer.close()">Cancel</button>

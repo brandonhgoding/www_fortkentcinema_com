@@ -1,19 +1,12 @@
+{% load dashboard_extras %}
 <form id="author-form" class="form" hx-post="{{ form_action }}" hx-target="#drawer-content" hx-swap="innerHTML">
   {% csrf_token %}
-  {% if form.non_field_errors %}<div class="field-error">{{ form.non_field_errors|striptags }}</div>{% endif %}
+  {% include "dashboard/_form_alert.html" with errors=form.non_field_errors %}
+  {% if editing %}<p class="formIntro">Renaming updates every byline. The author's URL slug ({{ form.instance.slug }}) stays the same.</p>{% endif %}
   <div class="formRow">
-    <div class="formGroup">
-      <label for="{{ form.first_name.id_for_label }}">First name</label>
-      {{ form.first_name }}
-      {% if form.first_name.errors %}<div class="field-error">{{ form.first_name.errors|striptags }}</div>{% endif %}
-    </div>
-    <div class="formGroup">
-      <label for="{{ form.last_name.id_for_label }}">Last name</label>
-      {{ form.last_name }}
-      {% if form.last_name.errors %}<div class="field-error">{{ form.last_name.errors|striptags }}</div>{% endif %}
-    </div>
+    {% field form.first_name label="First name" %}
+    {% field form.last_name label="Last name" %}
   </div>
-  {% if editing %}<p class="fieldHint">Renaming updates every byline. The author's URL slug ({{ form.instance.slug }}) stays the same.</p>{% endif %}
 </form>
 <div id="drawer-footer" class="drawerFooter" hx-swap-oob="true">
   <button type="button" class="btn btn-secondary" @click="$store.drawer.close()">Cancel</button>

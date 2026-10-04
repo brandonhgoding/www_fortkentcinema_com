@@ -1,29 +1,30 @@
 <form id="bulk-showtime-form" class="form" hx-post="{{ form_action }}" hx-target="#drawer-content" hx-swap="innerHTML"
       x-data="bulkShowtimeForm()">
   {% csrf_token %}
-  {% if errors %}<div class="field-error">{% for e in errors %}{{ e }}<br />{% endfor %}</div>{% endif %}
-  <div class="bulkInfo">Create showtimes for each day in the date range at the specified times.</div>
+  {% include "dashboard/_form_alert.html" with errors=errors %}
+  <p class="formIntro">Creates a showtime at each time below, on every day from the start date to the end date.</p>
   <div class="formRow">
-    <div class="formGroup"><label for="bulk-start">Start Date</label>
+    <div class="formGroup"><label for="bulk-start">Start date</label>
       <input id="bulk-start" type="date" name="start_date" class="input" required value="{{ start_date }}"
              min="{{ engagement.start_date|date:'Y-m-d' }}" max="{{ engagement.end_date|date:'Y-m-d' }}" /></div>
-    <div class="formGroup"><label for="bulk-end">End Date</label>
+    <div class="formGroup"><label for="bulk-end">End date</label>
       <input id="bulk-end" type="date" name="end_date" class="input" required value="{{ end_date }}"
              min="{{ engagement.start_date|date:'Y-m-d' }}" max="{{ engagement.end_date|date:'Y-m-d' }}" /></div>
   </div>
-  <div class="formGroup">
-    <label>Showtimes (per day)</label>
-    <div class="timeSlots">
+  <fieldset class="formGroup">
+    <legend>Times each day</legend>
+    <div class="repeatList">
       <template x-for="(t, i) in times" :key="i">
-        <div class="timeSlot">
-          <input type="time" class="input" required x-model="times[i]" name="times" />
-          <button type="button" class="btn btn-danger btn-icon" x-show="times.length > 1" @click="remove(i)">&times;</button>
+        <div class="repeatRow">
+          <input type="time" class="input" required x-model="times[i]" name="times" :aria-label="'Time ' + (i + 1)" />
+          <button type="button" class="btn btn-secondary btn-icon" x-show="times.length > 1" @click="remove(i)"
+                  :aria-label="'Remove time ' + (i + 1)">&times;</button>
         </div>
       </template>
-      <button type="button" class="addTimeButton" @click="add()">+ Add another time</button>
+      <button type="button" class="repeatAdd" @click="add()">+ Add another time</button>
     </div>
-  </div>
-  <div class="formGroup"><label for="bulk-captions">Captions (optional)</label>
+  </fieldset>
+  <div class="formGroup"><label for="bulk-captions">Captions<span class="fieldOptional">optional</span></label>
     <select id="bulk-captions" name="captions" class="input">
       <option value="" {% if captions == '' %}selected{% endif %}>None</option>
       <option value="CC" {% if captions == 'CC' %}selected{% endif %}>Closed Captions (CC)</option>

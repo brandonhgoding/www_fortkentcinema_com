@@ -4,33 +4,39 @@
 
   `checked` sits on the same line as `value` deliberately: a line break
   between them renders whitespace into the attribute pair.
+
+  Posts into #poll-status rather than the drawer: there is nothing to
+  re-render on a bad submit, which the view answers with a 4xx.
 {% endcomment %}
-<form class="pollForm" hx-post="{% url 'dashboard:poll_announce' poll.pk %}"
+<form id="announce-form" class="form" hx-post="{% url 'dashboard:poll_announce' poll.pk %}"
       hx-target="#poll-status" hx-swap="outerHTML"
       @htmx:after-request="$event.detail.successful && $store.drawer.close()">
   {% csrf_token %}
-  <div class="formGroup" role="radiogroup" aria-labelledby="announce-winner-label">
-  <label id="announce-winner-label">Winner</label>
-  {% for row in tallies %}
-    <label class="checkboxLabel">
-      <input type="radio" name="winner" value="{{ row.option.pk }}"{% if forloop.first %} checked{% endif %} />
+  <fieldset class="formGroup">
+    <legend>Winner</legend>
+    {% for row in tallies %}
+    <label class="checkboxLabel" for="announce-winner-{{ row.option.pk }}">
+      <input type="radio" id="announce-winner-{{ row.option.pk }}" name="winner" value="{{ row.option.pk }}"{% if forloop.first %} checked{% endif %} />
       {{ row.option.film.title }} &mdash; {{ row.count }} vote{{ row.count|pluralize }}
     </label>
-  {% endfor %}
-  </div>
+    {% endfor %}
+  </fieldset>
 
   <div class="formGroup">
-  <label for="announce-engagement">Booked engagement (optional)</label>
-  <select name="engagement" id="announce-engagement" class="input">
-    <option value="">Not booked yet</option>
-    {% for engagement in engagements %}
-      <option value="{{ engagement.pk }}"
-              {% if poll.engagement_id == engagement.pk %}selected{% endif %}>
-        {{ engagement }}
-      </option>
-    {% endfor %}
-  </select>
+    <label for="announce-engagement">Booked engagement<span class="fieldOptional">optional</span></label>
+    <select name="engagement" id="announce-engagement" class="input" aria-describedby="announce-engagement-hint">
+      <option value="">Not booked yet</option>
+      {% for engagement in engagements %}
+        <option value="{{ engagement.pk }}"
+                {% if poll.engagement_id == engagement.pk %}selected{% endif %}>
+          {{ engagement }}
+        </option>
+      {% endfor %}
+    </select>
+    <p class="fieldHint" id="announce-engagement-hint">Links the results page to the showtimes.</p>
   </div>
-
-  <button type="submit" class="btn btn-primary">Announce</button>
 </form>
+<div id="drawer-footer" class="drawerFooter" hx-swap-oob="true">
+  <button type="button" class="btn btn-secondary" @click="$store.drawer.close()">Cancel</button>
+  <button type="submit" form="announce-form" class="btn btn-primary">Announce Winner</button>
+</div>

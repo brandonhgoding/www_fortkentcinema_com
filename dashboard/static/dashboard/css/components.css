@@ -364,6 +364,11 @@ textarea.input,
   color: var(--text-secondary);
 }
 
+/* A checkbox's hint lines up with its caption, not its box. */
+.checkboxLabel ~ .fieldHint {
+  padding-left: calc(18px + var(--space-sm));
+}
+
 /* Under a control the group's gap already spaces them; pull the hint and
    the error in so they read as part of the field above. */
 .formGroup > .fieldHint,
@@ -401,6 +406,13 @@ textarea.input,
 
 .repeatRow .input {
   flex: 1;
+}
+
+/* Square, and as tall as the control beside it. */
+.repeatRow .btn-icon {
+  flex-shrink: 0;
+  width: 2.875rem;
+  height: 2.875rem;
 }
 
 /* A dashed brass slot rather than a button, because it stands in for the

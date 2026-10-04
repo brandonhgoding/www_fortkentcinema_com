@@ -105,9 +105,8 @@ class MemberForm(forms.ModelForm):
             "first_name": forms.TextInput(attrs={"class": "input"}),
             "last_name": forms.TextInput(attrs={"class": "input"}),
             "email": forms.EmailInput(attrs={"class": "input"}),
-            "phone": forms.TextInput(
-                attrs={"class": "input", "placeholder": "optional"}
-            ),
+            # No "optional" placeholder: the drawer label says so.
+            "phone": forms.TextInput(attrs={"class": "input"}),
             "notes": forms.Textarea(attrs={"class": "input", "rows": 3}),
         }
 

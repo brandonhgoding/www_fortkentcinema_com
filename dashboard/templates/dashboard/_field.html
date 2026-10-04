@@ -6,6 +6,6 @@
   <label for="{{ id }}">{{ label }}{% if optional %}<span class="fieldOptional">optional</span>{% endif %}</label>
   {{ widget }}
   {% endif %}
-  {% if errors %}<p class="field-error" id="{{ id }}-error">{{ errors|join:" " }}</p>{% endif %}
-  {% if hint %}<p class="fieldHint" id="{{ id }}-hint">{{ hint }}</p>{% endif %}
+  {% if errors %}<p class="field-error" id="{{ id }}_error">{{ errors|join:" " }}</p>{% endif %}
+  {% if hint %}<p class="fieldHint" id="{{ id }}_helptext">{{ hint }}</p>{% endif %}
 </div>

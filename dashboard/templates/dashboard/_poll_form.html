@@ -1,5 +1,14 @@
-<form class="pollForm" hx-post="{{ action_url }}" hx-target="#drawer-content" hx-swap="innerHTML">
+{% load dashboard_extras %}
+<form id="poll-form" class="form" hx-post="{{ action_url }}" hx-target="#drawer-content" hx-swap="innerHTML">
   {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit" class="btn btn-primary">{{ submit_label }}</button>
+  {% include "dashboard/_form_alert.html" with errors=form.non_field_errors %}
+  {% field form.title label="Title" %}
+  {% field form.blurb label="Blurb" %}
+  {% field form.opens_at label="Opens" %}
+  {% field form.closes_at label="Closes" %}
+  {% field form.results_visible label="Show running tallies while voting is open" hint="Off hides them until the round closes." %}
 </form>
+<div id="drawer-footer" class="drawerFooter" hx-swap-oob="true">
+  <button type="button" class="btn btn-secondary" @click="$store.drawer.close()">Cancel</button>
+  <button type="submit" form="poll-form" class="btn btn-primary">{{ submit_label }}</button>
+</div>
