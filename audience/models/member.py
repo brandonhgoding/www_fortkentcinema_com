@@ -16,6 +16,19 @@ from .membership_term import MembershipTerm
 EXPIRING_SOON_DAYS = 30
 
 
+class MemberStatus(models.TextChoices):
+    """A member's standing today, derived from their terms, never stored.
+
+    The one place these words live: the roster pill, its filter dropdown
+    and the term ledger's matching windows all read them from here.
+    """
+
+    ACTIVE = "active", "Active"
+    EXPIRING = "expiring", "Expiring soon"
+    UPCOMING = "upcoming", "Not started yet"
+    LAPSED = "lapsed", "Lapsed"
+
+
 class MemberManager(models.Manager):
     def active(self, on: datetime.date | None = None) -> models.QuerySet["Member"]:
         """Members whose terms cover `on` (today by default)."""
@@ -101,36 +114,27 @@ class Member(models.Model):
         return covered
 
     @property
-    def status(self) -> str:
-        """One of "active", "expiring", "upcoming", "lapsed" — drives the
-        roster pill.
+    def status(self) -> "MemberStatus":
+        """Drives the roster pill and its filter.
 
-        "expiring" is judged on `covered_through`, not the current term's
-        own expiry. "upcoming" is a member with no cover today but a term
+        EXPIRING is judged on `covered_through`, not the current term's
+        own expiry. UPCOMING is a member with no cover today but a term
         still to start — booked ahead, not lapsed.
         """
         covered = self.covered_through
         if covered is None:
             today = timezone.localdate()
             if any(term.started_on > today for term in self.terms.all()):
-                return "upcoming"
-            return "lapsed"
+                return MemberStatus.UPCOMING
+            return MemberStatus.LAPSED
         days_left = (covered - timezone.localdate()).days
         if days_left <= EXPIRING_SOON_DAYS:
-            return "expiring"
-        return "active"
-
-    STATUS_LABELS: ClassVar[dict[str, str]] = {
-        "active": "Active",
-        "expiring": "Expiring soon",
-        # Same words as the term ledger's "future" window.
-        "upcoming": "Not started yet",
-        "lapsed": "Lapsed",
-    }
+            return MemberStatus.EXPIRING
+        return MemberStatus.ACTIVE
 
     @property
     def status_label(self) -> str:
-        return self.STATUS_LABELS[self.status]
+        return self.status.label
 
     @property
     def free_admission_allowance(self) -> int:

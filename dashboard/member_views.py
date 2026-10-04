@@ -10,7 +10,7 @@ import csv
 import json
 
 from audience.dates import month_bounds
-from audience.models import FreeAdmission, Member, MembershipTerm
+from audience.models import FreeAdmission, Member, MembershipTerm, MemberStatus
 from audience.terms import latest_term, overlapping_term_ids, renewal_start
 from django.db import models
 from django.db.models import Count, Q
@@ -23,13 +23,7 @@ from django.views import View
 from .forms import MemberForm, MembershipTermForm
 from .mixins import StaffRequiredMixin
 
-STATUS_FILTERS = [
-    ("", "All members"),
-    ("active", "Active"),
-    ("expiring", "Expiring soon"),
-    ("upcoming", "Not started yet"),
-    ("lapsed", "Lapsed"),
-]
+STATUS_FILTERS = [("", "All members"), *MemberStatus.choices]
 
 
 def this_month() -> tuple[int, int]:
@@ -81,14 +75,13 @@ def member_roster(request):
         )
 
     status = (params.get("status") or "").strip()
-    valid = {value for value, _label in STATUS_FILTERS if value}
     members = list(members)
-    if status == "active":
+    if status == MemberStatus.ACTIVE:
         # Covered today, expiring soon included: the same members as the
         # header's Member.objects.active() count. "Expiring soon" is a
         # narrower filter of its own, not a different kind of member.
         members = [m for m in members if m.is_active]
-    elif status in valid:
+    elif status in MemberStatus.values:
         members = [m for m in members if m.status == status]
     return members, q, status
 

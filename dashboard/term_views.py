@@ -14,7 +14,7 @@ bounded by the number of people.
 import csv
 import datetime
 
-from audience.models import MembershipTerm, MembershipTier
+from audience.models import MembershipTerm, MembershipTier, MemberStatus
 from audience.models.member import EXPIRING_SOON_DAYS
 from django.db.models import Exists, OuterRef, Q, Sum
 from django.http import HttpResponse
@@ -27,9 +27,10 @@ from .mixins import StaffRequiredMixin
 WINDOW_FILTERS = [
     ("", "All terms"),
     ("current", "Current"),
-    ("expiring", "Expiring soon"),
+    # The roster's words for the same states, so the two screens agree.
+    ("expiring", MemberStatus.EXPIRING.label),
     ("expired", "Expired"),
-    ("future", "Not started yet"),
+    ("future", MemberStatus.UPCOMING.label),
 ]
 
 

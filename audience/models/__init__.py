@@ -1,4 +1,4 @@
-from .member import Member, MemberManager
+from .member import Member, MemberManager, MemberStatus
 from .membership_term import MembershipTerm
 from .subscriber import Subscriber, SubscriberManager, SubscriberStatus
 from .membership_benefit import MembershipBenefit
@@ -8,6 +8,7 @@ from .free_admission import FreeAdmission
 __all__ = [
     "Member",
     "MemberManager",
+    "MemberStatus",
     "MembershipTerm",
     "Subscriber",
     "SubscriberManager",
