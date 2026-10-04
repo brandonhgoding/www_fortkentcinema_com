@@ -4,6 +4,7 @@ from functools import partial
 from pathlib import Path
 
 from django.db import models, transaction
+from django.utils import timezone
 from django.utils.text import slugify
 
 from .mixins import SlugModelMixin
@@ -108,6 +109,9 @@ class BlogPost(SlugModelMixin):
     status = models.CharField(
         max_length=10, choices=Status.choices, default=Status.PUBLISHED
     )
+    # When the row was made: for a dashboard post, the day its draft was
+    # started. Null for posts from before this field existed.
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
 
     objects = BlogPostQuerySet.as_manager()
 
@@ -145,6 +149,19 @@ class BlogPost(SlugModelMixin):
             # After commit: if the save is rolled back, the row still points
             # at the old file.
             transaction.on_commit(partial(_delete_header_image, self.header_image.storage, before))
+
+    def date_for_publishing(self) -> None:
+        """Move post_date to today when a draft goes live, if it is still the
+        day the draft was started.
+
+        The editor pre-fills today on a new post, so an untouched date is the
+        draft-start day, and a post drafted on the 1st and published on the
+        20th would go out dated the 1st. Any other date was set on purpose (a
+        backdated review, say) and stays. A post from before created_at
+        existed can't be told apart, so it keeps its date too.
+        """
+        if self.created_at and self.post_date == timezone.localdate(self.created_at):
+            self.post_date = timezone.localdate()
 
     @property
     def is_published(self) -> bool:

@@ -154,6 +154,11 @@ def _save_post(request, post: BlogPost | None):
         # Reload it so the header (status, "View live" URL) shows what is saved.
         saved = BlogPost.objects.get(pk=post.pk) if post else None
         return _render_editor(request, form, saved)
+    if (before, after) == (BlogPost.Status.DRAFT, BlogPost.Status.PUBLISHED) and (
+        "post_date" not in form.changed_data
+    ):
+        # A date changed in this same submit was set on purpose.
+        form.instance.date_for_publishing()
     form.instance.status = after
     saved = form.save()
     messages.success(request, SAVE_MESSAGES[(before, after)])

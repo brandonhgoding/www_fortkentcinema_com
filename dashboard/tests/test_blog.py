@@ -8,6 +8,7 @@ from cinema.models import Film
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -303,6 +304,67 @@ class EditPostTests(BlogFixture):
         )
         self.assertEqual(resp["HX-Redirect"], reverse("dashboard:blog"))
         self.assertFalse(BlogPost.objects.filter(pk=post.pk).exists())
+
+
+class PublishDateTests(BlogFixture):
+    """post_date was the day the draft was started: the editor pre-fills
+    today, and publishing only changed the status. A post drafted on the 1st
+    and published on the 20th went out dated the 1st, sorted below newer
+    posts.
+
+    Publishing now moves the date to the publish day, but only when it is
+    still the day the draft was started. A date staff set on purpose stays.
+    """
+
+    STARTED = datetime.date(2026, 9, 1)
+
+    def make_draft(self, post_date) -> BlogPost:
+        post = self.make_post(status=BlogPost.Status.DRAFT, post_date=post_date)
+        started = timezone.make_aware(datetime.datetime(2026, 9, 1, 10, 0))
+        BlogPost.objects.filter(pk=post.pk).update(created_at=started)
+        return post
+
+    def publish(self, post, **overrides) -> BlogPost:
+        data = self.payload(
+            slug=post.slug, status="published", post_date=post.post_date.isoformat()
+        )
+        data.update(overrides)
+        self.client.post(reverse("dashboard:blog_post_edit", args=[post.pk]), data)
+        post.refresh_from_db()
+        return post
+
+    def test_publishing_moves_an_untouched_date_to_the_publish_day(self) -> None:
+        post = self.publish(self.make_draft(self.STARTED))
+        self.assertTrue(post.is_published)
+        self.assertEqual(post.post_date, timezone.localdate())
+
+    def test_publishing_keeps_a_backdated_post(self) -> None:
+        post = self.publish(self.make_draft(datetime.date(2026, 8, 15)))
+        self.assertEqual(post.post_date, datetime.date(2026, 8, 15))
+
+    def test_a_date_set_while_publishing_is_kept(self) -> None:
+        """Changing the field in the same submit counts as deliberate, even
+        when the new value is the start day."""
+        post = self.make_draft(datetime.date(2026, 8, 15))
+        post = self.publish(post, post_date=self.STARTED.isoformat())
+        self.assertEqual(post.post_date, self.STARTED)
+
+    def test_saving_a_published_post_keeps_its_date(self) -> None:
+        post = self.make_draft(self.STARTED)
+        BlogPost.objects.filter(pk=post.pk).update(status=BlogPost.Status.PUBLISHED)
+        post.refresh_from_db()
+        post = self.publish(post)
+        self.assertEqual(post.post_date, self.STARTED)
+
+    def test_saving_a_draft_keeps_its_date(self) -> None:
+        post = self.publish(self.make_draft(self.STARTED), status="draft")
+        self.assertEqual(post.post_date, self.STARTED)
+
+    def test_new_posts_record_when_they_were_started(self) -> None:
+        self.client.post(reverse("dashboard:blog_post_create"), self.payload(status="draft"))
+        self.assertEqual(
+            timezone.localdate(BlogPost.objects.get().created_at), timezone.localdate()
+        )
 
 
 class PreviewTests(BlogFixture):

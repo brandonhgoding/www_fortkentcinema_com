@@ -102,6 +102,7 @@
         <div class="formGroup">
           <label for="{{ form.post_date.id_for_label }}">{{ form.post_date.label }}</label>
           {{ form.post_date }}
+          {% if not post.is_published %}<p class="fieldHint">Publishing moves this to the publish day, unless you have changed it.</p>{% endif %}
           {% if form.post_date.errors %}<div class="field-error">{{ form.post_date.errors|striptags }}</div>{% endif %}
         </div>
         <div class="formGroup">
