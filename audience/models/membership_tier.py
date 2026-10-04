@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -76,7 +78,31 @@ class MembershipTier(models.Model):
     def __str__(self) -> str:
         return self.name
 
+    SLUG_IS_FIXED: ClassVar[str] = (
+        "A tier's slug is fixed once saved: Square redirects and GA4 "
+        "tracking carry it."
+    )
+
+    def _slug_changed(self) -> bool:
+        """Whether this saved tier's slug differs from the stored one.
+
+        Asks the database rather than remembering the loaded value, so a
+        deliberate QuerySet.update() — the escape hatch for a real rename —
+        followed by refresh_from_db() is not mistaken for an edit.
+        """
+        if self._state.adding or self.pk is None:
+            return False
+        stored = (
+            type(self)
+            ._base_manager.filter(pk=self.pk)
+            .values_list("slug", flat=True)
+            .first()
+        )
+        return stored is not None and stored != self.slug
+
     def clean(self) -> None:
+        if self._slug_changed():
+            raise ValidationError({"slug": self.SLUG_IS_FIXED})
         # A listed tier's card is a Join button pointing at checkout_url;
         # without one it renders href="" and goes nowhere.
         if self.show_on_membership_page and not self.checkout_url:
@@ -86,3 +112,12 @@ class MembershipTier(models.Model):
                     "needs its Square payment link."
                 }
             )
+
+    def save(self, *args, **kwargs) -> None:
+        # The forms and admin already lock the field; this catches code.
+        update_fields = kwargs.get("update_fields")
+        if (update_fields is None or "slug" in update_fields) and (
+            self._slug_changed()
+        ):
+            raise ValueError(self.SLUG_IS_FIXED)
+        super().save(*args, **kwargs)

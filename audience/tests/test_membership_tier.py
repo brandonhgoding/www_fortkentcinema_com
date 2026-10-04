@@ -247,3 +247,34 @@ class CheckoutLinkTests(TestCase):
         for tier in MembershipTier.objects.all():
             with self.subTest(slug=tier.slug):
                 tier.full_clean()
+
+
+class SlugImmutabilityTests(TestCase):
+    """Square and GA4 key off the slug, so it is fixed once saved — in the
+    model, not only in the admin and dashboard forms."""
+
+    def setUp(self) -> None:
+        self.tier = MembershipTier.objects.get(slug="individual")
+
+    def test_saving_a_changed_slug_is_refused(self) -> None:
+        self.tier.slug = "individual-2"
+        with self.assertRaises(ValueError):
+            self.tier.save()
+        self.assertTrue(MembershipTier.objects.filter(slug="individual").exists())
+
+    def test_full_clean_reports_it_on_the_slug(self) -> None:
+        from django.core.exceptions import ValidationError
+
+        self.tier.slug = "individual-2"
+        with self.assertRaises(ValidationError) as caught:
+            self.tier.full_clean()
+        self.assertIn("slug", caught.exception.message_dict)
+
+    def test_other_fields_still_save(self) -> None:
+        self.tier.price = 65
+        self.tier.save()
+        self.tier.refresh_from_db()
+        self.assertEqual(self.tier.price, 65)
+
+    def test_a_new_tier_chooses_its_slug(self) -> None:
+        self.assertEqual(make_tier(slug="brand-new").slug, "brand-new")
