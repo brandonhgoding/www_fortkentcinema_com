@@ -3,6 +3,9 @@
 import blog.models
 from django.db import migrations, models
 
+# This migration also set storage=blog.models.OverwriteStorage(). That class
+# is gone (uploads now get unique names), and storage never touches the
+# schema, so the argument was dropped here rather than kept importable.
 
 class Migration(migrations.Migration):
 
@@ -14,6 +17,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='blogpost',
             name='header_image',
-            field=models.ImageField(blank=True, null=True, storage=blog.models.OverwriteStorage(), upload_to=blog.models.blog_header_image_path),
+            field=models.ImageField(blank=True, null=True, upload_to=blog.models.blog_header_image_path),
         ),
     ]

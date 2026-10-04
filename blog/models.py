@@ -1,42 +1,46 @@
+import secrets
 import uuid
+from functools import partial
 from pathlib import Path
 
-from django.core.files.storage import FileSystemStorage
-from django.db import models
+from django.db import models, transaction
 from django.utils.text import slugify
 
 from .mixins import SlugModelMixin
 
-
-class OverwriteStorage(FileSystemStorage):
-    """Replace an existing file instead of suffixing a new name onto it.
-
-    Django's default would turn a re-upload for the same post into
-    `a-review-of-thing_Ab3xY.png`, which defeats the point of naming the file
-    after the slug in the first place.
-    """
-
-    def get_available_name(self, name, max_length=None):
-        if self.exists(name):
-            self.delete(name)
-        return name
+HEADER_IMAGE_DIR = "blog/images/"
 
 
 def blog_header_image_path(instance, filename):
-    """Name the upload after the post's slug.
+    """Name the upload after the post's slug, plus a short random suffix:
+    `blog/images/a-review-of-dune-3f9a1c2e.png`.
 
     Uploads used to keep whatever the file was called on the author's desktop —
-    `ChatGPT_Image_Jul_11_2026_at_05_21_01_PM.png` — plus a random suffix from
-    Django's collision handling.
+    `ChatGPT_Image_Jul_11_2026_at_05_21_01_PM.png`. Then they were named for the
+    slug alone, and each re-upload overwrote the last. That had three problems,
+    which the suffix fixes:
+
+    - nginx serves /media/ with a 30-day expiry, so a replaced image kept its
+      URL and browsers showed the old one for up to a month.
+    - A slug can change and be taken by another post, whose upload then
+      replaced a file the first post still pointed at.
+    - 'blog/images/' + a 100-character slug overflowed the 100-character
+      column. The slug is trimmed so the whole name fits.
+
+    BlogPost.save() deletes the file an upload replaces.
 
     SlugModelMixin.save() sets `slug` before calling super().save(), and the file
     is written during that super().save(), so the slug is already available here
     even for a brand-new post. The slugify fallback covers a caller that bypasses
     the mixin.
     """
-    ext = Path(filename).suffix.lower()
+    ext = Path(filename).suffix.lower()[:10]
+    suffix = secrets.token_hex(4)
+    max_length = instance._meta.get_field("header_image").max_length
+    room = max_length - len(HEADER_IMAGE_DIR) - len(f"-{suffix}{ext}")
     slug = instance.slug or slugify(getattr(instance, instance.slug_field, "")) or "post"
-    return f"blog/images/{slug}{ext}"
+    slug = slug[:room].strip("-") or "post"
+    return f"{HEADER_IMAGE_DIR}{slug}-{suffix}{ext}"
 
 
 class BlogAuthor(SlugModelMixin):
@@ -95,7 +99,6 @@ class BlogPost(SlugModelMixin):
     summary = models.TextField(blank=True, null=True)
     header_image = models.ImageField(
         upload_to=blog_header_image_path,
-        storage=OverwriteStorage(),
         null=True,
         blank=True,
     )
@@ -117,6 +120,32 @@ class BlogPost(SlugModelMixin):
     def __str__(self) -> str:
         return self.subtitle
 
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        instance = super().from_db(db, field_names, values)
+        # The stored name, read before anything can replace it, so save() can
+        # tell when an upload replaced the file. Read from __dict__ so a
+        # deferred header_image isn't fetched just for this.
+        instance._stored_header_image = instance.__dict__.get("header_image") or ""
+        return instance
+
+    def refresh_from_db(self, using=None, fields=None, from_queryset=None):
+        super().refresh_from_db(using=using, fields=fields, from_queryset=from_queryset)
+        if (fields is None or "header_image" in fields) and "header_image" in self.__dict__:
+            self._stored_header_image = self.header_image.name or ""
+
+    def save(self, *args, **kwargs) -> None:
+        super().save(*args, **kwargs)
+        if "header_image" not in self.__dict__:
+            return  # deferred and untouched
+        before = getattr(self, "_stored_header_image", "")
+        after = self.header_image.name or ""
+        self._stored_header_image = after
+        if before and before != after:
+            # After commit: if the save is rolled back, the row still points
+            # at the old file.
+            transaction.on_commit(partial(_delete_header_image, self.header_image.storage, before))
+
     @property
     def is_published(self) -> bool:
         return self.status == self.Status.PUBLISHED
@@ -125,3 +154,10 @@ class BlogPost(SlugModelMixin):
         from django.urls import reverse
 
         return reverse("blog_detail", kwargs={"slug": self.slug})
+
+
+def _delete_header_image(storage, name: str) -> None:
+    """Remove a header image an upload (or Remove image) replaced, unless some
+    other post still points at it."""
+    if not BlogPost.objects.filter(header_image=name).exists():
+        storage.delete(name)
