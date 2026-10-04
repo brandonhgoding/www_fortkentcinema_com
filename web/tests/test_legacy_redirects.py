@@ -46,6 +46,12 @@ class LegacyBlogRedirectTests(TestCase):
             target_status_code=200,
         )
 
+    def test_legacy_post_url_with_non_ascii_slug_is_a_404(self):
+        """`[-\w]+` matched Unicode, which can't reverse into the ASCII
+        <slug:> route on /blog/ — a NoReverseMatch, so a 500."""
+        resp = self.client.get("/fort-kent-cinema-blog/кино/")
+        self.assertEqual(resp.status_code, 404)
+
     def test_legacy_blog_index_redirects_to_blog_list(self):
         resp = self.client.get("/fort-kent-cinema-blog/")
         self.assertRedirects(resp, "/blog/", status_code=301, target_status_code=200)

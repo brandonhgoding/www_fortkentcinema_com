@@ -14,9 +14,11 @@ from django.views.generic import RedirectView
 
 legacy_urlpatterns = [
     # Blog lived at /fort-kent-cinema-blog/<slug>/. Slugs carried over to the
-    # modern /blog/<slug> route unchanged, so this maps 1:1.
+    # modern /blog/<slug> route unchanged, so this maps 1:1. ASCII only, to
+    # match <slug:>: `\w` let a Unicode slug through, which then failed to
+    # reverse and 500'd instead of 404ing.
     re_path(
-        r"^fort-kent-cinema-blog/(?P<slug>[-\w]+)/?$",
+        r"^fort-kent-cinema-blog/(?P<slug>[-a-zA-Z0-9_]+)/?$",
         RedirectView.as_view(pattern_name="blog_detail", permanent=True),
         name="legacy_blog_detail",
     ),
