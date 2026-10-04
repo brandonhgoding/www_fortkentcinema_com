@@ -62,13 +62,21 @@ def plain_excerpt(text: str | None, max_length: int = 150) -> str:
     A leading heading is skipped, since it makes a poor summary, and the
     Markdown syntax is stripped. Without that, `**` and `[links](...)` would
     show up in search results.
+
+    A paragraph with no text left after sanitising (an opening image, a
+    linked image, `&nbsp;`, `<br>`) is skipped too.
     """
     html = render_markdown(text)
     if not html:
         return ""
-    match = re.search(r"<p>(.*?)</p>", html, re.S)
-    first = unescape(strip_tags(match.group(1) if match else html))
-    first = " ".join(first.split())
+    paragraphs = (
+        " ".join(unescape(strip_tags(p)).split())
+        for p in re.findall(r"<p>(.*?)</p>", html, re.S)
+    )
+    first = next(
+        (p for p in paragraphs if p),
+        " ".join(unescape(strip_tags(html)).split()),
+    )
     if len(first) <= max_length:
         return first
     return first[:max_length].strip() + "..."

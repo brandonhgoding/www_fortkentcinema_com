@@ -32,6 +32,18 @@ class ExcerptTests(SimpleTestCase):
     def test_skips_a_leading_heading(self):
         self.assertEqual(excerpt("# Verdict\n\nGo see it."), "Go see it.")
 
+    def test_skips_paragraphs_the_sanitiser_emptied(self):
+        """An opening image (linked or not), `&nbsp;` or `<br>` leaves an
+        empty <p> behind. The card showed nothing at all."""
+        for body in (
+            "![poster](/media/a.png)\n\nGo see it.",
+            "[![poster](/media/a.png)](https://x.test)\n\nGo see it.",
+            "&nbsp;\n\nGo see it.",
+            "<br>\n\nGo see it.",
+        ):
+            with self.subTest(body=body):
+                self.assertEqual(excerpt(body), "Go see it.")
+
     def test_joins_soft_wrapped_lines(self):
         self.assertEqual(excerpt("One line\nwrapped here."), "One line wrapped here.")
 
