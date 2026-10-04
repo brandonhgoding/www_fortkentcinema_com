@@ -574,6 +574,35 @@ class AuthorCategoryTests(BlogFixture):
         self.assertEqual(self.category.name, "Film Reviews")
         self.assertEqual(self.category.slug, "reviews")
 
+    def test_renaming_a_category_to_a_taken_name_is_a_form_error(self) -> None:
+        other = BlogCategory.objects.create(name="News")
+        resp = self.client.post(
+            reverse("dashboard:blog_category_edit", args=[other.pk]),
+            {"name": " reviews "},
+        )
+        self.assertContains(resp, "already a category with that name")
+        other.refresh_from_db()
+        self.assertEqual(other.name, "News")
+
+    def test_renaming_an_author_to_a_taken_name_is_a_form_error(self) -> None:
+        other = BlogAuthor.objects.create(first_name="Grace", last_name="Hopper")
+        resp = self.client.post(
+            reverse("dashboard:blog_author_edit", args=[other.pk]),
+            {"first_name": "ADA", "last_name": "Lovelace"},
+        )
+        self.assertContains(resp, "already an author with that name")
+        other.refresh_from_db()
+        self.assertEqual(other.first_name, "Grace")
+
+    def test_saving_a_category_under_its_own_name_is_allowed(self) -> None:
+        resp = self.client.post(
+            reverse("dashboard:blog_category_edit", args=[self.category.pk]),
+            {"name": "Reviews"},
+        )
+        self.assertNotContains(resp, "already a category with that name")
+        self.category.refresh_from_db()
+        self.assertEqual(self.category.name, "Reviews")
+
     def test_duplicate_category_name_is_a_form_error(self) -> None:
         resp = self.client.post(reverse("dashboard:blog_category_create"), {"name": "Reviews"})
         self.assertContains(resp, "already a category with that name")

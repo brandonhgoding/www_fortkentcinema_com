@@ -389,17 +389,23 @@ class _SlugOnCreateMixin:
 
     def clean(self):
         cleaned = super().clean()
-        if self.instance._state.adding and not self.errors:
-            model = self._meta.model
-            candidate = model(**cleaned)
-            # Authors and categories number in the dozens, so comparing in
-            # Python is cheaper than teaching the database the same rule.
-            name = _normalized_name(getattr(candidate, model.slug_field))
-            if any(_normalized_name(getattr(other, model.slug_field)) == name
-                   for other in model.objects.all()):
-                raise forms.ValidationError(self.duplicate_message)
-            if model.objects.filter(slug=candidate.generate_slug()).exists():
-                raise forms.ValidationError(self.duplicate_message)
+        if self.errors:
+            return cleaned
+        model = self._meta.model
+        candidate = model(**cleaned)
+        # Authors and categories number in the dozens, so comparing in
+        # Python is cheaper than teaching the database the same rule.
+        # Renames are checked too: the slug stays put, but two rows that
+        # read the same would be indistinguishable in the editor.
+        name = _normalized_name(getattr(candidate, model.slug_field))
+        others = model.objects.exclude(pk=self.instance.pk)
+        if any(_normalized_name(getattr(other, model.slug_field)) == name
+               for other in others):
+            raise forms.ValidationError(self.duplicate_message)
+        if self.instance._state.adding and model.objects.filter(
+            slug=candidate.generate_slug()
+        ).exists():
+            raise forms.ValidationError(self.duplicate_message)
         return cleaned
 
 
