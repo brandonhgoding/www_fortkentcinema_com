@@ -151,3 +151,97 @@ class MarkExistingPostsPlainMigrationTests(BodyFormatFixture):
         for post in (a, b):
             post.refresh_from_db()
             self.assertEqual(post.body_format, BlogPost.BodyFormat.PLAIN)
+
+
+class LeadTextBypassTests(BodyFormatFixture):
+    """lead_text is set in save(). Writes that skip save() (queryset update,
+    bulk_update, bulk_create) used to leave it stale or empty."""
+
+    def lead(self, post) -> str:
+        return BlogPost.objects.values_list("lead_text", flat=True).get(pk=post.pk)
+
+    def test_queryset_update_of_content(self):
+        post = self.make_post("Old opening.")
+        BlogPost.objects.filter(pk=post.pk).update(content="New opening.\n\nMore.")
+        self.assertEqual(self.lead(post), "New opening.")
+
+    def test_update_filtered_on_the_field_it_changes(self):
+        """The rows are picked before the update, so a filter the new value
+        no longer matches still finds them."""
+        post = self.make_post("Old opening.")
+        BlogPost.objects.filter(content="Old opening.").update(content="New opening.")
+        self.assertEqual(self.lead(post), "New opening.")
+
+    def test_update_of_body_format_uses_each_rows_content(self):
+        a = self.make_post("# A\n\nBody A.", body_format=BlogPost.BodyFormat.PLAIN)
+        b = self.make_post("# B\n\nBody B.", body_format=BlogPost.BodyFormat.PLAIN)
+        BlogPost.objects.filter(pk__in=[a.pk, b.pk]).update(
+            body_format=BlogPost.BodyFormat.MARKDOWN
+        )
+        self.assertEqual(self.lead(a), "Body A.")
+        self.assertEqual(self.lead(b), "Body B.")
+
+    def test_update_with_an_expression(self):
+        from django.db.models import F, Value
+        from django.db.models.functions import Concat
+
+        post = self.make_post("Old opening.")
+        BlogPost.objects.filter(pk=post.pk).update(
+            content=Concat(Value("Prefix.\n\n"), F("content"))
+        )
+        self.assertEqual(self.lead(post), "Prefix.")
+
+    def test_related_manager_update(self):
+        post = self.make_post("Old opening.")
+        self.author.blogpost_set.update(content="Via the author.")
+        self.assertEqual(self.lead(post), "Via the author.")
+
+    def test_update_returns_the_row_count(self):
+        self.make_post("One.")
+        self.make_post("Two.")
+        self.assertEqual(BlogPost.objects.update(content="Same."), 2)
+
+    def test_unrelated_update_costs_one_query(self):
+        post = self.make_post("Opening.")
+        with self.assertNumQueries(1):
+            BlogPost.objects.filter(pk=post.pk).update(title="Retitled")
+
+    def test_content_update_costs_a_fixed_number_of_queries(self):
+        for n in range(5):
+            self.make_post(f"Opening {n}.")
+        # Select the rows, update, read them back, write lead_text.
+        with self.assertNumQueries(4):
+            BlogPost.objects.update(content="Same.")
+
+    def test_bulk_update(self):
+        a, b = self.make_post("Old A."), self.make_post("Old B.")
+        a.content, b.content = "New A.", "New B."
+        with self.assertNumQueries(1):
+            BlogPost.objects.bulk_update([a, b], ["content"])
+        self.assertEqual(self.lead(a), "New A.")
+        self.assertEqual(self.lead(b), "New B.")
+        self.assertEqual(a.lead_text, "New A.")
+
+    def test_bulk_update_of_body_format(self):
+        post = self.make_post("# H\n\nBody.", body_format=BlogPost.BodyFormat.PLAIN)
+        post.body_format = BlogPost.BodyFormat.MARKDOWN
+        BlogPost.objects.bulk_update([post], ["body_format"])
+        self.assertEqual(self.lead(post), "Body.")
+
+    def test_bulk_create(self):
+        (post,) = BlogPost.objects.bulk_create([
+            BlogPost(
+                title="T", subtitle="Bulk", slug="bulk", author=self.author,
+                category=self.category, post_date=datetime.date(2024, 1, 1),
+                content="Bulk opening.\n\nMore.",
+            )
+        ])
+        self.assertEqual(self.lead(post), "Bulk opening.")
+
+    def test_save_with_lead_text_deferred_does_not_fetch_it(self):
+        post = self.make_post("Opening.")
+        post = BlogPost.objects.defer("lead_text").get(pk=post.pk)
+        post.content = "Changed."
+        with self.assertNumQueries(1):
+            post.save(update_fields=["content"])
+        self.assertEqual(self.lead(post), "Changed.")

@@ -78,12 +78,66 @@ class BlogCategory(SlugModelMixin):
         return self.name
 
 
+# The fields lead_text is worked out from.
+LEAD_TEXT_SOURCES = frozenset({"content", "body_format"})
+
+
 class BlogPostQuerySet(models.QuerySet):
+    """lead_text is set in BlogPost.save(). update(), bulk_update() and
+    bulk_create() never call save(), so they keep it current here instead.
+    Raw SQL, migrations (historical models don't use this queryset) and
+    writes through _base_manager are not covered.
+    """
+
     def published(self):
         """What the public site may show. Every public read goes through this —
         the default manager still returns drafts, because the dashboard and
         Film.review need to see them."""
         return self.filter(status=BlogPost.Status.PUBLISHED)
+
+    def update(self, **kwargs):
+        # An explicit lead_text wins. bulk_update() below relies on that: it
+        # computes lead_text itself and then calls update() with it.
+        if not LEAD_TEXT_SOURCES & kwargs.keys() or "lead_text" in kwargs:
+            return super().update(**kwargs)
+        with transaction.atomic(using=self.db, savepoint=False):
+            # Picked before the update, which may change what the filter
+            # matches (filter(content=old).update(content=new)).
+            pks = list(self.values_list("pk", flat=True))
+            rows = super().update(**kwargs)
+            # Read back rather than computed from kwargs: the new value may be
+            # an expression, and body_format alone needs each row's content.
+            base = self.model._base_manager.using(self.db)
+            posts = base.filter(pk__in=pks).only("pk", "content", "body_format", "lead_text")
+            stale = [post for post in posts if _set_lead_text(post)]
+            base.bulk_update(stale, ["lead_text"])
+        return rows
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        if LEAD_TEXT_SOURCES & set(fields):
+            objs = list(objs)
+            for obj in objs:
+                _set_lead_text(obj)
+            fields = [*fields, "lead_text"]
+        return super().bulk_update(objs, fields, batch_size=batch_size)
+
+    def bulk_create(self, objs, *args, **kwargs):
+        objs = list(objs)
+        for obj in objs:
+            _set_lead_text(obj)
+        update_fields = kwargs.get("update_fields")
+        if update_fields and LEAD_TEXT_SOURCES & set(update_fields):
+            kwargs["update_fields"] = [*update_fields, "lead_text"]
+        return super().bulk_create(objs, *args, **kwargs)
+
+
+def _set_lead_text(post: "BlogPost") -> bool:
+    """Set post.lead_text from its body; True if that changed it. Read from
+    __dict__ so a deferred lead_text isn't fetched just to be overwritten."""
+    lead_text = rendering.first_paragraph(post.content, post.body_format)
+    changed = lead_text != post.__dict__.get("lead_text")
+    post.lead_text = lead_text
+    return changed
 
 
 class BlogPost(SlugModelMixin):
@@ -156,7 +210,7 @@ class BlogPost(SlugModelMixin):
             self._stored_header_image = self.header_image.name or ""
 
     def save(self, *args, **kwargs) -> None:
-        self.lead_text = rendering.first_paragraph(self.content, self.body_format)
+        _set_lead_text(self)
         update_fields = kwargs.get("update_fields")
         if update_fields is not None and {"content", "body_format"} & set(update_fields):
             kwargs["update_fields"] = {*update_fields, "lead_text"}
