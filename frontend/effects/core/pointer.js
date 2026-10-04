@@ -57,7 +57,3 @@ export function onPointer(fn) {
     teardownIfEmpty();
   };
 }
-
-export function pointerSubscriberCount() {
-  return subscribers.size;
-}

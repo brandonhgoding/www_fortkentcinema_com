@@ -38,7 +38,6 @@ from web.constants import (
     SAVOY_PLAYBILLS,
     RENTALS_FAQ,
     SPONSORSHIP_FAQ,
-    SPONSORSHIP_POPCORN_CAP,
     SPONSORSHIP_SHOWCASE,
     SPONSORSHIP_TIERS,
 )
@@ -159,8 +158,6 @@ class HomeView(TemplateView):
         today_index = ns_dates.index(today) if today in ns_dates else 0
 
         ctx["ns_dates"] = ns_dates
-        ctx["ns_dates_labeled"] = ns_dates_labeled
-        ctx["ns_today"] = today
         ctx["ns_today_index"] = today_index
         ctx["ns_dates_json"] = json.dumps(ns_dates)
         ctx["ns_labels_json"] = json.dumps([d["label"] for d in ns_dates_labeled])
@@ -741,7 +738,6 @@ class SponsorView(SponsorCatalogMixin, ListView):
             {
                 "tiers": SPONSORSHIP_TIERS,
                 "showcase": SPONSORSHIP_SHOWCASE,
-                "popcorn_cap": SPONSORSHIP_POPCORN_CAP,
                 "total_count": available.count(),
                 "ratings": sorted(
                     r for r in set(

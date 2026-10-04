@@ -37,10 +37,6 @@ export function onTick(fn) {
   };
 }
 
-export function tickSubscriberCount() {
-  return subscribers.size;
-}
-
 // Pause the whole loop while the tab is hidden; resume on return.
 if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', () => {

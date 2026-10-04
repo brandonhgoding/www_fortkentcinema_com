@@ -98,10 +98,6 @@ class Poll(models.Model):
         super().save(*args, **kwargs)
 
     @property
-    def is_open(self) -> bool:
-        return self.status == PollStatus.OPEN
-
-    @property
     def total_votes(self) -> int:
         return self.votes.count()
 
@@ -159,10 +155,6 @@ class PollOption(models.Model):
 
     def __str__(self) -> str:
         return f"{self.film.title} ({self.poll.title})"
-
-    @property
-    def vote_count(self) -> int:
-        return self.votes.count()
 
     @property
     def description(self) -> str:
