@@ -117,3 +117,12 @@ class BlogDetailTests(TestCase):
         self.assertRedirects(
             resp, f"/blog/{self.post.slug}", status_code=301, target_status_code=200
         )
+
+    def test_detail_query_count(self):
+        """The post's author and category are joined into the post's own query
+        rather than fetched one by one while the template renders."""
+        url = reverse("blog_detail", args=[self.post.slug])
+        self.client.get(url)  # warm the site-config cache
+        with self.assertNumQueries(4):
+            # The post; related posts in its category, then the backfill; its films.
+            self.client.get(url)

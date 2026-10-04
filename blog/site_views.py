@@ -38,7 +38,7 @@ class PostDetailView(DetailView):
 
     def get_queryset(self):
         # Drafts 404 here. Staff preview them from the dashboard instead.
-        return BlogPost.objects.published()
+        return BlogPost.objects.published().select_related("author", "category")
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
