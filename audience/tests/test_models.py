@@ -151,9 +151,112 @@ class SubscriberStatusConsistencyTests(TestCase):
                 "consent_ip": "",
                 "unsubscribed_at_0": "",
                 "unsubscribed_at_1": "",
+                "changes-TOTAL_FORMS": "0",
+                "changes-INITIAL_FORMS": "0",
+                "changes-MIN_NUM_FORMS": "0",
+                "changes-MAX_NUM_FORMS": "1000",
             },
         )
         self.assertEqual(resp.status_code, 302)
         self.sub.refresh_from_db()
         self.assertEqual(self.sub.status, SubscriberStatus.UNSUBSCRIBED)
         self.assertIsNotNone(self.sub.unsubscribed_at)
+
+
+class SubscriptionHistoryTests(TestCase):
+    """Every opt-in and opt-out is kept, even after a re-subscribe clears
+    unsubscribed_at on the subscriber itself."""
+
+    def setUp(self) -> None:
+        self.sub, _ = Subscriber.objects.record("a@example.com", source="poll_vote")
+
+    def history(self) -> list[tuple[str, datetime.datetime]]:
+        return list(self.sub.changes.order_by("at", "id").values_list("status", "at"))
+
+    def test_signing_up_records_the_opt_in_at_the_consent_time(self) -> None:
+        self.assertEqual(self.history(), [("ACTIVE", self.sub.consent_at)])
+
+    def test_signing_up_again_records_nothing(self) -> None:
+        Subscriber.objects.record("a@example.com", source="poll_vote")
+        self.assertEqual(len(self.history()), 1)
+
+    def test_unsubscribing_records_the_opt_out_time(self) -> None:
+        self.sub.unsubscribe()
+        self.assertEqual(self.history()[-1], ("UNSUBSCRIBED", self.sub.unsubscribed_at))
+
+    def test_a_re_subscribe_keeps_the_earlier_opt_out(self) -> None:
+        self.sub.unsubscribe()
+        opted_out_at = self.sub.unsubscribed_at
+        self.sub.status = SubscriberStatus.ACTIVE
+        self.sub.save()
+
+        statuses = [status for status, _ in self.history()]
+        self.assertEqual(statuses, ["ACTIVE", "UNSUBSCRIBED", "ACTIVE"])
+        self.assertIn(("UNSUBSCRIBED", opted_out_at), self.history())
+        self.assertIsNone(self.sub.unsubscribed_at)
+
+    def test_a_save_that_does_not_change_the_status_records_nothing(self) -> None:
+        self.sub.source = "newsletter"
+        self.sub.save()
+        self.sub.unsubscribe()
+        self.sub.unsubscribe()
+        self.assertEqual(len(self.history()), 2)
+
+    def test_the_admin_opt_out_is_recorded(self) -> None:
+        from django.contrib.auth.models import User
+        from django.urls import reverse
+
+        User.objects.create_superuser(
+            username="root", email="root@example.com", password="pw12345"
+        )
+        self.client.login(username="root", password="pw12345")
+        url = reverse("admin:audience_subscriber_change", args=[self.sub.pk])
+        self.assertEqual(self.client.get(url).status_code, 200)
+        resp = self.client.post(
+            url,
+            {
+                "email": "a@example.com",
+                "status": "UNSUBSCRIBED",
+                "source": "poll_vote",
+                "consent_ip": "",
+                "unsubscribed_at_0": "",
+                "unsubscribed_at_1": "",
+                "changes-TOTAL_FORMS": "1",
+                "changes-INITIAL_FORMS": "1",
+                "changes-MIN_NUM_FORMS": "0",
+                "changes-MAX_NUM_FORMS": "1000",
+                "changes-0-id": str(self.sub.changes.get().pk),
+                "changes-0-subscriber": str(self.sub.pk),
+            },
+        )
+        self.assertEqual(resp.status_code, 302)
+        statuses = [status for status, _ in self.history()]
+        self.assertEqual(statuses, ["ACTIVE", "UNSUBSCRIBED"])
+
+    def test_the_migration_backfills_existing_subscribers(self) -> None:
+        import importlib
+
+        from django.apps import apps
+
+        backfill = importlib.import_module(
+            "audience.migrations.0012_subscriptionchange"
+        ).backfill
+        self.sub.unsubscribe()
+        stayed, _ = Subscriber.objects.record("b@example.com", source="poll_vote")
+        from audience.models import SubscriptionChange
+
+        SubscriptionChange.objects.all().delete()
+
+        backfill(apps, None)
+
+        self.assertEqual(
+            self.history(),
+            [
+                ("ACTIVE", self.sub.consent_at),
+                ("UNSUBSCRIBED", self.sub.unsubscribed_at),
+            ],
+        )
+        self.assertEqual(
+            list(stayed.changes.values_list("status", "at")),
+            [("ACTIVE", stayed.consent_at)],
+        )

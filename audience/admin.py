@@ -11,7 +11,24 @@ from .models import (
     MembershipTerm,
     MembershipTier,
     Subscriber,
+    SubscriptionChange,
 )
+
+
+class SubscriptionChangeInline(admin.TabularInline):
+    """The subscriber's opt-in and opt-out history, read-only: it is a
+    record of what happened, written by Subscriber.save()."""
+
+    model = SubscriptionChange
+    extra = 0
+    fields = ("status", "at")
+    readonly_fields = ("status", "at")
+    can_delete = False
+
+    def has_add_permission(
+        self, request: HttpRequest, obj: Subscriber | None = None
+    ) -> bool:
+        return False
 
 
 @admin.register(Subscriber)
@@ -20,6 +37,7 @@ class SubscriberAdmin(admin.ModelAdmin):
     list_filter = ("status", "source")
     search_fields = ("email",)
     readonly_fields = ("unsubscribe_token", "consent_at")
+    inlines = [SubscriptionChangeInline]
 
 
 @admin.register(MembershipTier)

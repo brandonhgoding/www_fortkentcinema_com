@@ -2,7 +2,7 @@ import uuid
 from collections.abc import Collection
 from typing import ClassVar
 
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 
@@ -97,6 +97,7 @@ class Subscriber(models.Model):
         # the admin's Status dropdown bypasses unsubscribe(). An opt-out
         # keeps any time already recorded; a re-subscribe (staff acting on
         # fresh consent) clears it, so an active row never reads as opted out.
+        # The earlier opt-out is not lost: SubscriptionChange keeps it.
         if self.status == SubscriberStatus.UNSUBSCRIBED:
             if self.unsubscribed_at is None:
                 self.unsubscribed_at = timezone.now()
@@ -105,7 +106,30 @@ class Subscriber(models.Model):
         update_fields = kwargs.get("update_fields")
         if update_fields is not None and "status" in update_fields:
             kwargs["update_fields"] = {*update_fields, "unsubscribed_at"}
-        super().save(*args, **kwargs)
+
+        adding = self._state.adding
+        previous = (
+            None
+            if adding
+            else Subscriber.objects.filter(pk=self.pk)
+            .values_list("status", flat=True)
+            .first()
+        )
+        with transaction.atomic():
+            super().save(*args, **kwargs)
+            if adding or previous != self.status:
+                self._log_change()
+
+    def _log_change(self) -> None:
+        from .subscription_change import SubscriptionChange
+
+        if self.status == SubscriberStatus.UNSUBSCRIBED:
+            at = self.unsubscribed_at
+        elif self.changes.exists():
+            at = timezone.now()
+        else:
+            at = self.consent_at
+        SubscriptionChange.objects.create(subscriber=self, status=self.status, at=at)
 
     def unsubscribe(self) -> None:
         if self.status == SubscriberStatus.UNSUBSCRIBED:

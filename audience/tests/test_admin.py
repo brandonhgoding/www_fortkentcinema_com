@@ -218,6 +218,10 @@ class EmailCaseAdminTests(TestCase):
                 "consent_ip": "",
                 "unsubscribed_at_0": "",
                 "unsubscribed_at_1": "",
+                "changes-TOTAL_FORMS": "0",
+                "changes-INITIAL_FORMS": "0",
+                "changes-MIN_NUM_FORMS": "0",
+                "changes-MAX_NUM_FORMS": "1000",
             },
         )
         self.assertEqual(resp.status_code, 200)
