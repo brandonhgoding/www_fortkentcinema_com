@@ -242,3 +242,108 @@ class EditorHeaderImageTests(TestCase):
         self.assertIn(f'src="{post.header_image.url}"', html)
         self.assertNotIn(first_url, html)
         self.assertFalse((Path(self._tmp) / first_url.removeprefix("/media/")).exists())
+
+
+class DeletedPostImageTests(TestCase):
+    """Deleting a post used to leave its header image on disk for good."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._tmp = tempfile.mkdtemp()
+        cls._media = override_settings(MEDIA_ROOT=cls._tmp)
+        cls._media.enable()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._media.disable()
+        shutil.rmtree(cls._tmp, ignore_errors=True)
+        super().tearDownClass()
+
+    def setUp(self):
+        self.author = BlogAuthor.objects.create(first_name="Brandon", last_name="Goding")
+        self.cat = BlogCategory.objects.create(name="Reviews")
+
+    def make_post(self, subtitle):
+        return BlogPost.objects.create(
+            title="T", subtitle=subtitle, author=self.author, category=self.cat,
+            post_date="2026-07-11", content="...",
+            header_image=SimpleUploadedFile("p.png", PNG, content_type="image/png"),
+        )
+
+    def path(self, post):
+        return Path(self._tmp) / post.header_image.name
+
+    def test_instance_delete_removes_the_file(self):
+        post = self.make_post("Gone")
+        path = self.path(post)
+        with self.captureOnCommitCallbacks(execute=True):
+            post.delete()
+        self.assertFalse(path.exists())
+
+    def test_queryset_delete_removes_each_file(self):
+        a, b = self.make_post("Gone A"), self.make_post("Gone B")
+        paths = [self.path(a), self.path(b)]
+        with self.captureOnCommitCallbacks(execute=True):
+            BlogPost.objects.filter(pk__in=[a.pk, b.pk]).delete()
+        self.assertFalse(any(p.exists() for p in paths))
+
+    def test_deferred_image_is_still_removed(self):
+        post = self.make_post("Gone Deferred")
+        path = self.path(post)
+        with self.captureOnCommitCallbacks(execute=True):
+            BlogPost.objects.defer("header_image").get(pk=post.pk).delete()
+        self.assertFalse(path.exists())
+
+    def test_dashboard_delete_removes_the_file(self):
+        get_user_model().objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+        post = self.make_post("Gone From Dashboard")
+        path = self.path(post)
+        with self.captureOnCommitCallbacks(execute=True):
+            resp = self.client.post(reverse("dashboard:blog_post_delete", args=[post.pk]))
+        self.assertEqual(resp.status_code, 204)
+        self.assertFalse(BlogPost.objects.filter(pk=post.pk).exists())
+        self.assertFalse(path.exists())
+
+    def test_file_shared_with_another_post_is_kept(self):
+        post = self.make_post("Gone Shared")
+        other = self.make_post("Stays")
+        BlogPost.objects.filter(pk=other.pk).update(header_image=post.header_image.name)
+        path = self.path(post)
+        with self.captureOnCommitCallbacks(execute=True):
+            post.delete()
+        self.assertTrue(path.exists())
+
+    def test_rolled_back_delete_keeps_the_file(self):
+        from django.db import transaction
+
+        post = self.make_post("Rolled Back")
+        pk, path = post.pk, self.path(post)
+        with self.captureOnCommitCallbacks(execute=True):
+            try:
+                with transaction.atomic():
+                    post.delete()
+                    raise RuntimeError
+            except RuntimeError:
+                pass
+        self.assertTrue(BlogPost.objects.filter(pk=pk).exists())
+        self.assertTrue(path.exists())
+
+    def test_post_without_an_image_deletes_cleanly(self):
+        post = BlogPost.objects.create(
+            title="T", subtitle="No image", author=self.author, category=self.cat,
+            post_date="2026-07-11", content="...",
+        )
+        pk = post.pk
+        with self.captureOnCommitCallbacks(execute=True):
+            post.delete()
+        self.assertFalse(BlogPost.objects.filter(pk=pk).exists())
+
+    def test_unsaved_new_upload_does_not_change_which_file_goes(self):
+        post = self.make_post("Gone Unsaved")
+        path = self.path(post)
+        post.header_image = SimpleUploadedFile("q.png", PNG, content_type="image/png")
+        with self.captureOnCommitCallbacks(execute=True):
+            post.delete()
+        self.assertFalse(path.exists())

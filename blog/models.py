@@ -4,6 +4,8 @@ from functools import partial
 from pathlib import Path
 
 from django.db import models, transaction
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.text import slugify
 
@@ -29,7 +31,8 @@ def blog_header_image_path(instance, filename):
     - 'blog/images/' + a 100-character slug overflowed the 100-character
       column. The slug is trimmed so the whole name fits.
 
-    BlogPost.save() deletes the file an upload replaces.
+    BlogPost.save() deletes the file an upload replaces, and deleting a post
+    deletes its file (_delete_header_image_with_post).
 
     SlugModelMixin.save() sets `slug` before calling super().save(), and the file
     is written during that super().save(), so the slug is already available here
@@ -196,7 +199,31 @@ class BlogPost(SlugModelMixin):
 
 
 def _delete_header_image(storage, name: str) -> None:
-    """Remove a header image an upload (or Remove image) replaced, unless some
-    other post still points at it."""
+    """Remove a header image an upload (or Remove image) replaced, or whose
+    post was deleted, unless some other post still points at it."""
     if not BlogPost.objects.filter(header_image=name).exists():
         storage.delete(name)
+
+
+@receiver(pre_delete, sender=BlogPost, dispatch_uid="blog_delete_header_image_with_post")
+def _delete_header_image_with_post(sender, instance: BlogPost, using, **kwargs) -> None:
+    """Delete a post's header image along with the post.
+
+    A signal rather than BlogPost.delete(), so a queryset delete (which
+    never calls delete() on each row) removes the files too. pre_delete,
+    not post_delete: the row still exists, so a deferred header_image can
+    still be read. The file goes once the delete commits, and only if no
+    other post points at it (checked then, not now); a rolled-back delete
+    drops the callback with the transaction.
+
+    The stored name, not whatever is on the instance: an upload assigned but
+    never saved isn't in storage under that name.
+    """
+    if "header_image" in instance.__dict__ and hasattr(instance, "_stored_header_image"):
+        name = instance._stored_header_image
+    else:
+        name = instance.header_image.name  # deferred: loads the stored name
+    if name:
+        transaction.on_commit(
+            partial(_delete_header_image, instance.header_image.storage, name), using=using
+        )
