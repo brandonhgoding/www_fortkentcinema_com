@@ -6,6 +6,17 @@ from django.urls import reverse
 from django.utils.text import slugify
 
 
+class FilmQuerySet(models.QuerySet):
+    def with_page(self):
+        """Films that have a /movies/<slug> page: those we have booked.
+
+        MovieDetailView serves exactly these, and the sitemap and a review's
+        "Showtimes & details" link use the same rule, so a link can't point at
+        a page that 404s.
+        """
+        return self.filter(engagements__isnull=False).distinct()
+
+
 class Film(models.Model):
     """
     Film in the system catalog.
@@ -37,6 +48,8 @@ class Film(models.Model):
     )
 
     created_at = models.DateTimeField(auto_now_add=True, null=True)
+
+    objects = FilmQuerySet.as_manager()
 
     class Meta:
         ordering = ["title"]

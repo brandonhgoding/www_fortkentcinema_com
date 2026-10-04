@@ -468,11 +468,7 @@ class MovieDetailView(DetailView):
     template_name = "web/movie_detail.html"
 
     def get_queryset(self):
-        return (
-            Film.objects.filter(engagements__isnull=False)
-            .select_related("review", "review__author")
-            .distinct()
-        )
+        return Film.objects.with_page().select_related("review", "review__author")
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)

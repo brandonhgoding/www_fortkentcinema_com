@@ -119,11 +119,7 @@ class FilmSitemap(Sitemap):
     def items(self):
         # Only films we've actually booked. A never-booked film has no showtimes
         # and no run history — nothing but the TMDB blurb — so it has no page.
-        return (
-            Film.objects.filter(engagements__isnull=False)
-            .exclude(slug__isnull=True)
-            .distinct()
-        )
+        return Film.objects.with_page().exclude(slug__isnull=True)
 
 
 class PollSitemap(Sitemap):

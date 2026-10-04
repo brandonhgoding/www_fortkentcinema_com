@@ -179,6 +179,18 @@ class ReviewLinkTests(MoviePageFixture):
         html = self.client.get(f"/blog/{self.review.slug}").content.decode()
         self.assertIn(f"/movies/{self.showing.slug}", hrefs(html))
 
+    def test_review_does_not_link_to_an_unbooked_film(self):
+        """A review can be linked to a film we never booked, which has no
+        /movies/ page. The link 404'd."""
+        self.never_booked.review = self.review
+        self.never_booked.save(update_fields=["review"])
+        links = hrefs(self.client.get(f"/blog/{self.review.slug}").content.decode())
+        self.assertIn(f"/movies/{self.showing.slug}", links)
+        self.assertNotIn(f"/movies/{self.never_booked.slug}", links)
+        self.assertEqual(
+            self.client.get(f"/movies/{self.never_booked.slug}").status_code, 404
+        )
+
     def test_draft_review_is_not_linked(self):
         """A review being rewritten as a draft 404s publicly, so the film page
         must not link to it."""

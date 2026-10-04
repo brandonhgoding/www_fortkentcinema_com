@@ -48,6 +48,9 @@ class PostDetailView(DetailView):
             if post.header_image else None
         )
         ctx["related_posts"] = self._related_posts(post)
+        # Only films with a page to link to. A review can be linked to a film
+        # we never booked, and /movies/<slug> 404s for those.
+        ctx["reviewed_films"] = post.films.with_page()
         return ctx
 
     def _related_posts(self, post):
