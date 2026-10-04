@@ -35,7 +35,6 @@
 
 /* Loading and error states */
 .loading,
-.notFound,
 .empty {
   text-align: center;
   padding: 3rem 1rem;
@@ -94,12 +93,6 @@
   font-weight: 600;
   color: var(--charcoal);
   margin: 0 0 0.5rem 0;
-}
-
-.filmMeta {
-  font-size: 0.875rem;
-  color: var(--charcoal);
-  margin: 0 0 0.25rem 0;
 }
 
 .synopsis {

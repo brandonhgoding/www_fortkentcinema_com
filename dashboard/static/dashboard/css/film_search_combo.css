@@ -126,8 +126,7 @@
   margin: var(--space-xs) 0;
 }
 
-/* States (loading, error, empty) */
-.loadingState,
+/* Empty states */
 .emptyState {
   display: flex;
   flex-direction: column;
@@ -140,18 +139,6 @@
 .emptyLocalState {
   padding: var(--space-md);
   text-align: center;
-}
-
-.loadingSpinner {
-  width: 32px;
-  height: 32px;
-  margin-bottom: var(--space-md);
-}
-
-.loadingText {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  margin: 0;
 }
 
 .emptyText {
@@ -178,8 +165,7 @@
   border-bottom: none;
 }
 
-.resultItem:hover,
-.resultItemSelected {
+.resultItem:hover {
   background: var(--surface-secondary);
 }
 
@@ -198,8 +184,7 @@
   background: rgba(184, 149, 108, 0.03);
 }
 
-.tmdbResultItem:hover,
-.tmdbResultItem.resultItemSelected {
+.tmdbResultItem:hover {
   background: rgba(184, 149, 108, 0.08);
 }
 
@@ -221,8 +206,7 @@
   transition: background var(--transition-fast);
 }
 
-.tmdbOption:hover,
-.tmdbOption.resultItemSelected {
+.tmdbOption:hover {
   background: rgba(184, 149, 108, 0.08);
 }
 
@@ -340,35 +324,6 @@
 .checkIcon {
   width: 16px;
   height: 16px;
-}
-
-/* Creating indicator */
-.creatingIndicator {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  margin-top: var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
-  background: var(--surface-secondary);
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-}
-
-.creatingIndicator .spinner {
-  width: 16px;
-  height: 16px;
-}
-
-/* Error banner */
-.errorBanner {
-  margin-top: var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
-  background: var(--status-cancelled-bg);
-  color: var(--status-cancelled);
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
-  font-weight: 500;
 }
 
 /* Help text */

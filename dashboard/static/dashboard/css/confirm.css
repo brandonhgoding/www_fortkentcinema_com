@@ -86,38 +86,6 @@
   margin: 0;
 }
 
-/* Prompt input group */
-.promptGroup {
-  margin-top: var(--space-md);
-}
-
-.promptLabel {
-  display: block;
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--text-secondary);
-  margin-bottom: var(--space-xs);
-}
-
-.promptInput {
-  width: 100%;
-  padding: var(--space-sm) var(--space-md);
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-  color: var(--text-primary);
-  background: var(--surface-secondary);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
-  resize: vertical;
-  transition: border-color var(--transition-fast);
-}
-
-.promptInput:focus {
-  outline: none;
-  border-color: var(--brass);
-  box-shadow: 0 0 0 3px var(--brass-glow);
-}
-
 /* Footer */
 .footer {
   display: flex;

@@ -47,19 +47,9 @@
 }
 
 /* Width variants */
-.sm {
-  width: 100%;
-  max-width: 400px;
-}
-
 .md {
   width: 100%;
   max-width: 500px;
-}
-
-.lg {
-  width: 100%;
-  max-width: 600px;
 }
 
 /* Header */
@@ -141,9 +131,7 @@
 /* Phone & small tablet: full width — avoids the half-covered look
    on devices wider than 480px but narrower than the panel. */
 @media (max-width: 640px) {
-  .sm,
-  .md,
-  .lg {
+  .md {
     max-width: 100%;
   }
 }
