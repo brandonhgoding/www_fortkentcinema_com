@@ -95,3 +95,21 @@ class InquiryAlertTests(TestCase):
         # The new parameter has a default, so every existing call site and the
         # pre-existing tests above keep working unchanged.
         self.assertEqual(build_smart_alerts([], 1, self.today), [])
+
+
+class VoicemailAlertTests(TestCase):
+    def setUp(self) -> None:
+        self.today = datetime.date(2026, 7, 10)
+
+    def _message(self, count: int) -> str | None:
+        alerts = build_smart_alerts([], 1, self.today, new_voicemails=count)
+        return next((a["message"] for a in alerts if a["id"] == "new-voicemails"), None)
+
+    def test_no_alert_without_new_voicemails(self):
+        self.assertIsNone(self._message(0))
+
+    def test_alert_is_singular_for_one(self):
+        self.assertEqual(self._message(1), "You have 1 new voicemail")
+
+    def test_alert_is_plural_for_many(self):
+        self.assertEqual(self._message(2), "You have 2 new voicemails")

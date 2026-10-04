@@ -41,6 +41,7 @@ class ChromeTests(TestCase):
                 "Polls",
                 "Screens",
                 "Subscribers",
+                "Voicemails",
             ],
         )
 

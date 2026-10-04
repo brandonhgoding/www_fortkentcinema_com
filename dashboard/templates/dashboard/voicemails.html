@@ -1,0 +1,76 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% block title %}Voicemails · LeprinceOS{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/polls.css' %}" />{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Voicemails</h1>
+      <p class="page-subtitle">
+        {{ new_count }} new message{{ new_count|pluralize }} waiting.
+      </p>
+    </div>
+  </div>
+
+  <form method="get" class="filterBar">
+    <select class="input" name="status" onchange="this.form.submit()">
+      <option value="">All statuses</option>
+      {% for value, label in statuses %}
+        <option value="{{ value }}" {% if value == selected_status %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </form>
+
+  {% if voicemails %}
+    <div class="tableWrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Caller</th><th>Received</th><th>Length</th>
+          <th>Recording</th><th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for voicemail in voicemails %}
+          <tr>
+            <td>
+              {% if voicemail.caller %}<a href="tel:{{ voicemail.caller }}">{{ voicemail.caller }}</a>{% else %}Unknown{% endif %}
+            </td>
+            <td>{{ voicemail.created_at|date:"M j, Y g:i A" }}</td>
+            <td>{% if voicemail.duration_seconds is not None %}{{ voicemail.duration_seconds }}s{% else %}—{% endif %}</td>
+            <td>
+              {% if voicemail.audio_url %}
+                <audio controls preload="none" src="{{ voicemail.audio_url }}"></audio>
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              <form method="post" action="{% url 'dashboard:voicemail_status' voicemail.pk %}">
+                {% csrf_token %}
+                <select class="input inputCompact" name="status" onchange="this.form.submit()">
+                  {% for value, label in statuses %}
+                    <option value="{{ value }}" {% if value == voicemail.status %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </form>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="5" class="text-muted">
+              {% if voicemail.transcript %}{{ voicemail.transcript }}
+              {% elif voicemail.transcription_status == "failed" %}Transcript unavailable — listen to the recording.
+              {% else %}Transcript pending…{% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <h3 class="empty-state-title">No Voicemails Yet</h3>
+      <p class="empty-state-description">They'll show up here when a caller presses 3 on the phone line.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

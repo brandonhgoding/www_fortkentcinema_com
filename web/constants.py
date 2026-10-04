@@ -66,6 +66,21 @@ SITE_CONFIG = {
     ],
 }
 
+# Regular admission, in whole dollars. Read by the phone line (phone/speech.py).
+# A matinee is a show starting at `matinee_until` or earlier. The member price
+# applies to every show, except runs marked `is_free_for_members`.
+#
+# NOTE: OPEN_MIC's "member_price"/"general_price" and /membership/'s "$4 off
+# evening tickets" restate these numbers; a reprice has to move them together.
+TICKET_PRICES = {
+    "adult": 8,
+    "senior": 7,
+    "child": 6,
+    "matinee": 7,
+    "member": 4,
+    "matinee_until": datetime.time(16, 0),
+}
+
 
 # Everything below is derived from SITE_CONFIG above, so the config stays the
 # single source of truth. SITE_CONFIG["seo"] is what templates read: it rides

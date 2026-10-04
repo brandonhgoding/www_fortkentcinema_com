@@ -9,6 +9,7 @@ from . import (
     term_views,
     tier_views,
     views,
+    voicemail_views,
 )
 
 app_name = "dashboard"
@@ -206,5 +207,11 @@ urlpatterns = [
         "inquiries/<int:pk>/status",
         inquiry_views.InquiryStatusView.as_view(),
         name="inquiry_status",
+    ),
+    path("voicemails", voicemail_views.VoicemailListView.as_view(), name="voicemails"),
+    path(
+        "voicemails/<int:pk>/status",
+        voicemail_views.VoicemailStatusView.as_view(),
+        name="voicemail_status",
     ),
 ]

@@ -37,6 +37,7 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.generic import TemplateView, View
+from phone.models import Voicemail, VoicemailStatus
 
 from .forms import EngagementForm, ScreenForm
 from .mixins import StaffRequiredMixin
@@ -84,6 +85,9 @@ class HomeView(StaffRequiredMixin, TemplateView):
                 today,
                 new_inquiries=SponsorshipInquiry.objects.filter(
                     status=InquiryStatus.NEW
+                ).count(),
+                new_voicemails=Voicemail.objects.filter(
+                    status=VoicemailStatus.NEW
                 ).count(),
             ),
             "display_name": user.get_short_name() or user.get_username(),

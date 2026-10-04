@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "dashboard.apps.DashboardConfig",
     "cinema.apps.CinemaConfig",
     "audience.apps.AudienceConfig",
+    "phone.apps.PhoneConfig",
     "rest_framework",
     "corsheaders",
 ]
@@ -229,3 +230,13 @@ LOGIN_REDIRECT_URL = "/dashboard/"
 TMDB_API_KEY = config("TMDB_API_KEY", default="")
 TMDB_BASE_URL = "https://api.themoviedb.org/3"
 TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/"
+
+# Twilio phone line (phone app). Every webhook is checked against
+# X-Twilio-Signature using this token; empty means every webhook gets a 403,
+# so a missing env var fails closed rather than open.
+TWILIO_AUTH_TOKEN = config("TWILIO_AUTH_TOKEN", default="")
+# Twilio signs the exact public URL it called. Behind nginx, Django rebuilds
+# that from X-Forwarded-Proto/Host (USE_PROXY_HEADERS). Set this — e.g.
+# "https://www.fortkentcinema.com" or an ngrok URL — to sign against a fixed
+# base instead, so a proxy header misconfiguration can't 403 every call.
+TWILIO_WEBHOOK_BASE_URL = config("TWILIO_WEBHOOK_BASE_URL", default="")
