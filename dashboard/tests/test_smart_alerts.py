@@ -33,10 +33,10 @@ class BuildSmartAlertsTests(TestCase):
         self.assertNotIn("no-showtimes-tomorrow", ids)
 
     def test_ending_soon_boundaries(self) -> None:
-        e_today = make_eng(self.screen, self.film, end=self.today, title="Ends Today")
-        e_two = make_eng(self.screen, self.film, end=self.today + datetime.timedelta(days=2), title="Ends Two")
-        e_three = make_eng(self.screen, self.film, end=self.today + datetime.timedelta(days=3), title="Ends Three")
-        e_draft = make_eng(self.screen, self.film, end=self.today, status="DRAFT", title="Draft One")
+        make_eng(self.screen, self.film, end=self.today, title="Ends Today")
+        make_eng(self.screen, self.film, end=self.today + datetime.timedelta(days=2), title="Ends Two")
+        make_eng(self.screen, self.film, end=self.today + datetime.timedelta(days=3), title="Ends Three")
+        make_eng(self.screen, self.film, end=self.today, status="DRAFT", title="Draft One")
         alerts = build_smart_alerts(Engagement.objects.all(), 5, self.today)
         msgs = [a["message"] for a in alerts]
         self.assertIn("Ends Today ends in 0 days", msgs)

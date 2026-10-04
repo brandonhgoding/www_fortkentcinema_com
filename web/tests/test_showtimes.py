@@ -1,4 +1,3 @@
-import datetime
 from django.test import SimpleTestCase
 from web.services import showtimes
 

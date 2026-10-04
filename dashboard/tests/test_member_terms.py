@@ -327,8 +327,6 @@ class RenewPrefillTests(TestCase):
         self.member = make_member()
 
     def renew_form(self):
-        from dashboard.forms import MembershipTermForm  # noqa: F401
-
         return self.client.get(
             reverse("dashboard:term_create", args=[self.member.pk]), {"renew": "1"}
         ).content.decode()

@@ -42,9 +42,6 @@ class ScreenListTests(TestCase):
         self.assertIn("dashboard/css/screens.css", html)
 
 
-import json
-
-
 class ScreenCreateEditTests(TestCase):
     def setUp(self) -> None:
         User.objects.create_user(username="s", password="pw12345", is_staff=True)
@@ -101,7 +98,7 @@ class ScreenCreateEditTests(TestCase):
 
 import datetime
 
-from cinema.models import Engagement, Showtime
+from cinema.models import Engagement
 
 
 class ScreenDeleteTests(TestCase):

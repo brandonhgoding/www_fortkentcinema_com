@@ -25,7 +25,6 @@ import tempfile
 from pathlib import Path
 
 from blog.models import BlogAuthor, BlogCategory, BlogPost
-from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 

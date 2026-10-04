@@ -91,7 +91,6 @@ class ShowtimeListTests(TestCase):
         self.assertIn("Active", html)         # active badge
 
 
-import json
 from zoneinfo import ZoneInfo
 
 TZ = ZoneInfo("America/New_York")

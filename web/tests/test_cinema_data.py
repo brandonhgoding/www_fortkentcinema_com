@@ -5,7 +5,6 @@ from django.test import TestCase
 from django.utils import timezone
 
 from web.services.cinema_data import (
-    CINEMA_TZ,
     _format_runtime,
     get_now_showing,
 )

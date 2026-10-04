@@ -83,9 +83,6 @@ class EngagementListTests(TestCase):
         self.assertIn("<!doctype", body.lower())
 
 
-import json
-
-
 class EngagementStatusTests(TestCase):
     def setUp(self) -> None:
         User.objects.create_user(username="s", password="pw12345", is_staff=True)
@@ -113,7 +110,7 @@ class EngagementStatusTests(TestCase):
 
     def test_ended_engagement_locked(self) -> None:
         past = self.today - datetime.timedelta(days=5)
-        e = make_engagement(self.screen, start=past, end=past, status="CONFIRMED")
+        make_engagement(self.screen, start=past, end=past, status="CONFIRMED")
         html = self.client.get(reverse("dashboard:engagements"), {"tab": "ENDED"}).content.decode()
         # locked: the status button is disabled for an ended engagement
         self.assertIn("disabled", html)
@@ -187,8 +184,8 @@ class EngagementCreateTests(TestCase):
         self.assertIn('id="engagement-form"', resp.content.decode())
 
     def test_end_before_start(self) -> None:
-        resp = self.client.post(reverse("dashboard:engagement_create"),
-                                self._payload(end_date=(self.today - datetime.timedelta(days=1)).isoformat()))
+        self.client.post(reverse("dashboard:engagement_create"),
+                         self._payload(end_date=(self.today - datetime.timedelta(days=1)).isoformat()))
         self.assertEqual(Engagement.objects.count(), 0)
 
 
