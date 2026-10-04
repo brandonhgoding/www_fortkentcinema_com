@@ -118,6 +118,14 @@ def seed(apps, schema_editor):
 def unseed(apps, schema_editor):
     # Scoped to exactly what `seed` created — an unscoped delete would also
     # take any tier or benefit a staff member added since through the admin.
+    #
+    # Known limitation: benefits are matched by the names seeded here, so a
+    # seeded perk renamed since (in the admin or the dashboard) survives a
+    # rollback, orphaned from every tier. Benefits have no slug, and `seed`
+    # never recorded the pks it created, so nothing stable identifies them
+    # after a rename. Guessing — the lowest ten pks, say, or every benefit
+    # a seeded tier carries — could delete perks staff added. Tiers do not
+    # have this problem: their slugs are fixed after creation.
     apps.get_model("audience", "MembershipTier").objects.filter(
         slug__in=[spec["slug"] for spec in TIERS]
     ).delete()
