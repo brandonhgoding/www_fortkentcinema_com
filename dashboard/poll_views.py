@@ -17,16 +17,26 @@ from .forms import PollForm
 from .mixins import StaffRequiredMixin
 
 
-def _poll_list_response(request, toast_message: str = "") -> HttpResponse:
+def _poll_list_response(request, toast_message: str) -> HttpResponse:
+    """Success response for the poll drawer: swap the list out of band,
+    close the drawer, and toast.
+
+    The form posts into #drawer-content like every other drawer form, so an
+    invalid submit re-renders the form in place. It used to target the
+    list, which put the form with its errors where the table was and closed
+    the drawer, since a 200 counts as a successful request.
+    """
     response = render(
         request,
         "dashboard/_poll_list.html",
-        {"polls": Poll.objects.all()},
+        {"polls": Poll.objects.all(), "oob": True},
     )
-    if toast_message:
-        response["HX-Trigger"] = json.dumps(
-            {"dashboard-toast": {"kind": "success", "message": toast_message}}
-        )
+    response["HX-Trigger"] = json.dumps(
+        {
+            "close-drawer": True,
+            "dashboard-toast": {"kind": "success", "message": toast_message},
+        }
+    )
     return response
 
 

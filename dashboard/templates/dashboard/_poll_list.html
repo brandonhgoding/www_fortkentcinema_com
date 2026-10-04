@@ -1,5 +1,5 @@
 {% if polls %}
-<div class="tableWrapper" id="poll-list">
+<div class="tableWrapper" id="poll-list"{% if oob %} hx-swap-oob="true"{% endif %}>
 <table class="table">
   <thead>
     <tr><th>Poll</th><th>Status</th><th>Options</th><th>Votes</th><th></th></tr>
@@ -25,7 +25,7 @@
 </table>
 </div>
 {% else %}
-<div class="empty-state" id="poll-list">
+<div class="empty-state" id="poll-list"{% if oob %} hx-swap-oob="true"{% endif %}>
   <h3 class="empty-state-title">No Polls Yet</h3>
   <p class="empty-state-description">Create a round, add four to six films, then open it for voting.</p>
 </div>

@@ -1,3 +1,5 @@
+import json
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -67,6 +69,23 @@ class PollCreateEditTests(TestCase):
         response = self.client.post(reverse("dashboard:poll_create"), {"title": ""})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Poll.objects.count(), 0)
+
+    def test_invalid_submit_stays_in_the_drawer(self) -> None:
+        # The form re-renders into the drawer; it used to replace the list.
+        response = self.client.post(reverse("dashboard:poll_create"), {"title": ""})
+        html = response.content.decode()
+        self.assertIn('hx-target="#drawer-content"', html)
+        self.assertNotIn('id="poll-list"', html)
+        self.assertNotIn("HX-Trigger", response)
+
+    def test_success_swaps_the_list_and_closes_the_drawer(self) -> None:
+        response = self.client.post(
+            reverse("dashboard:poll_create"), {"title": "Round One", "blurb": ""}
+        )
+        self.assertIn('id="poll-list" hx-swap-oob="true"', response.content.decode())
+        trigger = json.loads(response["HX-Trigger"])
+        self.assertTrue(trigger["close-drawer"])
+        self.assertEqual(trigger["dashboard-toast"]["message"], "Poll created")
 
     def test_edit_updates_the_poll(self) -> None:
         poll = Poll.objects.create(title="Round One")
