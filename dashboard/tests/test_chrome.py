@@ -1,3 +1,5 @@
+import re
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -19,6 +21,28 @@ class ChromeTests(TestCase):
         self.assertIn(">Engagements<", html)
         self.assertIn(">Screens<", html)
         self.assertNotIn("API Docs", html)
+
+    def test_nav_order_home_first_then_alphabetical(self) -> None:
+        # Home stays on top; everything under it is alphabetical by the label
+        # staff see, the order the owner set on 2026-10-03. The mobile menu
+        # is this same sidebar slid in, so this pins both.
+        html = self.client.get(reverse("dashboard:home")).content.decode()
+        nav = html.split('data-cy="sidebar-nav"', 1)[1].split("</nav>", 1)[0]
+        labels = re.findall(r"</svg>([^<]+)</a>", nav)
+        self.assertEqual(
+            labels,
+            [
+                "Home",
+                "Blog",
+                "Engagements",
+                "Inquiries",
+                "Members",
+                "Memberships",
+                "Polls",
+                "Screens",
+                "Subscribers",
+            ],
+        )
 
     def test_logout_link_present(self) -> None:
         html = self.client.get(reverse("dashboard:home")).content.decode()
