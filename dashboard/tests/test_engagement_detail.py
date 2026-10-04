@@ -111,7 +111,7 @@ class ShowtimeCreateEditTests(TestCase):
     def test_get_form(self) -> None:
         html = self.client.get(reverse("dashboard:showtime_create", args=[self.eng.pk])).content.decode()
         self.assertIn('id="showtime-form"', html)
-        self.assertIn("Add Showtime", html)
+        self.assertIn("Create Showtime", html)
 
     def test_create_combines_tz_aware(self) -> None:
         resp = self.client.post(reverse("dashboard:showtime_create", args=[self.eng.pk]),

@@ -94,7 +94,7 @@ class TermCreateTests(TestCase):
             reverse("dashboard:term_create", args=[self.member.pk])
         ).content.decode()
         self.assertIn('id="term-form"', html)
-        self.assertIn("Add Term", html)
+        self.assertIn("Create Term", html)
 
     def test_renewal_needs_only_a_tier_and_a_start_date(self) -> None:
         resp = self.client.post(
@@ -330,6 +330,24 @@ class RenewPrefillTests(TestCase):
         return self.client.get(
             reverse("dashboard:term_create", args=[self.member.pk]), {"renew": "1"}
         ).content.decode()
+
+    def test_renewal_says_renew_through_an_invalid_submit(self) -> None:
+        # The drawer is titled Renew Membership; its button matches, and
+        # keeps matching when a bad submit re-renders the form.
+        url = reverse("dashboard:term_create", args=[self.member.pk]) + "?renew=1"
+        self.assertIn("Renew Membership", self.renew_form())
+        self.assertIn(f'hx-post="{url}"', self.renew_form())
+        html = self.client.post(url, {}).content.decode()
+        self.assertIn("Renew Membership", html)
+        self.assertIn(f'hx-post="{url}"', html)
+
+    def test_renewal_toasts_renewed(self) -> None:
+        url = reverse("dashboard:term_create", args=[self.member.pk]) + "?renew=1"
+        resp = self.client.post(
+            url,
+            {"tier": a_tier("individual").pk, "started_on": "2026-01-01"},
+        )
+        self.assertIn("Membership renewed", resp["HX-Trigger"])
 
     def test_prefills_the_tier_and_a_continuing_start_date(self) -> None:
         # Relative to today: renewal_start never goes earlier than today,

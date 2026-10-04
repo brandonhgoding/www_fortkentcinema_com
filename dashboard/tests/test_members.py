@@ -199,7 +199,7 @@ class MemberCreateEditTests(TestCase):
     def test_get_create_form(self) -> None:
         html = self.client.get(reverse("dashboard:member_create")).content.decode()
         self.assertIn('id="member-form"', html)
-        self.assertIn("Add Member", html)
+        self.assertIn("Create Member", html)
 
     def test_post_create_valid(self) -> None:
         resp = self.client.post(

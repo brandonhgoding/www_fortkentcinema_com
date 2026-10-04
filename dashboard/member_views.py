@@ -144,16 +144,16 @@ def _member_list_response(request, toast_message):
 class MemberCreateView(StaffRequiredMixin, View):
     def get(self, request):
         return _render_member_form(
-            request, MemberForm(), reverse("dashboard:member_create"), "Add Member"
+            request, MemberForm(), reverse("dashboard:member_create"), "Create Member"
         )
 
     def post(self, request):
         form = MemberForm(request.POST)
         if form.is_valid():
             form.save()
-            return _member_list_response(request, "Member added")
+            return _member_list_response(request, "Member created")
         return _render_member_form(
-            request, form, reverse("dashboard:member_create"), "Add Member"
+            request, form, reverse("dashboard:member_create"), "Create Member"
         )
 
 
@@ -281,14 +281,26 @@ class MemberDetailView(StaffRequiredMixin, View):
         )
 
 
+def _term_create_action(request, pk) -> tuple[str, str]:
+    """The create form's post URL and submit label.
+
+    A renewal keeps `?renew=1` on its post URL so an invalid submit
+    re-renders as a renewal: the drawer is titled Renew Membership and the
+    button should say so too.
+    """
+    url = reverse("dashboard:term_create", args=[pk])
+    if request.GET.get("renew") == "1":
+        return f"{url}?renew=1", "Renew Membership"
+    return url, "Create Term"
+
+
 class TermCreateView(StaffRequiredMixin, View):
     def get(self, request, pk):
         member = get_object_or_404(Member, pk=pk)
         return _render_term_form(
             request,
             MembershipTermForm(initial=_renewal_initial(member, request)),
-            reverse("dashboard:term_create", args=[pk]),
-            "Add Term",
+            *_term_create_action(request, pk),
         )
 
     def post(self, request, pk):
@@ -299,13 +311,11 @@ class TermCreateView(StaffRequiredMixin, View):
             # The member comes from the URL, never the payload.
             term.member = member
             term.save()
-            return _term_list_response(request, member, "Term added")
-        return _render_term_form(
-            request,
-            form,
-            reverse("dashboard:term_create", args=[pk]),
-            "Add Term",
-        )
+            renewed = request.GET.get("renew") == "1"
+            return _term_list_response(
+                request, member, "Membership renewed" if renewed else "Term created"
+            )
+        return _render_term_form(request, form, *_term_create_action(request, pk))
 
 
 class TermEditView(StaffRequiredMixin, View):

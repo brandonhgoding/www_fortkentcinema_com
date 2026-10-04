@@ -22,7 +22,7 @@
               hx-target="#drawer-content" @click="$store.drawer.show('Renew Membership')">Renew</button>
       {% endif %}
       <button class="btn btn-primary" hx-get="{% url 'dashboard:term_create' member.pk %}"
-              hx-target="#drawer-content" @click="$store.drawer.show('Add Term')">+ Add Term</button>
+              hx-target="#drawer-content" @click="$store.drawer.show('New Term')">+ New Term</button>
     </div>
   </div>
 

@@ -45,7 +45,7 @@
   <div class="empty-state">
     <h3 class="empty-state-title">No Showtimes Yet</h3>
     <p class="empty-state-description">No showtimes scheduled for this engagement.</p>
-    <button class="btn btn-primary" hx-get="{% url 'dashboard:showtime_create' engagement.pk %}" hx-target="#drawer-content" @click="$store.drawer.show('Add Showtime')">Add your first showtime</button>
+    <button class="btn btn-primary" hx-get="{% url 'dashboard:showtime_create' engagement.pk %}" hx-target="#drawer-content" @click="$store.drawer.show('New Showtime')">Add your first showtime</button>
   </div>
   {% endif %}
 </div>

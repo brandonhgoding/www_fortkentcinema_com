@@ -468,7 +468,7 @@ class ShowtimeCreateView(StaffRequiredMixin, View):
         engagement = get_object_or_404(Engagement, pk=eng_pk)
         return _render_showtime_form(
             request, engagement, reverse("dashboard:showtime_create", args=[eng_pk]),
-            "Add Showtime", "create", date=engagement.start_date.isoformat())
+            "Create Showtime", "create", date=engagement.start_date.isoformat())
 
     def post(self, request, eng_pk):
         engagement = get_object_or_404(Engagement, pk=eng_pk)
@@ -476,19 +476,19 @@ class ShowtimeCreateView(StaffRequiredMixin, View):
         captions = request.POST.get("captions") or None
         action = reverse("dashboard:showtime_create", args=[eng_pk])
         if not date_str or not time_str:
-            return _render_showtime_form(request, engagement, action, "Add Showtime", "create",
+            return _render_showtime_form(request, engagement, action, "Create Showtime", "create",
                                          date=date_str, time=time_str, captions=captions,
                                          errors=["Date and time are required."])
         starts_at = _parse_starts_at(date_str, time_str)
         conflicts = check_overlap_against_existing(
             engagement.screen, starts_at, engagement.total_runtime_minutes, engagement.display_title)
         if conflicts:
-            return _render_showtime_form(request, engagement, action, "Add Showtime", "create",
+            return _render_showtime_form(request, engagement, action, "Create Showtime", "create",
                                          date=date_str, time=time_str, captions=captions,
                                          errors=[format_overlap_error(c) for c in conflicts])
         Showtime.objects.create(engagement=engagement, starts_at=starts_at, captions=captions)
         return _showtime_list_response(request, engagement,
-                                       {"kind": "success", "message": "Showtime added"}, close_drawer=True)
+                                       {"kind": "success", "message": "Showtime created"}, close_drawer=True)
 
 
 class ShowtimeEditView(StaffRequiredMixin, View):
