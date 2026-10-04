@@ -24,6 +24,10 @@ So comparing slug-to-slug sidesteps quotes, case and entities entirely.
 
 Idempotent: only fills in films whose `review` is unset, so it is safe to re-run
 as new reviews are written. Never overwrites a hand-made link.
+
+Only published posts count: a draft 404s publicly, so the film page must not
+link to it. When a film has several matching reviews the newest published one
+wins, and the film is then done for this run.
 """
 
 import re
@@ -65,11 +69,12 @@ class Command(BaseCommand):
         }
         linked = 0
 
-        for post in BlogPost.objects.all():
+        for post in BlogPost.objects.published().order_by("-post_date", "-id"):
             slug = film_slug_for(post.slug)
             if not slug:
                 continue
-            film = films_by_slug.get(slug)
+            # pop, not get: newest first, so the first match is the one to keep.
+            film = films_by_slug.pop(slug, None)
             if not film:
                 continue
 
@@ -83,6 +88,6 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"{verb} {linked} film(s) to a review."))
         if not linked:
             self.stdout.write(
-                "No unlinked films matched a review slug. "
-                "Link the rest by hand in admin (Film > review)."
+                "No unlinked films matched a review slug. Link the rest by hand "
+                "in the dashboard: open the post under Blog and set Reviews film."
             )

@@ -362,6 +362,50 @@ class LinkFilmReviewsCommandTests(TestCase):
         self.film.refresh_from_db()
         self.assertIsNone(self.film.review)
 
+    def make_review(self, subtitle, post_date, **extra):
+        return BlogPost.objects.create(
+            title="Another Take",
+            subtitle=subtitle,
+            author=self.review.author,
+            category=self.review.category,
+            post_date=post_date,
+            content="...",
+            **extra,
+        )
+
+    def test_draft_reviews_are_not_linked(self):
+        """A draft 404s publicly, so the film page must not link to it."""
+        film = Film.objects.create(title="Unfinished")
+        self.make_review(
+            "A Review of Unfinished", datetime.date(2026, 4, 1),
+            status=BlogPost.Status.DRAFT,
+        )
+        self.run_command()
+        film.refresh_from_db()
+        self.assertIsNone(film.review)
+
+    def test_newest_published_review_wins(self):
+        """Two reviews of one film: the film was linked once per match, and
+        the oldest write survived — even when it was a draft."""
+        film = Film.objects.create(title="Rewatched")
+        self.make_review("A Review of Rewatched", datetime.date(2024, 1, 1))
+        newest = self.make_review("A Preview of Rewatched", datetime.date(2026, 1, 1))
+        self.make_review(
+            "An Appreciation of Rewatched", datetime.date(2026, 6, 1),
+            status=BlogPost.Status.DRAFT,
+        )
+        out = self.run_command()
+        film.refresh_from_db()
+        self.assertEqual(film.review, newest)
+        self.assertEqual(out.count("Rewatched  ->"), 1)
+
+    def test_no_match_hint_does_not_point_at_admin(self):
+        """FilmAdmin.review is read-only; links are made in the post editor."""
+        Film.objects.filter(pk=self.film.pk).update(review=self.not_a_review)
+        out = self.run_command()
+        self.assertNotIn("admin", out)
+        self.assertIn("dashboard", out)
+
     def test_never_overwrites_a_hand_made_link(self):
         self.film.review = self.not_a_review
         self.film.save(update_fields=["review"])
