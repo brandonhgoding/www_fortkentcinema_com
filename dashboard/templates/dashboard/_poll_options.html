@@ -1,4 +1,4 @@
-<div id="poll-options">
+<div id="poll-options" class="pollOptions">
   {% for row in tallies %}
     <div class="pollOptionRow">
       <div>
@@ -13,21 +13,21 @@
       <div>
         <span>{{ row.count }} vote{{ row.count|pluralize }}</span>
         {% if poll.status == "DRAFT" %}
-          <button class="secondaryButton" aria-label="Move up"
+          <button class="btn btn-secondary btn-sm btn-icon" aria-label="Move up"
                   hx-post="{% url 'dashboard:poll_option_move' poll.pk row.option.pk %}"
                   hx-vals='{"direction": "up"}'
                   hx-target="#poll-options" hx-swap="outerHTML">&uarr;</button>
-          <button class="secondaryButton" aria-label="Move down"
+          <button class="btn btn-secondary btn-sm btn-icon" aria-label="Move down"
                   hx-post="{% url 'dashboard:poll_option_move' poll.pk row.option.pk %}"
                   hx-vals='{"direction": "down"}'
                   hx-target="#poll-options" hx-swap="outerHTML">&darr;</button>
-          <button class="secondaryButton"
+          <button class="btn btn-danger btn-sm"
                   hx-post="{% url 'dashboard:poll_option_remove' poll.pk row.option.pk %}"
                   hx-target="#poll-options" hx-swap="outerHTML">Remove</button>
         {% endif %}
       </div>
     </div>
   {% empty %}
-    <p>No films on this ballot yet. Search below to add four to six.</p>
+    <p class="pollEmpty">No films on this ballot yet. Search below to add four to six.</p>
   {% endfor %}
 </div>

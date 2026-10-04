@@ -13,9 +13,9 @@
           <td>{{ benefit.tier_count }} tier{{ benefit.tier_count|pluralize }}</td>
           <td>
             <div class="actions">
-              <button class="actionButton" hx-get="{% url 'dashboard:benefit_edit' benefit.pk %}"
+              <button class="btn btn-secondary btn-sm" hx-get="{% url 'dashboard:benefit_edit' benefit.pk %}"
                       hx-target="#drawer-content" @click="$store.drawer.show('Edit Perk')">Edit</button>
-              <button class="actionButton deleteButton"
+              <button class="btn btn-danger btn-sm"
                       hx-post="{% url 'dashboard:benefit_delete' benefit.pk %}"
                       hx-target="#benefit-list" hx-swap="outerHTML"
                       data-dashboard-confirm='{"title":"Delete Perk","message":"Delete this perk? It is listed by {{ benefit.tier_count }} tier{{ benefit.tier_count|pluralize }} and will drop off the membership page for all of them.","confirmLabel":"Delete","variant":"danger"}'>Delete</button>

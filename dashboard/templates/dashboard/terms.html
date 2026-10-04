@@ -4,19 +4,19 @@
 {% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/members.css' %}" />{% endblock %}
 {% block content %}
 <div class="page">
-  <div class="header">
+  <div class="page-header">
     <div>
       <a class="backLink" href="{% url 'dashboard:members' %}">← Members</a>
-      <h1 class="title">Terms sold</h1>
-      <p class="subtitle">{{ term_count }} term{{ term_count|pluralize }} · ${{ revenue }} collected</p>
+      <h1 class="page-title">Terms sold</h1>
+      <p class="page-subtitle">{{ term_count }} term{{ term_count|pluralize }} · ${{ revenue }} collected</p>
     </div>
     <div class="actions">
-      <a class="actionButton" href="{% url 'dashboard:terms_export' %}?{{ request.GET.urlencode }}">Export CSV</a>
-      <a class="actionButton" href="{% url 'dashboard:tiers' %}">Tiers</a>
+      <a class="btn btn-secondary" href="{% url 'dashboard:terms_export' %}?{{ request.GET.urlencode }}">Export CSV</a>
+      <a class="btn btn-secondary" href="{% url 'dashboard:tiers' %}">Tiers</a>
     </div>
   </div>
 
-  <form class="memberFilters" method="get" action="{% url 'dashboard:terms' %}">
+  <form class="filterBar memberFilters" method="get" action="{% url 'dashboard:terms' %}">
     <input class="input" type="search" name="q" value="{{ q }}" placeholder="Search name or email" />
     <select class="input" name="window">
       {% for value, label in windows %}
@@ -31,7 +31,7 @@
     </select>
     <label class="filterLabel">Started from <input class="input" type="date" name="from" value="{{ started_from }}" /></label>
     <label class="filterLabel">to <input class="input" type="date" name="to" value="{{ started_to }}" /></label>
-    <button class="actionButton" type="submit">Filter</button>
+    <button class="btn btn-secondary" type="submit">Filter</button>
   </form>
 
   {# Read-only on purpose: the drawer forms here answer with an OOB swap of
@@ -51,7 +51,7 @@
           <td>{{ term.started_on|date:"M j, Y" }}</td>
           <td>
             {{ term.expires_on|date:"M j, Y" }}
-            {% if term.expires_on < today %}<span class="statusPill status-lapsed">Expired</span>{% endif %}
+            {% if term.expires_on < today %}<span class="status-badge status-lapsed">Expired</span>{% endif %}
           </td>
           <td>${{ term.price_paid }}</td>
           <td>{{ term.purchased_at|date:"M j, Y"|default:"—" }}</td>

@@ -4,10 +4,10 @@
 {% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/polls.css' %}" />{% endblock %}
 {% block content %}
 <div class="page">
-  <div class="header">
+  <div class="page-header">
     <div>
-      <h1 class="title">Subscribers</h1>
-      <p class="subtitle">
+      <h1 class="page-title">Subscribers</h1>
+      <p class="page-subtitle">
         {{ active_count }} active address{{ active_count|pluralize:"es" }}.
         {% comment %}
           Nothing here sends mail. Export, then send from Square Marketing —
@@ -16,12 +16,13 @@
         Export and send from Square Marketing.
       </p>
     </div>
-    <a class="primaryButton" href="{% url 'dashboard:subscribers_export' %}">
+    <a class="btn btn-primary" href="{% url 'dashboard:subscribers_export' %}">
       Export CSV
     </a>
   </div>
 
   {% if subscribers %}
+    <div class="tableWrapper">
     <table class="table">
       <thead>
         <tr><th>Email</th><th>Status</th><th>Source</th><th>Joined</th></tr>
@@ -30,17 +31,18 @@
         {% for sub in subscribers %}
         <tr>
           <td>{{ sub.email }}</td>
-          <td><span class="statusBadge">{{ sub.get_status_display }}</span></td>
+          <td><span class="status-badge status-{{ sub.status|lower }}">{{ sub.get_status_display }}</span></td>
           <td>{{ sub.source }}</td>
           <td>{{ sub.consent_at|date:"M j, Y" }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
+    </div>
   {% else %}
     <div class="empty-state">
-      <h2>No Subscribers Yet</h2>
-      <p>Addresses arrive when people vote and ask to hear what won.</p>
+      <h3 class="empty-state-title">No Subscribers Yet</h3>
+      <p class="empty-state-description">Addresses arrive when people vote and ask to hear what won.</p>
     </div>
   {% endif %}
 </div>

@@ -10,32 +10,11 @@
   width: 100%;
 }
 
-.input {
-  width: 100%;
-  padding: var(--space-md);
+/* The search box is the shared .input (components.css), with room on the
+   right for the spinner. Scoped so it never restyles a page's other
+   inputs, which it did while this sheet defined a bare .input. */
+.searchWrapper .input {
   padding-right: 40px;
-  font-family: var(--font-sans);
-  font-size: var(--text-base);
-  color: var(--text-primary);
-  background: var(--surface-elevated);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
-}
-
-.input:focus {
-  outline: none;
-  border-color: var(--brass);
-  box-shadow: 0 0 0 3px rgba(184, 149, 108, 0.1);
-}
-
-.input:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.input::placeholder {
-  color: var(--text-tertiary);
 }
 
 /* Input spinner */
@@ -306,24 +285,6 @@
   width: 14px;
   height: 14px;
   color: var(--brass);
-}
-
-/* Selected film display */
-.selectedFilm {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  margin-top: var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
-  background: var(--status-confirmed-bg);
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
-  color: var(--status-confirmed);
-}
-
-.checkIcon {
-  width: 16px;
-  height: 16px;
 }
 
 /* Help text */

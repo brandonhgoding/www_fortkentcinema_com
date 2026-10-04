@@ -7,26 +7,26 @@
 {% endblock %}
 {% block content %}
 <div class="page">
-  <div class="header">
+  <div class="page-header">
     <div>
-      <h1 class="title">{{ poll.title }}</h1>
-      <p class="subtitle">
+      <h1 class="page-title">{{ poll.title }}</h1>
+      <p class="page-subtitle">
         {{ poll.get_status_display }} &middot; {{ poll.total_votes }} vote{{ poll.total_votes|pluralize }}
       </p>
     </div>
-    <a class="secondaryButton" href="{% url 'dashboard:polls' %}">All Polls</a>
+    <a class="btn btn-secondary" href="{% url 'dashboard:polls' %}">All Polls</a>
   </div>
 
   {% include "dashboard/_poll_status.html" %}
 
   <section>
-    <h2>Ballot</h2>
+    <h2 class="panelTitle">Ballot</h2>
     {% include "dashboard/_poll_options.html" %}
   </section>
 
   {% if poll.status == "DRAFT" %}
     <section>
-      <h2>Add a film</h2>
+      <h2 class="panelTitle">Add a film</h2>
       {% comment %}
         Reuses the engagement film picker. The option buttons in
         _film_options.html dispatch an Alpine `film-selected` event carrying

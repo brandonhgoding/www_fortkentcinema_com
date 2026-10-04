@@ -4,17 +4,17 @@
 {% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/polls.css' %}" />{% endblock %}
 {% block content %}
 <div class="page">
-  <div class="header">
+  <div class="page-header">
     <div>
-      <h1 class="title">Sponsorship Inquiries</h1>
-      <p class="subtitle">
+      <h1 class="page-title">Sponsorship Inquiries</h1>
+      <p class="page-subtitle">
         {{ new_count }} new inquir{{ new_count|pluralize:"y,ies" }} waiting.
       </p>
     </div>
   </div>
 
-  <form method="get" class="filters">
-    <select name="status" onchange="this.form.submit()">
+  <form method="get" class="filterBar">
+    <select class="input" name="status" onchange="this.form.submit()">
       <option value="">All statuses</option>
       {% for value, label in statuses %}
         <option value="{{ value }}" {% if value == selected_status %}selected{% endif %}>{{ label }}</option>
@@ -23,6 +23,7 @@
   </form>
 
   {% if inquiries %}
+    <div class="tableWrapper">
     <table class="table">
       <thead>
         <tr>
@@ -45,7 +46,7 @@
             <td>
               <form method="post" action="{% url 'dashboard:inquiry_status' inquiry.pk %}">
                 {% csrf_token %}
-                <select name="status" onchange="this.form.submit()">
+                <select class="input inputCompact" name="status" onchange="this.form.submit()">
                   {% for value, label in statuses %}
                     <option value="{{ value }}" {% if value == inquiry.status %}selected{% endif %}>{{ label }}</option>
                   {% endfor %}
@@ -59,10 +60,11 @@
         {% endfor %}
       </tbody>
     </table>
+    </div>
   {% else %}
     <div class="empty-state">
-      <h2>No Inquiries Yet</h2>
-      <p>They'll show up here when a business fills in the form on /sponsor/.</p>
+      <h3 class="empty-state-title">No Inquiries Yet</h3>
+      <p class="empty-state-description">They'll show up here when a business fills in the form on /sponsor/.</p>
     </div>
   {% endif %}
 </div>

@@ -26,27 +26,27 @@
           </td>
           <td>
             {% if tier.show_on_membership_page %}
-            <span class="statusPill status-active">Listed</span>
+            <span class="status-badge status-active">Listed</span>
             {% else %}
-            <span class="statusPill status-lapsed">Retired</span>
+            <span class="status-badge status-lapsed">Retired</span>
             {% endif %}
           </td>
           <td>
             <div class="actions">
-              <button class="actionButton" hx-get="{% url 'dashboard:tier_edit' tier.pk %}"
+              <button class="btn btn-secondary btn-sm" hx-get="{% url 'dashboard:tier_edit' tier.pk %}"
                       hx-target="#drawer-content" @click="$store.drawer.show('Edit Tier')">Edit</button>
               {% if tier.show_on_membership_page %}
-              <button class="actionButton"
+              <button class="btn btn-secondary btn-sm"
                       hx-post="{% url 'dashboard:tier_listing' tier.pk %}"
                       hx-target="#tier-list" hx-swap="outerHTML"
                       data-dashboard-confirm='{"title":"Retire Tier","message":"Take \"{{ tier.name|escapejs }}\" off the public membership page and out of the tier list for new terms? Existing terms keep it.","confirmLabel":"Retire"}'>Retire</button>
               {% else %}
-              <button class="actionButton"
+              <button class="btn btn-secondary btn-sm"
                       hx-post="{% url 'dashboard:tier_listing' tier.pk %}"
                       hx-target="#tier-list" hx-swap="outerHTML">Restore</button>
               {% endif %}
               {% if not tier.term_count %}
-              <button class="actionButton deleteButton"
+              <button class="btn btn-danger btn-sm"
                       hx-post="{% url 'dashboard:tier_delete' tier.pk %}"
                       hx-target="#tier-list" hx-swap="outerHTML"
                       data-dashboard-confirm='{"title":"Delete Tier","message":"Delete {{ tier.name|escapejs }}? No one has bought it, so nothing is lost. This cannot be undone.","confirmLabel":"Delete","variant":"danger"}'>Delete</button>

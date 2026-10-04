@@ -293,10 +293,6 @@ class EngagementDetailView(StaffRequiredMixin, TemplateView):
         ctx["films"] = [ef.film for ef in engagement.engagement_films.all()]
         ctx["showtimes"] = engagement.showtimes.select_related("screen")
         ctx["KIND_LABELS"] = KIND_LABELS
-        ctx["STATUS_BADGE_CLASSES"] = {
-            "DRAFT": "statusDraft", "CONFIRMED": "statusConfirmed",
-            "CANCELLED": "statusCancelled", "ENDED": "statusEnded",
-        }
         ctx["social_default_badge"] = PARAM_BY_BADGE[default_badge(engagement)]
         ctx["social_facebook_url"] = reverse(
             "dashboard:engagement_social_card", args=[engagement.pk, FACEBOOK]

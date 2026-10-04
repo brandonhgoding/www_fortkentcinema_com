@@ -4,12 +4,12 @@
 {% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/members.css' %}" />{% endblock %}
 {% block content %}
 <div class="page">
-  <div class="header">
+  <div class="page-header">
     <div>
       <a class="backLink" href="{% url 'dashboard:members' %}">← Members</a>
-      <h1 class="title">{{ member.full_name }}</h1>
-      <p class="subtitle">
-        <span class="statusPill status-{{ member.status }}">{{ member.status_label }}</span>
+      <h1 class="page-title">{{ member.full_name }}</h1>
+      <p class="page-subtitle">
+        <span class="status-badge status-{{ member.status }}">{{ member.status_label }}</span>
         {{ member.email }}{% if member.phone %} · {{ member.phone }}{% endif %}
       </p>
     </div>
@@ -18,10 +18,10 @@
       {# Renew prefills the tier and a start date that continues from the
          latest term; Add Term stays blank for anything that isn't a
          like-for-like renewal. #}
-      <button class="actionButton" hx-get="{% url 'dashboard:term_create' member.pk %}?renew=1"
+      <button class="btn btn-secondary" hx-get="{% url 'dashboard:term_create' member.pk %}?renew=1"
               hx-target="#drawer-content" @click="$store.drawer.show('Renew Membership')">Renew</button>
       {% endif %}
-      <button class="primaryButton" hx-get="{% url 'dashboard:term_create' member.pk %}"
+      <button class="btn btn-primary" hx-get="{% url 'dashboard:term_create' member.pk %}"
               hx-target="#drawer-content" @click="$store.drawer.show('Add Term')">+ Add Term</button>
     </div>
   </div>

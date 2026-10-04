@@ -1,5 +1,6 @@
 {% if polls %}
-<table class="table" id="poll-list">
+<div class="tableWrapper" id="poll-list">
+<table class="table">
   <thead>
     <tr><th>Poll</th><th>Status</th><th>Options</th><th>Votes</th><th></th></tr>
   </thead>
@@ -9,11 +10,11 @@
       <td>
         <a href="{% url 'dashboard:poll_detail' poll.pk %}">{{ poll.title }}</a>
       </td>
-      <td><span class="statusBadge">{{ poll.get_status_display }}</span></td>
+      <td><span class="status-badge status-{{ poll.status|lower }}">{{ poll.get_status_display }}</span></td>
       <td>{{ poll.options.count }}</td>
       <td>{{ poll.total_votes }}</td>
       <td>
-        <button class="secondaryButton"
+        <button class="btn btn-secondary btn-sm"
                 hx-get="{% url 'dashboard:poll_edit' poll.pk %}"
                 hx-target="#drawer-content" hx-swap="innerHTML"
                 @click="drawerOpen = true">Edit</button>
@@ -22,9 +23,10 @@
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% else %}
 <div class="empty-state" id="poll-list">
-  <h2>No Polls Yet</h2>
-  <p>Create a round, add four to six films, then open it for voting.</p>
+  <h3 class="empty-state-title">No Polls Yet</h3>
+  <p class="empty-state-description">Create a round, add four to six films, then open it for voting.</p>
 </div>
 {% endif %}

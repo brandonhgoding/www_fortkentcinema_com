@@ -5,18 +5,21 @@
   `checked` sits on the same line as `value` deliberately: a line break
   between them renders whitespace into the attribute pair.
 {% endcomment %}
-<form hx-post="{% url 'dashboard:poll_announce' poll.pk %}"
+<form class="pollForm" hx-post="{% url 'dashboard:poll_announce' poll.pk %}"
       hx-target="#poll-status" hx-swap="outerHTML"
       @htmx:after-request="drawerOpen = false">
   {% csrf_token %}
-  <h2>Announce the winner</h2>
+  <div class="formGroup" role="radiogroup" aria-labelledby="announce-winner-label">
+  <label id="announce-winner-label">Winner</label>
   {% for row in tallies %}
-    <label>
+    <label class="checkboxLabel">
       <input type="radio" name="winner" value="{{ row.option.pk }}"{% if forloop.first %} checked{% endif %} />
       {{ row.option.film.title }} &mdash; {{ row.count }} vote{{ row.count|pluralize }}
     </label>
   {% endfor %}
+  </div>
 
+  <div class="formGroup">
   <label for="announce-engagement">Booked engagement (optional)</label>
   <select name="engagement" id="announce-engagement" class="input">
     <option value="">Not booked yet</option>
@@ -27,6 +30,7 @@
       </option>
     {% endfor %}
   </select>
+  </div>
 
-  <button type="submit" class="primaryButton">Announce</button>
+  <button type="submit" class="btn btn-primary">Announce</button>
 </form>

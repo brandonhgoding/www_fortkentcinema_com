@@ -6,12 +6,12 @@
 <link rel="stylesheet" href="{% static 'dashboard/css/film_search_combo.css' %}" />{% endblock %}
 {% block content %}
 <div class="page">
-  <div class="header">
+  <div class="page-header">
     <div>
-      <h1 class="title">Engagements</h1>
-      <p class="subtitle">Manage your film engagements and runs.</p>
+      <h1 class="page-title">Engagements</h1>
+      <p class="page-subtitle">Manage your film engagements and runs.</p>
     </div>
-    <button class="primaryButton" hx-get="{% url 'dashboard:engagement_create' %}"
+    <button class="btn btn-primary" hx-get="{% url 'dashboard:engagement_create' %}"
             hx-target="#drawer-content" @click="$store.drawer.show('New Engagement')">+ New Engagement</button>
   </div>
 

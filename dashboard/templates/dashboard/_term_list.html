@@ -11,7 +11,7 @@
           <td>
             {{ term.tier.name }}
             {% if term.pk in overlapping_term_ids %}
-            <span class="statusPill status-expiring" title="These dates overlap another term. A renewal entered early looks like this too — check it is not the same purchase keyed twice.">Overlaps</span>
+            <span class="status-badge status-expiring" title="These dates overlap another term. A renewal entered early looks like this too — check it is not the same purchase keyed twice.">Overlaps</span>
             {% endif %}
           </td>
           <td>{{ term.started_on|date:"M j, Y" }}</td>
@@ -20,9 +20,9 @@
           <td>{{ term.purchased_at|date:"M j, Y"|default:"—" }}</td>
           <td>
             <div class="actions">
-              <button class="actionButton" hx-get="{% url 'dashboard:term_edit' term.pk %}"
+              <button class="btn btn-secondary btn-sm" hx-get="{% url 'dashboard:term_edit' term.pk %}"
                       hx-target="#drawer-content" @click="$store.drawer.show('Edit Term')">Edit</button>
-              <button class="actionButton deleteButton"
+              <button class="btn btn-danger btn-sm"
                       hx-post="{% url 'dashboard:term_delete' term.pk %}"
                       hx-target="#term-list" hx-swap="outerHTML"
                       data-dashboard-confirm='{"title":"Delete Term","message":"Delete this membership term? This cannot be undone.","confirmLabel":"Delete","variant":"danger"}'>Delete</button>

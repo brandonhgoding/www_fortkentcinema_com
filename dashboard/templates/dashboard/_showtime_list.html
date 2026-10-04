@@ -9,11 +9,11 @@
           <td class="dateTimeCell">{{ st.starts_at|date:"D, M j, Y" }} at {{ st.starts_at|date:"g:i A" }}</td>
           <td>{{ st.screen.name }}</td>
           <td>{% if st.captions %}<span class="captionsBadge">{{ st.captions }}</span>{% else %}<span class="noCaptions">—</span>{% endif %}</td>
-          <td>{% if st.is_cancelled %}<span class="cancelledBadge">Cancelled</span>{% else %}<span class="activeBadge">Active</span>{% endif %}</td>
+          <td>{% if st.is_cancelled %}<span class="status-badge status-cancelled">Cancelled</span>{% else %}<span class="status-badge status-active">Active</span>{% endif %}</td>
           <td>
             <div class="actions">
-              <button class="actionButton" hx-get="{% url 'dashboard:showtime_edit' st.pk %}" hx-target="#drawer-content" @click="$store.drawer.show('Edit Showtime')">Edit</button>
-              <button class="actionButton deleteButton" hx-post="{% url 'dashboard:showtime_delete' st.pk %}" hx-swap="none"
+              <button class="btn btn-secondary btn-sm" hx-get="{% url 'dashboard:showtime_edit' st.pk %}" hx-target="#drawer-content" @click="$store.drawer.show('Edit Showtime')">Edit</button>
+              <button class="btn btn-danger btn-sm" hx-post="{% url 'dashboard:showtime_delete' st.pk %}" hx-swap="none"
                       data-dashboard-confirm='{"title":"Delete Showtime","message":"Are you sure you want to delete this showtime?","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
             </div>
           </td>
@@ -28,23 +28,24 @@
       <div class="cardHeader">
         <div class="cardDateTime">{{ st.starts_at|date:"D, M j, Y" }} at {{ st.starts_at|date:"g:i A" }}</div>
         <div class="cardBadges">
-          {% if st.is_cancelled %}<span class="cancelledBadge">Cancelled</span>{% else %}<span class="activeBadge">Active</span>{% endif %}
+          {% if st.is_cancelled %}<span class="status-badge status-cancelled">Cancelled</span>{% else %}<span class="status-badge status-active">Active</span>{% endif %}
           {% if st.captions %}<span class="captionsBadge">{{ st.captions }}</span>{% endif %}
         </div>
       </div>
       <div class="cardBody"><div class="cardDetail"><span class="cardLabel">Screen</span><span class="cardValue">{{ st.screen.name }}</span></div></div>
       <div class="cardActions">
-        <button class="actionButton" hx-get="{% url 'dashboard:showtime_edit' st.pk %}" hx-target="#drawer-content" @click="$store.drawer.show('Edit Showtime')">Edit</button>
-        <button class="actionButton deleteButton" hx-post="{% url 'dashboard:showtime_delete' st.pk %}" hx-swap="none"
+        <button class="btn btn-secondary btn-sm" hx-get="{% url 'dashboard:showtime_edit' st.pk %}" hx-target="#drawer-content" @click="$store.drawer.show('Edit Showtime')">Edit</button>
+        <button class="btn btn-danger btn-sm" hx-post="{% url 'dashboard:showtime_delete' st.pk %}" hx-swap="none"
                 data-dashboard-confirm='{"title":"Delete Showtime","message":"Are you sure you want to delete this showtime?","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
       </div>
     </div>
     {% endfor %}
   </div>
   {% else %}
-  <div class="empty">
-    <p>No showtimes scheduled for this engagement.</p>
-    <button class="primaryButton" hx-get="{% url 'dashboard:showtime_create' engagement.pk %}" hx-target="#drawer-content" @click="$store.drawer.show('Add Showtime')">Add your first showtime</button>
+  <div class="empty-state">
+    <h3 class="empty-state-title">No Showtimes Yet</h3>
+    <p class="empty-state-description">No showtimes scheduled for this engagement.</p>
+    <button class="btn btn-primary" hx-get="{% url 'dashboard:showtime_create' engagement.pk %}" hx-target="#drawer-content" @click="$store.drawer.show('Add Showtime')">Add your first showtime</button>
   </div>
   {% endif %}
 </div>

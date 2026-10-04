@@ -1,20 +1,20 @@
-<div id="poll-status">
+<div id="poll-status" class="pollStatus">
   <p>
     Status: <strong>{{ poll.get_status_display }}</strong>
     {% if poll.winner %}&middot; Winner: {{ poll.winner.film.title }}{% endif %}
   </p>
   {% if poll.status == "DRAFT" %}
-    <button class="primaryButton"
+    <button class="btn btn-primary"
             hx-post="{% url 'dashboard:poll_status' poll.pk %}"
             hx-vals='{"status": "OPEN"}'
             hx-target="#poll-status" hx-swap="outerHTML">Open Voting</button>
   {% elif poll.status == "OPEN" %}
-    <button class="secondaryButton"
+    <button class="btn btn-secondary"
             hx-post="{% url 'dashboard:poll_status' poll.pk %}"
             hx-vals='{"status": "CLOSED"}'
             hx-target="#poll-status" hx-swap="outerHTML">Close Voting</button>
   {% elif poll.status == "CLOSED" %}
-    <button class="primaryButton"
+    <button class="btn btn-primary"
             hx-get="{% url 'dashboard:poll_announce' poll.pk %}"
             hx-target="#drawer-content" hx-swap="innerHTML"
             @click="drawerOpen = true">Announce Winner</button>

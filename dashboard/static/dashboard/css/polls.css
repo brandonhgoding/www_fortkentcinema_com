@@ -1,30 +1,112 @@
-/* Polls list and detail. */
-.pollTallyBar {
-  display: block;
-  height: 8px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.12);
-  overflow: hidden;
+/* Polls list and detail. Page chrome, tables, buttons and status pills come
+   from design-system.css and components.css.
+
+   The tally colours were written for a dark page (white at 8-12% alpha),
+   so on the dashboard's cream they did not show. They now use the same
+   tokens as every other page. */
+
+.pollStatus {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
 }
 
-.pollTallyFill {
-  display: block;
-  height: 100%;
-  background: var(--accent, #c9a227);
+.pollStatus strong {
+  color: var(--text-primary);
+}
+
+.pollOptions {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-xs) var(--space-lg);
 }
 
 .pollOptionRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  padding: 0.6rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: var(--space-md);
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.pollOptionRow:last-child {
+  border-bottom: none;
+}
+
+.pollOptionRow > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.pollOptionRow > div:last-child {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.pollTallyBar {
+  display: block;
+  height: 8px;
+  margin-top: var(--space-sm);
+  border-radius: var(--radius-full);
+  background: var(--surface-secondary);
+  overflow: hidden;
+}
+
+.pollTallyFill {
+  display: block;
+  height: 100%;
+  background: var(--brass);
 }
 
 .pollWinnerBadge {
-  font-size: 0.75rem;
-  letter-spacing: 0.1em;
+  margin-left: var(--space-sm);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--accent, #c9a227);
+  color: var(--brass-dark);
+}
+
+.pollEmpty {
+  padding: var(--space-md) 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* Poll and announce drawers render Django's form.as_p. */
+.pollForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.pollForm p {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.pollForm label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.pollForm .checkboxLabel {
+  font-weight: 400;
+}
+
+.pollForm .btn {
+  align-self: flex-start;
 }

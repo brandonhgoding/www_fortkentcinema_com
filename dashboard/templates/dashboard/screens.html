@@ -4,12 +4,12 @@
 {% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/screens.css' %}" />{% endblock %}
 {% block content %}
 <div class="page">
-  <div class="header">
+  <div class="page-header">
     <div>
-      <h1 class="title">Screens</h1>
-      <p class="subtitle">Manage your cinema's screens and auditoriums.</p>
+      <h1 class="page-title">Screens</h1>
+      <p class="page-subtitle">Manage your cinema's screens and auditoriums.</p>
     </div>
-    <button class="primaryButton" hx-get="{% url 'dashboard:screen_create' %}"
+    <button class="btn btn-primary" hx-get="{% url 'dashboard:screen_create' %}"
             hx-target="#drawer-content" @click="$store.drawer.show('New Screen')">+ New Screen</button>
   </div>
   {% include "dashboard/_screen_list.html" %}

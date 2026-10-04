@@ -10,8 +10,8 @@
       <p id="confirm-dialog-message" class="confirmMessage" x-text="$store.confirm.message"></p>
     </div>
     <div class="confirmFooter">
-      <button type="button" class="cancelButton" data-confirm-cancel @click="$store.confirm.cancel()">Cancel</button>
-      <button type="button" class="confirmButton" :class="{ danger: $store.confirm.variant==='danger' }"
+      <button type="button" class="btn btn-secondary" data-confirm-cancel @click="$store.confirm.cancel()">Cancel</button>
+      <button type="button" class="btn btn-primary" :class="{ 'btn-danger': $store.confirm.variant==='danger' }"
               data-confirm-ok @click="$store.confirm.accept()" x-text="$store.confirm.confirmLabel"></button>
     </div>
   </div>

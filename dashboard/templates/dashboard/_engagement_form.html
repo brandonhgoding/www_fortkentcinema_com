@@ -21,7 +21,7 @@
             <span class="filmListOrder" x-text="idx + 1"></span>
             <template x-if="f.poster"><img :src="f.poster" alt="" class="posterThumb" /></template>
             <span class="filmListTitle" x-text="f.title"></span>
-            <button type="button" class="removeFilmButton" @click="removeFilm(f.id)">Remove</button>
+            <button type="button" class="btn btn-danger btn-sm" @click="removeFilm(f.id)">Remove</button>
           </li>
         </template>
       </ol>
@@ -62,6 +62,6 @@
   <div class="formGroup"><label for="{{ form.notes.id_for_label }}">Notes</label>{{ form.notes }}</div>
 </form>
 <div id="drawer-footer" class="drawerFooter" hx-swap-oob="true">
-  <button type="button" class="cancelButton" @click="$store.drawer.close()">Cancel</button>
-  <button type="submit" form="engagement-form" class="submitButton">{{ submit_label }}</button>
+  <button type="button" class="btn btn-secondary" @click="$store.drawer.close()">Cancel</button>
+  <button type="submit" form="engagement-form" class="btn btn-primary">{{ submit_label }}</button>
 </div>

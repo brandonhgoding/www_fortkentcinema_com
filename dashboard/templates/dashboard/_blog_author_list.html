@@ -10,10 +10,10 @@
           <td>{{ author.post_count }}</td>
           <td>
             <div class="actions">
-              <button class="actionButton" hx-get="{% url 'dashboard:blog_author_edit' author.pk %}"
+              <button class="btn btn-secondary btn-sm" hx-get="{% url 'dashboard:blog_author_edit' author.pk %}"
                       hx-target="#drawer-content" @click="$store.drawer.show('Edit Author')">Edit</button>
               {% if not author.post_count %}
-              <button class="actionButton deleteButton"
+              <button class="btn btn-danger btn-sm"
                       hx-post="{% url 'dashboard:blog_author_delete' author.pk %}"
                       hx-target="#author-list" hx-swap="outerHTML"
                       data-dashboard-confirm='{"title":"Delete Author","message":"Delete {{ author.full_name|escapejs }}? They have no posts, so nothing else changes.","confirmLabel":"Delete","variant":"danger"}'>Delete</button>

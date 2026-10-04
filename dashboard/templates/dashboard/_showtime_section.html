@@ -1,9 +1,9 @@
-<div class="showtimesHeader">
-  <h2 class="sectionTitle">Showtimes</h2>
-  <div class="headerActions">
-    <button class="primaryButton" hx-get="{% url 'dashboard:showtime_create' engagement.pk %}"
+<div class="panelHeader">
+  <h2 class="panelTitle">Showtimes</h2>
+  <div class="actions">
+    <button class="btn btn-primary btn-sm" hx-get="{% url 'dashboard:showtime_create' engagement.pk %}"
             hx-target="#drawer-content" @click="$store.drawer.show('Add Showtime')">+ Add Showtime</button>
-    <button class="secondaryButton" hx-get="{% url 'dashboard:showtime_bulk' engagement.pk %}"
+    <button class="btn btn-secondary btn-sm" hx-get="{% url 'dashboard:showtime_bulk' engagement.pk %}"
             hx-target="#drawer-content" @click="$store.drawer.show('Bulk Add Showtimes')">Bulk Add</button>
   </div>
 </div>

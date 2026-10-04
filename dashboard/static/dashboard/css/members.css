@@ -1,296 +1,7 @@
-/* Page chrome.
- *
- * Mirrors the block every other dashboard page sheet carries (screens.css,
- * engagements.css, engagement_detail.css). These classes are not defined in
- * any globally loaded sheet, so a page that omits them renders its header,
- * table and drawer form unstyled. Kept in sync with screens.css by hand —
- * this duplication is the existing convention, not a decision made here.
- *
- * Two deliberate differences from screens.css, both noted where they occur:
- * the anchor-safe .actionButton, and the absent mobile table/card swap.
- */
-
-.page {
-  padding: 1rem 0;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1.5rem;
-  gap: 1rem;
-  flex-wrap: wrap;
-  position: relative;
-}
-
-.header::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  width: 60px;
-  height: 2px;
-  background: linear-gradient(90deg, var(--brass), var(--brass-light), transparent);
-  border-radius: 1px;
-}
-
-.title {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.75rem;
-  font-weight: 600;
-  color: var(--charcoal);
-  margin: 0 0 0.25rem 0;
-  letter-spacing: -0.02em;
-}
-
-.subtitle {
-  color: var(--stone);
-  margin: 0;
-}
-
-.primaryButton {
-  padding: 0.625rem 1.25rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--warmblack);
-  background: var(--brass);
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-  white-space: nowrap;
-  letter-spacing: -0.01em;
-  position: relative;
-  overflow: hidden;
-}
-
-.primaryButton:hover {
-  background: var(--brass-light);
-}
-
-/* Table */
-.tableWrapper {
-  background: white;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.table th,
-.table td {
-  padding: 0.875rem 1rem;
-  text-align: left;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.table th {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--stone);
-  background: var(--cream);
-}
-
-.table tbody tr:hover {
-  background: rgba(184, 149, 108, 0.04);
-}
-
-.table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-/* Actions */
-.actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.actionButton {
-  padding: 0.375rem 0.75rem;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--charcoal);
-  background: transparent;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  /* Export CSV is an <a>, not a <button> like every other .actionButton in
-   * the dashboard. Anchors bring their own underline and are inline, so the
-   * padding above would not apply and the link would sit off-baseline next
-   * to the New Member button. */
-  display: inline-block;
-  text-decoration: none;
-  line-height: 1.4;
-}
-
-.actionButton:hover {
-  background: var(--cream);
-  border-color: rgba(0, 0, 0, 0.25);
-}
-
-.deleteButton {
-  color: #dc2626;
-}
-
-.deleteButton:hover {
-  background: rgba(239, 68, 68, 0.05);
-  border-color: rgba(239, 68, 68, 0.3);
-}
-
-/* Form */
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.formGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.formGroup label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--charcoal);
-}
-
-.formRow {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-.input {
-  padding: 0.625rem 0.875rem;
-  font-size: 0.9375rem;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  border-radius: 6px;
-  background: white;
-  color: var(--charcoal);
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
-}
-
-.input:focus {
-  outline: none;
-  border-color: var(--brass);
-  box-shadow: 0 0 0 3px rgba(184, 149, 108, 0.1);
-}
-
-/* Form action buttons - used in drawer footer */
-.cancelButton {
-  padding: 0.625rem 1.25rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--charcoal);
-  background: transparent;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.cancelButton:hover {
-  background: var(--cream);
-}
-
-.submitButton {
-  padding: 0.625rem 1.25rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--warmblack);
-  background: var(--brass);
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-}
-
-.submitButton:hover:not(:disabled) {
-  background: var(--brass-light);
-}
-
-.submitButton:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* Responsive.
- *
- * screens.css hides .tableWrapper below 768px and swaps in a .cardList. The
- * member and term lists have no card markup, so that rule is deliberately
- * not copied — hiding the table here would leave a blank page. The roster
- * scrolls sideways instead.
- */
-@media (max-width: 768px) {
-  .tableWrapper {
-    overflow-x: auto;
-  }
-}
-
-@media (max-width: 640px) {
-  .header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .formRow {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Member-specific styles below. */
-
-.memberFilters {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-}
-
-.memberFilters .input {
-  max-width: 18rem;
-}
-
-.statusPill {
-  display: inline-block;
-  padding: 0.15rem 0.6rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.statusPill.status-active {
-  background: rgba(34, 139, 94, 0.15);
-  color: #1c7a52;
-}
-
-.statusPill.status-expiring {
-  background: rgba(196, 143, 44, 0.18);
-  color: #8a6111;
-}
-
-.statusPill.status-upcoming {
-  background: rgba(52, 104, 178, 0.15);
-  color: #2f5d9e;
-}
-
-.statusPill.status-lapsed {
-  background: rgba(120, 120, 120, 0.15);
-  color: #5b5b5b;
-}
+/* Members, member detail, the terms ledger and the membership catalogue
+   (tiers + perks). Page chrome, tables, forms, buttons and status pills
+   come from design-system.css and components.css; this sheet holds only
+   what these pages add. */
 
 .memberLink {
   color: inherit;
@@ -299,32 +10,14 @@
 }
 
 .memberLink:hover {
+  color: var(--brass-dark);
   text-decoration: underline;
 }
 
-.backLink {
-  display: inline-block;
-  margin-bottom: 0.35rem;
-  font-size: 0.85rem;
-  color: inherit;
-  opacity: 0.7;
-  text-decoration: none;
-}
-
-.backLink:hover {
-  opacity: 1;
-}
-
 .memberNotes {
-  margin: 0 0 1rem;
+  margin: 0 0 var(--space-md);
   white-space: pre-wrap;
-  opacity: 0.85;
-}
-
-.fieldHint {
-  margin: 0.25rem 0 0;
-  font-size: 0.75rem;
-  opacity: 0.7;
+  color: var(--text-secondary);
 }
 
 tr.currentTerm td {
@@ -339,56 +32,14 @@ tr.currentTerm td {
 }
 
 .freeCount--over {
-  color: #8a6111;
+  color: var(--status-warning);
   font-weight: 600;
-}
-
-.panelTitle {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.15rem;
-  font-weight: 600;
-  color: var(--charcoal);
-  margin: 2rem 0 0.75rem;
 }
 
 /* Month headers inside the free-admission table. */
 .monthRow th {
-  text-align: left;
-  background: var(--cream);
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--stone);
-  padding: 0.6rem 1rem;
-}
-
-/* Membership catalogue (tiers + perks) and the terms ledger.
- *
- * Both pages load this sheet rather than adding a third and fourth copy of
- * the page-chrome block above. They are the same area of the dashboard as
- * the roster, and every class they add is namespaced to them.
- */
-
-/* screens.css defines .checkboxLabel with a 1.5rem top padding, which
- * baselines a lone checkbox against a labelled field beside it. The tier
- * form stacks three of them in one group instead, so it defines its own
- * without that padding rather than inheriting a rule meant for the other
- * layout. */
-.checkboxLabel {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-  font-weight: 400;
-}
-
-.checkboxLabel input[type='checkbox'] {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  flex-shrink: 0;
+  padding: 0.625rem var(--space-md);
+  background: var(--surface-secondary);
 }
 
 /* The perk picker. Scrolls rather than pushing the drawer footer off the
@@ -396,28 +47,13 @@ tr.currentTerm td {
 .checkList {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-sm);
   max-height: 14rem;
   overflow-y: auto;
   padding: 0.75rem;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  border-radius: 6px;
-  background: white;
-}
-
-/* Section header inside a page that already has a .header at the top. */
-.panelHeader {
-  align-items: center;
-  margin-top: 2.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.panelHeader::after {
-  display: none;
-}
-
-.panelHeader .panelTitle {
-  margin: 0;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--surface-elevated);
 }
 
 .tierName {
@@ -427,37 +63,27 @@ tr.currentTerm td {
 
 .tierEyebrow {
   display: block;
-  font-size: 0.75rem;
-  color: var(--stone);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
 }
 
 /* Shown small because it is a fixed identifier, not a label: Square and
  * GA4 key off it, so it is there to be read, not changed. */
 .tierSlug {
   display: block;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.7rem;
-  color: var(--stone);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
 }
 
 .tierPerks {
   max-width: 22rem;
-  font-size: 0.8125rem;
-  color: var(--stone);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
 }
 
 /* A retired tier still sells nothing, but its rows are history — dimmed,
  * not hidden. */
 .tierRetired td {
   opacity: 0.6;
-}
-
-/* Date-range inputs in the ledger filter bar carry their own caption. */
-.filterLabel {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.8125rem;
-  color: var(--stone);
-  white-space: nowrap;
 }

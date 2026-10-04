@@ -4,12 +4,12 @@
 {% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/polls.css' %}" />{% endblock %}
 {% block content %}
 <div class="page">
-  <div class="header">
+  <div class="page-header">
     <div>
-      <h1 class="title">Polls</h1>
-      <p class="subtitle">Let the audience pick what plays next.</p>
+      <h1 class="page-title">Polls</h1>
+      <p class="page-subtitle">Let the audience pick what plays next.</p>
     </div>
-    <button class="primaryButton" hx-get="{% url 'dashboard:poll_create' %}"
+    <button class="btn btn-primary" hx-get="{% url 'dashboard:poll_create' %}"
             hx-target="#drawer-content" hx-swap="innerHTML"
             @click="drawerOpen = true">New Poll</button>
   </div>

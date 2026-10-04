@@ -17,9 +17,9 @@
           <td>{% if screen.supports_3d %}<span class="badge3d">3D</span>{% else %}<span class="badgeNo">—</span>{% endif %}</td>
           <td>
             <div class="actions">
-              <button class="actionButton" hx-get="{% url 'dashboard:screen_edit' screen.pk %}"
+              <button class="btn btn-secondary btn-sm" hx-get="{% url 'dashboard:screen_edit' screen.pk %}"
                       hx-target="#drawer-content" @click="$store.drawer.show('Edit Screen')">Edit</button>
-              <button class="actionButton deleteButton"
+              <button class="btn btn-danger btn-sm"
                       hx-post="{% url 'dashboard:screen_delete' screen.pk %}"
                       hx-target="#screen-list" hx-swap="outerHTML"
                       data-dashboard-confirm='{"title":"Delete Screen","message":"Are you sure you want to delete \"{{ screen.name|escapejs }}\"? This may affect existing engagements and showtimes.","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
@@ -49,9 +49,9 @@
         <div class="cardDetail"><span class="cardLabel">Sound</span><span class="cardValue">{{ SOUND_SYSTEM_LABELS|get_item:screen.sound_system }}</span></div>
       </div>
       <div class="cardActions">
-        <button class="actionButton" hx-get="{% url 'dashboard:screen_edit' screen.pk %}"
+        <button class="btn btn-secondary btn-sm" hx-get="{% url 'dashboard:screen_edit' screen.pk %}"
                 hx-target="#drawer-content" @click="$store.drawer.show('Edit Screen')">Edit</button>
-        <button class="actionButton deleteButton"
+        <button class="btn btn-danger btn-sm"
                 hx-post="{% url 'dashboard:screen_delete' screen.pk %}"
                 hx-target="#screen-list" hx-swap="outerHTML"
                 data-dashboard-confirm='{"title":"Delete Screen","message":"Are you sure you want to delete \"{{ screen.name|escapejs }}\"? This may affect existing engagements and showtimes.","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
@@ -61,7 +61,7 @@
   </div>
   {% else %}
   <div class="empty-state">
-    <div class="empty-state-icon" style="font-size: 2.5rem;">🎭</div>
+    <div class="empty-state-icon">🎭</div>
     <h3 class="empty-state-title">No Screens Configured</h3>
     <p class="empty-state-description">Define your cinema's auditoriums and screens to begin scheduling engagements and showtimes. Each screen can have unique technical specifications.</p>
     <button class="btn btn-primary" hx-get="{% url 'dashboard:screen_create' %}"

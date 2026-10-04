@@ -1,20 +1,6 @@
-/* Blog list and post editor. Loaded after members.css, whose page chrome,
- * table, form and statusPill rules these pages reuse (as tiers.html does). */
-
-.primaryButton {
-  text-decoration: none;
-  display: inline-block;
-}
-
-.statusPill.status-published {
-  background: rgba(34, 139, 94, 0.15);
-  color: #1c7a52;
-}
-
-.statusPill.status-draft {
-  background: rgba(196, 143, 44, 0.18);
-  color: #8a6111;
-}
+/* Blog list and post editor. Page chrome, tables, forms, buttons and
+ * status pills come from design-system.css and components.css; the
+ * memberLink style comes from members.css. */
 
 /* --- List ------------------------------------------------------------ */
 
@@ -43,7 +29,7 @@
 
 .blogPostSubtitle {
   display: block;
-  font-size: 0.8125rem;
+  font-size: var(--text-sm);
   color: var(--text-secondary);
   max-width: 36rem;
 }
@@ -56,14 +42,10 @@
 
 /* --- Editor ---------------------------------------------------------- */
 
-.subtitle .statusPill {
-  vertical-align: middle;
-}
-
 .unsavedNote {
-  margin-left: 0.5rem;
-  font-size: 0.8125rem;
-  color: #8a6111;
+  margin-left: var(--space-sm);
+  font-size: var(--text-sm);
+  color: var(--status-warning);
 }
 
 .blogEditor {
@@ -93,8 +75,9 @@
 .sideCard {
   background: var(--surface-elevated);
   border: 1px solid var(--border-subtle);
-  border-radius: 8px;
-  padding: 1rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-md);
 }
 
 .sideCard .formGroup:last-child {
@@ -114,12 +97,12 @@
 }
 
 .charCount--over {
-  color: #b23a2a;
+  color: var(--status-cancelled);
   font-weight: 600;
 }
 
 .fieldHint--warn {
-  color: #8a6111;
+  color: var(--status-warning);
 }
 
 .slugInput {
@@ -130,7 +113,7 @@
 
 .slugPrefix {
   color: var(--text-secondary);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
 }
 
 .slugInput .input {
@@ -153,11 +136,12 @@
 }
 
 .editorTab {
-  padding: 0.25rem 0.75rem;
-  font-size: 0.8125rem;
+  padding: var(--space-xs) 0.75rem;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
   background: none;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   color: var(--text-secondary);
   cursor: pointer;
 }
@@ -165,7 +149,7 @@
 .editorTab--active {
   border-color: var(--border-default);
   background: var(--surface-elevated);
-  color: var(--charcoal);
+  color: var(--text-primary);
   font-weight: 600;
 }
 
@@ -196,14 +180,15 @@
 
 .markdownInput {
   width: 100%;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.875rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
   line-height: 1.6;
   resize: vertical;
 }
 
 .markdownHint code {
-  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
   background: var(--border-subtle);
   padding: 0 0.25rem;
   border-radius: 3px;
@@ -216,10 +201,10 @@
   padding: 1rem 1.25rem;
   background: var(--surface-elevated);
   border: 1px solid var(--border-default);
-  border-radius: 6px;
-  font-size: 1rem;
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
   line-height: 1.8;
-  color: var(--charcoal);
+  color: var(--text-primary);
 }
 
 .markdownPreview:empty::before {
@@ -232,13 +217,13 @@
 .markdownPreview h2,
 .markdownPreview h3,
 .markdownPreview h4 {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-serif);
   line-height: 1.3;
   margin: 1.5rem 0 0.5rem;
 }
-.markdownPreview h2 { font-size: 1.4rem; }
-.markdownPreview h3 { font-size: 1.2rem; }
-.markdownPreview h4 { font-size: 1.05rem; }
+.markdownPreview h2 { font-size: var(--text-2xl); }
+.markdownPreview h3 { font-size: var(--text-xl); }
+.markdownPreview h4 { font-size: var(--text-lg); }
 .markdownPreview a { color: var(--brass-dark); text-decoration: underline; }
 .markdownPreview ul,
 .markdownPreview ol { margin: 0 0 1rem; padding-left: 1.5em; }
@@ -255,19 +240,14 @@
   width: 100%;
   aspect-ratio: 16 / 9;
   object-fit: cover;
-  border-radius: 6px;
-  margin-bottom: 0.5rem;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-sm);
 }
 
 .editorSide input[type='file'] {
-  font-size: 0.8125rem;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
   max-width: 100%;
-}
-
-/* film_search_combo.css loads first so members.css wins on .input; put
- * back the room the combo's spinner needs. */
-.editorSide .searchWrapper .input {
-  padding-right: 40px;
 }
 
 .filmChip {
@@ -277,7 +257,7 @@
   padding: 0.375rem 0.5rem;
   margin-bottom: 0.5rem;
   border: 1px solid var(--border-default);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--surface-secondary);
 }
 
@@ -291,18 +271,18 @@
 .filmChipTitle {
   flex: 1;
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
 }
 
 .filmChipRemove {
   background: none;
   border: none;
-  font-size: 1.125rem;
+  font-size: var(--text-lg);
   line-height: 1;
   color: var(--text-secondary);
   cursor: pointer;
 }
 
 .filmChipRemove:hover {
-  color: #b23a2a;
+  color: var(--status-cancelled);
 }

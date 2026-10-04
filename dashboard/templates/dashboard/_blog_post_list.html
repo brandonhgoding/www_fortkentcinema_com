@@ -21,16 +21,16 @@
           <td>{{ post.category.name }}</td>
           <td>{{ post.author }}</td>
           <td>{{ post.post_date|date:"M j, Y" }}</td>
-          <td><span class="statusPill status-{{ post.status }}">{{ post.get_status_display }}</span></td>
+          <td><span class="status-badge status-{{ post.status }}">{{ post.get_status_display }}</span></td>
           <td>
             <div class="actions">
-              <a class="actionButton" href="{% url 'dashboard:blog_post_edit' post.pk %}">Edit</a>
+              <a class="btn btn-secondary btn-sm" href="{% url 'dashboard:blog_post_edit' post.pk %}">Edit</a>
               {% if post.is_published %}
-              <a class="actionButton" href="{% url 'blog_detail' post.slug %}" target="_blank" rel="noopener">View</a>
+              <a class="btn btn-secondary btn-sm" href="{% url 'blog_detail' post.slug %}" target="_blank" rel="noopener">View</a>
               {% else %}
-              <a class="actionButton" href="{% url 'dashboard:blog_post_preview' post.pk %}" target="_blank" rel="noopener">Preview</a>
+              <a class="btn btn-secondary btn-sm" href="{% url 'dashboard:blog_post_preview' post.pk %}" target="_blank" rel="noopener">Preview</a>
               {% endif %}
-              <button class="actionButton deleteButton"
+              <button class="btn btn-danger btn-sm"
                       hx-post="{% url 'dashboard:blog_post_delete' post.pk %}"
                       hx-target="#post-list" hx-swap="outerHTML" hx-include=".blogFilters"
                       data-dashboard-confirm='{"title":"Delete Post","message":"Delete \"{{ post.title|escapejs }}\"?{% if post.film_count %} It is the review linked from {{ post.film_count }} film page{{ post.film_count|pluralize }}, which will lose the link.{% endif %} This cannot be undone.","confirmLabel":"Delete","variant":"danger"}'>Delete</button>

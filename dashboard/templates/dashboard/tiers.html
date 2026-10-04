@@ -4,23 +4,23 @@
 {% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/members.css' %}" />{% endblock %}
 {% block content %}
 <div class="page">
-  <div class="header">
+  <div class="page-header">
     <div>
-      <h1 class="title">Memberships</h1>
-      <p class="subtitle">The tiers sold on the membership page, and the perks they list.</p>
+      <h1 class="page-title">Memberships</h1>
+      <p class="page-subtitle">The tiers sold on the membership page, and the perks they list.</p>
     </div>
     <div class="actions">
-      <a class="actionButton" href="{% url 'dashboard:terms' %}">Terms sold</a>
-      <button class="primaryButton" hx-get="{% url 'dashboard:tier_create' %}"
+      <a class="btn btn-secondary" href="{% url 'dashboard:terms' %}">Terms sold</a>
+      <button class="btn btn-primary" hx-get="{% url 'dashboard:tier_create' %}"
               hx-target="#drawer-content" @click="$store.drawer.show('New Tier')">+ New Tier</button>
     </div>
   </div>
 
   {% include "dashboard/_tier_list.html" %}
 
-  <div class="header panelHeader">
+  <div class="panelHeader">
     <h2 class="panelTitle">Perks</h2>
-    <button class="actionButton" hx-get="{% url 'dashboard:benefit_create' %}"
+    <button class="btn btn-secondary btn-sm" hx-get="{% url 'dashboard:benefit_create' %}"
             hx-target="#drawer-content" @click="$store.drawer.show('New Perk')">+ New Perk</button>
   </div>
 
