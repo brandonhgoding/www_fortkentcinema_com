@@ -23,8 +23,8 @@
     <div class="layout" x-data="dashboardLayout">
       {% include "dashboard/_mobile_header.html" %}
       {% include "dashboard/_sidebar.html" %}
-      <main :class="isFullscreen ? 'mainFullscreen' : 'main'">
-        <div :class="isFullscreen ? 'containerFullscreen' : 'container'">
+      <main class="main">
+        <div class="container">
           {% include "dashboard/_toast.html" %}
           {% if messages %}
           {# Django messages from a full-page redirect (the blog editor); dashboard.js replays them as toasts. #}
@@ -32,7 +32,7 @@
           {% endif %}
           {% block content %}{% endblock %}
         </div>
-        <div class="keyboardHint" x-show="!isFullscreen" title="Press Alt+N to create new engagement">
+        <div class="keyboardHint" title="Press Alt+N to create new engagement">
           <kbd class="kbd">Alt+N</kbd>
           <span class="hintText">New Engagement</span>
         </div>

@@ -1,21 +1,7 @@
-// Dashboard chrome behaviour: sidebar toggle, fullscreen, keyboard shortcut.
+// Dashboard chrome behaviour: sidebar toggle, keyboard shortcut.
 document.addEventListener('alpine:init', () => {
   Alpine.data('dashboardLayout', () => ({
     sidebarOpen: false,
-    isFullscreen: false,
-    toggleFullscreen() {
-      this.isFullscreen = !this.isFullscreen;
-      if (this.isFullscreen) {
-        document.documentElement.requestFullscreen?.().catch(() => {});
-      } else {
-        document.exitFullscreen?.().catch(() => {});
-      }
-    },
-    init() {
-      document.addEventListener('fullscreenchange', () => {
-        if (!document.fullscreenElement) this.isFullscreen = false;
-      });
-    },
   }));
 });
 

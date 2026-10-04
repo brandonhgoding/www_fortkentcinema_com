@@ -1,6 +1,6 @@
 {% load static dashboard_nav %}
 <div class="sidebarOverlay" x-show="sidebarOpen" @click="sidebarOpen = false" x-cloak></div>
-<aside class="sidebar" :class="sidebarOpen ? 'sidebarOpen' : ''" data-cy="sidebar" x-show="!isFullscreen">
+<aside class="sidebar" :class="sidebarOpen ? 'sidebarOpen' : ''" data-cy="sidebar">
   <div class="sidebarBrand">
     <a href="{% url 'dashboard:home' %}" class="sidebarLogo" @click="sidebarOpen = false">LeprinceOS</a>
   </div>
