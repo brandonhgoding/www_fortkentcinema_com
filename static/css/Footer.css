@@ -149,30 +149,6 @@
   margin-bottom: var(--spacing-md);
 }
 
-.footer-links {
-  list-style: none;
-}
-
-.footer-links li {
-  margin-bottom: var(--spacing-xs);
-}
-
-.footer-links a {
-  color: var(--color-cream-muted);
-  font-size: 1rem;
-  font-weight: 600;
-  transition: color var(--transition-fast);
-}
-
-.footer-links a:hover {
-  color: var(--color-gold);
-}
-
-.footer-links a:focus-visible {
-  outline: 3px solid var(--color-gold);
-  outline-offset: 2px;
-}
-
 /* Box office hours — the second real column.
 
    .footer-hours was written for the React block that never shipped and sat

@@ -58,24 +58,3 @@
   gap: var(--spacing-lg);
   align-items: stretch;
 }
-
-.membership-tiers__loading,
-.membership-tiers__error {
-  text-align: center;
-  padding: var(--spacing-2xl);
-  font-family: var(--font-body);
-  font-size: 1.1rem;
-  font-style: italic;
-  color: var(--color-cream-muted);
-}
-
-.membership-tiers__error {
-  /* An error, not an accent: the danger token says "this went wrong" where a
-   * blue tint just read as another panel. */
-  color: var(--color-danger);
-  border: 1px solid rgba(153, 50, 37, 0.3);
-  border-radius: var(--radius-md);
-  background: rgba(153, 50, 37, 0.06);
-  max-width: 520px;
-  margin: 0 auto;
-}

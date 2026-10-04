@@ -70,18 +70,6 @@
   display: block;
 }
 
-.blog-list-loading,
-.blog-list-error {
-  text-align: center;
-  padding: var(--spacing-2xl);
-  color: var(--color-cream-muted);
-  font-size: 1.1rem;
-}
-
-.blog-list-error {
-  color: var(--color-gold);
-}
-
 .blog-pagination {
   display: flex;
   align-items: center;

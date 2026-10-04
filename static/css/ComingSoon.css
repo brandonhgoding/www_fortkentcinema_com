@@ -287,15 +287,6 @@
   margin: 0 auto;
 }
 
-.coming-calendar-loading {
-  text-align: center;
-  padding: var(--spacing-xl) 0;
-  font-family: var(--font-display);
-  font-size: 1.2rem;
-  letter-spacing: 2px;
-  color: var(--color-cream-muted);
-}
-
 .coming-calendar-nav {
   display: flex;
   align-items: center;
@@ -398,18 +389,6 @@
   border-radius: 3px;
   overflow: hidden;
   background: var(--color-bg-dark);
-}
-
-.coming-calendar-cell__poster--playable {
-  cursor: pointer;
-  transition:
-    transform var(--transition-fast),
-    box-shadow var(--transition-fast);
-}
-
-.coming-calendar-cell__poster--playable:hover {
-  transform: scale(1.08);
-  box-shadow: 0 0 10px var(--color-gold-glow);
 }
 
 .coming-calendar-cell__poster:focus-visible {

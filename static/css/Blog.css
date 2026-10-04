@@ -88,18 +88,6 @@
   outline-offset: 2px;
 }
 
-.blog-loading,
-.blog-error {
-  text-align: center;
-  padding: var(--spacing-2xl);
-  color: var(--color-cream-muted);
-  font-size: 1.1rem;
-}
-
-.blog-error {
-  color: var(--color-accent);
-}
-
 /* Tablet: the auto-fit grid holds two 320px columns down to about 700px, then
  * would try to keep them at 300px each. Collapse to one column before the
  * cards get narrower than their own type. */
