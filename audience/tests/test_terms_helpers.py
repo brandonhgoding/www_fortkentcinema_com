@@ -87,6 +87,24 @@ class OverlappingTermIdsTests(TestCase):
     def test_empty_input(self) -> None:
         self.assertEqual(overlapping_term_ids([]), set())
 
+    def test_unsaved_terms_are_ignored(self) -> None:
+        """An unsaved term has no pk to return; it must not add None, nor
+        flag a saved term that only it overlaps."""
+        saved = make_term(
+            self.member, self.tier,
+            datetime.date(2026, 1, 1), datetime.date(2026, 12, 31),
+        )
+        unsaved = [
+            MembershipTerm(
+                member=self.member, tier=self.tier,
+                started_on=datetime.date(2026, 6, 1),
+                expires_on=datetime.date(2027, 5, 31),
+                price_paid=Decimal("60.00"),
+            )
+            for _ in range(2)
+        ]
+        self.assertEqual(overlapping_term_ids([saved, *unsaved]), set())
+
 
 class RenewalStartTests(TestCase):
     def setUp(self) -> None:

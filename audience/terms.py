@@ -24,10 +24,13 @@ def overlapping_term_ids(terms: Iterable) -> set[int]:
 
     Quadratic on purpose — a member has a handful of terms, and the pairwise
     loop reads as the definition of the thing rather than as a sweep that
-    has to be re-derived to be trusted. It also works on unsaved or
-    Python-filtered lists, which a SQL self-join would not.
+    has to be re-derived to be trusted. It also works on Python-filtered
+    lists, which a SQL self-join would not.
+
+    Unsaved terms are skipped: they have no pk to return, and the set is
+    for highlighting rows that exist.
     """
-    terms = list(terms)
+    terms = [term for term in terms if term.pk is not None]
     overlapping: set[int] = set()
     for i, first in enumerate(terms):
         for second in terms[i + 1:]:
