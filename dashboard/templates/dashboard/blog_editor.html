@@ -1,7 +1,7 @@
 {% extends "dashboard/base_dashboard.html" %}
 {% load static %}
 {% block title %}{% if post %}{{ post.title }}{% else %}New Post{% endif %} · LeprinceOS{% endblock %}
-{% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/film_search_combo.css' %}" /><link rel="stylesheet" href="{% static 'dashboard/css/members.css' %}" /><link rel="stylesheet" href="{% static 'dashboard/css/blog.css' %}" />{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/film_search_combo.css' %}" /><link rel="stylesheet" href="{% static 'dashboard/css/blog.css' %}" />{% endblock %}
 {% block content %}
 {{ initial_films|json_script:"blog-initial-films" }}
 <div class="page" x-data="blogEditor" data-is-new="{% if post %}false{% else %}true{% endif %}">

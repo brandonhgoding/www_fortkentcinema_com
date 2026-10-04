@@ -8,7 +8,7 @@
     {% for poll in polls %}
     <tr>
       <td>
-        <a href="{% url 'dashboard:poll_detail' poll.pk %}">{{ poll.title }}</a>
+        <a class="memberLink" href="{% url 'dashboard:poll_detail' poll.pk %}">{{ poll.title }}</a>
       </td>
       <td><span class="status-badge status-{{ poll.status|lower }}">{{ poll.get_status_display }}</span></td>
       <td>{{ poll.options.count }}</td>

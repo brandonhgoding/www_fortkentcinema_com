@@ -3,17 +3,6 @@
    come from design-system.css and components.css; this sheet holds only
    what these pages add. */
 
-.memberLink {
-  color: inherit;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.memberLink:hover {
-  color: var(--brass-dark);
-  text-decoration: underline;
-}
-
 .memberNotes {
   margin: 0 0 var(--space-md);
   white-space: pre-wrap;

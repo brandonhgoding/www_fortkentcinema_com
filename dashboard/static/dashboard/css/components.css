@@ -112,6 +112,19 @@
   font-weight: 500;
 }
 
+/* The row's name, linking to its detail page (a member, a post, a poll).
+   Named for where it started. */
+.memberLink {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.memberLink:hover {
+  color: var(--brass-dark);
+  text-decoration: underline;
+}
+
 /* ===== Forms ===== */
 .form {
   display: flex;
