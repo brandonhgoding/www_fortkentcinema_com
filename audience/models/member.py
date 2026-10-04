@@ -7,6 +7,8 @@ from django.utils import timezone
 
 from audience.dates import month_bounds
 
+from .membership_term import MembershipTerm
+
 # How close to expiry a membership counts as "Expiring soon": the roster's
 # amber pill and the term ledger's Expiring window both read this, so the
 # two screens agree about which memberships are nearly up. Affects what
@@ -18,9 +20,7 @@ class MemberManager(models.Manager):
     def active(self, on: datetime.date | None = None) -> models.QuerySet["Member"]:
         """Members whose terms cover `on` (today by default)."""
         on = on or timezone.localdate()
-        return self.filter(
-            terms__started_on__lte=on, terms__expires_on__gte=on
-        ).distinct()
+        return self.filter(MembershipTerm.covering(on, via="terms__")).distinct()
 
     def lapsed(self, on: datetime.date | None = None) -> models.QuerySet["Member"]:
         """Everyone else, including members who never had a term."""
@@ -74,7 +74,7 @@ class Member(models.Model):
         """
         today = timezone.localdate()
         for term in self.terms.all():
-            if term.started_on <= today <= term.expires_on:
+            if term.covers(today):
                 return term
         return None
 

@@ -36,23 +36,20 @@ WINDOW_FILTERS = [
 def _window_q(window: str, today: datetime.date) -> Q | None:
     soon = today + datetime.timedelta(days=EXPIRING_SOON_DAYS)
     return {
-        "current": Q(started_on__lte=today, expires_on__gte=today),
+        "current": MembershipTerm.covering(today),
         # A subset of "current" on purpose: a term that has already expired
         # is not expiring soon, it is expired.
         # Also excludes a term the member has already renewed: one that
         # another of their terms continues without a gap is not about to
         # lapse, which is what Member.status judges too.
-        "expiring": Q(
-            ~Exists(
-                MembershipTerm.objects.filter(
-                    member=OuterRef("member"),
-                    started_on__lte=OuterRef("expires_on") + datetime.timedelta(days=1),
-                    expires_on__gt=OuterRef("expires_on"),
-                )
-            ),
-            started_on__lte=today,
-            expires_on__gte=today,
-            expires_on__lte=soon,
+        "expiring": MembershipTerm.covering(today)
+        & Q(expires_on__lte=soon)
+        & ~Exists(
+            MembershipTerm.objects.filter(
+                member=OuterRef("member"),
+                started_on__lte=OuterRef("expires_on") + datetime.timedelta(days=1),
+                expires_on__gt=OuterRef("expires_on"),
+            )
         ),
         "expired": Q(expires_on__lt=today),
         "future": Q(started_on__gt=today),

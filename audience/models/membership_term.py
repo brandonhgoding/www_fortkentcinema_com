@@ -71,9 +71,27 @@ class MembershipTerm(models.Model):
                 {"expires_on": "Expiry cannot be before the start date."}
             )
 
+    def covers(self, on: datetime.date) -> bool:
+        """Whether this term covers `on`. Both ends are inclusive.
+
+        The Python half of the one definition; `covering` is the SQL half.
+        """
+        return self.started_on <= on <= self.expires_on
+
+    @staticmethod
+    def covering(on: datetime.date, via: str = "") -> models.Q:
+        """A filter for terms covering `on`, matching `covers`.
+
+        `via` spans a relation in one filter() call, e.g. via="terms__" on
+        Member, so both bounds apply to the same term.
+        """
+        return models.Q(
+            **{f"{via}started_on__lte": on, f"{via}expires_on__gte": on}
+        )
+
     @property
     def is_current(self) -> bool:
-        return self.started_on <= timezone.localdate() <= self.expires_on
+        return self.covers(timezone.localdate())
 
     @staticmethod
     def default_expiry(
