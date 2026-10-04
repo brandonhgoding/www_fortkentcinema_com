@@ -16,8 +16,8 @@ SITE_CONFIG = {
         "phone": "(207) 231-5287",
     },
     "hours": {
-        "weekday": {"days": "Monday - Thursday", "open": "4:00 PM", "close": "9:00 PM"},
-        "weekend": {"days": "Friday - Sunday", "open": "2:00 PM", "close": "10:00 PM"},
+        "weekday": {"days": "Wednesday - Thursday", "open": "6:00 PM", "close": "9:00 PM"},
+        "weekend": {"days": "Saturday & Sunday", "open": "3:00 PM", "close": "9:00 PM"},
     },
     "social": {"facebook": "https://facebook.com/fortkentcinema"},
     # Items with "children" render as a dropdown; everything else is a plain
