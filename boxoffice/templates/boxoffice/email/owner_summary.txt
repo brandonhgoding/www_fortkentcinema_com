@@ -1,0 +1,6 @@
+Item Sales Summary:
+
+{% for r in rows %}{{ r.name }}: {{ r.quantity }} sold for ${{ r.gross_dollars }}
+{% empty %}No sales were recorded for {{ day|date:"F j, Y" }}.
+{% endfor %}
+Total: {{ total_quantity }} sold for ${{ total_dollars }}

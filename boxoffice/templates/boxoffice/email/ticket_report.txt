@@ -1,0 +1,6 @@
+🎟 Ticket Sales Summary:
+
+{% for r in rows %}{{ r.name }}: {{ r.quantity }} sold, ${{ r.gross_dollars }} revenue
+{% empty %}No ticket sales were recorded for {{ day|date:"F j, Y" }}.
+{% endfor %}
+Report generated for {{ day|date:"F j, Y" }}
