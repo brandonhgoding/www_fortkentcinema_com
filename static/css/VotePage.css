@@ -1,21 +1,32 @@
-/* /vote — ballot, results, and the email ask. */
+/* /vote — hero, ballot, results, and the mailing-list ask. */
 .vote-page {
-  padding: 2rem 1rem 4rem;
+  padding: 0 0 4rem;
 }
 
 .vote-container {
   max-width: 56rem;
   margin: 0 auto;
+  padding: 2.5rem 1rem 0;
 }
 
-.vote-header {
+/* Hero: the ballot's posters fanned like lobby cards over the round's
+   title. A full-width band on the alt surface so the page opens with a
+   room of its own, then hands over to the ballot on the plain surface. */
+.vote-hero {
+  padding: calc(70px + var(--spacing-xl)) 1rem var(--spacing-xl);
+  background: var(--color-surface-alt);
+  border-bottom: 1px solid rgba(32, 57, 130, 0.12);
   text-align: center;
-  margin-bottom: 2rem;
+}
+
+.vote-hero__inner {
+  max-width: 56rem;
+  margin: 0 auto;
 }
 
 .vote-back {
   display: inline-block;
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-md);
   font-size: 0.85rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -23,15 +34,113 @@
   text-decoration: none;
 }
 
+.vote-back:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+/* The fan. Posters overlap by a third and alternate a few degrees of tilt;
+   the middle ones sit forward. Decorative: the films are named on the
+   ballot below, so the list is aria-hidden. */
+.vote-hero__posters {
+  list-style: none;
+  margin: 0 auto var(--spacing-lg);
+  padding: 0.75rem 0 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.vote-hero__poster {
+  --tilt: 0deg;
+  --lift: 0px;
+  width: clamp(72px, 14vw, 132px);
+  aspect-ratio: 2 / 3;
+  margin: 0 calc(clamp(72px, 14vw, 132px) * -0.18);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-surface-sunken);
+  box-shadow:
+    0 1px 2px rgba(20, 22, 21, 0.25),
+    0 10px 24px rgba(20, 22, 21, 0.22);
+  transform: rotate(var(--tilt)) translateY(var(--lift));
+  animation: vote-hero-fan 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.vote-hero__poster img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vote-hero__poster-blank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0.5rem;
+  font-family: var(--font-condensed);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+/* Tilt and depth by position. Six is the most the hero shows. */
+.vote-hero__poster:nth-child(1) { --tilt: -7deg; --lift: 14px; z-index: 1; }
+.vote-hero__poster:nth-child(2) { --tilt: -3.5deg; --lift: 6px; z-index: 2; }
+.vote-hero__poster:nth-child(3) { --tilt: -1deg; z-index: 3; }
+.vote-hero__poster:nth-child(4) { --tilt: 1deg; z-index: 3; }
+.vote-hero__poster:nth-child(5) { --tilt: 3.5deg; --lift: 6px; z-index: 2; }
+.vote-hero__poster:nth-child(6) { --tilt: 7deg; --lift: 14px; z-index: 1; }
+
+/* Fewer posters: the fan still centres, the outer cards just tilt less. */
+.vote-hero__poster:first-child:nth-last-child(2) { --tilt: -4deg; --lift: 4px; }
+.vote-hero__poster:last-child:nth-child(2) { --tilt: 4deg; --lift: 4px; }
+.vote-hero__poster:only-child { --tilt: 0deg; --lift: 0px; }
+
+/* One moment on load: the cards fan out from a single stack. */
+@keyframes vote-hero-fan {
+  from {
+    transform: rotate(0deg) translateY(0);
+    opacity: 0;
+  }
+  to {
+    transform: rotate(var(--tilt)) translateY(var(--lift));
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vote-hero__poster {
+    animation: none;
+  }
+}
+
 .vote-title {
   font-size: clamp(1.8rem, 6vw, 3rem);
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  margin: 0;
 }
 
 .vote-subtitle {
-  margin-top: 0.5rem;
+  margin: 0.5rem auto 0;
+  max-width: 36rem;
   opacity: 0.85;
+}
+
+.vote-hero__status {
+  margin: var(--spacing-md) auto 0;
+  max-width: 36rem;
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+}
+
+.vote-hero__cta {
+  margin-top: var(--spacing-md);
 }
 
 /* Ballot */

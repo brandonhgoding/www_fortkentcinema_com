@@ -13,10 +13,10 @@ class OpenPollsTests(TestCase):
         Poll.objects.create(title="Old", status=PollStatus.CLOSED)
         self.assertEqual(vote_service.open_polls(), [])
 
-    def test_returns_every_open_poll_newest_first(self) -> None:
+    def test_returns_every_open_poll_oldest_first(self) -> None:
         first = Poll.objects.create(title="Live", status=PollStatus.OPEN)
         second = Poll.objects.create(title="Also live", status=PollStatus.OPEN)
-        self.assertEqual(vote_service.open_polls(), [second, first])
+        self.assertEqual(vote_service.open_polls(), [first, second])
 
     def test_none_when_the_open_poll_is_past_its_closes_at(self) -> None:
         Poll.objects.create(
@@ -100,7 +100,7 @@ class ResolveVotePageTests(TestCase):
         ctx = vote_service.resolve_vote_page()
         self.assertEqual(ctx["state"], vote_service.STATE_CHOOSE)
         self.assertIsNone(ctx["poll"])
-        self.assertEqual(ctx["open_rounds"], [b, a])
+        self.assertEqual(ctx["open_rounds"], [a, b])
         self.assertEqual(ctx["options"], [])
 
     def test_a_pinned_open_round_shows_its_ballot_even_with_others_open(self) -> None:

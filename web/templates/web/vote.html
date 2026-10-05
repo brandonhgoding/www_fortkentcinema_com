@@ -8,21 +8,60 @@
 
 {% block content %}
   <div class="vote-page">
-    <div class="vote-container">
-      <div class="vote-header">
-        <a href="/" class="vote-back">&larr; Back to Home</a>
+    {% comment %}
+      The hero is the ballot itself: the posters of the films in the running,
+      fanned like lobby cards, with the round's title under them. Light, like
+      every interior page; the home marquee stays the site's one dark island.
+    {% endcomment %}
+    <section class="vote-hero">
+      <div class="vote-hero__inner">
+        <a href="/" class="vote-back">&larr; Back to home</a>
+        {% if hero_films %}
+          <ul class="vote-hero__posters" aria-hidden="true">
+            {% for film in hero_films %}
+              <li class="vote-hero__poster">
+                {% if film.poster_url %}
+                  <img src="{{ film.poster_url }}" alt="" width="200" height="300" loading="eager" />
+                {% else %}
+                  <span class="vote-hero__poster-blank">{{ film.title }}</span>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
         <h1 class="vote-title">
-          {% if poll %}{{ poll.title }}{% else %}You Pick The Picture{% endif %}
+          {% if poll %}{{ poll.title }}{% else %}You pick the picture{% endif %}
         </h1>
         {% if poll.blurb %}
           <p class="vote-subtitle">{{ poll.blurb }}</p>
         {% elif state == "choose" %}
           <p class="vote-subtitle">More than one vote is on right now.</p>
+        {% elif poll %}
+          <p class="vote-subtitle">You choose what plays here.</p>
         {% else %}
           <p class="vote-subtitle">You choose what plays on our next classic night.</p>
         {% endif %}
+        {% if state == "ballot" or state == "voted" %}
+          <p class="vote-hero__status">
+            {{ options|length }} film{{ options|length|pluralize }} on the ballot.
+            {% if poll.closes_at %}Voting closes {{ poll.closes_at|date:"F j" }}.{% endif %}
+          </p>
+        {% elif state == "choose" %}
+          <p class="vote-hero__status">{{ open_rounds|length }} rounds are open. Vote in as many as you like.</p>
+        {% elif state == "closed" %}
+          <p class="vote-hero__status">Voting has closed. The winner is on its way.</p>
+        {% elif state == "announced" %}
+          <p class="vote-hero__status">The votes are in: {{ poll.winner.film.title }} won.</p>
+        {% endif %}
+        {% if state == "ballot" %}
+          <a href="#vote-panel" class="btn btn-primary vote-hero__cta">Cast your vote</a>
+        {% elif state == "choose" %}
+          <a href="#vote-panel" class="btn btn-primary vote-hero__cta">Pick a round</a>
+        {% endif %}
       </div>
+    </section>
 
+    <div class="vote-container">
       {% include "partials/vote_panel.html" %}
 
       {% if archive %}

@@ -12,6 +12,8 @@ from django.utils import timezone
 
 from cinema.models import Poll, PollStatus, Vote
 
+HERO_FILM_LIMIT = 6
+
 STATE_NO_POLL = "no_poll"
 STATE_CHOOSE = "choose"
 STATE_BALLOT = "ballot"
@@ -29,10 +31,11 @@ def _finished_q(now) -> Q:
 
 
 def open_polls() -> list[Poll]:
-    """Every round taking votes right now, newest first.
+    """Every round taking votes right now, oldest first.
 
     Several may be open at once; the callers decide whether to show one
-    ballot or a list.
+    ballot or a list. Oldest first so the round that has been waiting
+    longest leads the chooser, the home banners and the thanks screen.
     """
     now = timezone.now()
     return list(
@@ -40,6 +43,7 @@ def open_polls() -> list[Poll]:
         .filter(Poll.started_q(now))
         .exclude(Poll.ended_q(now))
         .select_related("winner", "engagement")
+        .order_by("created_at")
     )
 
 
@@ -72,6 +76,20 @@ def archived_polls() -> QuerySet:
     )
 
 
+def _hero_films_from_rounds(rounds: list[Poll]) -> list:
+    """Round-robin through the open rounds' ballots so each is represented,
+    up to the hero's limit."""
+    ballots = [list(r.options.select_related("film")) for r in rounds]
+    films = []
+    for position in range(max((len(b) for b in ballots), default=0)):
+        for ballot in ballots:
+            if position < len(ballot):
+                films.append(ballot[position].film)
+            if len(films) == HERO_FILM_LIMIT:
+                return films
+    return films
+
+
 def resolve_vote_page(poll: Poll | None = None, vote: Vote | None = None) -> dict:
     """Build the context for /vote or /vote/<slug>.
 
@@ -100,6 +118,9 @@ def resolve_vote_page(poll: Poll | None = None, vote: Vote | None = None) -> dic
         "state": STATE_NO_POLL,
         "poll": poll,
         "open_rounds": open_rounds,
+        # The posters fanned across the hero: this round's ballot, or when
+        # the visitor is choosing between rounds, a taste of each.
+        "hero_films": [],
         "options": [],
         "tallies": [],
         "show_results": False,
@@ -112,9 +133,11 @@ def resolve_vote_page(poll: Poll | None = None, vote: Vote | None = None) -> dic
     if poll is None:
         if len(open_rounds) > 1:
             ctx["state"] = STATE_CHOOSE
+            ctx["hero_films"] = _hero_films_from_rounds(open_rounds)
         return ctx
 
     ctx["options"] = list(poll.options.select_related("film"))
+    ctx["hero_films"] = [o.film for o in ctx["options"][:HERO_FILM_LIMIT]]
 
     if poll.status == PollStatus.ANNOUNCED:
         ctx["state"] = STATE_ANNOUNCED

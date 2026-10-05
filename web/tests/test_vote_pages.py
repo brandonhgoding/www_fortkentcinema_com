@@ -230,3 +230,71 @@ class VoteArchiveTests(TestCase):
         html = self.client.get(reverse("vote")).content.decode()
         self.assertIn(other.slug, html)
         self.assertIn(poll.title, html)
+
+
+class VoteHeroTests(TestCase):
+    def test_hero_fans_the_ballot_posters_with_a_blank_for_missing_art(self) -> None:
+        poll = Poll.objects.create(
+            title="Opening weekend",
+            status=PollStatus.OPEN,
+            closes_at=timezone.now() + datetime.timedelta(days=3),
+        )
+        PollOption.objects.create(
+            poll=poll,
+            film=Film.objects.create(title="Dune", poster_url="https://img/dune.jpg"),
+            sort_order=1,
+        )
+        PollOption.objects.create(
+            poll=poll, film=Film.objects.create(title="Wicked"), sort_order=2
+        )
+        html = self.client.get(reverse("vote")).content.decode()
+        self.assertIn('class="vote-hero"', html)
+        self.assertIn('src="https://img/dune.jpg"', html)
+        self.assertIn('<span class="vote-hero__poster-blank">Wicked</span>', html)
+        self.assertIn("2 films on the ballot.", html)
+        self.assertIn("Voting closes", html)
+        self.assertIn('href="#vote-panel"', html)
+        self.assertIn("Cast your vote", html)
+
+    def test_hero_shows_at_most_six_posters(self) -> None:
+        poll = Poll.objects.create(title="Big round", status=PollStatus.OPEN)
+        for i in range(8):
+            PollOption.objects.create(
+                poll=poll, film=Film.objects.create(title=f"Film {i}"), sort_order=i
+            )
+        html = self.client.get(reverse("vote")).content.decode()
+        self.assertEqual(html.count('class="vote-hero__poster"'), 6)
+        self.assertIn("8 films on the ballot.", html)
+
+    def test_chooser_hero_takes_a_film_from_each_open_round(self) -> None:
+        for title, films in (("Round A", ["A1", "A2"]), ("Round B", ["B1"])):
+            poll = Poll.objects.create(title=title, status=PollStatus.OPEN)
+            for i, name in enumerate(films):
+                PollOption.objects.create(
+                    poll=poll, film=Film.objects.create(title=name), sort_order=i
+                )
+        html = self.client.get(reverse("vote")).content.decode()
+        posters = html.split('class="vote-hero__poster"')[1:]
+        self.assertEqual(len(posters), 3)
+        # Oldest round first, alternating between rounds before going
+        # deeper into one ballot.
+        self.assertIn("A1", posters[0])
+        self.assertIn("B1", posters[1])
+        self.assertIn("A2", posters[2])
+        self.assertIn("2 rounds are open", html)
+        self.assertIn("Pick a round", html)
+
+    def test_decided_round_hero_has_no_call_to_action(self) -> None:
+        poll = Poll.objects.create(title="Done", status=PollStatus.CLOSED)
+        PollOption.objects.create(
+            poll=poll, film=Film.objects.create(title="Casablanca")
+        )
+        html = self.client.get(reverse("vote")).content.decode()
+        self.assertIn("Voting has closed.", html)
+        self.assertNotIn("Cast your vote", html)
+        self.assertNotIn('href="#vote-panel"', html)
+
+    def test_no_poll_hero_still_renders(self) -> None:
+        html = self.client.get(reverse("vote")).content.decode()
+        self.assertIn("You pick the picture", html)
+        self.assertNotIn("vote-hero__posters", html)
