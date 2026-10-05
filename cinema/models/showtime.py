@@ -44,8 +44,12 @@ class Showtime(models.Model):
             models.Index(fields=["screen", "is_cancelled", "starts_at"]),
         ]
         constraints = [
+            # Cancelled showtimes are kept as history and must not hold the
+            # slot, or re-booking it fails here after the overlap check
+            # (which skips them) has already passed it.
             models.UniqueConstraint(
                 fields=["screen", "starts_at"],
+                condition=models.Q(is_cancelled=False),
                 name="unique_screen_starts_at",
             ),
         ]
@@ -58,18 +62,3 @@ class Showtime(models.Model):
             if not self.screen_id:
                 self.screen_id = self.engagement.screen_id
         super().save(*args, **kwargs)
-
-    def clean(self) -> None:
-        # Date range validation is now a soft warning, not a hard constraint.
-        pass
-
-    @property
-    def is_outside_engagement_range(self) -> bool:
-        """Check if showtime falls outside engagement date range (for warnings)."""
-        if not self.engagement_id or not self.starts_at:
-            return False
-        show_date = self.starts_at.date()
-        return bool(
-            show_date < self.engagement.start_date
-            or show_date > self.engagement.end_date
-        )

@@ -123,11 +123,12 @@ class ShowtimeTestCase(TestCase):
         with self.assertRaises(IntegrityError), transaction.atomic():
             Showtime.objects.create(engagement=self.eng, starts_at=self._dt(2, 19))
 
-    def test_is_outside_engagement_range(self) -> None:
-        inside = Showtime.objects.create(engagement=self.eng, starts_at=self._dt(3, 19))
-        outside = Showtime.objects.create(engagement=self.eng, starts_at=self._dt(9, 19))
-        self.assertFalse(inside.is_outside_engagement_range)
-        self.assertTrue(outside.is_outside_engagement_range)
+    def test_cancelled_showtime_frees_its_slot(self) -> None:
+        Showtime.objects.create(
+            engagement=self.eng, starts_at=self._dt(2, 19), is_cancelled=True
+        )
+        Showtime.objects.create(engagement=self.eng, starts_at=self._dt(2, 19))
+        self.assertEqual(Showtime.objects.count(), 2)
 
 
 class EngagementAdmissionsTests(TestCase):
