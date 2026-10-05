@@ -29,6 +29,9 @@ def desired_item(engagement: Engagement) -> ItemSpec:
     if not name:
         raise ValueError(
             f"Engagement {engagement.pk} has no title to send to Square")
+    if len(name) > 200:  # SquareItem.name max_length
+        raise ValueError(
+            f"Engagement {engagement.pk} title is longer than 200 characters")
     variations = tuple(
         VariationSpec(
             tier=tier,

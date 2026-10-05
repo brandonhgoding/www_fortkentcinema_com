@@ -51,7 +51,7 @@ class OrderLine:
 @dataclass(frozen=True)
 class OrderData:
     order_id: str
-    closed_at: datetime.datetime  # aware
+    closed_at: datetime.datetime | None  # aware; None when Square omits it
     lines: tuple[OrderLine, ...]
 
 
@@ -84,8 +84,10 @@ def _remote_item(obj: Any) -> RemoteItem:
         item_id=obj.id,
         version=obj.version,
         name=obj.item_data.name,
+        # Hand-made variations often have no SKU; they cannot be matched by SKU.
         variation_ids_by_sku={
             v.item_variation_data.sku: v.id for v in (obj.item_data.variations or [])
+            if v.item_variation_data.sku
         },
     )
 
@@ -104,7 +106,8 @@ def _order_line(line: Any) -> OrderLine:
 def _order_data(order: Any) -> OrderData:
     return OrderData(
         order_id=order.id,
-        closed_at=datetime.datetime.fromisoformat(order.closed_at),
+        closed_at=(datetime.datetime.fromisoformat(order.closed_at)
+                   if order.closed_at else None),
         lines=tuple(_order_line(li) for li in (order.line_items or [])),
     )
 
@@ -134,6 +137,8 @@ class SquareGateway:
         )
 
     def delete_item(self, item_id: str) -> None:
+        # batch_delete "succeeds even if only a portion of the targeted IDs can be
+        # deleted" (SDK docstring), so an already-gone item does not raise.
         _call(self.client.catalog.batch_delete, object_ids=[item_id])
 
     def retrieve_item(self, item_id: str) -> RemoteItem:
@@ -169,8 +174,9 @@ class SquareGateway:
     def lookup_categories(self, variation_ids: list[str]) -> dict[str, str]:
         if not variation_ids:
             return {}
+        # Deleted objects too: a hand-made item removed at cutover still sold today.
         response = _call(self.client.catalog.batch_get, object_ids=variation_ids,
-                         include_related_objects=True)
+                         include_related_objects=True, include_deleted_objects=True)
         item_category = {}
         for item in response.related_objects or []:
             cats = _category_ids(item)
@@ -237,6 +243,7 @@ def get_gateway() -> SquareGateway | None:
     environment = (SquareEnvironment.PRODUCTION
                    if settings.SQUARE_ENVIRONMENT == "production"
                    else SquareEnvironment.SANDBOX)
-    client = Square(token=token, environment=environment)
+    # The push runs inside the dashboard request; fail well before the worker does.
+    client = Square(token=token, environment=environment, timeout=10)
     return SquareGateway(client, location_id=settings.SQUARE_LOCATION_ID,
                          category_id=settings.SQUARE_TICKET_CATEGORY_ID)

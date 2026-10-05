@@ -55,9 +55,8 @@ class FakeGateway:
 
     def delete_item(self, item_id: str) -> None:
         self._record("delete_item", item_id=item_id)
-        if item_id not in self.items:
-            raise GatewayError(f"Unknown item {item_id}")
-        del self.items[item_id]
+        # Like Square's batch_delete, an unknown id succeeds silently.
+        self.items.pop(item_id, None)
 
     def retrieve_item(self, item_id: str) -> RemoteItem:
         self._record("retrieve_item", item_id=item_id)

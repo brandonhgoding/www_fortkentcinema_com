@@ -247,8 +247,21 @@ class CatalogCallTests(SimpleTestCase):
         result = SquareGateway(client, "LOC", "CAT").lookup_categories(
             ["V1", "V2", "V3"])
         client.catalog.batch_get.assert_called_once_with(
-            object_ids=["V1", "V2", "V3"], include_related_objects=True)
+            object_ids=["V1", "V2", "V3"], include_related_objects=True,
+            include_deleted_objects=True)
         self.assertEqual(result, {"V1": "CAT", "V2": "POP"})
+
+    def test_variation_without_sku_is_left_out(self) -> None:
+        obj = _catalog_item("H1", ["CAT"])
+        obj.item_data.variations = [
+            mock.Mock(id="H1-a", item_variation_data=mock.Mock(sku=None)),
+            mock.Mock(id="H1-b", item_variation_data=mock.Mock(sku="")),
+            mock.Mock(id="H1-c", item_variation_data=mock.Mock(sku="s"))]
+        client = mock.Mock()
+        client.catalog.list.return_value = iter([obj])
+        [item] = SquareGateway(client, "LOC", "CAT").list_ticket_items()
+        self.assertEqual(item.variation_ids_by_sku, {"s": "H1-c"})
+        self.assertNotIn(None, item.variation_ids_by_sku)
 
     def test_lookup_categories_with_no_ids_makes_no_call(self) -> None:
         client = mock.Mock()
@@ -318,6 +331,14 @@ class SearchOrdersTests(SimpleTestCase):
         self.assertIsInstance(line.quantity, int)
         self.assertEqual(line.gross_cents, 1600)
 
+    def test_order_without_closed_at_has_none(self) -> None:
+        client = mock.Mock()
+        client.orders.search.return_value = mock.Mock(
+            orders=[_order("O1", None, [_line()])], cursor=None)
+        [o] = SquareGateway(client, "LOC", "CAT").search_orders(START, END)
+        self.assertIsNone(o.closed_at)
+        self.assertEqual(o.order_id, "O1")
+
     def test_api_error_is_gateway_error(self) -> None:
         client = mock.Mock()
         client.orders.search.side_effect = ApiError(status_code=401, body="nope")
@@ -337,6 +358,7 @@ class GetGatewayTests(SimpleTestCase):
             gw = get_gateway()
         self.assertIsInstance(gw, SquareGateway)
         self.assertEqual(Square.call_args.kwargs["token"], "tok")
+        self.assertEqual(Square.call_args.kwargs["timeout"], 10)
         self.assertEqual(Square.call_args.kwargs["environment"],
                          SquareEnvironment.SANDBOX)
         self.assertIs(gw.client, Square.return_value)
@@ -401,10 +423,10 @@ class FakeGatewayTests(SimpleTestCase):
         self.assertEqual(gw.upsert_item(SPEC_FOR_7, item_id=None, version=None,
                                         variation_ids_by_tier={}).item_id, "item-1")
 
-    def test_delete_unknown_raises_and_delete_known_removes(self) -> None:
+    def test_delete_unknown_succeeds_and_delete_known_removes(self) -> None:
         gw = FakeGateway()
-        with self.assertRaises(GatewayError):
-            gw.delete_item("nope")
+        gw.delete_item("nope")  # Square's batch_delete does not raise either.
+        self.assertEqual(gw.calls, [("delete_item", {"item_id": "nope"})])
         gw.upsert_item(SPEC_FOR_7, item_id=None, version=None, variation_ids_by_tier={})
         gw.delete_item("item-1")
         self.assertEqual(gw.items, {})

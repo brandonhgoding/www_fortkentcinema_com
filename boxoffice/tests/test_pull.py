@@ -197,6 +197,26 @@ class PullDayTests(TestCase):
         self.assertIsNotNone(pull.finished_at)
         self.assertEqual(SalesPull.objects.get().status, SalesPull.Status.FAILED)
 
+    def test_row_is_created_failed_until_the_pull_finishes(self) -> None:
+        seen = []
+
+        def search_orders(start, end):
+            row = SalesPull.objects.get()
+            seen.append((row.status, row.error))
+            raise GatewayError("down")
+
+        self.gw.search_orders = search_orders
+        with self.assertLogs(LOGGER, "WARNING"):
+            pull = pull_day(DAY, self.gw)
+        self.assertEqual(seen, [("FAILED", "Pull did not finish")])
+        pull.refresh_from_db()
+        self.assertEqual((pull.status, pull.error), ("FAILED", "down"))
+
+    def test_successful_pull_clears_the_placeholder_error(self) -> None:
+        pull = pull_day(DAY, self.gw)
+        pull.refresh_from_db()
+        self.assertEqual((pull.status, pull.error), ("OK", ""))
+
     def test_category_lookup_failure_stores_nothing(self) -> None:
         self.gw.orders = [order("O1", at_eastern(2026, 10, 9, 19, 5),
                                 line("L2", "Popcorn", "", "VPOP"))]

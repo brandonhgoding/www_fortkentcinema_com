@@ -43,3 +43,16 @@ class DesiredItemTests(TestCase):
         self.eng.engagement_films.all().delete()
         with self.assertRaisesMessage(ValueError, "no title"):
             desired_item(self.eng)
+
+    def test_title_over_200_characters_raises(self) -> None:
+        # Joined film titles have no length limit; SquareItem.name holds 200.
+        second = Film.objects.create(title="X" * 199)
+        EngagementFilm.objects.create(engagement=self.eng, film=second, position=2)
+        with self.assertRaisesMessage(
+                ValueError,
+                f"Engagement {self.eng.pk} title is longer than 200 characters"):
+            desired_item(self.eng)
+
+    def test_title_of_exactly_200_characters_is_allowed(self) -> None:
+        self.eng.event_title = "Y" * 200
+        self.assertEqual(len(desired_item(self.eng).name), 200)

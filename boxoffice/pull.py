@@ -31,7 +31,10 @@ def business_date(closed_at: datetime.datetime) -> datetime.date:
 
 def pull_day(day: datetime.date, gateway: SquareGateway) -> SalesPull:
     """Store every order line closed on ``day``; the returned row says how it went."""
-    pull = SalesPull.objects.create(business_date=day)
+    # Created FAILED so a pull killed mid-run still raises the dashboard alert.
+    pull = SalesPull.objects.create(business_date=day,
+                                    status=SalesPull.Status.FAILED,
+                                    error="Pull did not finish")
     try:
         orders = _closed_orders(gateway.search_orders(*day_bounds(day)))
         lines = [(o, ln) for o in orders for ln in o.lines]
