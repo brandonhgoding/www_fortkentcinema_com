@@ -1,6 +1,6 @@
 import datetime
 
-from cinema.models import Engagement, EngagementFilm, Film, Screen
+from cinema.models import Engagement, EngagementFilm, Film, Screen, Showtime
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -89,6 +89,15 @@ class EngagementStatusTests(TestCase):
         self.client.login(username="s", password="pw12345")
         self.screen = Screen.objects.create(name="S1", capacity=50)
         self.today = timezone.localdate()
+
+    def test_cancelling_frees_the_upcoming_showtimes(self) -> None:
+        e = make_engagement(self.screen, start=self.today, end=self.today)
+        st = Showtime.objects.create(
+            engagement=e, starts_at=timezone.now() + datetime.timedelta(hours=2))
+        self.client.post(reverse("dashboard:engagement_status", args=[e.pk]),
+                         {"status": "CANCELLED"})
+        st.refresh_from_db()
+        self.assertTrue(st.is_cancelled)
 
     def test_status_change_updates_and_refreshes(self) -> None:
         e = make_engagement(self.screen, start=self.today, end=self.today, status="DRAFT")

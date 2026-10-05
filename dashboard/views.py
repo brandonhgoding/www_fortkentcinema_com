@@ -266,7 +266,7 @@ def engagement_list_context(request):
         "today": timezone.localdate(),
         "status_options": [("DRAFT", "Draft"), ("CONFIRMED", "Confirmed"), ("CANCELLED", "Cancelled")],
         "status_descriptions": {"DRAFT": "Not yet confirmed", "CONFIRMED": "Active engagement",
-                                "CANCELLED": "Engagement cancelled", "ENDED": "Engagement has ended"},
+                                "CANCELLED": "Cancels its upcoming showtimes", "ENDED": "Engagement has ended"},
     }
 
 

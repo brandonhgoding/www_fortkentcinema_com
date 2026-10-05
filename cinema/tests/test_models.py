@@ -1,6 +1,13 @@
 import datetime
 
-from cinema.models import Engagement, EngagementFilm, Film, Screen, Showtime
+from cinema.models import (
+    Engagement,
+    EngagementFilm,
+    EngagementStatus,
+    Film,
+    Screen,
+    Showtime,
+)
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.test import TestCase
@@ -129,6 +136,46 @@ class ShowtimeTestCase(TestCase):
         )
         Showtime.objects.create(engagement=self.eng, starts_at=self._dt(2, 19))
         self.assertEqual(Showtime.objects.count(), 2)
+
+
+class EngagementCancellationTests(TestCase):
+    def setUp(self) -> None:
+        self.screen = Screen.objects.create(name="Screen 1", capacity=100)
+        today = dj_timezone.localdate()
+        self.eng = Engagement.objects.create(
+            screen=self.screen,
+            start_date=today - datetime.timedelta(days=3),
+            end_date=today + datetime.timedelta(days=3),
+            status=EngagementStatus.CONFIRMED,
+        )
+        now = dj_timezone.now()
+        self.past = Showtime.objects.create(
+            engagement=self.eng, starts_at=now - datetime.timedelta(days=1)
+        )
+        self.upcoming = Showtime.objects.create(
+            engagement=self.eng, starts_at=now + datetime.timedelta(days=1)
+        )
+
+    def test_cancelling_the_run_cancels_its_upcoming_showtimes(self) -> None:
+        self.eng.status = EngagementStatus.CANCELLED
+        self.eng.save(update_fields=["status"])
+        self.upcoming.refresh_from_db()
+        self.past.refresh_from_db()
+        self.assertTrue(self.upcoming.is_cancelled)
+        self.assertFalse(self.past.is_cancelled)
+
+    def test_other_statuses_leave_showtimes_alone(self) -> None:
+        self.eng.status = EngagementStatus.DRAFT
+        self.eng.save()
+        self.upcoming.refresh_from_db()
+        self.assertFalse(self.upcoming.is_cancelled)
+
+    def test_freed_slot_can_be_rebooked(self) -> None:
+        self.eng.status = EngagementStatus.CANCELLED
+        self.eng.save()
+        Showtime.objects.create(
+            engagement=self.eng, starts_at=self.upcoming.starts_at
+        )
 
 
 class EngagementAdmissionsTests(TestCase):

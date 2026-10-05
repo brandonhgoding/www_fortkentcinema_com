@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -116,6 +116,23 @@ class Engagement(models.Model):
         if self.event_title:
             return self.event_title
         return " + ".join(f.title for f in self.ordered_films)
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        super().save(*args, **kwargs)
+        if self.status == EngagementStatus.CANCELLED:
+            self.cancel_upcoming_showtimes()
+
+    def cancel_upcoming_showtimes(self) -> int:
+        """Cancel every showtime of this run that has not started yet.
+
+        A cancelled run's showtimes would otherwise still hold their screen
+        slots, blocking whatever is booked in their place. Past showtimes
+        happened and are left alone. Setting the run back to Confirmed does
+        not restore them; staff re-enable showtimes one by one.
+        """
+        return self.showtimes.filter(
+            is_cancelled=False, starts_at__gte=timezone.now()
+        ).update(is_cancelled=True)
 
     def clean(self) -> None:
         if self.start_date and self.end_date and self.end_date < self.start_date:
