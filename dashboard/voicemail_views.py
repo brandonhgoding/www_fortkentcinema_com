@@ -76,6 +76,14 @@ class VoicemailDeleteView(StaffRequiredMixin, View):
 
     def post(self, request, pk: int):
         voicemail = get_object_or_404(Voicemail, pk=pk)
+        if not recordings.is_configured():
+            # Retrying can't help here, so don't ask staff to.
+            messages.error(
+                request,
+                "Twilio isn't set up on this server, so the recording can't "
+                "be deleted and the voicemail was kept.",
+            )
+            return redirect("dashboard:voicemails")
         try:
             recordings.delete_recording(voicemail.recording_sid)
         except recordings.RecordingError:

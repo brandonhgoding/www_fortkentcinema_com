@@ -150,6 +150,7 @@ class VoicemailDeleteTests(VoicemailTestCase):
         self.assertTrue(Voicemail.objects.exists())
         delete_recording.assert_not_called()
 
+    @CONFIGURED
     @patch("dashboard.voicemail_views.recordings.delete_recording")
     def test_deletes_the_twilio_recording_then_the_row(self, delete_recording: Mock):
         self.login()
@@ -158,6 +159,7 @@ class VoicemailDeleteTests(VoicemailTestCase):
         delete_recording.assert_called_once_with(SID)
         self.assertFalse(Voicemail.objects.exists())
 
+    @CONFIGURED
     @patch(
         "dashboard.voicemail_views.recordings.delete_recording",
         side_effect=RecordingError("Twilio answered 500"),
@@ -174,8 +176,10 @@ class VoicemailDeleteTests(VoicemailTestCase):
         # The real delete_recording refuses, so the row survives rather than
         # orphaning a recording in Twilio.
         self.login()
-        self.delete()
+        response = self.delete()
         self.assertTrue(Voicemail.objects.exists())
+        messages = [str(m) for m in response.wsgi_request._messages]
+        self.assertIn("isn't set up", messages[0])
 
     def test_get_does_not_delete(self):
         self.login()
