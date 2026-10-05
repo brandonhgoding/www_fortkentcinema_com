@@ -14,7 +14,15 @@
         {{ poll.get_status_display }} &middot; {{ poll.total_votes }} vote{{ poll.total_votes|pluralize }}
       </p>
     </div>
-    <a class="btn btn-secondary" href="{% url 'dashboard:polls' %}">All Polls</a>
+    <div class="actions">
+      <a class="btn btn-secondary" href="{% url 'dashboard:polls' %}">All Polls</a>
+      {# A plain form: after the delete there is no page left to swap into, so the view redirects to the list. #}
+      <form method="post" action="{% url 'dashboard:poll_delete' poll.pk %}" x-data
+            @submit.prevent="dashboardConfirm({ title: 'Delete Poll', message: 'Delete \'{{ poll.title|escapejs }}\'? Its ballot and {{ poll.total_votes }} vote{{ poll.total_votes|pluralize }} go with it. This can\'t be undone.', confirmLabel: 'Delete', variant: 'danger' }).then(ok => ok && $el.submit())">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Delete</button>
+      </form>
+    </div>
   </div>
 
   {% include "dashboard/_poll_status.html" %}

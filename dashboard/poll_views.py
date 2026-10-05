@@ -7,8 +7,9 @@ helpers with this feature.
 import json
 
 from django.db.models import Max
+from django.contrib import messages
 from django.http import HttpResponse, HttpResponseBadRequest
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views import View
 
@@ -51,9 +52,7 @@ def _render_poll_form(request, form, action_url: str, submit_label: str):
 
 class PollListView(StaffRequiredMixin, View):
     def get(self, request):
-        return render(
-            request, "dashboard/polls.html", {"polls": Poll.objects.all()}
-        )
+        return render(request, "dashboard/polls.html", {"polls": Poll.objects.all()})
 
 
 class PollCreateView(StaffRequiredMixin, View):
@@ -94,6 +93,28 @@ class PollEditView(StaffRequiredMixin, View):
             reverse("dashboard:poll_edit", args=[pk]),
             "Save Changes",
         )
+
+
+class PollDeleteView(StaffRequiredMixin, View):
+    """Delete a round outright, ballot and votes included.
+
+    Options and votes cascade from the poll in the database, so one delete
+    takes the whole round. The engagement a winner became is left alone: it
+    is a booking in its own right, the poll only pointed at it.
+
+    From the list the row's button is an htmx request, answered with the
+    refreshed list. From the detail page there is nothing left to show, so a
+    plain form posts here and is sent back to the list with a flash toast.
+    """
+
+    def post(self, request, pk):
+        poll = get_object_or_404(Poll, pk=pk)
+        title = poll.title
+        poll.delete()
+        if request.headers.get("HX-Request"):
+            return _poll_list_response(request, f"Deleted {title}")
+        messages.success(request, f"Deleted {title}")
+        return redirect("dashboard:polls")
 
 
 def _poll_options_response(request, poll, toast_message: str = "") -> HttpResponse:
@@ -175,9 +196,7 @@ class PollOptionMoveView(StaffRequiredMixin, View):
             return HttpResponseBadRequest("Direction must be 'up' or 'down'.")
 
         options = list(poll.options.all())
-        index = next(
-            (i for i, opt in enumerate(options) if opt.pk == option_pk), None
-        )
+        index = next((i for i, opt in enumerate(options) if opt.pk == option_pk), None)
         if index is None:
             return HttpResponseBadRequest("Unknown option.")
 

@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from cinema.models import Poll, PollStatus
+from cinema.models import Film, Poll, PollOption, PollStatus, Vote
 
 User = get_user_model()
 
@@ -27,14 +27,10 @@ class PollListTests(TestCase):
 
     def test_requires_staff(self) -> None:
         self.client.logout()
-        self.assertEqual(
-            self.client.get(reverse("dashboard:polls")).status_code, 302
-        )
+        self.assertEqual(self.client.get(reverse("dashboard:polls")).status_code, 302)
         User.objects.create_user(username="p", password="pw12345", is_staff=False)
         self.client.login(username="p", password="pw12345")
-        self.assertEqual(
-            self.client.get(reverse("dashboard:polls")).status_code, 403
-        )
+        self.assertEqual(self.client.get(reverse("dashboard:polls")).status_code, 403)
 
     def test_polls_css_linked(self) -> None:
         html = self.client.get(reverse("dashboard:polls")).content.decode()
@@ -104,3 +100,92 @@ class PollCreateEditTests(TestCase):
         )
         poll.refresh_from_db()
         self.assertFalse(poll.results_visible)
+
+
+class PollDeleteTests(TestCase):
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+        self.poll = Poll.objects.create(title="Round One", status=PollStatus.OPEN)
+        self.film = Film.objects.create(title="Casablanca")
+        option = PollOption.objects.create(poll=self.poll, film=self.film)
+        Vote.objects.create(poll=self.poll, option=option, voter_key="k1")
+        Vote.objects.create(poll=self.poll, option=option, voter_key="k2")
+
+    def test_delete_takes_the_ballot_and_votes_with_it(self) -> None:
+        self.client.post(reverse("dashboard:poll_delete", args=[self.poll.pk]))
+        self.assertFalse(Poll.objects.filter(pk=self.poll.pk).exists())
+        self.assertEqual(PollOption.objects.count(), 0)
+        self.assertEqual(Vote.objects.count(), 0)
+        # The film is only referenced by the ballot; it stays.
+        self.assertTrue(Film.objects.filter(pk=self.film.pk).exists())
+
+    def test_delete_leaves_the_engagement_alone(self) -> None:
+        from cinema.models import Engagement, Screen
+        import datetime
+
+        screen = Screen.objects.create(
+            name="Main",
+            capacity=100,
+            screen_type="standard",
+            aspect_ratio="flat",
+            sound_system="standard",
+            supports_3d=False,
+        )
+        engagement = Engagement.objects.create(
+            screen=screen,
+            start_date=datetime.date(2026, 11, 1),
+            end_date=datetime.date(2026, 11, 7),
+        )
+        self.poll.status = PollStatus.ANNOUNCED
+        self.poll.winner = self.poll.options.first()
+        self.poll.engagement = engagement
+        self.poll.save()
+
+        self.client.post(reverse("dashboard:poll_delete", args=[self.poll.pk]))
+        self.assertTrue(Engagement.objects.filter(pk=engagement.pk).exists())
+
+    def test_htmx_delete_from_the_list_swaps_the_list_and_toasts(self) -> None:
+        response = self.client.post(
+            reverse("dashboard:poll_delete", args=[self.poll.pk]),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        self.assertIn('id="poll-list" hx-swap-oob="true"', html)
+        self.assertNotIn("Round One", html)
+        trigger = json.loads(response["HX-Trigger"])
+        self.assertEqual(trigger["dashboard-toast"]["message"], "Deleted Round One")
+
+    def test_form_delete_from_the_detail_page_redirects_to_the_list(self) -> None:
+        response = self.client.post(
+            reverse("dashboard:poll_delete", args=[self.poll.pk]), follow=True
+        )
+        self.assertRedirects(response, reverse("dashboard:polls"))
+        self.assertIn("Deleted Round One", response.content.decode())
+
+    def test_delete_is_post_only(self) -> None:
+        response = self.client.get(
+            reverse("dashboard:poll_delete", args=[self.poll.pk])
+        )
+        self.assertEqual(response.status_code, 405)
+        self.assertTrue(Poll.objects.filter(pk=self.poll.pk).exists())
+
+    def test_requires_staff(self) -> None:
+        self.client.logout()
+        response = self.client.post(
+            reverse("dashboard:poll_delete", args=[self.poll.pk])
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Poll.objects.filter(pk=self.poll.pk).exists())
+
+    def test_both_pages_offer_delete_with_a_confirm_naming_the_votes(self) -> None:
+        url = reverse("dashboard:poll_delete", args=[self.poll.pk])
+        list_html = self.client.get(reverse("dashboard:polls")).content.decode()
+        self.assertIn(f'hx-post="{url}"', list_html)
+        self.assertIn("2 votes go with it", list_html)
+        detail_html = self.client.get(
+            reverse("dashboard:poll_detail", args=[self.poll.pk])
+        ).content.decode()
+        self.assertIn(f'action="{url}"', detail_html)
+        self.assertIn("2 votes go with it", detail_html)

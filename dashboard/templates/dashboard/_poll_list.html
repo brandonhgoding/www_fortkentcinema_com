@@ -14,10 +14,16 @@
       <td>{{ poll.options.count }}</td>
       <td>{{ poll.total_votes }}</td>
       <td>
-        <button class="btn btn-secondary btn-sm"
-                hx-get="{% url 'dashboard:poll_edit' poll.pk %}"
-                hx-target="#drawer-content" hx-swap="innerHTML"
-                @click="$store.drawer.show('Edit Poll')">Edit</button>
+        <div class="actions">
+          <button class="btn btn-secondary btn-sm"
+                  hx-get="{% url 'dashboard:poll_edit' poll.pk %}"
+                  hx-target="#drawer-content" hx-swap="innerHTML"
+                  @click="$store.drawer.show('Edit Poll')">Edit</button>
+          <button class="btn btn-danger btn-sm"
+                  hx-post="{% url 'dashboard:poll_delete' poll.pk %}"
+                  hx-target="#poll-list" hx-swap="outerHTML"
+                  data-dashboard-confirm='{"title":"Delete Poll","message":"Delete \"{{ poll.title|escapejs }}\"? Its ballot and {{ poll.total_votes }} vote{{ poll.total_votes|pluralize }} go with it. This can\u0027t be undone.","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
+        </div>
       </td>
     </tr>
     {% endfor %}

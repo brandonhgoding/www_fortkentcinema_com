@@ -43,6 +43,11 @@ urlpatterns = [
     path("polls/<int:pk>/edit", poll_views.PollEditView.as_view(), name="poll_edit"),
     path("polls/<int:pk>", poll_views.PollDetailView.as_view(), name="poll_detail"),
     path(
+        "polls/<int:pk>/delete",
+        poll_views.PollDeleteView.as_view(),
+        name="poll_delete",
+    ),
+    path(
         "polls/<int:pk>/options/add",
         poll_views.PollOptionAddView.as_view(),
         name="poll_option_add",
