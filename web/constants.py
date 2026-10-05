@@ -1118,30 +1118,3 @@ DONATION = {
     ),
     "button": "Donate",
 }
-
-
-# Advance-ticket CTA for a tentpole release, on the home page under the
-# hero. Named for the pattern rather than the film: the next one is an edit
-# to this constant, not a new partial.
-#
-# SELF-EXPIRING: HomeView only passes this to the template while today is
-# on or before `until`, so the band retires itself after opening day and
-# the film carries on in Now Showing. Set the whole constant to None to
-# pull it early.
-#
-# The link goes to the same Square merchant as the gift-card and donation
-# links (MLWDCWWHFATH1) — the cheap check that it is our own checkout.
-ADVANCE_TICKETS = {
-    "url": "https://square.link/u/Qh1A0yq4",
-    "film": "Avengers: Doomsday",
-    "kicker": "Advance tickets on sale",
-    # The date the stub prints. Keep it in step with `until` below.
-    "opens": "Opens Friday, December 18",
-    "button": "Buy Now",
-    # Studio key art, 1600px and 800px wide. It already carries the title
-    # treatment and the date, so the alt text says what it shows.
-    "image": "img/avengers-doomsday-banner.jpg",
-    "image_small": "img/avengers-doomsday-banner-800.jpg",
-    "image_alt": "Avengers: Doomsday — in theaters 12.18.26",
-    "until": datetime.date(2026, 12, 18),
-}

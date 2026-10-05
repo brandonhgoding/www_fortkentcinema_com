@@ -26,7 +26,6 @@ from cinema.models import (
     Vote,
 )
 from web.constants import (
-    ADVANCE_TICKETS,
     CRAFT_NIGHT,
     DONATION,
     CRAFT_NIGHT_FAQ,
@@ -64,15 +63,6 @@ from web.services.showtimes import (
 from web.services import voting as vote_service
 
 
-def advance_tickets():
-    """ADVANCE_TICKETS while it is live, else None."""
-    if not ADVANCE_TICKETS or not ADVANCE_TICKETS["url"]:
-        return None
-    if timezone.localdate() > ADVANCE_TICKETS["until"]:
-        return None
-    return ADVANCE_TICKETS
-
-
 class HomeView(TemplateView):
     template_name = "web/home.html"
 
@@ -98,10 +88,6 @@ class HomeView(TemplateView):
         # Self-expiring vote CTAs: one per round that is OPEN and inside its
         # voting window, so each banner retires itself when its round closes.
         ctx["vote_polls"] = vote_service.open_polls()
-
-        # Advance-ticket CTA. Retires itself after opening day; see
-        # ADVANCE_TICKETS in web/constants.py.
-        ctx["advance_tickets"] = advance_tickets()
 
         # Donation CTA. The partial renders nothing while DONATION["url"]
         # is blank, which is how it shipped ahead of the Square item —
