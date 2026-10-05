@@ -138,6 +138,14 @@ def _poll_options_response(request, poll, toast_message: str = "") -> HttpRespon
     return response
 
 
+# The ballot's labels are the voter's own words; a table pill wants two.
+EMAIL_PREFERENCE_SHORT = {
+    EmailPreference.RESULTS: "Results only",
+    EmailPreference.SUBSCRIBE: "Mailing list",
+    EmailPreference.NONE: "No email",
+}
+
+
 class PollDetailView(StaffRequiredMixin, View):
     def get(self, request, pk):
         poll = get_object_or_404(Poll, pk=pk)
@@ -153,6 +161,9 @@ class PollDetailView(StaffRequiredMixin, View):
                     for key in EmailPreference.values
                 ],
                 "contactable_count": poll.contactable_votes().count(),
+                # Newest first, the model's default, so a fresh vote is on top.
+                "votes": poll.votes.select_related("option__film"),
+                "preference_short": EMAIL_PREFERENCE_SHORT,
             },
         )
 

@@ -229,6 +229,17 @@ class PollVotersTests(TestCase):
         self.assertIn("Download 2 emails (CSV)", html)
         self.assertIn(reverse("dashboard:poll_votes_export", args=[self.poll.pk]), html)
 
+    def test_detail_lists_every_voter_with_their_choice(self) -> None:
+        html = self.client.get(
+            reverse("dashboard:poll_detail", args=[self.poll.pk])
+        ).content.decode()
+        for email in ("=results@example.com", "list@example.com", "quiet@example.com"):
+            self.assertIn(email, html)
+        for pill in ("Results only", "Mailing list", "No email"):
+            self.assertIn(f">{pill}</span>", html)
+        self.assertIn("No address (voted before we asked)", html)
+        self.assertEqual(html.count("<td>Casablanca</td>"), 4)
+
     def test_detail_hides_the_export_when_nobody_may_be_emailed(self) -> None:
         self.poll.votes.exclude(email_preference=EmailPreference.NONE).delete()
         html = self.client.get(

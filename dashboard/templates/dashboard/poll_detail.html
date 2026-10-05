@@ -1,5 +1,5 @@
 {% extends "dashboard/base_dashboard.html" %}
-{% load static %}
+{% load static dashboard_extras %}
 {% block title %}{{ poll.title }} · LeprinceOS{% endblock %}
 {% block head_extra %}
   <link rel="stylesheet" href="{% static 'dashboard/css/polls.css' %}" />
@@ -47,6 +47,29 @@
           </a>
           <p class="fieldHint">Everyone who said we may email them, with a column saying whether they want just the result or the mailing list. People who asked not to be emailed are left out.</p>
         {% endif %}
+      </div>
+      <div class="tableWrapper">
+        <table class="table">
+          <thead>
+            <tr><th>Email</th><th>May we email them?</th><th>Voted for</th><th>When</th></tr>
+          </thead>
+          <tbody>
+            {% for vote in votes %}
+              <tr>
+                <td>{% if vote.email %}{{ vote.email }}{% else %}<span class="pollVoterNone">No address (voted before we asked)</span>{% endif %}</td>
+                <td>
+                  {% if vote.email %}
+                    <span class="status-badge status-{{ vote.email_preference|lower }}" title="{{ vote.get_email_preference_display }}">{{ preference_short|get_item:vote.email_preference }}</span>
+                  {% else %}
+                    &mdash;
+                  {% endif %}
+                </td>
+                <td>{{ vote.option.film.title }}</td>
+                <td>{{ vote.created_at|date:"M j, Y g:i A" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     </section>
   {% endif %}

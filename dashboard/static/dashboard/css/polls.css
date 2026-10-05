@@ -102,3 +102,24 @@
   font-size: var(--text-sm);
   color: var(--text-secondary);
 }
+
+/* Each voter's answer to "may we email you?", as a status pill. */
+.status-subscribe {
+  background: var(--status-confirmed-bg);
+  color: var(--status-confirmed);
+}
+
+.status-results {
+  background: var(--status-warning-bg);
+  color: var(--status-warning);
+}
+
+.status-none {
+  background: var(--status-ended-bg);
+  color: var(--status-ended);
+}
+
+.pollVoterNone {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
