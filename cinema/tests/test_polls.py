@@ -36,11 +36,10 @@ class PollWindowTests(TestCase):
 
 
 class OneOpenPollTests(TestCase):
-    def test_second_open_poll_is_refused_by_the_database(self) -> None:
+    def test_several_polls_may_be_open_at_once(self) -> None:
         Poll.objects.create(title="Round One", status=PollStatus.OPEN)
-        with self.assertRaises(IntegrityError):
-            with transaction.atomic():
-                Poll.objects.create(title="Round Two", status=PollStatus.OPEN)
+        Poll.objects.create(title="Round Two", status=PollStatus.OPEN)
+        self.assertEqual(Poll.objects.filter(status=PollStatus.OPEN).count(), 2)
 
     def test_many_closed_polls_are_fine(self) -> None:
         Poll.objects.create(title="Round One", status=PollStatus.CLOSED)

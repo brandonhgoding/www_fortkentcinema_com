@@ -12,6 +12,7 @@
   hx-swap="outerHTML"
 >
   {% csrf_token %}
+  <input type="hidden" name="poll" value="{{ poll.pk }}" />
   <fieldset class="vote-ballot__fieldset">
     <legend class="vote-ballot__legend">Pick one</legend>
     {% for option in options %}

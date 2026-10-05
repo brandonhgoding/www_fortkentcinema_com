@@ -40,7 +40,7 @@ not the TMDB blurb — the local intent is what we can actually win.
         <h1 class="movie-page-title">{{ film.title }}</h1>
 
         {% if on_ballot %}
-          <a class="movie-ballot-link" href="{% url 'vote' %}"
+          <a class="movie-ballot-link" href="{{ on_ballot.get_absolute_url }}"
              data-track="vote_cta_click" data-track-location="movie_page">
             On the ballot this round &mdash; vote for it &rarr;
           </a>

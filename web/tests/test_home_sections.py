@@ -147,7 +147,7 @@ class SectionCompositionTests(TestCase):
         poll = {"title": "Pick the Sunday matinee", "options": {"count": 3}}
         with mock.patch("web.views.sponsored_screening", return_value=banner), \
                 mock.patch(
-                    "web.views.vote_service.current_poll", return_value=poll
+                    "web.views.vote_service.open_polls", return_value=[poll]
                 ):
             seq = section_sequence(self.home())
         self.assertIn("sponsored-cta", seq)

@@ -16,6 +16,8 @@
         </h1>
         {% if poll.blurb %}
           <p class="vote-subtitle">{{ poll.blurb }}</p>
+        {% elif state == "choose" %}
+          <p class="vote-subtitle">More than one vote is on right now.</p>
         {% else %}
           <p class="vote-subtitle">You choose what plays on our next classic night.</p>
         {% endif %}

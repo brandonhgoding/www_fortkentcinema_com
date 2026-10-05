@@ -42,7 +42,7 @@ class PollStatusTests(TestCase):
         empty.refresh_from_db()
         self.assertEqual(empty.status, PollStatus.DRAFT)
 
-    def test_second_open_poll_is_refused_with_a_message(self) -> None:
+    def test_a_second_poll_can_be_opened_alongside_the_first(self) -> None:
         self.poll.status = PollStatus.OPEN
         self.poll.save()
         other = Poll.objects.create(title="Round Two")
@@ -55,10 +55,10 @@ class PollStatusTests(TestCase):
             {"status": PollStatus.OPEN},
         )
 
-        self.assertEqual(response.status_code, 409)
-        self.assertIn("already open", response.content.decode().lower())
+        self.assertEqual(response.status_code, 200)
         other.refresh_from_db()
-        self.assertEqual(other.status, PollStatus.DRAFT)
+        self.assertEqual(other.status, PollStatus.OPEN)
+        self.assertEqual(Poll.objects.filter(status=PollStatus.OPEN).count(), 2)
 
     def test_close_an_open_poll(self) -> None:
         self.poll.status = PollStatus.OPEN

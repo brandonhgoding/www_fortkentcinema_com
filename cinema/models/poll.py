@@ -69,16 +69,10 @@ class Poll(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        # Any number of rounds may be open at once (say, an opening-weekend
+        # pick and the next classic night). /vote lists them when there are
+        # several and shows the ballot straight away when there is one.
         ordering = ["-created_at"]
-        constraints = [
-            # The public page assumes a single live poll. Enforced in the
-            # database so a dashboard bug cannot produce two.
-            models.UniqueConstraint(
-                fields=["status"],
-                condition=models.Q(status="OPEN"),
-                name="cinema_poll_only_one_open",
-            )
-        ]
         verbose_name = "Poll"
         verbose_name_plural = "Polls"
 

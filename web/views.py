@@ -95,9 +95,9 @@ class HomeView(TemplateView):
         # the banner retires itself on the booking's last day.
         ctx["sponsored"] = sponsored_screening()
 
-        # Self-expiring vote CTA: None unless a poll is OPEN and inside its
-        # voting window, so the banner retires itself when the round closes.
-        ctx["vote_poll"] = vote_service.current_poll()
+        # Self-expiring vote CTAs: one per round that is OPEN and inside its
+        # voting window, so each banner retires itself when its round closes.
+        ctx["vote_polls"] = vote_service.open_polls()
 
         # Advance-ticket CTA. Retires itself after opening day; see
         # ADVANCE_TICKETS in web/constants.py.
@@ -484,12 +484,14 @@ class MovieDetailView(DetailView):
         )
         ctx["now_showing"] = get_now_showing()
         # Internal linking: push crawlers (and people) between the movie
-        # pages and /vote while this film is up for a vote.
-        open_poll = vote_service.current_poll()
-        ctx["on_ballot"] = (
-            open_poll
-            if open_poll and open_poll.options.filter(film=film).exists()
-            else None
+        # pages and the round's page while this film is up for a vote.
+        ctx["on_ballot"] = next(
+            (
+                poll
+                for poll in vote_service.open_polls()
+                if poll.options.filter(film=film).exists()
+            ),
+            None,
         )
         return ctx
 
@@ -508,6 +510,14 @@ def _vote_context(poll=None, vote=None, message="", form=None):
     return ctx
 
 
+def _pk_or_none(raw):
+    """An integer primary key from POST data, or None for blank or junk."""
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
+
+
 def _clean_ballot_email(raw: str) -> str:
     """The address as we store it, or a ValidationError.
 
@@ -521,10 +531,11 @@ def _clean_ballot_email(raw: str) -> str:
 
 
 class VoteView(View):
-    """/vote — the canonical, stable URL for the current round.
+    """/vote — the stable URL for whatever is being voted on.
 
     This is the link pasted into Facebook, so it must stay valid across every
-    round. Past rounds move to /vote/<slug>; see VoteArchiveView.
+    round. One open round shows its ballot here; several show a list, each
+    linking to its own /vote/<slug>, which is also where past rounds live.
     """
 
     def get(self, request):
@@ -532,19 +543,16 @@ class VoteView(View):
 
 
 class VoteArchiveView(View):
-    """/vote/<slug> — a specific round.
+    """/vote/<slug> — a specific round, open or decided.
 
-    While a round is open its slug URL redirects to /vote, so exactly one page
-    collects the shares and links.
+    An open round renders its ballot here too, since more than one can be
+    open and each needs a link of its own.
     """
 
     def get(self, request, slug):
         poll = get_object_or_404(Poll, slug=slug)
         if poll.status == PollStatus.DRAFT or not poll.has_started():
             raise Http404("No such poll.")
-        if poll.is_accepting_votes():
-            return redirect("vote")
-
         return render(request, "web/vote.html", _vote_context(poll=poll))
 
 
@@ -567,7 +575,10 @@ class VoteCastView(View):
     SOURCE = "poll_vote"
 
     def post(self, request):
-        poll = vote_service.current_poll()
+        # The ballot names its round: several can be open at once.
+        poll = Poll.objects.filter(pk=_pk_or_none(request.POST.get("poll"))).first()
+        if poll is None or poll.status == PollStatus.DRAFT:
+            return HttpResponseBadRequest("Unknown poll.")
         option_id = request.POST.get("option")
         if not option_id:
             return HttpResponseBadRequest("No option selected.")
@@ -575,7 +586,7 @@ class VoteCastView(View):
         # Honeypot. A real person never fills this in; bots fill everything.
         # Answered like a success so the bot learns nothing.
         if request.POST.get("website"):
-            return self._respond(request, message="")
+            return self._respond(request, poll)
 
         raw_email = request.POST.get("email") or ""
         preference = request.POST.get("email_preference") or ""
@@ -589,51 +600,50 @@ class VoteCastView(View):
             email = _clean_ballot_email(raw_email)
         except ValidationError:
             form["error"] = "That doesn't look like a valid email address."
-            return self._respond(request, form=form)
+            return self._respond(request, poll, form=form)
         if preference not in EmailPreference.values:
             form["error"] = "Tell us whether we may email you."
-            return self._respond(request, form=form)
+            return self._respond(request, poll, form=form)
+
+        option = poll.options.filter(pk=option_id).first()
+        if option is None:
+            return HttpResponseBadRequest("Unknown option.")
 
         message = ""
         vote = None
-        if poll is None:
+        try:
+            vote = vote_engine.cast_vote(
+                poll, option, email=email, email_preference=preference
+            )
+        except vote_engine.EmailAlreadyVoted:
+            # Said at the top of the panel, not as a field error: it is an
+            # answer, not a typo to fix. The ballot stays filled in case they
+            # meant a different address.
+            return self._respond(
+                request,
+                poll,
+                message=(
+                    "Sorry — you only get one vote per round, and that "
+                    "email address has already cast one."
+                ),
+                form=form,
+            )
+        except vote_engine.PollNotOpen:
             message = "Voting has closed for this round."
+        except vote_engine.OptionMismatch:
+            return HttpResponseBadRequest("Unknown option.")
         else:
-            option = poll.options.filter(pk=option_id).first()
-            if option is None:
-                return HttpResponseBadRequest("Unknown option.")
-            try:
-                vote = vote_engine.cast_vote(
-                    poll, option, email=email, email_preference=preference
+            if preference == EmailPreference.SUBSCRIBE:
+                # Idempotent, and never re-adds an address that opted out.
+                Subscriber.objects.record(
+                    email, source=self.SOURCE, ip=vote_engine.client_ip(request)
                 )
-            except vote_engine.EmailAlreadyVoted:
-                # Said at the top of the panel, like the cookie refusal, not
-                # as a field error: it is an answer, not a typo to fix. The
-                # ballot stays filled in case they meant a different address.
-                return self._respond(
-                    request,
-                    message=(
-                        "Sorry — you only get one vote per round, and that "
-                        "email address has already cast one."
-                    ),
-                    form=form,
-                )
-            except vote_engine.PollNotOpen:
-                message = "Voting has closed for this round."
-            except vote_engine.OptionMismatch:
-                return HttpResponseBadRequest("Unknown option.")
-            else:
-                if preference == EmailPreference.SUBSCRIBE:
-                    # Idempotent, and never re-adds an address that opted out.
-                    Subscriber.objects.record(
-                        email, source=self.SOURCE, ip=vote_engine.client_ip(request)
-                    )
 
-        return self._respond(request, vote=vote, message=message)
+        return self._respond(request, poll, vote=vote, message=message)
 
     @staticmethod
-    def _respond(request, vote=None, message="", form=None):
-        ctx = _vote_context(vote=vote, message=message, form=form)
+    def _respond(request, poll, vote=None, message="", form=None):
+        ctx = _vote_context(poll=poll, vote=vote, message=message, form=form)
         if request.headers.get("HX-Request"):
             return render(request, "partials/vote_panel.html", ctx)
         return render(request, "web/vote.html", ctx)

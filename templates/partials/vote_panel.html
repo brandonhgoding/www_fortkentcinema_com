@@ -7,7 +7,26 @@
     <p class="vote-panel__message" role="status">{{ message }}</p>
   {% endif %}
 
-  {% if state == "ballot" %}
+  {% if state == "choose" %}
+    {% comment %} Several rounds are open; each has its own page. {% endcomment %}
+    <p class="vote-panel__idle">Pick a round:</p>
+    <ul class="vote-rounds">
+      {% for round in open_rounds %}
+        <li class="vote-round">
+          <a class="vote-round__link" href="{{ round.get_absolute_url }}">
+            <span class="vote-round__title">{{ round.title }}</span>
+            {% if round.blurb %}<span class="vote-round__blurb">{{ round.blurb }}</span>{% endif %}
+            <span class="vote-round__meta">
+              {{ round.options.count }} film{{ round.options.count|pluralize }} on the ballot
+              {% if round.closes_at %}&middot; voting closes {{ round.closes_at|date:"F j" }}{% endif %}
+            </span>
+            <span class="vote-round__cta">Vote in this round &rarr;</span>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+
+  {% elif state == "ballot" %}
     {% include "partials/vote_ballot.html" %}
 
   {% elif state == "voted" %}

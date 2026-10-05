@@ -1,9 +1,10 @@
 """Resolves what the /vote page should show.
 
-Five states, all of which must render: no poll, an unvoted ballot, a cast
-ballot, a closed round awaiting a decision, and an announced winner. This
-lives here rather than in the view so each state is unit-testable without
-going through HTTP, matching the cinema_data / showtimes convention.
+Six states, all of which must render: no poll, a choice between several
+open rounds, an unvoted ballot, a cast ballot, a closed round awaiting a
+decision, and an announced winner. This lives here rather than in the view
+so each state is unit-testable without going through HTTP, matching the
+cinema_data / showtimes convention.
 """
 
 from django.db.models import Q, QuerySet
@@ -12,6 +13,7 @@ from django.utils import timezone
 from cinema.models import Poll, PollStatus, Vote
 
 STATE_NO_POLL = "no_poll"
+STATE_CHOOSE = "choose"
 STATE_BALLOT = "ballot"
 STATE_VOTED = "voted"
 STATE_CLOSED = "closed"
@@ -26,16 +28,18 @@ def _finished_q(now) -> Q:
     return Q(status__in=_DECIDED) | (Q(status=PollStatus.OPEN) & Poll.ended_q(now))
 
 
-def current_poll() -> Poll | None:
-    """The open poll, if one is inside its voting window. At most one can
-    be OPEN."""
+def open_polls() -> list[Poll]:
+    """Every round taking votes right now, newest first.
+
+    Several may be open at once; the callers decide whether to show one
+    ballot or a list.
+    """
     now = timezone.now()
-    return (
+    return list(
         Poll.objects.filter(status=PollStatus.OPEN)
         .filter(Poll.started_q(now))
         .exclude(Poll.ended_q(now))
         .select_related("winner", "engagement")
-        .first()
     )
 
 
@@ -71,15 +75,22 @@ def archived_polls() -> QuerySet:
 def resolve_vote_page(poll: Poll | None = None, vote: Vote | None = None) -> dict:
     """Build the context for /vote or /vote/<slug>.
 
-    `poll` pins the page to a specific round (the archive view). Without it,
-    the open poll wins, falling back to the most recent decided round.
+    `poll` pins the page to a specific round (its own /vote/<slug> page, or
+    the round a ballot was just cast in). Without it: one open round shows
+    its ballot, several show a list to pick from, and none falls back to
+    the most recent decided round.
 
     `vote` is the ballot just cast, for the response to a submission. There
     is no cookie, so a plain visit cannot tell who is looking: an open round
     always shows the ballot, and a repeat address is caught on submit.
     """
+    open_rounds: list[Poll] = []
     if poll is None:
-        poll = current_poll() or latest_decided_poll()
+        open_rounds = open_polls()
+        if len(open_rounds) == 1:
+            poll = open_rounds[0]
+        elif not open_rounds:
+            poll = latest_decided_poll()
 
     archive = archived_polls()
     if poll is not None:
@@ -88,6 +99,7 @@ def resolve_vote_page(poll: Poll | None = None, vote: Vote | None = None) -> dic
     ctx = {
         "state": STATE_NO_POLL,
         "poll": poll,
+        "open_rounds": open_rounds,
         "options": [],
         "tallies": [],
         "show_results": False,
@@ -97,6 +109,8 @@ def resolve_vote_page(poll: Poll | None = None, vote: Vote | None = None) -> dic
     }
 
     if poll is None:
+        if len(open_rounds) > 1:
+            ctx["state"] = STATE_CHOOSE
         return ctx
 
     ctx["options"] = list(poll.options.select_related("film"))

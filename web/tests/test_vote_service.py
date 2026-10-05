@@ -8,14 +8,15 @@ from cinema.models import Film, Poll, PollOption, PollStatus
 from web.services import voting as vote_service
 
 
-class CurrentPollTests(TestCase):
-    def test_none_when_nothing_is_open(self) -> None:
+class OpenPollsTests(TestCase):
+    def test_empty_when_nothing_is_open(self) -> None:
         Poll.objects.create(title="Old", status=PollStatus.CLOSED)
-        self.assertIsNone(vote_service.current_poll())
+        self.assertEqual(vote_service.open_polls(), [])
 
-    def test_returns_the_open_poll(self) -> None:
-        poll = Poll.objects.create(title="Live", status=PollStatus.OPEN)
-        self.assertEqual(vote_service.current_poll(), poll)
+    def test_returns_every_open_poll_newest_first(self) -> None:
+        first = Poll.objects.create(title="Live", status=PollStatus.OPEN)
+        second = Poll.objects.create(title="Also live", status=PollStatus.OPEN)
+        self.assertEqual(vote_service.open_polls(), [second, first])
 
     def test_none_when_the_open_poll_is_past_its_closes_at(self) -> None:
         Poll.objects.create(
@@ -23,7 +24,7 @@ class CurrentPollTests(TestCase):
             status=PollStatus.OPEN,
             closes_at=timezone.now() - datetime.timedelta(minutes=1),
         )
-        self.assertIsNone(vote_service.current_poll())
+        self.assertEqual(vote_service.open_polls(), [])
 
     def test_none_when_the_open_poll_has_not_opened_yet(self) -> None:
         Poll.objects.create(
@@ -31,7 +32,7 @@ class CurrentPollTests(TestCase):
             status=PollStatus.OPEN,
             opens_at=timezone.now() + datetime.timedelta(hours=1),
         )
-        self.assertIsNone(vote_service.current_poll())
+        self.assertEqual(vote_service.open_polls(), [])
 
 
 class ArchiveTests(TestCase):
@@ -92,6 +93,23 @@ class ResolveVotePageTests(TestCase):
         ctx = vote_service.resolve_vote_page()
         self.assertEqual(ctx["state"], vote_service.STATE_NO_POLL)
         self.assertIsNone(ctx["poll"])
+
+    def test_choose_state_when_several_rounds_are_open(self) -> None:
+        a = self._open_poll_with_options()
+        b = Poll.objects.create(title="Round Two", status=PollStatus.OPEN)
+        ctx = vote_service.resolve_vote_page()
+        self.assertEqual(ctx["state"], vote_service.STATE_CHOOSE)
+        self.assertIsNone(ctx["poll"])
+        self.assertEqual(ctx["open_rounds"], [b, a])
+        self.assertEqual(ctx["options"], [])
+
+    def test_a_pinned_open_round_shows_its_ballot_even_with_others_open(self) -> None:
+        a = self._open_poll_with_options()
+        Poll.objects.create(title="Round Two", status=PollStatus.OPEN)
+        ctx = vote_service.resolve_vote_page(poll=a)
+        self.assertEqual(ctx["state"], vote_service.STATE_BALLOT)
+        self.assertEqual(ctx["poll"], a)
+        self.assertEqual(len(ctx["options"]), 2)
 
     def test_ballot_state_for_a_visitor(self) -> None:
         poll = self._open_poll_with_options()

@@ -18,12 +18,20 @@ class HomepageVoteCTATests(TestCase):
         html = self.client.get(reverse("home")).content.decode()
         self.assertNotIn("vote-cta", html)
 
-    def test_cta_present_and_links_to_vote(self) -> None:
-        Poll.objects.create(title="Round One", status=PollStatus.OPEN)
+    def test_cta_present_and_links_to_the_round(self) -> None:
+        poll = Poll.objects.create(title="Round One", status=PollStatus.OPEN)
         html = self.client.get(reverse("home")).content.decode()
         self.assertIn("vote-cta", html)
-        self.assertIn(reverse("vote"), html)
+        self.assertIn(f'href="{poll.get_absolute_url()}"', html)
         self.assertIn("Round One", html)
+
+    def test_one_cta_per_open_round(self) -> None:
+        Poll.objects.create(title="Round One", status=PollStatus.OPEN)
+        Poll.objects.create(title="Round Two", status=PollStatus.OPEN)
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertEqual(html.count('class="vote-cta"'), 2)
+        self.assertIn("Round One", html)
+        self.assertIn("Round Two", html)
 
     def test_cta_retires_itself_when_the_poll_closes(self) -> None:
         poll = Poll.objects.create(title="Round One", status=PollStatus.OPEN)
@@ -60,7 +68,7 @@ class MoviePageBallotLinkTests(TestCase):
         html = self.client.get(self.film.get_absolute_url()).content.decode()
 
         self.assertIn("movie-ballot-link", html)
-        self.assertIn(reverse("vote"), html)
+        self.assertIn(f'href="{poll.get_absolute_url()}"', html)
 
     def test_no_link_for_a_closed_ballot(self) -> None:
         poll = Poll.objects.create(title="Round One", status=PollStatus.CLOSED)

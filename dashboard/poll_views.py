@@ -300,9 +300,7 @@ def _poll_status_response(request, poll, toast_message: str = "") -> HttpRespons
 class PollStatusView(StaffRequiredMixin, View):
     """Move a round through draft -> open -> closed.
 
-    Refuses a second open poll with a plain message rather than letting the
-    database constraint surface as a 500: the public page assumes exactly one
-    live round, so this is a mistake worth naming.
+    Any number of rounds may be open at once; /vote lists them.
     """
 
     def post(self, request, pk):
@@ -321,12 +319,6 @@ class PollStatusView(StaffRequiredMixin, View):
             if not poll.options.exists():
                 return HttpResponse(
                     "Add films to the ballot before opening the round.", status=409
-                )
-            others = Poll.objects.filter(status=PollStatus.OPEN).exclude(pk=poll.pk)
-            if others.exists():
-                return HttpResponse(
-                    f"“{others.first().title}” is already open. Close it first.",
-                    status=409,
                 )
 
         poll.status = status

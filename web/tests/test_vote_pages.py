@@ -9,7 +9,12 @@ from cinema.models import EmailPreference, Film, Poll, PollOption, PollStatus, V
 
 def _ballot(option, email="fan@example.com", preference=EmailPreference.NONE):
     """A complete ballot submission; email and preference are required."""
-    return {"option": option.pk, "email": email, "email_preference": preference}
+    return {
+        "poll": option.poll_id,
+        "option": option.pk,
+        "email": email,
+        "email_preference": preference,
+    }
 
 
 class VotePageTests(TestCase):
@@ -99,8 +104,40 @@ class CastVoteViewTests(TestCase):
         self.assertEqual(Vote.objects.count(), 0)
 
     def test_missing_option_is_a_bad_request_not_a_crash(self) -> None:
-        response = self.client.post(reverse("vote_cast"), {}, HTTP_HX_REQUEST="true")
+        response = self.client.post(
+            reverse("vote_cast"), {"poll": self.poll.pk}, HTTP_HX_REQUEST="true"
+        )
         self.assertEqual(response.status_code, 400)
+
+    def test_missing_or_unknown_poll_is_a_bad_request(self) -> None:
+        for data in ({}, {"poll": "junk"}, {"poll": 999999}):
+            response = self.client.post(
+                reverse("vote_cast"), data, HTTP_HX_REQUEST="true"
+            )
+            self.assertEqual(response.status_code, 400)
+        self.assertEqual(Vote.objects.count(), 0)
+
+    def test_a_draft_poll_cannot_be_voted_in_by_naming_it(self) -> None:
+        draft = Poll.objects.create(title="Secret")
+        option = PollOption.objects.create(
+            poll=draft, film=Film.objects.create(title="Alien")
+        )
+        response = self.client.post(
+            reverse("vote_cast"), _ballot(option), HTTP_HX_REQUEST="true"
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(Vote.objects.count(), 0)
+
+    def test_two_open_rounds_each_take_their_own_votes(self) -> None:
+        second = Poll.objects.create(title="Round Two", status=PollStatus.OPEN)
+        option_two = PollOption.objects.create(
+            poll=second, film=Film.objects.create(title="Alien")
+        )
+        self.client.post(reverse("vote_cast"), _ballot(self.option))
+        # The same address may vote once in each round.
+        self.client.post(reverse("vote_cast"), _ballot(option_two))
+        self.assertEqual(Vote.objects.filter(poll=self.poll).count(), 1)
+        self.assertEqual(Vote.objects.filter(poll=second).count(), 1)
 
     def test_voting_sets_no_cookie(self) -> None:
         response = self.client.post(
@@ -110,11 +147,50 @@ class CastVoteViewTests(TestCase):
         self.assertEqual(dict(response.cookies), {})
 
 
+class SeveralOpenRoundsTests(TestCase):
+    def setUp(self) -> None:
+        for title in ("Opening weekend November 11th", "Next classic movie"):
+            poll = Poll.objects.create(title=title, status=PollStatus.OPEN)
+            PollOption.objects.create(
+                poll=poll, film=Film.objects.create(title=f"Film for {title}")
+            )
+
+    def test_vote_lists_the_open_rounds_instead_of_a_ballot(self) -> None:
+        html = self.client.get(reverse("vote")).content.decode()
+        self.assertIn("Pick a round:", html)
+        self.assertNotIn("Cast my vote", html)
+        for poll in Poll.objects.all():
+            self.assertIn(poll.title, html)
+            self.assertIn(poll.get_absolute_url(), html)
+
+    def test_each_round_page_shows_only_its_own_ballot(self) -> None:
+        first, second = Poll.objects.order_by("pk")
+        html = self.client.get(first.get_absolute_url()).content.decode()
+        self.assertIn("Cast my vote", html)
+        self.assertIn(f'name="poll" value="{first.pk}"', html)
+        self.assertIn(first.options.first().film.title, html)
+        self.assertNotIn(second.options.first().film.title, html)
+
+    def test_closing_one_round_puts_the_other_ballot_back_on_vote(self) -> None:
+        first = Poll.objects.order_by("pk").first()
+        first.status = PollStatus.CLOSED
+        first.save()
+        html = self.client.get(reverse("vote")).content.decode()
+        self.assertIn("Cast my vote", html)
+        self.assertNotIn("Pick a round:", html)
+
+
 class VoteArchiveTests(TestCase):
-    def test_open_poll_slug_redirects_to_the_canonical_page(self) -> None:
+    def test_open_poll_has_its_own_page_with_the_ballot(self) -> None:
         poll = Poll.objects.create(title="Round One", status=PollStatus.OPEN)
+        PollOption.objects.create(
+            poll=poll, film=Film.objects.create(title="Casablanca")
+        )
         response = self.client.get(reverse("vote_archive", kwargs={"slug": poll.slug}))
-        self.assertRedirects(response, reverse("vote"))
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        self.assertIn("Cast my vote", html)
+        self.assertIn(f'name="poll" value="{poll.pk}"', html)
 
     def test_closed_poll_has_its_own_page(self) -> None:
         poll = Poll.objects.create(title="Round One", status=PollStatus.CLOSED)

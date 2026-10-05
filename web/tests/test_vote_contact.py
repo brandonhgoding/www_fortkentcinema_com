@@ -22,6 +22,7 @@ class VoteContactTests(TestCase):
 
     def cast(self, remote_addr="127.0.0.1", **overrides):
         data = {
+            "poll": self.poll.pk,
             "option": self.option.pk,
             "email": "Fan@Example.com",
             "email_preference": EmailPreference.RESULTS,
@@ -144,7 +145,8 @@ class VoteContactTests(TestCase):
 
     def test_plain_post_without_email_shows_the_page_and_stores_nothing(self) -> None:
         response = self.client.post(
-            reverse("vote_cast"), {"option": self.option.pk, "email": ""}
+            reverse("vote_cast"),
+            {"poll": self.poll.pk, "option": self.option.pk, "email": ""},
         )
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "web/vote.html")

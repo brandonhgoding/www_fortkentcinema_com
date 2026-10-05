@@ -127,8 +127,8 @@ class PollSitemap(Sitemap):
     priority = 0.5
 
     def items(self):
-        # Only decided rounds. A draft is not public, and an open round lives
-        # at /vote — its slug URL only redirects there.
+        # Only decided rounds. A draft is not public, and an open round is
+        # reached from /vote, which is already in the sitemap.
         return Poll.objects.filter(
             status__in=(PollStatus.CLOSED, PollStatus.ANNOUNCED)
         )
