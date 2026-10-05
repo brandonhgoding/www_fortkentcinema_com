@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "cinema.apps.CinemaConfig",
     "audience.apps.AudienceConfig",
     "phone.apps.PhoneConfig",
+    "boxoffice.apps.BoxofficeConfig",
     "rest_framework",
     "corsheaders",
 ]
@@ -243,3 +244,10 @@ TWILIO_ACCOUNT_SID = config("TWILIO_ACCOUNT_SID", default="")
 # "https://www.fortkentcinema.com" or an ngrok URL — to sign against a fixed
 # base instead, so a proxy header misconfiguration can't 403 every call.
 TWILIO_WEBHOOK_BASE_URL = config("TWILIO_WEBHOOK_BASE_URL", default="")
+
+# Square (boxoffice app). An empty token disables the sync: dashboard saves
+# succeed as before and the nightly commands exit without calling out.
+SQUARE_ACCESS_TOKEN = config("SQUARE_ACCESS_TOKEN", default="")
+SQUARE_LOCATION_ID = config("SQUARE_LOCATION_ID", default="")
+SQUARE_TICKET_CATEGORY_ID = config("SQUARE_TICKET_CATEGORY_ID", default="")
+SQUARE_ENVIRONMENT = config("SQUARE_ENVIRONMENT", default="sandbox")
