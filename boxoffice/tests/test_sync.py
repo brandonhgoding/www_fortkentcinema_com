@@ -341,8 +341,118 @@ class ReconcileTests(TestCase):
         b = make_eng(end_date=datetime.date(2026, 10, 2))
         push(a, self.gw)
         push(b, self.gw)
-        del self.gw.items[live_item(a).square_id]  # Square now refuses a's delete
+        real_delete = self.gw.delete_item
+        a_id = live_item(a).square_id
+
+        def refuse_a(item_id: str) -> None:
+            if item_id == a_id:
+                self.gw.fail_with = GatewayError("refused")
+            try:
+                real_delete(item_id)
+            finally:
+                self.gw.fail_with = None
+
+        self.gw.delete_item = refuse_a
         report = reconcile(self.today, self.gw)
         self.assertEqual(report.deleted, [b.pk])
         self.assertEqual(len(report.errors), 1)
+        self.assertIn("refused", report.errors[0])
         self.assertIsNotNone(live_item(a))
+
+    def test_hand_made_item_without_skus_is_unknown_not_a_crash(self) -> None:
+        self.gw.items["hand"] = RemoteItem(
+            "hand", 1, "Hand Made", variation_ids_by_sku={})
+        report = reconcile(self.today, self.gw)
+        self.assertEqual(report.unknown_items, ["Hand Made (hand)"])
+        self.assertEqual(report.errors, [])
+
+    def test_row_whose_engagement_was_deleted_is_removed(self) -> None:
+        eng = make_eng()
+        item = push(eng, self.gw)
+        Engagement.objects.filter(pk=eng.pk).delete()
+        report = reconcile(self.today, self.gw)
+        self.assertNotIn(item.square_id, self.gw.items)
+        item.refresh_from_db()
+        self.assertIsNone(item.engagement_id)
+        self.assertIsNotNone(item.deleted_at)
+        self.assertEqual(report.errors, [])
+        self.assertEqual(report.deleted, [])
+
+    def test_one_bad_row_does_not_stop_the_others(self) -> None:
+        a = make_eng(end_date=datetime.date(2026, 10, 1))
+        b = make_eng(end_date=datetime.date(2026, 10, 2))
+        push(a, self.gw)
+        push(b, self.gw)
+        real_delete = self.gw.delete_item
+        a_id = live_item(a).square_id
+
+        def explode_on_a(item_id: str) -> None:
+            if item_id == a_id:
+                raise KeyError("odd response")
+            real_delete(item_id)
+
+        self.gw.delete_item = explode_on_a
+        report = reconcile(self.today, self.gw)
+        self.assertEqual(report.deleted, [b.pk])
+        self.assertEqual(len(report.errors), 1)
+        self.assertIn("KeyError", report.errors[0])
+
+    def test_one_bad_push_does_not_stop_the_others(self) -> None:
+        a = make_eng()
+        b = make_eng()
+        real_upsert = self.gw.upsert_item
+
+        def explode_on_a(spec, **kwargs):
+            if spec.engagement_id == a.pk:
+                raise IndexError("odd response")
+            return real_upsert(spec, **kwargs)
+
+        self.gw.upsert_item = explode_on_a
+        report = reconcile(self.today, self.gw)
+        self.assertEqual(report.pushed, [b.pk])
+        self.assertEqual(len(report.errors), 1)
+        self.assertIn("IndexError", report.errors[0])
+
+    def test_item_deleted_by_hand_in_square_is_recreated(self) -> None:
+        eng = make_eng()
+        old = push(eng, self.gw)
+        del self.gw.items[old.square_id]
+        report = reconcile(self.today, self.gw)
+        old.refresh_from_db()
+        self.assertIsNotNone(old.deleted_at)
+        new = live_item(eng)
+        self.assertNotEqual(new.pk, old.pk)
+        self.assertNotEqual(new.square_id, old.square_id)
+        self.assertIn(new.square_id, self.gw.items)
+        self.assertEqual(report.pushed, [eng.pk])
+        self.assertEqual(report.errors, [
+            f"Item {old.square_id} for engagement {eng.pk} was deleted in "
+            "Square; it will be recreated"])
+
+    def test_item_moved_out_of_category_is_repushed(self) -> None:
+        eng = make_eng()
+        item = push(eng, self.gw)
+        real_list = self.gw.list_ticket_items
+
+        def without_item():
+            return [r for r in real_list() if r.item_id != item.square_id]
+
+        self.gw.list_ticket_items = without_item
+        self.gw.calls.clear()
+        report = reconcile(self.today, self.gw)
+        self.assertEqual(report.pushed, [eng.pk])
+        self.assertEqual(report.errors, [])
+        self.assertIn("upsert_item", [c[0] for c in self.gw.calls])
+        self.assertEqual(live_item(eng).pk, item.pk)
+        self.assertEqual(SquareItem.objects.count(), 1)
+
+    def test_dry_run_reports_missing_item_without_touching_it(self) -> None:
+        eng = make_eng()
+        old = push(eng, self.gw)
+        del self.gw.items[old.square_id]
+        self.gw.calls.clear()
+        report = reconcile(self.today, self.gw, dry_run=True)
+        self.assertEqual([c[0] for c in self.gw.calls], ["list_ticket_items"])
+        self.assertEqual(len(report.errors), 1)
+        self.assertIn("would be restored", report.errors[0])
+        self.assertEqual(live_item(eng).pk, old.pk)

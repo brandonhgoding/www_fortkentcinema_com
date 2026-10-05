@@ -168,13 +168,20 @@ def schedule(engagement: Engagement) -> None:
 
 @dataclasses.dataclass
 class ReconcileReport:
+    """What a reconcile did (or, with dry_run, would do).
+
+    ``pushed`` and ``deleted`` hold engagement pks. A live row whose engagement
+    was deleted from Django is still removed from Square and retired, but has no
+    engagement pk to list, so it is not counted in ``deleted``.
+    """
     pushed: list[int] = dataclasses.field(default_factory=list)
     deleted: list[int] = dataclasses.field(default_factory=list)
     unknown_items: list[str] = dataclasses.field(default_factory=list)
     errors: list[str] = dataclasses.field(default_factory=list)
 
 
-def _audit_remote(gateway: SquareGateway, report: ReconcileReport) -> None:
+def _audit_remote(today: datetime.date, gateway: SquareGateway, dry_run: bool,
+                  report: ReconcileReport) -> None:
     try:
         remote_items = gateway.list_ticket_items()
     except GatewayError as exc:
@@ -186,11 +193,52 @@ def _audit_remote(gateway: SquareGateway, report: ReconcileReport) -> None:
     for remote in remote_items:
         if remote.item_id in known:
             continue
-        if any(sku.startswith("fkc-eng-") for sku in remote.variation_ids_by_sku):
+        if any(sku and sku.startswith("fkc-eng-")
+               for sku in remote.variation_ids_by_sku):
             report.errors.append(
                 f"Django-made item without a link row: {remote.item_id}")
         else:
             report.unknown_items.append(f"{remote.name} ({remote.item_id})")
+    _audit_missing({r.item_id for r in remote_items}, today, gateway, dry_run,
+                   report)
+
+
+def _audit_missing(listed: set[str], today: datetime.date, gateway: SquareGateway,
+                   dry_run: bool, report: ReconcileReport) -> None:
+    """Live rows whose item is not in the ticket category: deleted or moved by hand.
+
+    A deleted item's row is retired so the push pass that follows recreates it;
+    a moved item is re-pushed, which puts it back in the category.
+    """
+    missing = SquareItem.objects.filter(
+        deleted_at__isnull=True, square_id__isnull=False
+    ).exclude(square_id__in=listed).select_related("engagement").order_by("pk")
+    for row in missing:
+        engagement = row.engagement
+        if engagement is None or not should_have_item(engagement, today):
+            continue  # The delete pass removes it.
+        if dry_run:
+            report.errors.append(
+                f"Item {row.square_id} for engagement {engagement.pk} is missing "
+                "from the ticket category in Square; it would be restored")
+            continue
+        try:
+            try:
+                gateway.retrieve_item(row.square_id)
+            except GatewayError:
+                _retire(row)
+                report.errors.append(
+                    f"Item {row.square_id} for engagement {engagement.pk} was "
+                    "deleted in Square; it will be recreated")
+                continue
+            spec = desired_item(engagement)
+            result = _upsert(gateway, row, spec)
+            _write_back(engagement, row, spec, result)
+            report.pushed.append(engagement.pk)
+        except Exception as exc:
+            report.errors.append(
+                f"Restoring item {row.square_id} for engagement "
+                f"{engagement.pk}: {exc!r}")
 
 
 def _reconcile_pushes(today: datetime.date, gateway: SquareGateway,
@@ -199,22 +247,30 @@ def _reconcile_pushes(today: datetime.date, gateway: SquareGateway,
         status=EngagementStatus.CONFIRMED, end_date__gte=today).order_by("pk")
     for engagement in wanted:
         try:
-            spec = desired_item(engagement)
-        except ValueError as exc:
-            if not dry_run:
-                _record_error(engagement, str(exc))
-            report.errors.append(f"Engagement {engagement.pk}: {exc}")
-            continue
-        if _unchanged(live_item(engagement), spec):
-            continue
-        if dry_run:
-            report.pushed.append(engagement.pk)
-            continue
-        item = push(engagement, gateway)
-        if item is not None and item.last_error:
-            report.errors.append(f"Engagement {engagement.pk}: {item.last_error}")
-        else:
-            report.pushed.append(engagement.pk)
+            _reconcile_push(engagement, gateway, dry_run, report)
+        except Exception as exc:
+            report.errors.append(f"Pushing engagement {engagement.pk}: {exc!r}")
+
+
+def _reconcile_push(engagement: Engagement, gateway: SquareGateway,
+                    dry_run: bool, report: ReconcileReport) -> None:
+    try:
+        spec = desired_item(engagement)
+    except ValueError as exc:
+        if not dry_run:
+            _record_error(engagement, str(exc))
+        report.errors.append(f"Engagement {engagement.pk}: {exc}")
+        return
+    if _unchanged(live_item(engagement), spec):
+        return
+    if dry_run:
+        report.pushed.append(engagement.pk)
+        return
+    item = push(engagement, gateway)
+    if item is not None and item.last_error:
+        report.errors.append(f"Engagement {engagement.pk}: {item.last_error}")
+    else:
+        report.pushed.append(engagement.pk)
 
 
 def _reconcile_deletes(today: datetime.date, gateway: SquareGateway,
@@ -222,18 +278,32 @@ def _reconcile_deletes(today: datetime.date, gateway: SquareGateway,
     live_rows = SquareItem.objects.filter(
         deleted_at__isnull=True).select_related("engagement").order_by("pk")
     for row in live_rows:
-        engagement = row.engagement
-        if should_have_item(engagement, today):
-            continue
-        if dry_run:
-            report.deleted.append(engagement.pk)
-            continue
         try:
-            delete(engagement, gateway)
-        except GatewayError as exc:
-            report.errors.append(f"Engagement {engagement.pk}: {exc}")
-        else:
-            report.deleted.append(engagement.pk)
+            _reconcile_delete(row, today, gateway, dry_run, report)
+        except Exception as exc:
+            report.errors.append(
+                f"Deleting item row {row.pk} (engagement {row.engagement_id}): "
+                f"{exc!r}")
+
+
+def _reconcile_delete(row: SquareItem, today: datetime.date,
+                      gateway: SquareGateway, dry_run: bool,
+                      report: ReconcileReport) -> None:
+    engagement = row.engagement
+    if engagement is None:
+        # The engagement was deleted outside the dashboard (e.g. the admin).
+        if not dry_run:
+            if row.square_id is not None:
+                gateway.delete_item(row.square_id)
+            _retire(row)
+        return
+    if should_have_item(engagement, today):
+        return
+    if dry_run:
+        report.deleted.append(engagement.pk)
+        return
+    delete(engagement, gateway)
+    report.deleted.append(engagement.pk)
 
 
 def reconcile(today: datetime.date, gateway: SquareGateway | None = None,
@@ -243,8 +313,9 @@ def reconcile(today: datetime.date, gateway: SquareGateway | None = None,
     gateway = _resolve(gateway)
     if gateway is None:
         return report
-    # Audit first: the listing is a snapshot of what Square held before we write.
-    _audit_remote(gateway, report)
+    # Audit first: the listing is a snapshot of what Square held before we
+    # write, and rows retired for vanished items are recreated by the pushes.
+    _audit_remote(today, gateway, dry_run, report)
     _reconcile_pushes(today, gateway, dry_run, report)
     _reconcile_deletes(today, gateway, dry_run, report)
     return report
