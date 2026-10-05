@@ -29,10 +29,27 @@ class VotePageTests(TestCase):
         self.assertTemplateUsed(response, "web/vote.html")
 
     def test_ballot_lists_every_option(self) -> None:
-        self._open_poll()
-        html = self.client.get(reverse("vote")).content.decode()
+        poll = self._open_poll()
+        html = self.client.get(poll.get_absolute_url()).content.decode()
         self.assertIn("Casablanca", html)
         self.assertIn("The Thing", html)
+        self.assertIn("Cast my vote", html)
+
+    def test_vote_page_lists_the_open_round_with_its_posters(self) -> None:
+        poll = self._open_poll()
+        poll.options.filter(film__title="Casablanca").update()
+        film = poll.options.get(film__title="Casablanca").film
+        film.poster_url = "https://img/casablanca.jpg"
+        film.save()
+        html = self.client.get(reverse("vote")).content.decode()
+        self.assertIn('class="vote-round"', html)
+        self.assertIn(f'href="{poll.get_absolute_url()}"', html)
+        self.assertIn('src="https://img/casablanca.jpg"', html)
+        self.assertIn('<span class="vote-round__poster-blank">The Thing</span>', html)
+        self.assertNotIn("Cast my vote", html)
+        # A single open round is not asked to be picked from.
+        self.assertNotIn("Pick a round", html)
+        self.assertIn("One round is open right now.", html)
 
     def test_visiting_sets_no_cookie(self) -> None:
         # The address is the voter's identity; nothing is stored on the browser.
@@ -85,9 +102,9 @@ class CastVoteViewTests(TestCase):
         self.assertEqual(Vote.objects.count(), 1)
         self.assertEqual(Vote.objects.first().option, self.option)
 
-    def test_returning_to_the_page_shows_the_ballot_again(self) -> None:
+    def test_returning_to_the_round_shows_the_ballot_again(self) -> None:
         self.client.post(reverse("vote_cast"), _ballot(self.option))
-        html = self.client.get(reverse("vote")).content.decode()
+        html = self.client.get(self.poll.get_absolute_url()).content.decode()
         self.assertIn("Cast my vote", html)
 
     def test_closed_poll_refuses_the_vote(self) -> None:
@@ -168,13 +185,23 @@ class SeveralOpenRoundsTests(TestCase):
         self.assertIn(first.options.first().film.title, html)
         self.assertNotIn(second.options.first().film.title, html)
 
-    def test_closing_one_round_puts_the_other_ballot_back_on_vote(self) -> None:
-        first = Poll.objects.order_by("pk").first()
+    def test_closing_one_round_leaves_a_single_card_on_vote(self) -> None:
+        first, second = Poll.objects.order_by("pk")
         first.status = PollStatus.CLOSED
         first.save()
         html = self.client.get(reverse("vote")).content.decode()
-        self.assertIn("Cast my vote", html)
+        self.assertEqual(html.count('class="vote-round"'), 1)
+        self.assertIn(second.title, html)
         self.assertNotIn("Pick a round:", html)
+
+    def test_every_open_round_is_listed_however_many(self) -> None:
+        for i in range(5):
+            poll = Poll.objects.create(title=f"Extra {i}", status=PollStatus.OPEN)
+            PollOption.objects.create(
+                poll=poll, film=Film.objects.create(title=f"Extra film {i}")
+            )
+        html = self.client.get(reverse("vote")).content.decode()
+        self.assertEqual(html.count('class="vote-round"'), 7)
 
 
 class VoteArchiveTests(TestCase):
@@ -247,7 +274,7 @@ class VoteHeroTests(TestCase):
         PollOption.objects.create(
             poll=poll, film=Film.objects.create(title="Wicked"), sort_order=2
         )
-        html = self.client.get(reverse("vote")).content.decode()
+        html = self.client.get(poll.get_absolute_url()).content.decode()
         self.assertIn('class="vote-hero"', html)
         self.assertIn('src="https://img/dune.jpg"', html)
         self.assertIn('<span class="vote-hero__poster-blank">Wicked</span>', html)
@@ -256,15 +283,28 @@ class VoteHeroTests(TestCase):
         self.assertIn('href="#vote-panel"', html)
         self.assertIn("Cast your vote", html)
 
+    def test_vote_page_hero_with_one_round_sends_you_straight_to_it(self) -> None:
+        poll = Poll.objects.create(title="Only round", status=PollStatus.OPEN)
+        PollOption.objects.create(poll=poll, film=Film.objects.create(title="Dune"))
+        html = self.client.get(reverse("vote")).content.decode()
+        self.assertIn(
+            f'href="{poll.get_absolute_url()}" class="btn btn-primary vote-hero__cta"',
+            html,
+        )
+        self.assertIn("Cast your vote", html)
+
     def test_hero_shows_at_most_six_posters(self) -> None:
         poll = Poll.objects.create(title="Big round", status=PollStatus.OPEN)
         for i in range(8):
             PollOption.objects.create(
                 poll=poll, film=Film.objects.create(title=f"Film {i}"), sort_order=i
             )
-        html = self.client.get(reverse("vote")).content.decode()
+        html = self.client.get(poll.get_absolute_url()).content.decode()
         self.assertEqual(html.count('class="vote-hero__poster"'), 6)
         self.assertIn("8 films on the ballot.", html)
+        # The round's card on /vote shows every poster, uncapped.
+        html = self.client.get(reverse("vote")).content.decode()
+        self.assertEqual(html.count('class="vote-round__poster"'), 8)
 
     def test_chooser_hero_takes_a_film_from_each_open_round(self) -> None:
         for title, films in (("Round A", ["A1", "A2"]), ("Round B", ["B1"])):

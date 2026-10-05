@@ -1,8 +1,8 @@
 """Resolves what the /vote page should show.
 
-Six states, all of which must render: no poll, a choice between several
-open rounds, an unvoted ballot, a cast ballot, a closed round awaiting a
-decision, and an announced winner. This lives here rather than in the view
+Six states, all of which must render: no poll, the list of open rounds,
+an unvoted ballot, a cast ballot, a closed round awaiting a decision, and
+an announced winner. This lives here rather than in the view
 so each state is unit-testable without going through HTTP, matching the
 cinema_data / showtimes convention.
 """
@@ -94,20 +94,20 @@ def resolve_vote_page(poll: Poll | None = None, vote: Vote | None = None) -> dic
     """Build the context for /vote or /vote/<slug>.
 
     `poll` pins the page to a specific round (its own /vote/<slug> page, or
-    the round a ballot was just cast in). Without it: one open round shows
-    its ballot, several show a list to pick from, and none falls back to
-    the most recent decided round.
+    the round a ballot was just cast in). Without it, /vote lists every
+    open round as a card, however many there are, and with none open falls
+    back to the most recent decided round.
 
     `vote` is the ballot just cast, for the response to a submission. There
     is no cookie, so a plain visit cannot tell who is looking: an open round
     always shows the ballot, and a repeat address is caught on submit.
     """
     open_rounds: list[Poll] = []
+    if poll is None and vote is not None:
+        poll = vote.poll
     if poll is None:
         open_rounds = open_polls()
-        if len(open_rounds) == 1:
-            poll = open_rounds[0]
-        elif not open_rounds:
+        if not open_rounds:
             poll = latest_decided_poll()
 
     archive = archived_polls()
@@ -131,7 +131,7 @@ def resolve_vote_page(poll: Poll | None = None, vote: Vote | None = None) -> dic
     }
 
     if poll is None:
-        if len(open_rounds) > 1:
+        if open_rounds:
             ctx["state"] = STATE_CHOOSE
             ctx["hero_films"] = _hero_films_from_rounds(open_rounds)
         return ctx

@@ -8,8 +8,8 @@
   {% endif %}
 
   {% if state == "choose" %}
-    {% comment %} Several rounds are open; each has its own page. {% endcomment %}
-    <p class="vote-panel__idle">Pick a round:</p>
+    {% comment %} Every open round, each with its own page. {% endcomment %}
+    {% if open_rounds|length > 1 %}<p class="vote-panel__idle">Pick a round:</p>{% endif %}
     {% include "partials/vote_round_cards.html" with rounds=open_rounds %}
 
   {% elif state == "ballot" %}

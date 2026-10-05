@@ -18,20 +18,22 @@ class HomepageVoteCTATests(TestCase):
         html = self.client.get(reverse("home")).content.decode()
         self.assertNotIn("vote-cta", html)
 
-    def test_cta_present_and_links_to_the_round(self) -> None:
-        poll = Poll.objects.create(title="Round One", status=PollStatus.OPEN)
+    def test_cta_is_generic_and_links_to_the_vote_page(self) -> None:
+        Poll.objects.create(title="Round One", status=PollStatus.OPEN)
         html = self.client.get(reverse("home")).content.decode()
         self.assertIn("vote-cta", html)
-        self.assertIn(f'href="{poll.get_absolute_url()}"', html)
-        self.assertIn("Round One", html)
+        self.assertIn(f'href="{reverse("vote")}"', html)
+        self.assertIn("Vote on what plays next", html)
+        self.assertIn("One round is open right now", html)
+        # It does not advertise one round over another.
+        self.assertNotIn("Round One", html.split('class="vote-cta"')[1])
 
-    def test_one_cta_per_open_round(self) -> None:
+    def test_one_cta_however_many_rounds_are_open(self) -> None:
         Poll.objects.create(title="Round One", status=PollStatus.OPEN)
         Poll.objects.create(title="Round Two", status=PollStatus.OPEN)
         html = self.client.get(reverse("home")).content.decode()
-        self.assertEqual(html.count('class="vote-cta"'), 2)
-        self.assertIn("Round One", html)
-        self.assertIn("Round Two", html)
+        self.assertEqual(html.count('class="vote-cta"'), 1)
+        self.assertIn("2 rounds are open right now", html)
 
     def test_cta_retires_itself_when_the_poll_closes(self) -> None:
         poll = Poll.objects.create(title="Round One", status=PollStatus.OPEN)
@@ -44,8 +46,12 @@ class HomepageVoteCTATests(TestCase):
 class MoviePageBallotLinkTests(TestCase):
     def setUp(self) -> None:
         self.screen = Screen.objects.create(
-            name="Screen 1", capacity=100, screen_type="standard",
-            aspect_ratio="flat", sound_system="standard", supports_3d=False,
+            name="Screen 1",
+            capacity=100,
+            screen_type="standard",
+            aspect_ratio="flat",
+            sound_system="standard",
+            supports_3d=False,
         )
         self.film = Film.objects.create(title="Casablanca")
         engagement = Engagement.objects.create(
@@ -53,9 +59,7 @@ class MoviePageBallotLinkTests(TestCase):
         )
         # `films` goes through EngagementFilm, which requires an explicit
         # position — .add() cannot supply one.
-        EngagementFilm.objects.create(
-            engagement=engagement, film=self.film, position=0
-        )
+        EngagementFilm.objects.create(engagement=engagement, film=self.film, position=0)
 
     def test_no_link_when_film_is_not_on_a_ballot(self) -> None:
         html = self.client.get(self.film.get_absolute_url()).content.decode()

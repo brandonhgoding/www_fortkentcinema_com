@@ -33,7 +33,7 @@ class VoteContactTests(TestCase):
     # --- the ballot ---
 
     def test_ballot_asks_for_an_email_and_nothing_else(self) -> None:
-        html = self.client.get(reverse("vote")).content.decode()
+        html = self.client.get(self.poll.get_absolute_url()).content.decode()
         # Required in the browser too, not only on the server.
         self.assertRegex(html, r'<input[^>]*type="email"[^>]*name="email"[^>]*required')
         self.assertNotIn("email_preference", html)
@@ -41,7 +41,7 @@ class VoteContactTests(TestCase):
         self.assertIn("One vote per email address per round", html)
 
     def test_copy_does_not_promise_a_newsletter(self) -> None:
-        for page in (self.client.get(reverse("vote")), self.cast()):
+        for page in (self.client.get(self.poll.get_absolute_url()), self.cast()):
             html = page.content.decode().lower()
             self.assertNotIn("newsletter", html)
             self.assertNotIn("weekly", html)

@@ -1,19 +1,32 @@
 {% comment %}
-  One card per open round, each linking to its own page. Used by the
-  chooser on /vote and by the thanks screen for the other rounds still open.
+  One card per open round, each linking to its own page: the round on the
+  left, every poster on its ballot as a thumbnail on the right. Used by the
+  list on /vote and by the thanks screen for the other rounds still open.
   Expects `rounds`.
 {% endcomment %}
 <ul class="vote-rounds">
   {% for round in rounds %}
     <li class="vote-round">
       <a class="vote-round__link" href="{{ round.get_absolute_url }}">
-        <span class="vote-round__title">{{ round.title }}</span>
-        {% if round.blurb %}<span class="vote-round__blurb">{{ round.blurb }}</span>{% endif %}
-        <span class="vote-round__meta">
-          {{ round.options.count }} film{{ round.options.count|pluralize }} on the ballot
-          {% if round.closes_at %}&middot; voting closes {{ round.closes_at|date:"F j" }}{% endif %}
+        <span class="vote-round__body">
+          <span class="vote-round__title">{{ round.title }}</span>
+          {% if round.blurb %}<span class="vote-round__blurb">{{ round.blurb }}</span>{% endif %}
+          <span class="vote-round__meta">
+            {{ round.options.count }} film{{ round.options.count|pluralize }} on the ballot{% if round.closes_at %}. Voting closes {{ round.closes_at|date:"F j" }}{% endif %}.
+          </span>
+          <span class="vote-round__cta">Vote in this round &rarr;</span>
         </span>
-        <span class="vote-round__cta">Vote in this round &rarr;</span>
+        <span class="vote-round__posters" aria-hidden="true">
+          {% for option in round.options.all %}
+            <span class="vote-round__poster" title="{{ option.film.title }}">
+              {% if option.film.poster_url %}
+                <img src="{{ option.film.poster_url }}" alt="" width="80" height="120" loading="lazy" />
+              {% else %}
+                <span class="vote-round__poster-blank">{{ option.film.title }}</span>
+              {% endif %}
+            </span>
+          {% endfor %}
+        </span>
       </a>
     </li>
   {% endfor %}

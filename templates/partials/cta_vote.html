@@ -1,22 +1,26 @@
 {% comment %}
-  Homepage CTA, one per open vote. `vote_polls` comes from HomeView and holds
-  only rounds that are OPEN and inside their opens_at/closes_at window, so
-  each banner retires itself the moment its round closes — no follow-up
-  commit required. Same self-expiring shape as cta_silents_synced.html.
+  Homepage CTA, one banner whenever any voting is open. `vote_polls` comes
+  from HomeView and holds only rounds that are OPEN and inside their
+  opens_at/closes_at window, so the banner retires itself the moment the
+  last round closes — no follow-up commit required. It is deliberately
+  generic: it sends people to /vote, which lists the rounds, rather than
+  advertising one round over another. Same self-expiring shape as
+  cta_silents_synced.html.
 {% endcomment %}
-{% for vote_poll in vote_polls %}
+{% if vote_polls %}
 <a
-  href="{{ vote_poll.get_absolute_url }}"
+  href="{% url 'vote' %}"
   class="vote-cta"
   data-track="vote_cta_click"
   data-track-location="home"
 >
   <span class="vote-cta__eyebrow">You pick the picture</span>
-  <span class="vote-cta__title">{{ vote_poll.title }}</span>
+  <span class="vote-cta__title">Vote on what plays next</span>
   <span class="vote-cta__detail">
-    {{ vote_poll.options.count }} film{{ vote_poll.options.count|pluralize }} on the ballot
-    {% if vote_poll.closes_at %}
-      &middot; voting closes {{ vote_poll.closes_at|date:"F j" }}
+    {% if vote_polls|length == 1 %}
+      One round is open right now
+    {% else %}
+      {{ vote_polls|length }} rounds are open right now
     {% endif %}
   </span>
   <span class="vote-cta__link">Cast your vote &rarr;</span>
@@ -27,4 +31,4 @@
   {% templatetag openblock %} section {% templatetag closeblock %}, which owns the seams, so a partial no longer
   compensates for what its neighbours might do.
 {% endcomment %}
-{% endfor %}
+{% endif %}

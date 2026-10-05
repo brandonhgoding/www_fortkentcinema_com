@@ -46,6 +46,8 @@
             {{ options|length }} film{{ options|length|pluralize }} on the ballot.
             {% if poll.closes_at %}Voting closes {{ poll.closes_at|date:"F j" }}.{% endif %}
           </p>
+        {% elif state == "choose" and open_rounds|length == 1 %}
+          <p class="vote-hero__status">One round is open right now.</p>
         {% elif state == "choose" %}
           <p class="vote-hero__status">{{ open_rounds|length }} rounds are open. Vote in as many as you like.</p>
         {% elif state == "closed" %}
@@ -55,6 +57,8 @@
         {% endif %}
         {% if state == "ballot" %}
           <a href="#vote-panel" class="btn btn-primary vote-hero__cta">Cast your vote</a>
+        {% elif state == "choose" and open_rounds|length == 1 %}
+          <a href="{{ open_rounds.0.get_absolute_url }}" class="btn btn-primary vote-hero__cta">Cast your vote</a>
         {% elif state == "choose" %}
           <a href="#vote-panel" class="btn btn-primary vote-hero__cta">Pick a round</a>
         {% endif %}

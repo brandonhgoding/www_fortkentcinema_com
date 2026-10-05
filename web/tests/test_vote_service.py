@@ -111,9 +111,16 @@ class ResolveVotePageTests(TestCase):
         self.assertEqual(ctx["poll"], a)
         self.assertEqual(len(ctx["options"]), 2)
 
-    def test_ballot_state_for_a_visitor(self) -> None:
+    def test_one_open_round_is_still_listed_not_shown_as_a_ballot(self) -> None:
         poll = self._open_poll_with_options()
         ctx = vote_service.resolve_vote_page()
+        self.assertEqual(ctx["state"], vote_service.STATE_CHOOSE)
+        self.assertEqual(ctx["open_rounds"], [poll])
+        self.assertIsNone(ctx["poll"])
+
+    def test_ballot_state_for_a_round_page(self) -> None:
+        poll = self._open_poll_with_options()
+        ctx = vote_service.resolve_vote_page(poll=poll)
         self.assertEqual(ctx["state"], vote_service.STATE_BALLOT)
         self.assertEqual(ctx["poll"], poll)
         self.assertEqual(len(ctx["options"]), 2)
