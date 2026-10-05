@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from typing import Any, Callable, TypeVar
 from uuid import uuid4
 
+import httpx
+import pydantic
 from boxoffice.spec import ItemSpec, VariationSpec
 from django.conf import settings
 from square import Square
@@ -60,6 +62,9 @@ def _call(fn: Callable[..., T], *args: Any, **kwargs: Any) -> T:
         if any(getattr(e, "code", None) == "VERSION_MISMATCH" for e in exc.errors):
             raise VersionMismatch(str(exc.body)) from exc
         raise GatewayError(str(exc.body)) from exc
+    except (httpx.HTTPError, pydantic.ValidationError) as exc:
+        # The SDK does not wrap transport failures or unparseable responses.
+        raise GatewayError(f"{type(exc).__name__}: {exc}") from exc
 
 
 def _temp_item_id(spec: ItemSpec) -> str:
@@ -147,15 +152,14 @@ class SquareGateway:
             "sort": {"sort_field": "CLOSED_AT", "sort_order": "ASC"},
         }
         orders: list[OrderData] = []
-        cursor = None
+        page: dict[str, Any] = {}
         while True:
             response = _call(self.client.orders.search,
-                             location_ids=[self.location_id], query=query,
-                             cursor=cursor)
+                             location_ids=[self.location_id], query=query, **page)
             orders.extend(_order_data(o) for o in (response.orders or []))
-            cursor = response.cursor
-            if not cursor:
+            if not response.cursor:
                 return orders
+            page = {"cursor": response.cursor}
 
     def list_ticket_items(self) -> list[RemoteItem]:
         objects = _call(lambda: list(self.client.catalog.list(types="ITEM")))

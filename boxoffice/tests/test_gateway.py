@@ -3,6 +3,9 @@ import datetime
 import inspect
 from unittest import mock
 
+import httpx
+import pydantic
+
 from boxoffice.gateway import (
     GatewayError,
     OrderData,
@@ -160,6 +163,39 @@ class UpsertRequestTests(SimpleTestCase):
         self.assertIn("INTERNAL_SERVER_ERROR", str(ctx.exception))
 
 
+class TransportErrorTests(SimpleTestCase):
+    def test_timeout_is_gateway_error(self) -> None:
+        client = mock.Mock()
+        client.catalog.batch_upsert.side_effect = httpx.ReadTimeout("slow")
+        with self.assertRaisesMessage(GatewayError, "slow"):
+            SquareGateway(client, "LOC", "CAT").upsert_item(
+                SPEC_FOR_7, item_id=None, version=None, variation_ids_by_tier={})
+
+    def test_connection_error_during_paging_is_gateway_error(self) -> None:
+        client = mock.Mock()
+
+        def pages():
+            yield _catalog_item("T1", ["CAT"])
+            raise httpx.ConnectError("refused")
+
+        client.catalog.list.return_value = pages()
+        with self.assertRaisesMessage(GatewayError, "refused"):
+            SquareGateway(client, "LOC", "CAT").list_ticket_items()
+
+    def test_unparseable_response_is_gateway_error(self) -> None:
+        class Strict(pydantic.BaseModel):
+            n: int
+
+        try:
+            Strict(n="x")
+        except pydantic.ValidationError as exc:
+            invalid = exc
+        client = mock.Mock()
+        client.orders.search.side_effect = invalid
+        with self.assertRaises(GatewayError):
+            SquareGateway(client, "LOC", "CAT").search_orders(START, END)
+
+
 class CatalogCallTests(SimpleTestCase):
     def test_delete_item_batch_deletes_the_id(self) -> None:
         client = mock.Mock()
@@ -240,7 +276,7 @@ class SearchOrdersTests(SimpleTestCase):
             "start_at": START.isoformat(), "end_at": END.isoformat()})
         self.assertEqual(query["sort"],
                          {"sort_field": "CLOSED_AT", "sort_order": "ASC"})
-        self.assertIsNone(first.kwargs["cursor"])
+        self.assertNotIn("cursor", first.kwargs)
         self.assertEqual(second.kwargs["cursor"], "page2")
         self.assertEqual(second.kwargs["query"], query)
         self.assertEqual([o.order_id for o in orders], ["O1", "O2"])
