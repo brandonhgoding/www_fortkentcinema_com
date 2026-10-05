@@ -93,8 +93,8 @@ class HomeView(TemplateView):
         # the banner retires itself on the booking's last day.
         ctx["sponsored"] = sponsored_screening()
 
-        # Self-expiring vote CTA: None unless a poll is OPEN, so the banner
-        # retires itself when the round closes.
+        # Self-expiring vote CTA: None unless a poll is OPEN and inside its
+        # voting window, so the banner retires itself when the round closes.
         ctx["vote_poll"] = vote_service.current_poll()
 
         # Advance-ticket CTA. Retires itself after opening day; see
@@ -543,10 +543,10 @@ class VoteArchiveView(View):
 
     def get(self, request, slug):
         poll = get_object_or_404(Poll, slug=slug)
-        if poll.status == PollStatus.OPEN:
-            return redirect("vote")
-        if poll.status == PollStatus.DRAFT:
+        if poll.status == PollStatus.DRAFT or not poll.has_started():
             raise Http404("No such poll.")
+        if poll.is_accepting_votes():
+            return redirect("vote")
 
         request.vote_key = (
             vote_engine.voter_key_from(request) or vote_engine.new_voter_key()
@@ -580,18 +580,11 @@ class VoteCastView(View):
             if option is None:
                 return HttpResponseBadRequest("Unknown option.")
             try:
-                vote_engine.cast_vote(
-                    poll,
-                    option,
-                    request.vote_key,
-                    ip=vote_engine.client_ip(request),
-                )
+                vote_engine.cast_vote(poll, option, request.vote_key)
             except vote_engine.AlreadyVoted:
                 message = "You've already voted in this round."
             except vote_engine.PollNotOpen:
                 message = "Voting has closed for this round."
-            except vote_engine.IPCapReached:
-                message = "We've had a lot of votes from this connection already."
             except vote_engine.OptionMismatch:
                 return HttpResponseBadRequest("Unknown option.")
 

@@ -1,5 +1,8 @@
+import datetime
+
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from cinema import voting
 from cinema.models import Film, Poll, PollOption, PollStatus, Vote
@@ -113,6 +116,24 @@ class VoteArchiveTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn("Round One", response.content.decode())
+
+    def test_lapsed_open_poll_has_its_own_page(self) -> None:
+        poll = Poll.objects.create(
+            title="Lapsed",
+            status=PollStatus.OPEN,
+            closes_at=timezone.now() - datetime.timedelta(minutes=1),
+        )
+        response = self.client.get(reverse("vote_archive", kwargs={"slug": poll.slug}))
+        self.assertEqual(response.status_code, 200)
+
+    def test_open_poll_before_its_opens_at_is_not_public(self) -> None:
+        poll = Poll.objects.create(
+            title="Soon",
+            status=PollStatus.OPEN,
+            opens_at=timezone.now() + datetime.timedelta(hours=1),
+        )
+        response = self.client.get(reverse("vote_archive", kwargs={"slug": poll.slug}))
+        self.assertEqual(response.status_code, 404)
 
     def test_draft_poll_is_not_public(self) -> None:
         poll = Poll.objects.create(title="Secret", status=PollStatus.DRAFT)

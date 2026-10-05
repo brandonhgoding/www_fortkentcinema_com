@@ -1,4 +1,7 @@
+import datetime
+
 from django.test import TestCase
+from django.utils import timezone
 
 from cinema import voting
 from cinema.models import Film, Poll, PollOption, PollStatus
@@ -13,6 +16,22 @@ class CurrentPollTests(TestCase):
     def test_returns_the_open_poll(self) -> None:
         poll = Poll.objects.create(title="Live", status=PollStatus.OPEN)
         self.assertEqual(vote_service.current_poll(), poll)
+
+    def test_none_when_the_open_poll_is_past_its_closes_at(self) -> None:
+        Poll.objects.create(
+            title="Lapsed",
+            status=PollStatus.OPEN,
+            closes_at=timezone.now() - datetime.timedelta(minutes=1),
+        )
+        self.assertIsNone(vote_service.current_poll())
+
+    def test_none_when_the_open_poll_has_not_opened_yet(self) -> None:
+        Poll.objects.create(
+            title="Soon",
+            status=PollStatus.OPEN,
+            opens_at=timezone.now() + datetime.timedelta(hours=1),
+        )
+        self.assertIsNone(vote_service.current_poll())
 
 
 class ArchiveTests(TestCase):
@@ -32,6 +51,30 @@ class ArchiveTests(TestCase):
         Poll.objects.create(title="Closed", status=PollStatus.CLOSED)
         announced = Poll.objects.create(title="Done", status=PollStatus.ANNOUNCED)
         self.assertEqual(vote_service.latest_decided_poll(), announced)
+
+
+class LapsedPollTests(TestCase):
+    def setUp(self) -> None:
+        self.poll = Poll.objects.create(
+            title="Lapsed",
+            status=PollStatus.OPEN,
+            results_visible=True,
+            closes_at=timezone.now() - datetime.timedelta(minutes=1),
+        )
+        PollOption.objects.create(
+            poll=self.poll, film=Film.objects.create(title="Casablanca")
+        )
+
+    def test_vote_page_shows_it_as_closed(self) -> None:
+        ctx = vote_service.resolve_vote_page(voter_key=None)
+        self.assertEqual(ctx["poll"], self.poll)
+        self.assertEqual(ctx["state"], vote_service.STATE_CLOSED)
+        self.assertTrue(ctx["show_results"])
+
+    def test_an_announced_round_still_outranks_it(self) -> None:
+        announced = Poll.objects.create(title="Done", status=PollStatus.ANNOUNCED)
+        self.assertEqual(vote_service.latest_decided_poll(), announced)
+        self.assertIn(self.poll, vote_service.archived_polls())
 
 
 class ResolveVotePageTests(TestCase):

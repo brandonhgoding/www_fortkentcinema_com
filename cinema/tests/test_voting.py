@@ -1,22 +1,10 @@
+import datetime
+
 from django.test import RequestFactory, TestCase
+from django.utils import timezone
 
 from cinema import voting
 from cinema.models import Film, Poll, PollOption, PollStatus, Vote
-
-
-class HashIPTests(TestCase):
-    def test_hash_is_stable_and_not_the_raw_address(self) -> None:
-        first = voting.hash_ip("10.0.0.1")
-        second = voting.hash_ip("10.0.0.1")
-        self.assertEqual(first, second)
-        self.assertNotIn("10.0.0.1", first)
-        self.assertEqual(len(first), 64)
-
-    def test_different_addresses_hash_differently(self) -> None:
-        self.assertNotEqual(voting.hash_ip("10.0.0.1"), voting.hash_ip("10.0.0.2"))
-
-    def test_missing_ip_hashes_to_empty_string(self) -> None:
-        self.assertEqual(voting.hash_ip(None), "")
 
 
 class ClientIPTests(TestCase):
@@ -69,11 +57,9 @@ class CastVoteTests(TestCase):
         )
 
     def test_records_a_vote(self) -> None:
-        vote = voting.cast_vote(self.poll, self.option, "k1", ip="10.0.0.1")
+        vote = voting.cast_vote(self.poll, self.option, "k1")
         self.assertEqual(Vote.objects.count(), 1)
         self.assertEqual(vote.option, self.option)
-        self.assertEqual(vote.ip_hash, voting.hash_ip("10.0.0.1"))
-        self.assertNotEqual(vote.ip_hash, "10.0.0.1")
 
     def test_second_vote_from_same_key_raises_already_voted(self) -> None:
         voting.cast_vote(self.poll, self.option, "k1")
@@ -102,44 +88,28 @@ class CastVoteTests(TestCase):
         with self.assertRaises(voting.OptionMismatch):
             voting.cast_vote(self.poll, stray, "k1")
 
-    def test_ip_cap_stops_the_sixth_vote_from_one_address(self) -> None:
-        for i in range(voting.IP_VOTE_CAP):
-            voting.cast_vote(self.poll, self.option, f"k{i}", ip="10.0.0.1")
-        with self.assertRaises(voting.IPCapReached):
-            voting.cast_vote(self.poll, self.option, "k-last", ip="10.0.0.1")
-        self.assertEqual(Vote.objects.count(), voting.IP_VOTE_CAP)
-
-    def test_ip_cap_is_per_poll(self) -> None:
-        for i in range(voting.IP_VOTE_CAP):
-            voting.cast_vote(self.poll, self.option, f"k{i}", ip="10.0.0.1")
-        self.poll.status = PollStatus.CLOSED
+    def test_poll_past_its_closes_at_refuses_the_write(self) -> None:
+        self.poll.closes_at = timezone.now() - datetime.timedelta(minutes=1)
         self.poll.save()
+        with self.assertRaises(voting.PollNotOpen):
+            voting.cast_vote(self.poll, self.option, "k1")
+        self.assertEqual(Vote.objects.count(), 0)
 
-        next_poll = Poll.objects.create(title="Round Two", status=PollStatus.OPEN)
-        next_option = PollOption.objects.create(
-            poll=next_poll, film=Film.objects.create(title="Jaws")
-        )
-        vote = voting.cast_vote(next_poll, next_option, "k0", ip="10.0.0.1")
-        self.assertIsNotNone(vote.pk)
+    def test_poll_before_its_opens_at_refuses_the_write(self) -> None:
+        self.poll.opens_at = timezone.now() + datetime.timedelta(hours=1)
+        self.poll.save()
+        with self.assertRaises(voting.PollNotOpen):
+            voting.cast_vote(self.poll, self.option, "k1")
 
-    def test_votes_without_an_ip_are_not_capped(self) -> None:
-        for i in range(voting.IP_VOTE_CAP + 2):
-            voting.cast_vote(self.poll, self.option, f"k{i}")
-        self.assertEqual(Vote.objects.count(), voting.IP_VOTE_CAP + 2)
-
-
-class ExistingVoteTests(TestCase):
-    def setUp(self) -> None:
-        self.poll = Poll.objects.create(title="Round One", status=PollStatus.OPEN)
-        self.option = PollOption.objects.create(
-            poll=self.poll, film=Film.objects.create(title="Casablanca")
-        )
-
-    def test_returns_none_without_a_key(self) -> None:
-        self.assertIsNone(voting.existing_vote(self.poll, None))
-
-    def test_returns_the_vote_when_present(self) -> None:
+    def test_poll_inside_its_window_records_the_vote(self) -> None:
+        now = timezone.now()
+        self.poll.opens_at = now - datetime.timedelta(hours=1)
+        self.poll.closes_at = now + datetime.timedelta(hours=1)
+        self.poll.save()
         voting.cast_vote(self.poll, self.option, "k1")
-        found = voting.existing_vote(self.poll, "k1")
-        self.assertIsNotNone(found)
-        self.assertEqual(found.option, self.option)
+        self.assertEqual(Vote.objects.count(), 1)
+
+    def test_many_voters_behind_one_address_all_count(self) -> None:
+        for i in range(10):
+            voting.cast_vote(self.poll, self.option, f"k{i}")
+        self.assertEqual(Vote.objects.count(), 10)

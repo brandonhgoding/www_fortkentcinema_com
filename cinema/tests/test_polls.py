@@ -1,5 +1,9 @@
+import datetime
+
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.test import TestCase
+from django.utils import timezone
 
 from cinema.models import Film, Poll, PollOption, PollStatus, Vote
 
@@ -14,6 +18,21 @@ class PollSlugTests(TestCase):
         second = Poll.objects.create(title="Halloween Vote")
         self.assertEqual(first.slug, "halloween-vote")
         self.assertEqual(second.slug, "halloween-vote-2")
+
+
+class PollWindowTests(TestCase):
+    def test_closes_before_opens_is_invalid(self) -> None:
+        now = timezone.now()
+        poll = Poll(
+            title="Backwards", opens_at=now, closes_at=now - datetime.timedelta(1)
+        )
+        with self.assertRaises(ValidationError) as caught:
+            poll.full_clean()
+        self.assertIn("closes_at", caught.exception.message_dict)
+
+    def test_open_poll_with_no_window_accepts_votes(self) -> None:
+        poll = Poll(title="Live", status=PollStatus.OPEN)
+        self.assertTrue(poll.is_accepting_votes())
 
 
 class OneOpenPollTests(TestCase):

@@ -6,7 +6,8 @@ lives here rather than in the view so each state is unit-testable without
 going through HTTP, matching the cinema_data / showtimes convention.
 """
 
-from django.db.models import QuerySet
+from django.db.models import Q, QuerySet
+from django.utils import timezone
 
 from cinema.models import Poll, PollStatus
 from cinema.voting import existing_vote
@@ -20,10 +21,20 @@ STATE_ANNOUNCED = "announced"
 _DECIDED = (PollStatus.CLOSED, PollStatus.ANNOUNCED)
 
 
+def _finished_q(now) -> Q:
+    """Rounds that are done taking votes: decided by staff, or still OPEN
+    but past their closes_at."""
+    return Q(status__in=_DECIDED) | (Q(status=PollStatus.OPEN) & Poll.ended_q(now))
+
+
 def current_poll() -> Poll | None:
-    """The single open poll, if there is one. At most one can exist."""
+    """The open poll, if one is inside its voting window. At most one can
+    be OPEN."""
+    now = timezone.now()
     return (
         Poll.objects.filter(status=PollStatus.OPEN)
+        .filter(Poll.started_q(now))
+        .exclude(Poll.ended_q(now))
         .select_related("winner", "engagement")
         .first()
     )
@@ -43,7 +54,8 @@ def latest_decided_poll() -> Poll | None:
     if announced is not None:
         return announced
     return (
-        Poll.objects.filter(status=PollStatus.CLOSED)
+        Poll.objects.filter(_finished_q(timezone.now()))
+        .exclude(status=PollStatus.ANNOUNCED)
         .select_related("winner", "winner__film", "engagement")
         .first()
     )
@@ -52,7 +64,7 @@ def latest_decided_poll() -> Poll | None:
 def archived_polls() -> QuerySet:
     """Past rounds, newest first. There is no separate archive index page —
     /vote lists these and each links to its own /vote/<slug>."""
-    return Poll.objects.filter(status__in=_DECIDED).select_related(
+    return Poll.objects.filter(_finished_q(timezone.now())).select_related(
         "winner", "winner__film"
     )
 
@@ -91,15 +103,18 @@ def resolve_vote_page(voter_key: str | None, poll: Poll | None = None) -> dict:
         ctx["tallies"] = poll.tallies(by_rank=True)
         return ctx
 
-    if poll.status == PollStatus.CLOSED:
+    if poll.status == PollStatus.CLOSED or (
+        poll.status == PollStatus.OPEN and poll.has_ended()
+    ):
         ctx["state"] = STATE_CLOSED
         ctx["show_results"] = poll.results_visible
         if poll.results_visible:
             ctx["tallies"] = poll.tallies(by_rank=True)
         return ctx
 
-    if poll.status != PollStatus.OPEN:
-        # A draft round is not public. Treat it as no poll at all.
+    if poll.status != PollStatus.OPEN or not poll.has_started():
+        # A draft round, or one whose window has not opened, is not public.
+        # Treat it as no poll at all.
         ctx["poll"] = None
         ctx["options"] = []
         return ctx

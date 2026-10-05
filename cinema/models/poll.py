@@ -1,8 +1,10 @@
 from typing import Any, ClassVar
 
+from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Manager
+from django.db.models import Manager, Q
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.text import slugify
 
 from .engagement import Engagement
@@ -32,6 +34,9 @@ class Poll(models.Model):
         blank=True, help_text="Shown above the ballot. One or two sentences."
     )
 
+    # The voting window, enforced on top of status: an OPEN poll takes votes
+    # only between these (blank means no limit on that side). Staff still
+    # move it to CLOSED by hand to record the round as decided.
     opens_at = models.DateTimeField(null=True, blank=True)
     closes_at = models.DateTimeField(null=True, blank=True)
 
@@ -96,6 +101,34 @@ class Poll(models.Model):
         if not self.slug:
             self.slug = self.generate_slug()
         super().save(*args, **kwargs)
+
+    def clean(self) -> None:
+        if self.opens_at and self.closes_at and self.closes_at <= self.opens_at:
+            raise ValidationError({"closes_at": "Closes must be after Opens."})
+
+    @staticmethod
+    def started_q(now) -> Q:
+        return Q(opens_at__isnull=True) | Q(opens_at__lte=now)
+
+    @staticmethod
+    def ended_q(now) -> Q:
+        return Q(closes_at__isnull=False, closes_at__lte=now)
+
+    def has_started(self, now=None) -> bool:
+        now = now or timezone.now()
+        return self.opens_at is None or self.opens_at <= now
+
+    def has_ended(self, now=None) -> bool:
+        now = now or timezone.now()
+        return self.closes_at is not None and self.closes_at <= now
+
+    def is_accepting_votes(self, now=None) -> bool:
+        now = now or timezone.now()
+        return (
+            self.status == PollStatus.OPEN
+            and self.has_started(now)
+            and not self.has_ended(now)
+        )
 
     @property
     def total_votes(self) -> int:
@@ -164,9 +197,7 @@ class PollOption(models.Model):
 class Vote(models.Model):
     """A single ballot cast.
 
-    `voter_key` is a random token from a long-lived cookie. `ip_hash` is a
-    salted hash — never the raw address — kept only so a flood from one
-    connection is visible and cappable.
+    `voter_key` is a random token from a long-lived cookie.
     """
 
     objects: ClassVar[Manager["Vote"]]
@@ -176,7 +207,6 @@ class Vote(models.Model):
         PollOption, on_delete=models.CASCADE, related_name="votes"
     )
     voter_key = models.CharField(max_length=36, db_index=True)
-    ip_hash = models.CharField(max_length=64, blank=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
