@@ -3,7 +3,7 @@ from unittest import mock
 from zoneinfo import ZoneInfo
 
 from boxoffice.gateway import GatewayError, OrderData, OrderLine
-from boxoffice.models import SaleLine, SalesPull
+from boxoffice.models import SaleLine, SalesPull, SquareVariation
 from boxoffice.pull import business_date, day_bounds, pull_day
 from boxoffice.sync import live_item, push
 from boxoffice.tests.fakes import FakeGateway
@@ -146,6 +146,47 @@ class PullDayTests(TestCase):
         pull_day(DAY + datetime.timedelta(days=1), self.gw)
         self.eng.refresh_from_db()
         self.assertEqual(self.eng.admissions, 5)
+
+    def test_repull_keeps_attribution_when_variation_is_gone(self) -> None:
+        self.gw.orders = [order("O1", at_eastern(2026, 10, 9, 19, 5),
+                                line("L1", "Dune", "Adult", self.adult_id, 2, 1600))]
+        pull_day(DAY, self.gw)
+        SquareVariation.objects.filter(square_id=self.adult_id).delete()
+        Engagement.objects.filter(pk=self.eng.pk).update(admissions=99)
+        second = pull_day(DAY, self.gw)
+        self.assertEqual(second.status, "OK")
+        stored = SaleLine.objects.get(line_uid="L1")
+        self.assertEqual(stored.engagement_id, self.eng.pk)
+        self.assertIsNone(stored.variation)
+        self.assertEqual(stored.category_id, TICKETS)
+        self.eng.refresh_from_db()
+        self.assertEqual(self.eng.admissions, 2)
+
+    def test_repull_updates_changed_quantity_and_admissions(self) -> None:
+        self.gw.orders = [order("O1", at_eastern(2026, 10, 9, 19, 5),
+                                line("L1", "Dune", "Adult", self.adult_id, 2, 1600))]
+        pull_day(DAY, self.gw)
+        self.gw.orders = [order("O1", at_eastern(2026, 10, 9, 19, 5),
+                                line("L1", "Dune", "Adult", self.adult_id, 3, 2400))]
+        pull_day(DAY, self.gw)
+        stored = SaleLine.objects.get(line_uid="L1")
+        self.assertEqual((stored.quantity, stored.gross_cents), (3, 2400))
+        self.eng.refresh_from_db()
+        self.assertEqual(self.eng.admissions, 3)
+
+    def test_engagement_losing_lines_is_recomputed(self) -> None:
+        other = make_eng()
+        push(other, self.gw)
+        other_adult = live_item(other).variations.get(tier="adult").square_id
+        self.gw.orders = [order("O1", at_eastern(2026, 10, 9, 19, 5),
+                                line("L1", "Dune", "Adult", self.adult_id, 2, 1600))]
+        pull_day(DAY, self.gw)
+        self.gw.orders = [order("O1", at_eastern(2026, 10, 9, 19, 5),
+                                line("L1", "Dune", "Adult", other_adult, 2, 1600))]
+        pull_day(DAY, self.gw)
+        self.eng.refresh_from_db()
+        other.refresh_from_db()
+        self.assertEqual((self.eng.admissions, other.admissions), (0, 2))
 
     def test_gateway_failure_writes_failed_row(self) -> None:
         gw = self.gw

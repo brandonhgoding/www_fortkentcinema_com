@@ -41,9 +41,13 @@ def pull_day(day: datetime.date, gateway: SquareGateway) -> SalesPull:
             {ln.catalog_object_id for _, ln in lines
              if ln.catalog_object_id and ln.catalog_object_id not in variations})
         with transaction.atomic():
-            touched = set()
+            existing = _existing_rows(lines)
+            # Engagements losing lines must be recomputed too.
+            touched = {row.engagement_id for row in existing.values()
+                       if row.engagement_id is not None}
             for o, ln in lines:
-                stored = _store_line(o, ln, variations, categories)
+                stored = _store_line(o, ln, variations, categories,
+                                     existing.get((o.order_id, ln.uid)))
                 if stored.engagement_id is not None:
                     touched.add(stored.engagement_id)
             recompute_admissions(touched)
@@ -90,13 +94,36 @@ def _resolve_categories(gateway: SquareGateway,
     return gateway.lookup_categories(sorted(unknown_ids))
 
 
+def _existing_rows(lines: list[tuple[OrderData, OrderLine]]
+                   ) -> dict[tuple[str, str], SaleLine]:
+    """The ledger rows this pull will overwrite, keyed by (order_id, line_uid)."""
+    keys = {(o.order_id, ln.uid) for o, ln in lines}
+    if not keys:
+        return {}
+    rows = SaleLine.objects.filter(order_id__in={k[0] for k in keys}).only(
+        "order_id", "line_uid", "variation_id", "engagement_id", "category_id")
+    return {(r.order_id, r.line_uid): r for r in rows
+            if (r.order_id, r.line_uid) in keys}
+
+
 def _store_line(o: OrderData, ln: OrderLine, variations: dict[str, SquareVariation],
-                categories: dict[str, str]) -> SaleLine:
+                categories: dict[str, str], existing: SaleLine | None) -> SaleLine:
     variation = variations.get(ln.catalog_object_id) if ln.catalog_object_id else None
     if variation is not None:
-        category_id = settings.SQUARE_TICKET_CATEGORY_ID
+        attribution = {
+            "variation_id": variation.pk,
+            "engagement_id": variation.item.engagement_id,
+            "category_id": settings.SQUARE_TICKET_CATEGORY_ID,
+        }
     else:
-        category_id = categories.get(ln.catalog_object_id, "")
+        # The catalog no longer resolves this line: keep what an earlier pull
+        # attributed rather than stripping it.
+        attribution = {
+            "variation_id": existing.variation_id if existing else None,
+            "engagement_id": existing.engagement_id if existing else None,
+            "category_id": (categories.get(ln.catalog_object_id, "")
+                            or (existing.category_id if existing else "")),
+        }
     stored, _ = SaleLine.objects.update_or_create(
         order_id=o.order_id, line_uid=ln.uid,
         defaults={
@@ -105,11 +132,9 @@ def _store_line(o: OrderData, ln: OrderLine, variations: dict[str, SquareVariati
             "item_name": ln.name,
             "variation_name": ln.variation_name,
             "catalog_object_id": ln.catalog_object_id,
-            "category_id": category_id,
             "quantity": ln.quantity,
             "gross_cents": ln.gross_cents,
-            "variation": variation,
-            "engagement_id": variation.item.engagement_id if variation else None,
+            **attribution,
         },
     )
     return stored
