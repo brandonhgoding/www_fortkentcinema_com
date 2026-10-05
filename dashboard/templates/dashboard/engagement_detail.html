@@ -40,6 +40,10 @@
       <div class="engagementInfo">
         <div class="infoRow"><span class="label">Status:</span>
           <span class="status-badge status-{{ engagement.status|lower }}">{{ engagement.get_status_display }}</span></div>
+        {% if square_enabled %}
+        <div class="infoRow"><span class="label">Square:</span>
+          {% include "dashboard/_square_pill.html" %}</div>
+        {% endif %}
         <div class="infoRow"><span class="label">Kind:</span><span>{{ KIND_LABELS|get_item:engagement.kind }}</span></div>
         {% if engagement.event_title and engagement.event_title != engagement.display_title %}
         <div class="infoRow"><span class="label">Event:</span><span>{{ engagement.event_title }}</span></div>{% endif %}

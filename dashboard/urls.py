@@ -30,6 +30,11 @@ urlpatterns = [
     path("engagements/<int:pk>/delete", views.EngagementDeleteView.as_view(), name="engagement_delete"),
     path("engagements/<int:pk>/status", views.EngagementStatusView.as_view(), name="engagement_status"),
     path(
+        "engagements/<int:pk>/square/retry",
+        views.EngagementSquareRetryView.as_view(),
+        name="engagement_square_retry",
+    ),
+    path(
         "engagements/<int:pk>/social/<slug:platform>.png",
         views.EngagementSocialCardView.as_view(),
         name="engagement_social_card",

@@ -2,6 +2,8 @@ import datetime
 import json
 from zoneinfo import ZoneInfo
 
+from boxoffice.gateway import GatewayError
+from boxoffice.sync import delete, live_item, push, schedule
 from cinema.models import (
     Engagement,
     EngagementFilm,
@@ -31,10 +33,11 @@ from cinema.social_cards import (
 )
 from cinema.tmdb import TMDBAPIError
 from cinema.tmdb.services import TMDBService
+from django.conf import settings
 from django.db import transaction
 from django.db.models import ProtectedError, Q
 from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.generic import TemplateView, View
@@ -312,6 +315,8 @@ class EngagementDetailView(StaffRequiredMixin, TemplateView):
             "dashboard:engagement_social_card",
             args=[engagement.pk, FACEBOOK_BANNER],
         )
+        ctx["square_enabled"] = bool(settings.SQUARE_ACCESS_TOKEN)
+        ctx["square_item"] = live_item(engagement)
         return ctx
 
 
@@ -382,6 +387,7 @@ class EngagementCreateView(StaffRequiredMixin, View):
             with transaction.atomic():
                 engagement = form.save()
                 save_engagement_films(engagement, film_ids)
+                schedule(engagement)
             tab = request.GET.get("tab") or "CURRENT"
             resp = _engagement_list_response(request, tab, toast={"kind": "success", "message": "Engagement created"})
             existing = resp["HX-Trigger"]
@@ -411,6 +417,7 @@ class EngagementEditView(StaffRequiredMixin, View):
             with transaction.atomic():
                 engagement = form.save()
                 save_engagement_films(engagement, film_ids)
+                schedule(engagement)
             tab = request.GET.get("tab") or "CURRENT"
             resp = _engagement_list_response(request, tab, toast={"kind": "success", "message": "Engagement updated"})
             trigger = json.loads(resp["HX-Trigger"]) if resp.get("HX-Trigger") else {}
@@ -428,7 +435,9 @@ class EngagementStatusView(StaffRequiredMixin, View):
         if new_status not in {"DRAFT", "CONFIRMED", "CANCELLED"}:
             return HttpResponse(status=400)
         engagement.status = new_status
-        engagement.save(update_fields=["status"])
+        with transaction.atomic():
+            engagement.save(update_fields=["status"])
+            schedule(engagement)
         tab = request.GET.get("tab") or "CURRENT"
         return _engagement_list_response(request, tab, toast={"kind": "success", "message": "Status updated"})
 
@@ -436,9 +445,23 @@ class EngagementStatusView(StaffRequiredMixin, View):
 class EngagementDeleteView(StaffRequiredMixin, View):
     def post(self, request, pk):
         engagement = get_object_or_404(Engagement, pk=pk)
-        engagement.delete()
         tab = request.GET.get("tab") or "CURRENT"
+        try:
+            delete(engagement)
+        except GatewayError as exc:
+            return _engagement_list_response(request, tab, toast={
+                "kind": "error",
+                "message": f"Square refused to delete the ticket item ({exc}). The engagement was kept.",
+            })
+        engagement.delete()
         return _engagement_list_response(request, tab, toast={"kind": "success", "message": "Engagement deleted"})
+
+
+class EngagementSquareRetryView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        engagement = get_object_or_404(Engagement, pk=pk)
+        push(engagement)
+        return redirect("dashboard:engagement_detail", pk=pk)
 
 
 CINEMA_TZ = ZoneInfo("America/New_York")
