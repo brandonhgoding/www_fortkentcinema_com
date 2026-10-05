@@ -44,7 +44,7 @@ INSTAGRAM_HEADLINE_TO_DATE_GAP = 22
 INSTAGRAM_DATE_TO_WORDMARK_GAP = 10
 INSTAGRAM_TEXT_TO_FOOTER_GAP = 32
 
-# Footer band heights. `_draw_footer_strip` centres its text vertically in
+# Footer band heights. `draw_footer_strip` centres its text vertically in
 # a band that is always full-bleed to the canvas's bottom edge, so the
 # band height directly controls how much clear space sits below the text
 # ink. Both platforms crop toward centre in feed/story/mobile placements,
@@ -100,7 +100,7 @@ def _clamp_lines(
     return lines[:max_lines]
 
 
-def _draw_footer_strip(
+def draw_footer_strip(
     base: Image.Image, text: str, height: int, font_size: int
 ) -> None:
     width, canvas_height = base.size
@@ -198,7 +198,7 @@ def _render_facebook(data: CardData, images: ArtworkImages) -> Image.Image:
         (64, y + 12), theme.GOLD,
     )
 
-    _draw_footer_strip(
+    draw_footer_strip(
         base, data.footer, height=FACEBOOK_FOOTER_HEIGHT, font_size=18
     )
     return base
@@ -348,7 +348,7 @@ def _render_instagram(data: CardData, images: ArtworkImages) -> Image.Image:
         (headline_x, y + INSTAGRAM_DATE_TO_WORDMARK_GAP), theme.GOLD,
     )
 
-    _draw_footer_strip(base, data.footer, height=footer_height, font_size=20)
+    draw_footer_strip(base, data.footer, height=footer_height, font_size=20)
     return base
 
 

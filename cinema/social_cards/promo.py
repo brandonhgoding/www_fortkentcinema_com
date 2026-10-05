@@ -21,6 +21,7 @@ from io import BytesIO
 from PIL import Image
 
 from . import draw, theme
+from .layouts import draw_footer_strip
 
 SPONSOR_BADGE = "FOR LOCAL BUSINESS"
 SPONSOR_HEADLINE = "PUT YOUR BUSINESS ON THE BIG SCREEN"
@@ -129,28 +130,8 @@ def render_sponsor_card() -> Image.Image:
         y + 20, theme.GOLD,
     )
 
-    _draw_footer(base, SPONSOR_FOOTER)
+    draw_footer_strip(base, SPONSOR_FOOTER, height=FOOTER_HEIGHT, font_size=18)
     return base
-
-
-def _draw_footer(base: Image.Image, text: str) -> None:
-    """Same translucent full-bleed band as the feed card's footer."""
-    width, height = base.size
-    top = height - FOOTER_HEIGHT
-    strip = Image.new(
-        "RGBA",
-        (width, FOOTER_HEIGHT),
-        theme.INK_EDGE + (150,),
-    )
-    base.alpha_composite(strip, (0, top))
-    font = theme.load_font(theme.FONT_MEDIUM, 18)
-    draw.draw_plain_text(
-        base,
-        text,
-        font,
-        (_centre_x(font.getlength(text), width), top + (FOOTER_HEIGHT - 18) // 2),
-        theme.CREAM,
-    )
 
 
 def to_jpeg(image: Image.Image, quality: int = 88) -> bytes:
