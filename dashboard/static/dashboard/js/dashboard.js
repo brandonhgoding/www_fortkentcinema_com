@@ -224,6 +224,29 @@ document.addEventListener('alpine:init', () => {
   }));
 });
 
+// Poll ballot (poll_detail.html): add the picked film to the ballot.
+// Listens on body like engagementForm and blogEditor, since film-selected
+// arrives both from the local combo ($dispatch, bubbles) and from a TMDB
+// import (HX-Trigger). Kept out of hx-* attributes on the picker's wrapper:
+// htmx inherits hx-vals, so a wrapper expression ran on the search request.
+document.addEventListener('alpine:init', () => {
+  Alpine.data('pollBallot', () => ({
+    init() {
+      this._onSel = (e) => {
+        const id = e.detail && e.detail.id;
+        if (!id) return;
+        htmx.ajax('POST', this.$root.dataset.addUrl, {
+          target: '#poll-options',
+          swap: 'outerHTML',
+          values: { film_id: id },
+        });
+      };
+      document.body.addEventListener('film-selected', this._onSel);
+    },
+    destroy() { document.body.removeEventListener('film-selected', this._onSel); },
+  }));
+});
+
 // Blog post editor (blog_editor.html).
 document.addEventListener('alpine:init', () => {
   Alpine.data('blogEditor', () => ({

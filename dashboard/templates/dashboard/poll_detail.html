@@ -30,14 +30,17 @@
       {% comment %}
         Reuses the engagement film picker. The option buttons in
         _film_options.html dispatch an Alpine `film-selected` event carrying
-        {id, title, poster}, which bubbles to body — that is the contract this
-        hooks, and `js:` hx-vals lifts the id straight off the event detail.
-        Do not rename the event without changing _film_options.html too.
+        {id, title, poster}, which bubbles to body, and a TMDB import fires
+        the same event from an HX-Trigger header. pollBallot (dashboard.js)
+        listens on body and posts the id to data-add-url.
+
+        The listener lives in JS rather than as hx-post/hx-vals on this
+        wrapper: htmx inherits hx-vals from ancestors, so a `js:` expression
+        here was evaluated for the picker's own search request too, where it
+        threw and silently killed the search. Do not rename the event without
+        changing _film_options.html too.
       {% endcomment %}
-      <div hx-post="{% url 'dashboard:poll_option_add' poll.pk %}"
-           hx-trigger="film-selected from:body"
-           hx-vals='js:{film_id: event.detail.id}'
-           hx-target="#poll-options" hx-swap="outerHTML">
+      <div x-data="pollBallot" data-add-url="{% url 'dashboard:poll_option_add' poll.pk %}">
         {% include "dashboard/_film_search_combo.html" with combo_id="poll-film" %}
       </div>
     </section>

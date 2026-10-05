@@ -1,3 +1,5 @@
+from html.parser import HTMLParser
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -5,6 +7,36 @@ from django.urls import reverse
 from cinema.models import Film, Poll, PollOption, PollStatus, Vote
 
 User = get_user_model()
+
+
+class _SearchBoxAncestors(HTMLParser):
+    """Collect the hx-vals values on every open element above the film
+    search box (the input named "q")."""
+
+    VOID = {"input", "img", "br", "hr", "meta", "link"}
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.stack: list[dict] = []
+        self.found: list[str] | None = None
+
+    def handle_starttag(self, tag, attrs) -> None:
+        attrs = dict(attrs)
+        if tag == "input" and attrs.get("name") == "q" and self.found is None:
+            self.found = [a["hx-vals"] for a in self.stack if "hx-vals" in a]
+        if tag not in self.VOID:
+            self.stack.append(attrs)
+
+    def handle_endtag(self, tag) -> None:
+        if self.stack:
+            self.stack.pop()
+
+
+def _hx_vals_above_search_box(html: str) -> list[str]:
+    parser = _SearchBoxAncestors()
+    parser.feed(html)
+    assert parser.found is not None, "no film search box on the page"
+    return parser.found
 
 
 class PollDetailTests(TestCase):
@@ -25,6 +57,20 @@ class PollDetailTests(TestCase):
             reverse("dashboard:poll_detail", args=[self.poll.pk])
         ).content.decode()
         self.assertIn("Search for a film", html)
+
+    def test_film_picker_search_box_inherits_no_hx_vals(self) -> None:
+        # The add-to-ballot hook used to be hx-post/hx-vals on the picker's
+        # wrapper. htmx inherits hx-vals from ancestors, so the wrapper's
+        # `js:event.detail.id` ran on the search box's own request, threw,
+        # and the dropdown never showed any results.
+        html = self.client.get(
+            reverse("dashboard:poll_detail", args=[self.poll.pk])
+        ).content.decode()
+        self.assertEqual(_hx_vals_above_search_box(html), [])
+        self.assertIn(
+            f'data-add-url="{reverse("dashboard:poll_option_add", args=[self.poll.pk])}"',
+            html,
+        )
 
     def test_detail_lists_options_with_counts(self) -> None:
         option = PollOption.objects.create(
