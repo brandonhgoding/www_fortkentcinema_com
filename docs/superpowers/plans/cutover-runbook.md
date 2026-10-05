@@ -425,3 +425,66 @@ If verification fails, revert to serving the static React build:
 5. Verify `https://www.fortkentcinema.com/` serves the React `index.html`
    again, `https://fortkentcinema.com` still 301s to `www`, and
    `https://api.fortkentcinema.com/api/posts/` is unaffected throughout.
+
+## 7. Square sync
+
+Ship with the token blank, so deploying the code changes nothing visible.
+With `SQUARE_ACCESS_TOKEN` empty, `pull_square_sales` and `sync_square_catalog`
+print `Square sync disabled (no SQUARE_ACCESS_TOKEN)` and exit 0.
+
+### Environment variables (`webservers.yml`)
+
+- `SQUARE_ACCESS_TOKEN` (leave blank until cutover)
+- `SQUARE_LOCATION_ID`
+- `SQUARE_TICKET_CATEGORY_ID` (the Movies category)
+- `SQUARE_ENVIRONMENT=production` (defaults to `sandbox`)
+- `EMAIL_HOST`
+- `EMAIL_PORT` (default 587)
+- `EMAIL_HOST_USER`
+- `EMAIL_HOST_PASSWORD`
+- `EMAIL_USE_TLS` (default True)
+- `DEFAULT_FROM_EMAIL`
+
+Deploy note: `requirements.txt` bumped `typing_extensions` from 4.14.0 to
+4.16.0 (required by the Square SDK's `anyio` dependency); the deploy's
+`pip install -r requirements.txt` picks it up.
+
+### Cron lines (Ansible repo, `webservers.yml`)
+
+Adjust the path to the deployed checkout.
+
+```
+45 23 * * *  cd /srv/www_fortkentcinema_com && .venv/bin/python manage.py pull_square_sales
+0  2  * * *  cd /srv/www_fortkentcinema_com && .venv/bin/python manage.py sync_square_catalog
+```
+
+Command flags: `pull_square_sales [--date YYYY-MM-DD] [--days N] [--dry-run]
+[--no-email]` and `sync_square_catalog [--dry-run]`.
+
+### Admin steps
+
+In Django admin, Box Office, Email reports: enter the To and CC recipients
+for both reports, and set the ticket report's subject (seeded as "Ticket
+Sales Report"; the owner may change it). `EmailRecipient` rows marked CC do
+not count as a To address, and a report with no To address is skipped.
+
+### Rollout (from the spec)
+
+1. **Square side.** Create a Developer application with catalog read/write
+   and orders read scopes. Record the production location ID and the Movies
+   category ID. Confirm the sandbox equivalents for local use.
+2. **Server side.** Add `SQUARE_*` and `EMAIL_*` to `webservers.yml`; deploy;
+   `migrate`. In the admin, enter the recipients for both reports. Run
+   `sync_square_catalog --dry-run` and read what it would push.
+3. **Cutover, on a run boundary.** After the last show of the current runs
+   has started: delete every hand-made ticket item in Square (not the Movies
+   category); mark those runs `ENDED`; confirm the new week's runs in the
+   dashboard and watch the items appear. Staff pin the new items to the
+   register's favorites grid and stop using the matinee discount. The empty
+   Events and Pre-Sales categories can be removed in Square or left; Django
+   never uses them.
+4. **Reports.** Run `pull_square_sales --dry-run` for the cutover day and
+   compare against the old script's output for the same day. Then add the two
+   cron entries and retire the script's cron.
+5. **Verify over the first week** that `admissions` is filling and the
+   ticket report matches what the booker received before.
