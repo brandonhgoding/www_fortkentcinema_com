@@ -9,8 +9,7 @@ going through HTTP, matching the cinema_data / showtimes convention.
 from django.db.models import Q, QuerySet
 from django.utils import timezone
 
-from cinema.models import Poll, PollStatus
-from cinema.voting import existing_vote
+from cinema.models import Poll, PollStatus, Vote
 
 STATE_NO_POLL = "no_poll"
 STATE_BALLOT = "ballot"
@@ -69,11 +68,15 @@ def archived_polls() -> QuerySet:
     )
 
 
-def resolve_vote_page(voter_key: str | None, poll: Poll | None = None) -> dict:
+def resolve_vote_page(poll: Poll | None = None, vote: Vote | None = None) -> dict:
     """Build the context for /vote or /vote/<slug>.
 
     `poll` pins the page to a specific round (the archive view). Without it,
     the open poll wins, falling back to the most recent decided round.
+
+    `vote` is the ballot just cast, for the response to a submission. There
+    is no cookie, so a plain visit cannot tell who is looking: an open round
+    always shows the ballot, and a repeat address is caught on submit.
     """
     if poll is None:
         poll = current_poll() or latest_decided_poll()
@@ -120,8 +123,7 @@ def resolve_vote_page(voter_key: str | None, poll: Poll | None = None) -> dict:
         ctx["options"] = []
         return ctx
 
-    vote = existing_vote(poll, voter_key)
-    if vote is None:
+    if vote is None or vote.poll_id != poll.pk:
         ctx["state"] = STATE_BALLOT
         return ctx
 

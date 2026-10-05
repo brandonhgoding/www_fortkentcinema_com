@@ -10,7 +10,6 @@ from django.test import TestCase
 from django.urls import reverse
 
 from audience.models import Subscriber, SubscriberStatus
-from cinema import voting
 from cinema.models import EmailPreference, Film, Poll, PollOption, PollStatus, Vote
 
 
@@ -20,7 +19,6 @@ class VoteContactTests(TestCase):
         self.option = PollOption.objects.create(
             poll=self.poll, film=Film.objects.create(title="Casablanca")
         )
-        self.client.cookies[voting.VOTER_COOKIE] = "k1"
 
     def cast(self, remote_addr="127.0.0.1", **overrides):
         data = {
@@ -67,10 +65,9 @@ class VoteContactTests(TestCase):
         self.assertEqual(vote.email_preference, EmailPreference.RESULTS)
 
     def test_results_only_does_not_join_the_mailing_list(self) -> None:
-        self.cast(email_preference=EmailPreference.RESULTS)
+        response = self.cast(email_preference=EmailPreference.RESULTS)
         self.assertEqual(Subscriber.objects.count(), 0)
-        html = self.cast().content.decode()  # the voted panel
-        self.assertIn("once with what won", html)
+        self.assertIn("once with what won", response.content.decode())
 
     def test_do_not_email_me_stores_the_address_but_nothing_else(self) -> None:
         response = self.cast(email_preference=EmailPreference.NONE)
@@ -131,10 +128,13 @@ class VoteContactTests(TestCase):
 
     def test_same_address_cannot_vote_twice_in_a_round(self) -> None:
         self.cast()
-        self.client.cookies[voting.VOTER_COOKIE] = "k2"  # a fresh browser
         response = self.cast(email="FAN@example.com")
         self.assertEqual(Vote.objects.count(), 1)
-        self.assertIn("already voted in this round", response.content.decode())
+        html = response.content.decode()
+        self.assertIn("you only get one vote per round", html)
+        self.assertIn('role="status"', html)
+        # The ballot comes back filled, in case they meant another address.
+        self.assertIn('value="FAN@example.com"', html)
 
     def test_honeypot_discards_the_vote_without_telling(self) -> None:
         response = self.cast(website="http://spam.example")
@@ -142,9 +142,11 @@ class VoteContactTests(TestCase):
         self.assertEqual(Vote.objects.count(), 0)
         self.assertEqual(Subscriber.objects.count(), 0)
 
-    def test_plain_post_without_email_redirects_and_stores_nothing(self) -> None:
+    def test_plain_post_without_email_shows_the_page_and_stores_nothing(self) -> None:
         response = self.client.post(
             reverse("vote_cast"), {"option": self.option.pk, "email": ""}
         )
-        self.assertRedirects(response, reverse("vote"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "web/vote.html")
+        self.assertIn("valid email address", response.content.decode())
         self.assertEqual(Vote.objects.count(), 0)

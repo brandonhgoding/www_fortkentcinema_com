@@ -66,7 +66,7 @@ class LapsedPollTests(TestCase):
         )
 
     def test_vote_page_shows_it_as_closed(self) -> None:
-        ctx = vote_service.resolve_vote_page(voter_key=None)
+        ctx = vote_service.resolve_vote_page()
         self.assertEqual(ctx["poll"], self.poll)
         self.assertEqual(ctx["state"], vote_service.STATE_CLOSED)
         self.assertTrue(ctx["show_results"])
@@ -89,13 +89,13 @@ class ResolveVotePageTests(TestCase):
         return poll
 
     def test_no_poll_state(self) -> None:
-        ctx = vote_service.resolve_vote_page(voter_key=None)
+        ctx = vote_service.resolve_vote_page()
         self.assertEqual(ctx["state"], vote_service.STATE_NO_POLL)
         self.assertIsNone(ctx["poll"])
 
-    def test_ballot_state_for_a_fresh_visitor(self) -> None:
+    def test_ballot_state_for_a_visitor(self) -> None:
         poll = self._open_poll_with_options()
-        ctx = vote_service.resolve_vote_page(voter_key="never-voted")
+        ctx = vote_service.resolve_vote_page()
         self.assertEqual(ctx["state"], vote_service.STATE_BALLOT)
         self.assertEqual(ctx["poll"], poll)
         self.assertEqual(len(ctx["options"]), 2)
@@ -104,9 +104,9 @@ class ResolveVotePageTests(TestCase):
     def test_voted_state_after_casting(self) -> None:
         poll = self._open_poll_with_options()
         option = poll.options.first()
-        voting.cast_vote(poll, option, "k1")
+        vote = voting.cast_vote(poll, option, "fan@example.com")
 
-        ctx = vote_service.resolve_vote_page(voter_key="k1")
+        ctx = vote_service.resolve_vote_page(vote=vote)
 
         self.assertEqual(ctx["state"], vote_service.STATE_VOTED)
         self.assertEqual(ctx["voted_option"], option)
@@ -117,9 +117,9 @@ class ResolveVotePageTests(TestCase):
         poll = self._open_poll_with_options()
         poll.results_visible = False
         poll.save()
-        voting.cast_vote(poll, poll.options.first(), "k1")
+        vote = voting.cast_vote(poll, poll.options.first(), "fan@example.com")
 
-        ctx = vote_service.resolve_vote_page(voter_key="k1")
+        ctx = vote_service.resolve_vote_page(vote=vote)
 
         self.assertEqual(ctx["state"], vote_service.STATE_VOTED)
         self.assertFalse(ctx["show_results"])
@@ -129,7 +129,7 @@ class ResolveVotePageTests(TestCase):
         poll.status = PollStatus.CLOSED
         poll.save()
 
-        ctx = vote_service.resolve_vote_page(voter_key=None)
+        ctx = vote_service.resolve_vote_page()
 
         self.assertEqual(ctx["state"], vote_service.STATE_CLOSED)
         self.assertEqual(ctx["poll"], poll)
@@ -141,7 +141,7 @@ class ResolveVotePageTests(TestCase):
         poll.status = PollStatus.ANNOUNCED
         poll.save()
 
-        ctx = vote_service.resolve_vote_page(voter_key=None)
+        ctx = vote_service.resolve_vote_page()
 
         self.assertEqual(ctx["state"], vote_service.STATE_ANNOUNCED)
         self.assertEqual(ctx["poll"].winner, winner)
@@ -151,7 +151,7 @@ class ResolveVotePageTests(TestCase):
         self._open_poll_with_options()
         archived = Poll.objects.create(title="Old", status=PollStatus.CLOSED)
 
-        ctx = vote_service.resolve_vote_page(voter_key=None, poll=archived)
+        ctx = vote_service.resolve_vote_page(poll=archived)
 
         self.assertEqual(ctx["poll"], archived)
         self.assertEqual(ctx["state"], vote_service.STATE_CLOSED)
@@ -160,7 +160,7 @@ class ResolveVotePageTests(TestCase):
         shown = Poll.objects.create(title="Shown", status=PollStatus.ANNOUNCED)
         other = Poll.objects.create(title="Other", status=PollStatus.CLOSED)
 
-        ctx = vote_service.resolve_vote_page(voter_key=None, poll=shown)
+        ctx = vote_service.resolve_vote_page(poll=shown)
 
         self.assertNotIn(shown, ctx["archive"])
         self.assertIn(other, ctx["archive"])

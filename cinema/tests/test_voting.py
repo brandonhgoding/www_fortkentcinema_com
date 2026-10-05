@@ -55,28 +55,33 @@ class CastVoteTests(TestCase):
         )
 
     def test_records_a_vote(self) -> None:
-        vote = voting.cast_vote(self.poll, self.option, "k1")
+        vote = voting.cast_vote(self.poll, self.option, "k1@example.com")
         self.assertEqual(Vote.objects.count(), 1)
         self.assertEqual(vote.option, self.option)
 
-    def test_second_vote_from_same_key_raises_already_voted(self) -> None:
-        voting.cast_vote(self.poll, self.option, "k1")
-        with self.assertRaises(voting.AlreadyVoted):
-            voting.cast_vote(self.poll, self.other, "k1")
+    def test_second_vote_from_same_address_is_refused(self) -> None:
+        voting.cast_vote(self.poll, self.option, "k1@example.com")
+        with self.assertRaises(voting.EmailAlreadyVoted):
+            voting.cast_vote(self.poll, self.other, "k1@example.com")
         self.assertEqual(Vote.objects.count(), 1)
+
+    def test_blank_address_is_a_programming_error(self) -> None:
+        with self.assertRaises(ValueError):
+            voting.cast_vote(self.poll, self.option, "  ")
+        self.assertEqual(Vote.objects.count(), 0)
 
     def test_closed_poll_refuses_the_write(self) -> None:
         self.poll.status = PollStatus.CLOSED
         self.poll.save()
         with self.assertRaises(voting.PollNotOpen):
-            voting.cast_vote(self.poll, self.option, "k1")
+            voting.cast_vote(self.poll, self.option, "k1@example.com")
         self.assertEqual(Vote.objects.count(), 0)
 
     def test_draft_poll_refuses_the_write(self) -> None:
         self.poll.status = PollStatus.DRAFT
         self.poll.save()
         with self.assertRaises(voting.PollNotOpen):
-            voting.cast_vote(self.poll, self.option, "k1")
+            voting.cast_vote(self.poll, self.option, "k1@example.com")
 
     def test_option_from_another_poll_is_refused(self) -> None:
         stray_poll = Poll.objects.create(title="Round Two")
@@ -84,65 +89,57 @@ class CastVoteTests(TestCase):
             poll=stray_poll, film=Film.objects.create(title="Alien")
         )
         with self.assertRaises(voting.OptionMismatch):
-            voting.cast_vote(self.poll, stray, "k1")
+            voting.cast_vote(self.poll, stray, "k1@example.com")
 
     def test_poll_past_its_closes_at_refuses_the_write(self) -> None:
         self.poll.closes_at = timezone.now() - datetime.timedelta(minutes=1)
         self.poll.save()
         with self.assertRaises(voting.PollNotOpen):
-            voting.cast_vote(self.poll, self.option, "k1")
+            voting.cast_vote(self.poll, self.option, "k1@example.com")
         self.assertEqual(Vote.objects.count(), 0)
 
     def test_poll_before_its_opens_at_refuses_the_write(self) -> None:
         self.poll.opens_at = timezone.now() + datetime.timedelta(hours=1)
         self.poll.save()
         with self.assertRaises(voting.PollNotOpen):
-            voting.cast_vote(self.poll, self.option, "k1")
+            voting.cast_vote(self.poll, self.option, "k1@example.com")
 
     def test_poll_inside_its_window_records_the_vote(self) -> None:
         now = timezone.now()
         self.poll.opens_at = now - datetime.timedelta(hours=1)
         self.poll.closes_at = now + datetime.timedelta(hours=1)
         self.poll.save()
-        voting.cast_vote(self.poll, self.option, "k1")
+        voting.cast_vote(self.poll, self.option, "k1@example.com")
         self.assertEqual(Vote.objects.count(), 1)
 
     def test_many_voters_behind_one_address_all_count(self) -> None:
         for i in range(10):
-            voting.cast_vote(self.poll, self.option, f"k{i}")
+            voting.cast_vote(self.poll, self.option, f"k{i}@example.com")
         self.assertEqual(Vote.objects.count(), 10)
 
     def test_email_is_stored_lowercased_with_the_preference(self) -> None:
         vote = voting.cast_vote(
             self.poll,
             self.option,
-            "k1",
-            email="  Fan@Example.COM ",
+            "  Fan@Example.COM ",
             email_preference=EmailPreference.RESULTS,
         )
         self.assertEqual(vote.email, "fan@example.com")
         self.assertEqual(vote.email_preference, EmailPreference.RESULTS)
 
     def test_second_vote_from_same_email_raises_email_already_voted(self) -> None:
-        voting.cast_vote(self.poll, self.option, "k1", email="fan@example.com")
+        voting.cast_vote(self.poll, self.option, "fan@example.com")
         with self.assertRaises(voting.EmailAlreadyVoted):
-            voting.cast_vote(self.poll, self.option, "k2", email="FAN@example.com")
+            voting.cast_vote(self.poll, self.option, "FAN@example.com")
         self.assertEqual(Vote.objects.count(), 1)
 
     def test_same_email_may_vote_in_another_poll(self) -> None:
-        voting.cast_vote(self.poll, self.option, "k1", email="fan@example.com")
+        voting.cast_vote(self.poll, self.option, "fan@example.com")
         other = Poll.objects.create(title="Round Two", status=PollStatus.DRAFT)
         other_option = PollOption.objects.create(
             poll=other, film=Film.objects.create(title="The Thing")
         )
         # The first poll is the one that is OPEN; cast directly to skip the
         # one-open-poll rule, which is not what this test is about.
-        Vote.objects.create(
-            poll=other, option=other_option, voter_key="k1", email="fan@example.com"
-        )
+        Vote.objects.create(poll=other, option=other_option, email="fan@example.com")
         self.assertEqual(Vote.objects.filter(email="fan@example.com").count(), 2)
-
-    def test_legacy_votes_without_an_email_do_not_collide(self) -> None:
-        Vote.objects.create(poll=self.poll, option=self.option, voter_key="k1")
-        Vote.objects.create(poll=self.poll, option=self.option, voter_key="k2")
-        self.assertEqual(Vote.objects.filter(email="").count(), 2)

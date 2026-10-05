@@ -76,7 +76,7 @@ class PollDetailTests(TestCase):
         option = PollOption.objects.create(
             poll=self.poll, film=Film.objects.create(title="Casablanca")
         )
-        Vote.objects.create(poll=self.poll, option=option, voter_key="k1")
+        Vote.objects.create(poll=self.poll, option=option, email="k1@x.com")
 
         html = self.client.get(
             reverse("dashboard:poll_detail", args=[self.poll.pk])

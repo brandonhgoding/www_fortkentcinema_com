@@ -117,9 +117,9 @@ class PollAnnounceTests(TestCase):
         self.runner_up = PollOption.objects.create(
             poll=self.poll, film=Film.objects.create(title="The Thing")
         )
-        Vote.objects.create(poll=self.poll, option=self.leader, voter_key="k1")
-        Vote.objects.create(poll=self.poll, option=self.leader, voter_key="k2")
-        Vote.objects.create(poll=self.poll, option=self.runner_up, voter_key="k3")
+        Vote.objects.create(poll=self.poll, option=self.leader, email="k1@x.com")
+        Vote.objects.create(poll=self.poll, option=self.leader, email="k2@x.com")
+        Vote.objects.create(poll=self.poll, option=self.runner_up, email="k3@x.com")
 
     def test_announce_form_defaults_to_the_leader(self) -> None:
         html = self.client.get(

@@ -226,11 +226,12 @@ class EmailPreference(models.TextChoices):
 class Vote(models.Model):
     """A single ballot cast.
 
-    `voter_key` is a random token from a long-lived cookie. `email` is
-    required on the public ballot (one vote per address per round, enforced
-    below) and `email_preference` is the voter's own say in what we do with
-    it; see EmailPreference. Blank email and NONE only on votes cast before
-    the address was asked for.
+    The email address is the voter's identity: required on the public
+    ballot, one vote per address per round (enforced below). There is no
+    cookie or browser token any more; a shared family computer can carry
+    one vote per person. `email_preference` is the voter's own say in what
+    we do with the address; see EmailPreference. Blank email and NONE only
+    on votes cast before the address was asked for.
     """
 
     objects: ClassVar[Manager["Vote"]]
@@ -241,7 +242,6 @@ class Vote(models.Model):
     option = models.ForeignKey(
         PollOption, on_delete=models.CASCADE, related_name="votes"
     )
-    voter_key = models.CharField(max_length=36, db_index=True)
     email = models.EmailField(max_length=EMAIL_MAX_LENGTH, blank=True, default="")
     email_preference = models.CharField(
         max_length=20,
@@ -254,9 +254,6 @@ class Vote(models.Model):
         ordering = ["-created_at"]
         constraints = [
             models.UniqueConstraint(
-                fields=["poll", "voter_key"], name="cinema_vote_one_per_poll_per_voter"
-            ),
-            models.UniqueConstraint(
                 fields=["poll", "email"],
                 condition=~models.Q(email=""),
                 name="cinema_vote_one_per_poll_per_email",
@@ -264,7 +261,7 @@ class Vote(models.Model):
         ]
 
     def __str__(self) -> str:
-        return f"{self.voter_key[:8]}… → {self.option.film.title}"
+        return f"{self.email or 'anonymous'} → {self.option.film.title}"
 
     def save(self, *args: Any, **kwargs: Any) -> None:
         # Lowercased so the per-address constraint cannot be sidestepped by

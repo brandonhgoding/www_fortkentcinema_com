@@ -4,7 +4,6 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from cinema import voting
 from cinema.models import EmailPreference, Film, Poll, PollOption, PollStatus, Vote
 
 
@@ -35,9 +34,10 @@ class VotePageTests(TestCase):
         self.assertIn("Casablanca", html)
         self.assertIn("The Thing", html)
 
-    def test_visiting_sets_the_voter_cookie(self) -> None:
+    def test_visiting_sets_no_cookie(self) -> None:
+        # The address is the voter's identity; nothing is stored on the browser.
         response = self.client.get(reverse("vote"))
-        self.assertIn(voting.VOTER_COOKIE, response.cookies)
+        self.assertEqual(dict(response.cookies), {})
 
     def test_no_template_comment_leaks(self) -> None:
         self._open_poll()
@@ -57,7 +57,6 @@ class CastVoteViewTests(TestCase):
         )
 
     def test_htmx_post_records_the_vote_and_returns_the_panel(self) -> None:
-        self.client.cookies[voting.VOTER_COOKIE] = "k1"
         response = self.client.post(
             reverse("vote_cast"),
             _ballot(self.option),
@@ -67,28 +66,32 @@ class CastVoteViewTests(TestCase):
         self.assertTemplateUsed(response, "partials/vote_panel.html")
         self.assertEqual(Vote.objects.count(), 1)
 
-    def test_plain_post_redirects_back_to_vote(self) -> None:
-        self.client.cookies[voting.VOTER_COOKIE] = "k1"
+    def test_plain_post_renders_the_voted_page(self) -> None:
+        # No cookie means a redirect could not show "your vote is in", so the
+        # whole page comes back with the voted panel.
         response = self.client.post(reverse("vote_cast"), _ballot(self.option))
-        self.assertRedirects(response, reverse("vote"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "web/vote.html")
+        self.assertIn("your vote for", response.content.decode())
         self.assertEqual(Vote.objects.count(), 1)
 
-    def test_voting_twice_shows_the_voted_state_not_a_500(self) -> None:
-        self.client.cookies[voting.VOTER_COOKIE] = "k1"
+    def test_voting_twice_from_one_address_keeps_the_first(self) -> None:
         self.client.post(reverse("vote_cast"), _ballot(self.option))
         response = self.client.post(
-            reverse("vote_cast"),
-            _ballot(self.other, "two@example.com"),
-            HTTP_HX_REQUEST="true",
+            reverse("vote_cast"), _ballot(self.other), HTTP_HX_REQUEST="true"
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Vote.objects.count(), 1)
         self.assertEqual(Vote.objects.first().option, self.option)
 
+    def test_returning_to_the_page_shows_the_ballot_again(self) -> None:
+        self.client.post(reverse("vote_cast"), _ballot(self.option))
+        html = self.client.get(reverse("vote")).content.decode()
+        self.assertIn("Cast my vote", html)
+
     def test_closed_poll_refuses_the_vote(self) -> None:
         self.poll.status = PollStatus.CLOSED
         self.poll.save()
-        self.client.cookies[voting.VOTER_COOKIE] = "k1"
         response = self.client.post(
             reverse("vote_cast"), _ballot(self.option), HTTP_HX_REQUEST="true"
         )
@@ -96,16 +99,15 @@ class CastVoteViewTests(TestCase):
         self.assertEqual(Vote.objects.count(), 0)
 
     def test_missing_option_is_a_bad_request_not_a_crash(self) -> None:
-        self.client.cookies[voting.VOTER_COOKIE] = "k1"
         response = self.client.post(reverse("vote_cast"), {}, HTTP_HX_REQUEST="true")
         self.assertEqual(response.status_code, 400)
 
-    def test_vote_without_a_cookie_still_works_and_sets_one(self) -> None:
+    def test_voting_sets_no_cookie(self) -> None:
         response = self.client.post(
             reverse("vote_cast"), _ballot(self.option), HTTP_HX_REQUEST="true"
         )
         self.assertEqual(Vote.objects.count(), 1)
-        self.assertIn(voting.VOTER_COOKIE, response.cookies)
+        self.assertEqual(dict(response.cookies), {})
 
 
 class VoteArchiveTests(TestCase):

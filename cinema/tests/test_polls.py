@@ -73,20 +73,27 @@ class VoteConstraintTests(TestCase):
             poll=self.poll, film=Film.objects.create(title="Casablanca")
         )
 
-    def test_one_vote_per_voter_key_per_poll(self) -> None:
-        Vote.objects.create(poll=self.poll, option=self.option, voter_key="abc")
+    def test_one_vote_per_email_per_poll(self) -> None:
+        Vote.objects.create(poll=self.poll, option=self.option, email="a@example.com")
         with self.assertRaises(IntegrityError):
             with transaction.atomic():
-                Vote.objects.create(poll=self.poll, option=self.option, voter_key="abc")
+                Vote.objects.create(
+                    poll=self.poll, option=self.option, email="A@Example.com"
+                )
 
-    def test_same_voter_key_may_vote_in_a_different_poll(self) -> None:
+    def test_same_email_may_vote_in_a_different_poll(self) -> None:
         other_poll = Poll.objects.create(title="Round Two")
         other_option = PollOption.objects.create(
             poll=other_poll, film=Film.objects.create(title="The Thing")
         )
-        Vote.objects.create(poll=self.poll, option=self.option, voter_key="abc")
-        Vote.objects.create(poll=other_poll, option=other_option, voter_key="abc")
-        self.assertEqual(Vote.objects.filter(voter_key="abc").count(), 2)
+        Vote.objects.create(poll=self.poll, option=self.option, email="a@example.com")
+        Vote.objects.create(poll=other_poll, option=other_option, email="a@example.com")
+        self.assertEqual(Vote.objects.filter(email="a@example.com").count(), 2)
+
+    def test_legacy_votes_without_an_email_do_not_collide(self) -> None:
+        Vote.objects.create(poll=self.poll, option=self.option)
+        Vote.objects.create(poll=self.poll, option=self.option)
+        self.assertEqual(Vote.objects.filter(email="").count(), 2)
 
 
 class PollTallyTests(TestCase):
@@ -107,8 +114,8 @@ class PollTallyTests(TestCase):
 
     def test_tallies_count_and_percent(self) -> None:
         for key in ("k1", "k2", "k3"):
-            Vote.objects.create(poll=self.poll, option=self.a, voter_key=key)
-        Vote.objects.create(poll=self.poll, option=self.b, voter_key="k4")
+            Vote.objects.create(poll=self.poll, option=self.a, email=f"{key}@x.com")
+        Vote.objects.create(poll=self.poll, option=self.b, email="k4@x.com")
 
         tallies = self.poll.tallies()
 
@@ -120,6 +127,6 @@ class PollTallyTests(TestCase):
         self.assertEqual(tallies[1]["percent"], 25)
 
     def test_tallies_are_sorted_by_count_when_asked(self) -> None:
-        Vote.objects.create(poll=self.poll, option=self.b, voter_key="k1")
+        Vote.objects.create(poll=self.poll, option=self.b, email="k1@x.com")
         tallies = self.poll.tallies(by_rank=True)
         self.assertEqual(tallies[0]["option"], self.b)

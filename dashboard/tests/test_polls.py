@@ -109,8 +109,8 @@ class PollDeleteTests(TestCase):
         self.poll = Poll.objects.create(title="Round One", status=PollStatus.OPEN)
         self.film = Film.objects.create(title="Casablanca")
         option = PollOption.objects.create(poll=self.poll, film=self.film)
-        Vote.objects.create(poll=self.poll, option=option, voter_key="k1")
-        Vote.objects.create(poll=self.poll, option=option, voter_key="k2")
+        Vote.objects.create(poll=self.poll, option=option, email="k1@x.com")
+        Vote.objects.create(poll=self.poll, option=option, email="k2@x.com")
 
     def test_delete_takes_the_ballot_and_votes_with_it(self) -> None:
         self.client.post(reverse("dashboard:poll_delete", args=[self.poll.pk]))
@@ -202,25 +202,24 @@ class PollVotersTests(TestCase):
         Vote.objects.create(
             poll=self.poll,
             option=option,
-            voter_key="k1",
             email="=results@example.com",
             email_preference=EmailPreference.RESULTS,
         )
         Vote.objects.create(
             poll=self.poll,
             option=option,
-            voter_key="k2",
             email="list@example.com",
             email_preference=EmailPreference.SUBSCRIBE,
         )
         Vote.objects.create(
             poll=self.poll,
             option=option,
-            voter_key="k3",
             email="quiet@example.com",
             email_preference=EmailPreference.NONE,
         )
-        Vote.objects.create(poll=self.poll, option=option, voter_key="k4")  # legacy
+        Vote.objects.create(
+            poll=self.poll, option=option
+        )  # legacy, no address  # legacy
 
     def test_detail_counts_each_choice_and_offers_the_export(self) -> None:
         html = self.client.get(

@@ -494,14 +494,14 @@ class MovieDetailView(DetailView):
         return ctx
 
 
-def _vote_context(request, poll=None, message="", form=None):
+def _vote_context(poll=None, vote=None, message="", form=None):
     """Shared context for every rendering of the vote panel.
 
-    `form` carries a rejected ballot back to the template: what was typed
-    and why it was refused, so nobody has to fill it in twice.
+    `vote` is the ballot just cast. `form` carries a rejected ballot back
+    to the template: what was typed and why it was refused, so nobody has
+    to fill it in twice.
     """
-    voter_key = vote_engine.voter_key_from(request) or request.vote_key
-    ctx = vote_service.resolve_vote_page(voter_key=voter_key, poll=poll)
+    ctx = vote_service.resolve_vote_page(poll=poll, vote=vote)
     ctx["message"] = message
     ctx["form"] = form or {}
     ctx["email_preferences"] = EmailPreference.choices
@@ -520,24 +520,6 @@ def _clean_ballot_email(raw: str) -> str:
     return email.lower()
 
 
-def _with_voter_cookie(response, request):
-    """Set the voter cookie when the browser does not already carry one.
-
-    httpOnly: nothing in the page needs to read it, and it is the only thing
-    standing between one browser and a second vote.
-    """
-    if not vote_engine.voter_key_from(request):
-        response.set_cookie(
-            vote_engine.VOTER_COOKIE,
-            request.vote_key,
-            max_age=vote_engine.VOTER_COOKIE_MAX_AGE,
-            httponly=True,
-            samesite="Lax",
-            secure=not settings.DEBUG,
-        )
-    return response
-
-
 class VoteView(View):
     """/vote — the canonical, stable URL for the current round.
 
@@ -546,12 +528,7 @@ class VoteView(View):
     """
 
     def get(self, request):
-        request.vote_key = (
-            vote_engine.voter_key_from(request) or vote_engine.new_voter_key()
-        )
-        ctx = _vote_context(request)
-        response = render(request, "web/vote.html", ctx)
-        return _with_voter_cookie(response, request)
+        return render(request, "web/vote.html", _vote_context())
 
 
 class VoteArchiveView(View):
@@ -568,11 +545,7 @@ class VoteArchiveView(View):
         if poll.is_accepting_votes():
             return redirect("vote")
 
-        request.vote_key = (
-            vote_engine.voter_key_from(request) or vote_engine.new_voter_key()
-        )
-        ctx = _vote_context(request, poll=poll)
-        return render(request, "web/vote.html", ctx)
+        return render(request, "web/vote.html", _vote_context(poll=poll))
 
 
 class VoteCastView(View):
@@ -585,17 +558,15 @@ class VoteCastView(View):
     reached, if at all, through the dashboard's per-poll export. Nothing in
     this project sends mail yet, so the copy never promises a cadence.
 
-    HTMX gets the swapped panel back; a plain form POST is redirected to /vote
-    so a refresh cannot re-submit.
+    HTMX gets the swapped panel back. A plain form POST gets the whole page
+    with the same panel: there is no cookie to carry "you voted" across a
+    redirect, and a refresh that re-submits is harmless, since the address
+    rule refuses it.
     """
 
     SOURCE = "poll_vote"
 
     def post(self, request):
-        request.vote_key = (
-            vote_engine.voter_key_from(request) or vote_engine.new_voter_key()
-        )
-
         poll = vote_service.current_poll()
         option_id = request.POST.get("option")
         if not option_id:
@@ -624,6 +595,7 @@ class VoteCastView(View):
             return self._respond(request, form=form)
 
         message = ""
+        vote = None
         if poll is None:
             message = "Voting has closed for this round."
         else:
@@ -631,18 +603,21 @@ class VoteCastView(View):
             if option is None:
                 return HttpResponseBadRequest("Unknown option.")
             try:
-                vote_engine.cast_vote(
-                    poll,
-                    option,
-                    request.vote_key,
-                    email=email,
-                    email_preference=preference,
+                vote = vote_engine.cast_vote(
+                    poll, option, email=email, email_preference=preference
                 )
-            except vote_engine.AlreadyVoted:
-                message = "You've already voted in this round."
             except vote_engine.EmailAlreadyVoted:
-                form["error"] = "That email address has already voted in this round."
-                return self._respond(request, form=form)
+                # Said at the top of the panel, like the cookie refusal, not
+                # as a field error: it is an answer, not a typo to fix. The
+                # ballot stays filled in case they meant a different address.
+                return self._respond(
+                    request,
+                    message=(
+                        "Sorry — you only get one vote per round, and that "
+                        "email address has already cast one."
+                    ),
+                    form=form,
+                )
             except vote_engine.PollNotOpen:
                 message = "Voting has closed for this round."
             except vote_engine.OptionMismatch:
@@ -654,18 +629,14 @@ class VoteCastView(View):
                         email, source=self.SOURCE, ip=vote_engine.client_ip(request)
                     )
 
-        return self._respond(request, message=message)
+        return self._respond(request, vote=vote, message=message)
 
     @staticmethod
-    def _respond(request, message="", form=None):
+    def _respond(request, vote=None, message="", form=None):
+        ctx = _vote_context(vote=vote, message=message, form=form)
         if request.headers.get("HX-Request"):
-            ctx = _vote_context(request, message=message, form=form)
-            response = render(request, "partials/vote_panel.html", ctx)
-            return _with_voter_cookie(response, request)
-        # Without JavaScript the browser's own required/email checks catch
-        # a bad form first, so losing the error on this redirect is rare.
-        response = redirect("vote")
-        return _with_voter_cookie(response, request)
+            return render(request, "partials/vote_panel.html", ctx)
+        return render(request, "web/vote.html", ctx)
 
 
 # Whitelist of sort keys. The querystring never reaches order_by directly.
