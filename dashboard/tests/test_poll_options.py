@@ -70,6 +70,18 @@ class PollOptionTests(TestCase):
             )
         self.assertEqual(self.poll.options.count(), 1)
 
+    def test_adding_after_a_removal_takes_a_fresh_slot(self) -> None:
+        films = [Film.objects.create(title=t) for t in ("A", "B", "C")]
+        for position, film in enumerate(films, start=1):
+            PollOption.objects.create(poll=self.poll, film=film, sort_order=position)
+        self.poll.options.get(film=films[0]).delete()
+        self.client.post(
+            reverse("dashboard:poll_option_add", args=[self.poll.pk]),
+            {"film_id": self.film.pk},
+        )
+        orders = list(self.poll.options.values_list("sort_order", flat=True))
+        self.assertEqual(sorted(orders), [2, 3, 4])
+
     def test_added_options_get_increasing_sort_order(self) -> None:
         other = Film.objects.create(title="The Thing")
         for film in (self.film, other):

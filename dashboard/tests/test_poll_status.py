@@ -70,6 +70,26 @@ class PollStatusTests(TestCase):
         self.poll.refresh_from_db()
         self.assertEqual(self.poll.status, PollStatus.CLOSED)
 
+    def test_an_open_poll_cannot_go_back_to_draft(self) -> None:
+        self.poll.status = PollStatus.OPEN
+        self.poll.save()
+        response = self.client.post(
+            reverse("dashboard:poll_status", args=[self.poll.pk]),
+            {"status": PollStatus.DRAFT},
+        )
+        self.assertEqual(response.status_code, 409)
+        self.poll.refresh_from_db()
+        self.assertEqual(self.poll.status, PollStatus.OPEN)
+
+    def test_announced_is_not_reachable_without_a_winner(self) -> None:
+        self.poll.status = PollStatus.CLOSED
+        self.poll.save()
+        response = self.client.post(
+            reverse("dashboard:poll_status", args=[self.poll.pk]),
+            {"status": PollStatus.ANNOUNCED},
+        )
+        self.assertEqual(response.status_code, 409)
+
     def test_unknown_status_is_a_bad_request(self) -> None:
         response = self.client.post(
             reverse("dashboard:poll_status", args=[self.poll.pk]),
@@ -138,6 +158,37 @@ class PollAnnounceTests(TestCase):
         )
         self.poll.refresh_from_db()
         self.assertEqual(self.poll.engagement, engagement)
+
+    def test_not_booked_yet_clears_an_earlier_link(self) -> None:
+        screen = Screen.objects.create(name="Screen 1", capacity=100)
+        self.poll.engagement = Engagement.objects.create(
+            screen=screen, start_date="2026-10-01", end_date="2026-10-03"
+        )
+        self.poll.save()
+        self.client.post(
+            reverse("dashboard:poll_announce", args=[self.poll.pk]),
+            {"winner": self.leader.pk, "engagement": ""},
+        )
+        self.poll.refresh_from_db()
+        self.assertIsNone(self.poll.engagement)
+
+    def test_junk_ids_are_a_bad_request_not_a_500(self) -> None:
+        response = self.client.post(
+            reverse("dashboard:poll_announce", args=[self.poll.pk]),
+            {"winner": "abc", "engagement": "abc"},
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_cannot_announce_a_draft(self) -> None:
+        draft = Poll.objects.create(title="Draft")
+        option = PollOption.objects.create(
+            poll=draft, film=Film.objects.create(title="Alien")
+        )
+        response = self.client.post(
+            reverse("dashboard:poll_announce", args=[draft.pk]),
+            {"winner": option.pk},
+        )
+        self.assertEqual(response.status_code, 409)
 
     def test_cannot_announce_an_open_poll(self) -> None:
         open_poll = Poll.objects.create(title="Live", status=PollStatus.OPEN)

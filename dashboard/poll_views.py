@@ -6,6 +6,7 @@ helpers with this feature.
 
 import json
 
+from django.db.models import Max
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
@@ -132,12 +133,13 @@ class PollOptionAddView(StaffRequiredMixin, View):
                 "The ballot is locked once a round leaves draft.", status=409
             )
 
-        film = Film.objects.filter(pk=request.POST.get("film_id")).first()
+        film = Film.objects.filter(pk=_pk_or_none(request.POST.get("film_id"))).first()
         if film is None:
             return HttpResponseBadRequest("Unknown film.")
 
         if not poll.options.filter(film=film).exists():
-            highest = poll.options.count()
+            # Max, not count: after a removal the count repeats a taken slot.
+            highest = poll.options.aggregate(m=Max("sort_order"))["m"] or 0
             PollOption.objects.create(poll=poll, film=film, sort_order=highest + 1)
 
         return _poll_options_response(request, poll, f"Added {film.title}")
@@ -192,12 +194,21 @@ class PollOptionMoveView(StaffRequiredMixin, View):
         return _poll_options_response(request, poll)
 
 
-_ALLOWED_STATUSES = {
-    PollStatus.DRAFT,
-    PollStatus.OPEN,
-    PollStatus.CLOSED,
-    PollStatus.ANNOUNCED,
+# The only moves the status buttons offer. Going back to DRAFT would unlock
+# the ballot after votes are in (removing an option deletes its votes), and
+# ANNOUNCED needs a winner, so it goes through PollAnnounceView.
+_ALLOWED_MOVES = {
+    PollStatus.DRAFT: {PollStatus.OPEN},
+    PollStatus.OPEN: {PollStatus.CLOSED},
 }
+
+
+def _pk_or_none(raw):
+    """An integer primary key from POST data, or None for blank or junk."""
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
 
 
 def _poll_status_response(request, poll, toast_message: str = "") -> HttpResponse:
@@ -220,8 +231,14 @@ class PollStatusView(StaffRequiredMixin, View):
     def post(self, request, pk):
         poll = get_object_or_404(Poll, pk=pk)
         status = request.POST.get("status")
-        if status not in _ALLOWED_STATUSES:
+        if status not in PollStatus.values:
             return HttpResponseBadRequest("Unknown status.")
+        if status not in _ALLOWED_MOVES.get(poll.status, set()):
+            return HttpResponse(
+                f"A {poll.get_status_display().lower()} round can't be moved "
+                f"to {PollStatus(status).label.lower()}.",
+                status=409,
+            )
 
         if status == PollStatus.OPEN:
             if not poll.options.exists():
@@ -261,21 +278,21 @@ class PollAnnounceView(StaffRequiredMixin, View):
 
     def post(self, request, pk):
         poll = get_object_or_404(Poll, pk=pk)
-        if poll.status == PollStatus.OPEN:
+        if poll.status not in (PollStatus.CLOSED, PollStatus.ANNOUNCED):
             return HttpResponse(
                 "Close the round before announcing a winner.", status=409
             )
 
-        winner = poll.options.filter(pk=request.POST.get("winner")).first()
+        winner = poll.options.filter(pk=_pk_or_none(request.POST.get("winner"))).first()
         if winner is None:
             return HttpResponseBadRequest("Unknown option.")
 
         poll.winner = winner
         poll.status = PollStatus.ANNOUNCED
-
-        engagement_id = request.POST.get("engagement")
-        if engagement_id:
-            poll.engagement = Engagement.objects.filter(pk=engagement_id).first()
+        # "Not booked yet" posts a blank engagement and clears any old link.
+        poll.engagement = Engagement.objects.filter(
+            pk=_pk_or_none(request.POST.get("engagement"))
+        ).first()
 
         poll.save(update_fields=["winner", "status", "engagement"])
         return _poll_status_response(request, poll, "Winner announced")
