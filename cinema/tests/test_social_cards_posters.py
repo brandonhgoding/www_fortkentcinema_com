@@ -97,6 +97,30 @@ class FetchArtworkTests(TestCase):
             get.call_args.args[0], "https://image.tmdb.org/t/p/original/a.png"
         )
 
+    def test_falls_back_to_the_stored_size_when_original_is_too_big(self) -> None:
+        big = FakeResponse(b"x" * (posters.MAX_BYTES + 1))
+        small = FakeResponse(png_bytes())
+        with mock.patch.object(
+            posters.requests, "get", side_effect=[big, small]
+        ) as get:
+            image = posters.fetch_artwork("https://image.tmdb.org/t/p/w500/a.png")
+        self.assertIsNotNone(image)
+        self.assertEqual(
+            [call.args[0] for call in get.call_args_list],
+            [
+                "https://image.tmdb.org/t/p/original/a.png",
+                "https://image.tmdb.org/t/p/w500/a.png",
+            ],
+        )
+
+    def test_undecodable_body_is_not_cached(self) -> None:
+        with mock.patch.object(
+            posters.requests, "get", return_value=FakeResponse(b"not an image")
+        ) as get:
+            posters.fetch_artwork("https://img/a.png")
+            posters.fetch_artwork("https://img/a.png")
+        self.assertEqual(get.call_count, 2)
+
     def test_second_fetch_is_served_from_cache(self) -> None:
         with mock.patch.object(
             posters.requests, "get", return_value=FakeResponse(png_bytes())

@@ -89,16 +89,33 @@ def _decode(data: bytes) -> Image.Image | None:
         return None
 
 
+def _fetch(url: str) -> Image.Image | None:
+    key = CACHE_PREFIX + hashlib.sha256(url.encode()).hexdigest()
+    data = cache.get(key)
+    if data is not None:
+        return _decode(data)
+    data = _download(url)
+    if data is None:
+        return None
+    image = _decode(data)
+    # Only cache what decodes, so a bad response is retried next time
+    # instead of blanking the artwork for a day.
+    if image is not None:
+        cache.set(key, data, CACHE_TTL_SECONDS)
+    return image
+
+
 def fetch_artwork(url: str) -> Image.Image | None:
-    """Return a decoded RGB image for `url`, or None on any failure."""
+    """Return a decoded RGB image for `url`, or None on any failure.
+
+    Tries TMDB's full-resolution file first, then the stored URL as given,
+    so an original too big for MAX_BYTES or MAX_PIXELS_PER_AXIS still
+    gets the w500 rather than an empty frame.
+    """
     if not url:
         return None
-    target = upsize_tmdb_url(url)
-    key = CACHE_PREFIX + hashlib.sha256(target.encode()).hexdigest()
-    data = cache.get(key)
-    if data is None:
-        data = _download(target)
-        if data is None:
-            return None
-        cache.set(key, data, CACHE_TTL_SECONDS)
-    return _decode(data)
+    for candidate in dict.fromkeys([upsize_tmdb_url(url), url]):
+        image = _fetch(candidate)
+        if image is not None:
+            return image
+    return None
