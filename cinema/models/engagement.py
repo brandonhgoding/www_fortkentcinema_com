@@ -118,8 +118,17 @@ class Engagement(models.Model):
         return " + ".join(f.title for f in self.ordered_films)
 
     def save(self, *args: Any, **kwargs: Any) -> None:
+        # Cascade only on the move into CANCELLED, so a later save of a
+        # cancelled run (a notes fix) leaves showtimes staff re-enabled alone.
+        was = (
+            Engagement.objects.filter(pk=self.pk)
+            .values_list("status", flat=True)
+            .first()
+            if self.pk
+            else None
+        )
         super().save(*args, **kwargs)
-        if self.status == EngagementStatus.CANCELLED:
+        if self.status == EngagementStatus.CANCELLED and was != self.status:
             self.cancel_upcoming_showtimes()
 
     def cancel_upcoming_showtimes(self) -> int:

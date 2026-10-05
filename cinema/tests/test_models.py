@@ -170,6 +170,17 @@ class EngagementCancellationTests(TestCase):
         self.upcoming.refresh_from_db()
         self.assertFalse(self.upcoming.is_cancelled)
 
+    def test_resaving_a_cancelled_run_keeps_re_enabled_showtimes(self) -> None:
+        self.eng.status = EngagementStatus.CANCELLED
+        self.eng.save()
+        self.upcoming.refresh_from_db()
+        self.upcoming.is_cancelled = False
+        self.upcoming.save()
+        self.eng.notes = "Typo fixed"
+        self.eng.save()
+        self.upcoming.refresh_from_db()
+        self.assertFalse(self.upcoming.is_cancelled)
+
     def test_freed_slot_can_be_rebooked(self) -> None:
         self.eng.status = EngagementStatus.CANCELLED
         self.eng.save()
