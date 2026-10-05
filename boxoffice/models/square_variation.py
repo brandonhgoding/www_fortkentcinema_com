@@ -8,7 +8,7 @@ class SquareVariation(models.Model):
         SquareItem, on_delete=models.CASCADE, related_name="variations"
     )
     square_id = models.CharField(max_length=64, unique=True)
-    sku = models.CharField(max_length=64, unique=True)
+    sku = models.CharField(max_length=64, db_index=True)
     tier = models.CharField(max_length=16)
     name = models.CharField(max_length=80)
     price_cents = models.PositiveIntegerField()

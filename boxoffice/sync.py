@@ -13,8 +13,6 @@ from boxoffice.models import SquareItem, SquareVariation
 from boxoffice.spec import ItemSpec, desired_item
 from cinema.models import Engagement, EngagementStatus
 from django.db import transaction
-from django.db.models import F, Value
-from django.db.models.functions import Concat
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
@@ -125,11 +123,9 @@ def push(engagement: Engagement,
 
 
 def _retire(item: SquareItem) -> None:
+    # The row and its variations stay so old sales still resolve.
     item.deleted_at = timezone.now()
     item.save(update_fields=["deleted_at"])
-    # Variation rows stay so old sales still resolve, but they release their
-    # SKUs: a reconfirmed run gets a new item that writes the same SKUs.
-    item.variations.update(sku=Concat(F("sku"), Value(f"~del{item.pk}")))
 
 
 def delete(engagement: Engagement, gateway: SquareGateway | None = None) -> None:

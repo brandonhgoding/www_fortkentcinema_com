@@ -125,14 +125,18 @@ class PushTests(TestCase):
 
     def test_reconfirmed_run_after_deletion_gets_new_item(self) -> None:
         old = push(self.eng, self.gw)
+        old_skus = sorted(old.variations.values_list("sku", flat=True))
         delete(self.eng, self.gw)
         new = push(self.eng, self.gw)
         self.assertNotEqual(old.pk, new.pk)
         self.assertEqual(new.square_id, "item-2")
-        self.assertEqual(new.variations.count(), 5)
+        self.assertEqual(sorted(new.variations.values_list("sku", flat=True)),
+                         old_skus)
         old.refresh_from_db()
         self.assertIsNotNone(old.deleted_at)
-        self.assertEqual(old.variations.count(), 5)  # kept so old sales resolve
+        # Kept, unchanged, so old sales still resolve.
+        self.assertEqual(sorted(old.variations.values_list("sku", flat=True)),
+                         old_skus)
         self.assertEqual(live_item(self.eng).pk, new.pk)
 
 
