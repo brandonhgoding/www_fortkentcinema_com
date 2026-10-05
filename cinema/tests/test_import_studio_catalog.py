@@ -169,6 +169,13 @@ class ImportStudioCatalogTests(TestCase):
         with self.assertRaises(CommandError):
             call_command("import_studio_catalog", studio="pathe", file=path)
 
+    def test_a_studio_added_in_the_admin_is_accepted(self):
+        Studio.objects.create(slug="sony", name="Sony Pictures")
+        path = workbook([])
+        call_command(
+            "import_studio_catalog", studio="sony", file=path, stdout=StringIO()
+        )
+
     def test_missing_file_is_an_error(self):
         with self.assertRaises(CommandError):
             call_command(

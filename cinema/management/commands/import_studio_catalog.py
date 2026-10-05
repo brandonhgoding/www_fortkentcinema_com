@@ -26,6 +26,7 @@ from cinema.studio_import import (
     import_rows,
     preview,
     read_upload,
+    studio_choices,
 )
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
@@ -37,7 +38,10 @@ class Command(BaseCommand):
     def add_arguments(self, parser) -> None:
         parser.add_argument(
             "--studio", required=True,
-            help=f"Studio slug. One of: {', '.join(sorted(KNOWN_STUDIOS))}",
+            help=(
+                f"Studio slug: one of {', '.join(sorted(KNOWN_STUDIOS))}, "
+                "or any studio already added in the admin."
+            ),
         )
         parser.add_argument(
             "--file", required=True, help="Path to the .xlsx or .csv file."
@@ -56,10 +60,11 @@ class Command(BaseCommand):
 
     def handle(self, *args: Any, **options: Any) -> None:
         slug = options["studio"]
-        if slug not in KNOWN_STUDIOS:
+        # Same list as the admin uploader: the known studios plus any row.
+        known = dict(studio_choices())
+        if slug not in known:
             raise CommandError(
-                f"Unknown studio '{slug}'. "
-                f"Known: {', '.join(sorted(KNOWN_STUDIOS))}"
+                f"Unknown studio '{slug}'. Known: {', '.join(sorted(known))}"
             )
 
         path = Path(options["file"])
