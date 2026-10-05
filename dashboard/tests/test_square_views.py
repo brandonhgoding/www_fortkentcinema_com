@@ -1,7 +1,11 @@
+import datetime
+import json
 from unittest import mock
 
 from boxoffice.gateway import GatewayError
 from boxoffice.models import SquareItem, SquareVariation
+from boxoffice.sync import live_item
+from boxoffice.tests.fakes import FakeGateway
 from cinema.models import Engagement, Film, Screen, Showtime
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
@@ -157,21 +161,149 @@ class RetryViewTests(StaffTestCase):
     def test_requires_staff(self) -> None:
         eng = make_eng(self.screen, films=[self.film])
         self.client.logout()
-        with mock.patch("dashboard.views.push") as push:
+        with mock.patch("dashboard.views.sync") as sync:
             resp = self.client.post(retry_url(eng.pk))
         self.assertEqual(resp.status_code, 302)
-        push.assert_not_called()
+        sync.assert_not_called()
 
-    def test_calls_push_and_redirects(self) -> None:
+    def test_calls_sync_and_redirects(self) -> None:
         eng = make_eng(self.screen, films=[self.film])
-        with mock.patch("dashboard.views.push") as push:
+        with mock.patch("dashboard.views.sync") as sync:
             resp = self.client.post(retry_url(eng.pk))
-        push.assert_called_once_with(eng)
+        sync.assert_called_once_with(eng)
         detail = reverse("dashboard:engagement_detail", args=[eng.pk])
         self.assertRedirects(resp, detail, fetch_redirect_response=False)
 
     def test_unknown_engagement_404(self) -> None:
-        with mock.patch("dashboard.views.push") as push:
+        with mock.patch("dashboard.views.sync") as sync:
             resp = self.client.post(retry_url(999999))
         self.assertEqual(resp.status_code, 404)
-        push.assert_not_called()
+        sync.assert_not_called()
+
+
+class RetryViewSquareTests(StaffTestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.gw = FakeGateway()
+        patcher = mock.patch("boxoffice.sync.get_gateway", return_value=self.gw)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def _eng_with_error_row(self, status: str) -> tuple[Engagement, SquareItem]:
+        eng = make_eng(self.screen, films=[self.film], status=status,
+                       end_date=self.today + datetime.timedelta(days=7))
+        row = SquareItem.objects.create(engagement=eng, name="Dune",
+                                        last_error="Square said no")
+        return eng, row
+
+    def test_retry_on_cancelled_run_retires_row_without_creating_item(self) -> None:
+        eng, row = self._eng_with_error_row("CANCELLED")
+        resp = self.client.post(retry_url(eng.pk))
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(self.gw.items, {})
+        self.assertNotIn("upsert_item", [c[0] for c in self.gw.calls])
+        row.refresh_from_db()
+        self.assertIsNotNone(row.deleted_at)
+        self.assertIsNone(live_item(eng))
+
+    def test_retry_on_confirmed_run_creates_item(self) -> None:
+        eng, row = self._eng_with_error_row("CONFIRMED")
+        self.client.post(retry_url(eng.pk))
+        item = live_item(eng)
+        self.assertEqual(item.pk, row.pk)
+        self.assertEqual((item.square_id, item.last_error), ("item-1", ""))
+        self.assertIn("item-1", self.gw.items)
+
+
+@override_settings(SQUARE_ACCESS_TOKEN="tok")
+class SaveToastTests(StaffTestCase):
+    """In production the view's atomic block commits on exit and runs the
+    on-commit sync before the toast is built. A TestCase never commits (and
+    captureOnCommitCallbacks only runs callbacks after the response), so
+    on_commit runs its callback at once here, which gives the same order.
+    """
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.gw = FakeGateway()
+        for patcher in (
+            mock.patch("boxoffice.sync.get_gateway", return_value=self.gw),
+            mock.patch("boxoffice.sync.transaction.on_commit",
+                       side_effect=lambda fn, *a, **kw: fn()),
+        ):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def _payload(self, **over):
+        data = {
+            "kind": "REGULAR", "event_title": "", "screen": self.screen.pk,
+            "start_date": self.today.isoformat(),
+            "end_date": self.today.isoformat(),
+            "presentation_format": "2d", "status": "CONFIRMED",
+            "show_in_main_listings": "on", "notes": "", "films": [self.film.pk],
+        }
+        data.update(over)
+        return data
+
+    def _toast(self, resp) -> dict:
+        return json.loads(resp["HX-Trigger"])["dashboard-toast"]
+
+    def test_create_with_square_failure_says_so(self) -> None:
+        self.gw.fail_with = GatewayError("boom")
+        with self.assertLogs("boxoffice.sync", "WARNING"):
+            resp = self.client.post(reverse("dashboard:engagement_create"),
+                                    self._payload())
+        self.assertEqual(self._toast(resp), {
+            "kind": "error", "message": "Saved. Square sync failed — see the run"})
+        self.assertTrue(json.loads(resp["HX-Trigger"])["close-drawer"])
+
+    def test_create_with_square_success_is_normal(self) -> None:
+        resp = self.client.post(reverse("dashboard:engagement_create"),
+                                self._payload())
+        self.assertEqual(self._toast(resp),
+                         {"kind": "success", "message": "Engagement created"})
+        self.assertIn("item-1", self.gw.items)
+
+    def test_edit_and_status_with_square_failure_say_so(self) -> None:
+        eng = make_eng(self.screen, films=[self.film], status="DRAFT",
+                       end_date=self.today)
+        self.gw.fail_with = GatewayError("boom")
+        failed = {"kind": "error",
+                  "message": "Saved. Square sync failed — see the run"}
+        with self.assertLogs("boxoffice.sync", "WARNING"):
+            resp = self.client.post(
+                reverse("dashboard:engagement_edit", args=[eng.pk]),
+                self._payload())
+        self.assertEqual(self._toast(resp), failed)
+        status_url = reverse("dashboard:engagement_status", args=[eng.pk])
+        with self.assertLogs("boxoffice.sync", "WARNING"):
+            resp = self.client.post(status_url + "?tab=CURRENT",
+                                    {"status": "CONFIRMED"})
+        self.assertEqual(self._toast(resp), failed)
+
+    def test_edit_and_status_with_square_success_are_normal(self) -> None:
+        eng = make_eng(self.screen, films=[self.film], status="DRAFT",
+                       end_date=self.today)
+        resp = self.client.post(
+            reverse("dashboard:engagement_edit", args=[eng.pk]), self._payload())
+        self.assertEqual(self._toast(resp),
+                         {"kind": "success", "message": "Engagement updated"})
+        status_url = reverse("dashboard:engagement_status", args=[eng.pk])
+        resp = self.client.post(status_url + "?tab=CURRENT",
+                                {"status": "CONFIRMED"})
+        self.assertEqual(self._toast(resp),
+                         {"kind": "success", "message": "Status updated"})
+
+    @override_settings(SQUARE_ACCESS_TOKEN="")
+    def test_disabled_square_never_shows_the_failure_toast(self) -> None:
+        eng = make_eng(self.screen, films=[self.film], status="CONFIRMED",
+                       end_date=self.today)
+        SquareItem.objects.create(engagement=eng, name="Dune",
+                                  last_error="stale")
+        status_url = reverse("dashboard:engagement_status", args=[eng.pk])
+        with mock.patch("boxoffice.sync.get_gateway", return_value=None):
+            resp = self.client.post(status_url + "?tab=CURRENT",
+                                    {"status": "CONFIRMED"})
+        self.assertEqual(live_item(eng).last_error, "stale")
+        self.assertEqual(self._toast(resp),
+                         {"kind": "success", "message": "Status updated"})

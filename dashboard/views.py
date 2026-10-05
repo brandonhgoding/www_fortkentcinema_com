@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 from boxoffice.gateway import GatewayError
 from boxoffice.models import SquareItem
 from boxoffice.reports import pull_status, sales_panel
-from boxoffice.sync import delete, live_item, push, schedule
+from boxoffice.sync import delete, live_item, schedule, sync
 from cinema.models import (
     Engagement,
     EngagementFilm,
@@ -379,6 +379,14 @@ def _render_engagement_form(request, form, action_url, submit_label, film_ids, f
     })
 
 
+def _save_toast(engagement, message):
+    # The on-commit Square sync has run by now (the atomic block has exited).
+    item = live_item(engagement) if settings.SQUARE_ACCESS_TOKEN else None
+    if item is not None and item.last_error:
+        return {"kind": "error", "message": "Saved. Square sync failed — see the run"}
+    return {"kind": "success", "message": message}
+
+
 class EngagementCreateView(StaffRequiredMixin, View):
     def get(self, request):
         return _render_engagement_form(request, EngagementForm(),
@@ -397,7 +405,7 @@ class EngagementCreateView(StaffRequiredMixin, View):
                 save_engagement_films(engagement, film_ids)
                 schedule(engagement)
             tab = request.GET.get("tab") or "CURRENT"
-            resp = _engagement_list_response(request, tab, toast={"kind": "success", "message": "Engagement created"})
+            resp = _engagement_list_response(request, tab, toast=_save_toast(engagement, "Engagement created"))
             existing = resp["HX-Trigger"]
             trigger = json.loads(existing) if existing else {}
             trigger["close-drawer"] = True
@@ -427,7 +435,7 @@ class EngagementEditView(StaffRequiredMixin, View):
                 save_engagement_films(engagement, film_ids)
                 schedule(engagement)
             tab = request.GET.get("tab") or "CURRENT"
-            resp = _engagement_list_response(request, tab, toast={"kind": "success", "message": "Engagement updated"})
+            resp = _engagement_list_response(request, tab, toast=_save_toast(engagement, "Engagement updated"))
             trigger = json.loads(resp["HX-Trigger"]) if resp.get("HX-Trigger") else {}
             trigger["close-drawer"] = True
             resp["HX-Trigger"] = json.dumps(trigger)
@@ -447,7 +455,7 @@ class EngagementStatusView(StaffRequiredMixin, View):
             engagement.save(update_fields=["status"])
             schedule(engagement)
         tab = request.GET.get("tab") or "CURRENT"
-        return _engagement_list_response(request, tab, toast={"kind": "success", "message": "Status updated"})
+        return _engagement_list_response(request, tab, toast=_save_toast(engagement, "Status updated"))
 
 
 class EngagementDeleteView(StaffRequiredMixin, View):
@@ -468,7 +476,7 @@ class EngagementDeleteView(StaffRequiredMixin, View):
 class EngagementSquareRetryView(StaffRequiredMixin, View):
     def post(self, request, pk):
         engagement = get_object_or_404(Engagement, pk=pk)
-        push(engagement)
+        sync(engagement)
         return redirect("dashboard:engagement_detail", pk=pk)
 
 

@@ -135,7 +135,7 @@ class HomeRenderTests(TestCase):
         self.assertIn("No sales pulled yet", html)
 
     @override_settings(SQUARE_ACCESS_TOKEN="tok")
-    def test_sales_panel_with_sales_and_missing_pull_alert(self) -> None:
+    def test_sales_panel_with_sales_and_failed_pull_alert(self) -> None:
         yesterday = timezone.localdate() - datetime.timedelta(days=1)
         SalesPull.objects.create(
             business_date=yesterday, status=SalesPull.Status.FAILED)
