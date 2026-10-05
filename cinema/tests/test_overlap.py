@@ -55,6 +55,25 @@ class OverlapServiceTests(TestCase):
             self.screen, _dt(2026, 7, 4, 20), 155, "Dune")
         self.assertEqual(conflicts, [])
 
+    def test_unknown_runtime_in_a_double_feature_is_not_zero(self) -> None:
+        mystery = Film.objects.create(title="Mystery", runtime_minutes=None)
+        EngagementFilm.objects.create(engagement=self.eng, film=mystery, position=2)
+        self.assertEqual(
+            self.eng.total_runtime_minutes, 155 + Engagement.UNKNOWN_RUNTIME_MINUTES
+        )
+        Showtime.objects.create(engagement=self.eng, starts_at=_dt(2026, 7, 4, 19))
+        # Dune alone would be over by 22:05; the second film is still running.
+        conflicts = check_overlap_against_existing(
+            self.screen, _dt(2026, 7, 4, 22, 30), 100, "Later")
+        self.assertEqual(len(conflicts), 1)
+
+    def test_old_showtimes_are_not_considered(self) -> None:
+        Showtime.objects.create(engagement=self.eng, starts_at=_dt(2026, 7, 1, 19))
+        with self.assertNumQueries(1):
+            conflicts = check_overlap_against_existing(
+                self.screen, _dt(2026, 7, 4, 19), 155, "Dune")
+        self.assertEqual(conflicts, [])
+
     def test_exclude_self(self) -> None:
         st = Showtime.objects.create(engagement=self.eng, starts_at=_dt(2026, 7, 4, 19))
         conflicts = check_overlap_against_existing(

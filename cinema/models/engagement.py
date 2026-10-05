@@ -19,6 +19,10 @@ class EngagementStatus(models.TextChoices):
 class Engagement(models.Model):
     objects: ClassVar[Manager["Engagement"]]
 
+    # What a film with no known runtime is assumed to run when booking a
+    # screen. Long enough that a guess errs towards a gap, not an overlap.
+    UNKNOWN_RUNTIME_MINUTES = 150
+
     films = models.ManyToManyField(
         Film, through="cinema.EngagementFilm", related_name="engagements"
     )
@@ -102,7 +106,10 @@ class Engagement(models.Model):
 
     @property
     def total_runtime_minutes(self) -> int:
-        return sum((f.runtime_minutes or 0) for f in self.ordered_films)
+        return sum(
+            f.runtime_minutes or self.UNKNOWN_RUNTIME_MINUTES
+            for f in self.ordered_films
+        )
 
     @property
     def display_title(self) -> str:

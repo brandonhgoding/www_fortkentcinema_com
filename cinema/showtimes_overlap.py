@@ -4,10 +4,13 @@ import datetime
 from collections import defaultdict
 from dataclasses import dataclass
 
-from cinema.models import Screen, Showtime
+from cinema.models import Engagement, Screen, Showtime
 
-DEFAULT_RUNTIME_MINUTES = 150
+DEFAULT_RUNTIME_MINUTES = Engagement.UNKNOWN_RUNTIME_MINUTES
 DEFAULT_BUFFER_MINUTES = 30
+# No showing, marathons included, runs this long, so nothing that started
+# earlier can still be on the screen. Bounds the query to recent rows.
+LONGEST_SHOWING = datetime.timedelta(hours=24)
 
 
 @dataclass
@@ -40,12 +43,14 @@ def check_overlap_against_existing(
 
     # Interval overlap: existing_start < new_end AND existing_effective_end > new_start.
     # We filter starts_at < new_end in the DB (any showtime starting at or after
-    # new_end cannot overlap). The second condition requires each film's runtime,
+    # new_end cannot overlap), and skip anything that started more than
+    # LONGEST_SHOWING ago. The second condition requires each film's runtime,
     # so we check effective_end > new_start in Python after fetching.
     qs = Showtime.objects.filter(
         screen=screen,
         is_cancelled=False,
         starts_at__lt=new_end,
+        starts_at__gt=starts_at - LONGEST_SHOWING,
     ).select_related("screen").prefetch_related("engagement__engagement_films__film")
 
     if exclude_showtime_id is not None:
