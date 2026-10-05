@@ -14,7 +14,6 @@ from django.urls import reverse
 from django.views import View
 
 from cinema.models import (
-    EmailPreference,
     Engagement,
     Film,
     Poll,
@@ -138,44 +137,28 @@ def _poll_options_response(request, poll, toast_message: str = "") -> HttpRespon
     return response
 
 
-# The ballot's labels are the voter's own words; a table pill wants two.
-EMAIL_PREFERENCE_SHORT = {
-    EmailPreference.RESULTS: "Results only",
-    EmailPreference.SUBSCRIBE: "Mailing list",
-    EmailPreference.NONE: "No email",
-}
-
-
 class PollDetailView(StaffRequiredMixin, View):
     def get(self, request, pk):
         poll = get_object_or_404(Poll, pk=pk)
-        counts = poll.contact_counts()
         return render(
             request,
             "dashboard/poll_detail.html",
             {
                 "poll": poll,
                 "tallies": poll.tallies(),
-                "contact_rows": [
-                    (EmailPreference(key).label, counts[key])
-                    for key in EmailPreference.values
-                ],
-                "contactable_count": poll.contactable_votes().count(),
+                "email_count": poll.votes_with_email().count(),
                 # Newest first, the model's default, so a fresh vote is on top.
                 "votes": poll.votes.select_related("option__film"),
-                "preference_short": EMAIL_PREFERENCE_SHORT,
             },
         )
 
 
 class PollVotesExportView(StaffRequiredMixin, View):
-    """CSV of the voters we may write to, for telling them what won.
+    """CSV of every voter who gave an address, with their pick and when.
 
-    Nothing in this project sends mail yet, so this export is how the
-    "tell me the results" promise gets kept: close the round, download,
-    send by hand. Voters who asked not to be emailed are not in it, and
-    the preference column separates a one-off results note from the
-    mailing list (whose members are also on the Subscribers page).
+    The ballot makes no promise about email, so what to do with this is
+    staff's call. Votes cast before the ballot asked for an address are
+    left out, having nothing to list.
     """
 
     def get(self, request, pk):
@@ -185,15 +168,10 @@ class PollVotesExportView(StaffRequiredMixin, View):
             f'attachment; filename="poll-{poll.slug}-emails.csv"'
         )
         writer = safe_csv_writer(response)
-        writer.writerow(["email", "preference", "film", "voted_at"])
-        for vote in poll.contactable_votes().select_related("option__film"):
+        writer.writerow(["email", "film", "voted_at"])
+        for vote in poll.votes_with_email().select_related("option__film"):
             writer.writerow(
-                [
-                    vote.email,
-                    vote.email_preference,
-                    vote.option.film.title,
-                    vote.created_at.isoformat(),
-                ]
+                [vote.email, vote.option.film.title, vote.created_at.isoformat()]
             )
         return response
 

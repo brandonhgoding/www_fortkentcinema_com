@@ -1,5 +1,5 @@
 {% extends "dashboard/base_dashboard.html" %}
-{% load static dashboard_extras %}
+{% load static %}
 {% block title %}{{ poll.title }} · LeprinceOS{% endblock %}
 {% block head_extra %}
   <link rel="stylesheet" href="{% static 'dashboard/css/polls.css' %}" />
@@ -35,35 +35,23 @@
   {% if poll.total_votes %}
     <section>
       <h2 class="panelTitle">Voters</h2>
-      <div class="pollContact">
-        <ul class="pollContactCounts">
-          {% for label, count in contact_rows %}
-            <li><strong>{{ count }}</strong> {{ label|lower }}</li>
-          {% endfor %}
-        </ul>
-        {% if contactable_count %}
+      {% if email_count %}
+        <div class="pollContact">
           <a class="btn btn-secondary btn-sm" href="{% url 'dashboard:poll_votes_export' poll.pk %}">
-            Download {{ contactable_count }} email{{ contactable_count|pluralize }} (CSV)
+            Download {{ email_count }} email{{ email_count|pluralize }} (CSV)
           </a>
-          <p class="fieldHint">Everyone who said we may email them, with a column saying whether they want just the result or the mailing list. People who asked not to be emailed are left out.</p>
-        {% endif %}
-      </div>
+          <p class="fieldHint">Every voter's address with their pick and when they voted. The ballot promises them nothing by email, so what you send is up to you.</p>
+        </div>
+      {% endif %}
       <div class="tableWrapper">
         <table class="table">
           <thead>
-            <tr><th>Email</th><th>May we email them?</th><th>Voted for</th><th>When</th></tr>
+            <tr><th>Email</th><th>Voted for</th><th>When</th></tr>
           </thead>
           <tbody>
             {% for vote in votes %}
               <tr>
                 <td>{% if vote.email %}{{ vote.email }}{% else %}<span class="pollVoterNone">No address (voted before we asked)</span>{% endif %}</td>
-                <td>
-                  {% if vote.email %}
-                    <span class="status-badge status-{{ vote.email_preference|lower }}" title="{{ vote.get_email_preference_display }}">{{ preference_short|get_item:vote.email_preference }}</span>
-                  {% else %}
-                    &mdash;
-                  {% endif %}
-                </td>
                 <td>{{ vote.option.film.title }}</td>
                 <td>{{ vote.created_at|date:"M j, Y g:i A" }}</td>
               </tr>

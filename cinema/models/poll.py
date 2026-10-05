@@ -128,26 +128,9 @@ class Poll(models.Model):
     def total_votes(self) -> int:
         return self.votes.count()
 
-    def contact_counts(self) -> dict[str, int]:
-        """How many voters chose each email preference. Votes cast before
-        the ballot asked for an address are left out."""
-        counts = {key: 0 for key in EmailPreference.values}
-        rows = (
-            self.votes.exclude(email="")
-            .values("email_preference")
-            .annotate(n=models.Count("id"))
-        )
-        for row in rows:
-            counts[row["email_preference"]] = row["n"]
-        return counts
-
-    def contactable_votes(self):
-        """Votes whose address we may write to, oldest first."""
-        return (
-            self.votes.exclude(email="")
-            .exclude(email_preference=EmailPreference.NONE)
-            .order_by("created_at")
-        )
+    def votes_with_email(self):
+        """Votes that carry an address, oldest first: the per-poll export."""
+        return self.votes.exclude(email="").order_by("created_at")
 
     def tallies(self, by_rank: bool = False) -> list[dict]:
         """Per-option counts and whole-number percentages.
@@ -209,23 +192,15 @@ class PollOption(models.Model):
         return self.blurb or self.film.description
 
 
-class EmailPreference(models.TextChoices):
-    """What a voter asked us to do with the address they gave."""
-
-    RESULTS = "RESULTS", "Tell me the results, but don't add me to the mailing list"
-    SUBSCRIBE = "SUBSCRIBE", "Add me to the mailing list"
-    NONE = "NONE", "Don't email me"
-
-
 class Vote(models.Model):
     """A single ballot cast.
 
     The email address is the voter's identity: required on the public
     ballot, one vote per address per round (enforced below). There is no
-    cookie or browser token any more; a shared family computer can carry
-    one vote per person. `email_preference` is the voter's own say in what
-    we do with the address; see EmailPreference. Blank email and NONE only
-    on votes cast before the address was asked for.
+    cookie or browser token; a shared family computer can carry one vote
+    per person. The address is kept on the vote only. Nothing signs it up
+    to anything: the Subscriber list is a separate, explicit opt-in. Blank
+    only on votes cast before the address was asked for.
     """
 
     objects: ClassVar[Manager["Vote"]]
@@ -237,11 +212,6 @@ class Vote(models.Model):
         PollOption, on_delete=models.CASCADE, related_name="votes"
     )
     email = models.EmailField(max_length=EMAIL_MAX_LENGTH, blank=True, default="")
-    email_preference = models.CharField(
-        max_length=20,
-        choices=EmailPreference.choices,
-        default=EmailPreference.NONE,
-    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -262,7 +232,3 @@ class Vote(models.Model):
         # capitalisation. Same rule as Subscriber.
         self.email = (self.email or "").strip().lower()
         super().save(*args, **kwargs)
-
-    @property
-    def wants_email(self) -> bool:
-        return bool(self.email) and self.email_preference != EmailPreference.NONE

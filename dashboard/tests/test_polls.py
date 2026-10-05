@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from cinema.models import EmailPreference, Film, Poll, PollOption, PollStatus, Vote
+from cinema.models import Film, Poll, PollOption, PollStatus, Vote
 
 User = get_user_model()
 
@@ -199,66 +199,40 @@ class PollVotersTests(TestCase):
         option = PollOption.objects.create(
             poll=self.poll, film=Film.objects.create(title="Casablanca")
         )
-        Vote.objects.create(
-            poll=self.poll,
-            option=option,
-            email="=results@example.com",
-            email_preference=EmailPreference.RESULTS,
-        )
-        Vote.objects.create(
-            poll=self.poll,
-            option=option,
-            email="list@example.com",
-            email_preference=EmailPreference.SUBSCRIBE,
-        )
-        Vote.objects.create(
-            poll=self.poll,
-            option=option,
-            email="quiet@example.com",
-            email_preference=EmailPreference.NONE,
-        )
-        Vote.objects.create(
-            poll=self.poll, option=option
-        )  # legacy, no address  # legacy
+        Vote.objects.create(poll=self.poll, option=option, email="=a@example.com")
+        Vote.objects.create(poll=self.poll, option=option, email="b@example.com")
+        Vote.objects.create(poll=self.poll, option=option)  # legacy, no address
 
-    def test_detail_counts_each_choice_and_offers_the_export(self) -> None:
+    def test_detail_lists_every_voter_and_offers_the_export(self) -> None:
         html = self.client.get(
             reverse("dashboard:poll_detail", args=[self.poll.pk])
         ).content.decode()
         self.assertIn("Voters", html)
+        self.assertIn("=a@example.com", html)
+        self.assertIn("b@example.com", html)
+        self.assertIn("No address (voted before we asked)", html)
+        self.assertEqual(html.count("<td>Casablanca</td>"), 3)
         self.assertIn("Download 2 emails (CSV)", html)
         self.assertIn(reverse("dashboard:poll_votes_export", args=[self.poll.pk]), html)
 
-    def test_detail_lists_every_voter_with_their_choice(self) -> None:
-        html = self.client.get(
-            reverse("dashboard:poll_detail", args=[self.poll.pk])
-        ).content.decode()
-        for email in ("=results@example.com", "list@example.com", "quiet@example.com"):
-            self.assertIn(email, html)
-        for pill in ("Results only", "Mailing list", "No email"):
-            self.assertIn(f">{pill}</span>", html)
-        self.assertIn("No address (voted before we asked)", html)
-        self.assertEqual(html.count("<td>Casablanca</td>"), 4)
-
-    def test_detail_hides_the_export_when_nobody_may_be_emailed(self) -> None:
-        self.poll.votes.exclude(email_preference=EmailPreference.NONE).delete()
+    def test_detail_hides_the_export_when_no_vote_has_an_address(self) -> None:
+        self.poll.votes.exclude(email="").delete()
         html = self.client.get(
             reverse("dashboard:poll_detail", args=[self.poll.pk])
         ).content.decode()
         self.assertNotIn("Download", html)
 
-    def test_export_lists_only_those_who_may_be_emailed(self) -> None:
+    def test_export_lists_every_address_with_film_and_time(self) -> None:
         response = self.client.get(
             reverse("dashboard:poll_votes_export", args=[self.poll.pk])
         )
         self.assertEqual(response["Content-Type"], "text/csv")
         self.assertIn("poll-round-one-emails.csv", response["Content-Disposition"])
         rows = response.content.decode().splitlines()
-        self.assertEqual(rows[0], "email,preference,film,voted_at")
+        self.assertEqual(rows[0], "email,film,voted_at")
         self.assertEqual(len(rows), 3)
-        self.assertTrue(rows[1].startswith("'=results@example.com,RESULTS,Casablanca,"))
-        self.assertTrue(rows[2].startswith("list@example.com,SUBSCRIBE,Casablanca,"))
-        self.assertNotIn("quiet@example.com", response.content.decode())
+        self.assertTrue(rows[1].startswith("'=a@example.com,Casablanca,"))
+        self.assertTrue(rows[2].startswith("b@example.com,Casablanca,"))
 
     def test_export_requires_staff(self) -> None:
         self.client.logout()

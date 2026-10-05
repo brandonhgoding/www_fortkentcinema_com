@@ -4,17 +4,12 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from cinema.models import EmailPreference, Film, Poll, PollOption, PollStatus, Vote
+from cinema.models import Film, Poll, PollOption, PollStatus, Vote
 
 
-def _ballot(option, email="fan@example.com", preference=EmailPreference.NONE):
-    """A complete ballot submission; email and preference are required."""
-    return {
-        "poll": option.poll_id,
-        "option": option.pk,
-        "email": email,
-        "email_preference": preference,
-    }
+def _ballot(option, email="fan@example.com"):
+    """A complete ballot submission; the email is required."""
+    return {"poll": option.poll_id, "option": option.pk, "email": email}
 
 
 class VotePageTests(TestCase):

@@ -217,23 +217,10 @@
   color: inherit;
 }
 
-.vote-contact__choices {
-  display: grid;
-  gap: 0.5rem;
-  margin-top: 0.85rem;
-}
-
-.vote-contact__choice {
-  display: flex;
-  gap: 0.6rem;
-  align-items: flex-start;
-  font-size: 0.9rem;
-  cursor: pointer;
-}
-
-.vote-contact__radio {
-  margin-top: 0.2em;
-  flex-shrink: 0;
+.vote-contact__hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  opacity: 0.75;
 }
 
 .vote-contact__error {
@@ -251,11 +238,6 @@
   overflow: hidden;
 }
 
-.vote-panel__contact {
-  margin-top: 0.75rem;
-  font-size: 0.9rem;
-  opacity: 0.85;
-}
 
 /* Several open rounds: pick one */
 .vote-rounds {

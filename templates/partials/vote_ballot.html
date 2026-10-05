@@ -47,11 +47,9 @@
   </fieldset>
 
   {% comment %}
-    Both fields are required: the address keeps a round to one vote per
-    person, and the choice is the voter's consent for what we do with it.
-    Only the middle option joins the mailing list. The copy must never say
-    "newsletter" or promise a schedule; nothing in this project sends mail
-    yet, and results go out by hand from the dashboard export.
+    The address is required: it keeps a round to one vote per person. It is
+    not a mailing-list signup, and the copy must never say "newsletter" or
+    promise a schedule; nothing in this project sends mail yet.
   {% endcomment %}
   <fieldset class="vote-contact">
     <legend class="vote-ballot__legend">Your email</legend>
@@ -66,22 +64,7 @@
       autocomplete="email"
       required
     />
-    <div class="vote-contact__choices" role="radiogroup" aria-label="May we email you?">
-      {% for value, label in email_preferences %}
-        <label class="vote-contact__choice" for="email-preference-{{ value|lower }}">
-          <input
-            class="vote-contact__radio"
-            type="radio"
-            name="email_preference"
-            id="email-preference-{{ value|lower }}"
-            value="{{ value }}"
-            {% if form.email_preference == value %}checked{% endif %}
-            required
-          />
-          <span>{{ label }}</span>
-        </label>
-      {% endfor %}
-    </div>
+    <p class="vote-contact__hint">One vote per email address per round. We won't sign you up to anything.</p>
     {% comment %} Honeypot: hidden from people, irresistible to bots. {% endcomment %}
     <div class="vote-contact__hp" aria-hidden="true">
       <label for="vote-email-website">Website</label>

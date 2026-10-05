@@ -12,11 +12,10 @@ from django.utils import timezone
 from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView
 
-from audience.models import Member, MembershipTier, Subscriber
+from audience.models import Member, MembershipTier
 from blog.models import BlogPost
 from cinema import voting as vote_engine
 from cinema.models import (
-    EmailPreference,
     Engagement,
     EngagementStatus,
     Film,
@@ -506,7 +505,6 @@ def _vote_context(poll=None, vote=None, message="", form=None):
     ctx = vote_service.resolve_vote_page(poll=poll, vote=vote)
     ctx["message"] = message
     ctx["form"] = form or {}
-    ctx["email_preferences"] = EmailPreference.choices
     return ctx
 
 
@@ -559,20 +557,17 @@ class VoteArchiveView(View):
 class VoteCastView(View):
     """POST /vote/cast — record one ballot.
 
-    The ballot asks for an email address and what to do with it, and both
-    are required: the address is what keeps a round to one vote per person,
-    and the choice is the voter's consent. Only "add me to the mailing list"
-    creates a Subscriber; the other two are kept on the vote alone and
-    reached, if at all, through the dashboard's per-poll export. Nothing in
-    this project sends mail yet, so the copy never promises a cadence.
+    The ballot asks for an email address, required: it is what keeps a
+    round to one vote per person. The address stays on the vote and is
+    reached, if at all, through the dashboard's per-poll export. It does
+    not join the mailing list; that is a separate opt-in. Nothing in this
+    project sends mail yet, so the copy never promises a cadence.
 
     HTMX gets the swapped panel back. A plain form POST gets the whole page
     with the same panel: there is no cookie to carry "you voted" across a
     redirect, and a refresh that re-submits is harmless, since the address
     rule refuses it.
     """
-
-    SOURCE = "poll_vote"
 
     def post(self, request):
         # The ballot names its round: several can be open at once.
@@ -589,20 +584,12 @@ class VoteCastView(View):
             return self._respond(request, poll)
 
         raw_email = request.POST.get("email") or ""
-        preference = request.POST.get("email_preference") or ""
-        form = {
-            "option": option_id,
-            "email": raw_email.strip(),
-            "email_preference": preference,
-        }
+        form = {"option": option_id, "email": raw_email.strip()}
 
         try:
             email = _clean_ballot_email(raw_email)
         except ValidationError:
             form["error"] = "That doesn't look like a valid email address."
-            return self._respond(request, poll, form=form)
-        if preference not in EmailPreference.values:
-            form["error"] = "Tell us whether we may email you."
             return self._respond(request, poll, form=form)
 
         option = poll.options.filter(pk=option_id).first()
@@ -612,9 +599,7 @@ class VoteCastView(View):
         message = ""
         vote = None
         try:
-            vote = vote_engine.cast_vote(
-                poll, option, email=email, email_preference=preference
-            )
+            vote = vote_engine.cast_vote(poll, option, email)
         except vote_engine.EmailAlreadyVoted:
             # Said at the top of the panel, not as a field error: it is an
             # answer, not a typo to fix. The ballot stays filled in case they
@@ -632,12 +617,6 @@ class VoteCastView(View):
             message = "Voting has closed for this round."
         except vote_engine.OptionMismatch:
             return HttpResponseBadRequest("Unknown option.")
-        else:
-            if preference == EmailPreference.SUBSCRIBE:
-                # Idempotent, and never re-adds an address that opted out.
-                Subscriber.objects.record(
-                    email, source=self.SOURCE, ip=vote_engine.client_ip(request)
-                )
 
         return self._respond(request, poll, vote=vote, message=message)
 

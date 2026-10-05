@@ -4,7 +4,7 @@ from django.test import RequestFactory, TestCase
 from django.utils import timezone
 
 from cinema import voting
-from cinema.models import EmailPreference, Film, Poll, PollOption, PollStatus, Vote
+from cinema.models import Film, Poll, PollOption, PollStatus, Vote
 
 
 class ClientIPTests(TestCase):
@@ -117,15 +117,9 @@ class CastVoteTests(TestCase):
             voting.cast_vote(self.poll, self.option, f"k{i}@example.com")
         self.assertEqual(Vote.objects.count(), 10)
 
-    def test_email_is_stored_lowercased_with_the_preference(self) -> None:
-        vote = voting.cast_vote(
-            self.poll,
-            self.option,
-            "  Fan@Example.COM ",
-            email_preference=EmailPreference.RESULTS,
-        )
+    def test_email_is_stored_lowercased(self) -> None:
+        vote = voting.cast_vote(self.poll, self.option, "  Fan@Example.COM ")
         self.assertEqual(vote.email, "fan@example.com")
-        self.assertEqual(vote.email_preference, EmailPreference.RESULTS)
 
     def test_second_vote_from_same_email_raises_email_already_voted(self) -> None:
         voting.cast_vote(self.poll, self.option, "fan@example.com")

@@ -18,7 +18,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import validate_ipv46_address
 from django.db import IntegrityError, transaction
 
-from .models import EmailPreference, Vote
+from .models import Vote
 
 
 class VoteError(Exception):
@@ -64,15 +64,11 @@ def client_ip(request) -> str | None:
     return candidate
 
 
-def cast_vote(
-    poll, option, email: str, email_preference: str = EmailPreference.NONE
-) -> Vote:
+def cast_vote(poll, option, email: str) -> Vote:
     """Record one vote, or raise a VoteError subclass explaining the refusal.
 
-    The address is checked here but what to do with it (a mailing-list
-    signup) is the caller's business: this module knows nothing about the
-    audience app. The caller validates the address; a blank one is a
-    programming error, not a refusal.
+    The caller validates the address; a blank one is a programming error,
+    not a refusal.
     """
     if not poll.is_accepting_votes():
         raise PollNotOpen(f"Poll {poll.pk} is not taking votes.")
@@ -89,12 +85,7 @@ def cast_vote(
 
     try:
         with transaction.atomic():
-            return Vote.objects.create(
-                poll=poll,
-                option=option,
-                email=email,
-                email_preference=email_preference,
-            )
+            return Vote.objects.create(poll=poll, option=option, email=email)
     except IntegrityError as exc:
         # Two concurrent requests from the same address. The database
         # constraint is the authority; translate it into our own error.
