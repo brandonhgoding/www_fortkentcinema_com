@@ -1,7 +1,7 @@
 # Square Sync — ticket items pushed, sales pulled — Design
 
 **Date:** 2026-10-05
-**Status:** Awaiting user review (design phase)
+**Status:** Implemented on feat/square-sync (see Amendments)
 **Repo:** `www_fortkentcinema_com` (branch: new `feat/square-sync`)
 
 ## Context
@@ -145,7 +145,10 @@ to read.
 | `DRAFT` | none |
 | `CONFIRMED`, today ≤ `end_date` | exists, kept in step |
 | `CONFIRMED`, today > `end_date` | deleted by the nightly reconcile |
-| `CANCELLED`, `ENDED` | deleted |
+| `CANCELLED` | deleted |
+
+The engagement has no `ENDED` status; a run is "ended" when today >
+`end_date`, which the `CONFIRMED` rows above cover.
 
 Items are created on confirmation regardless of `start_date`. A December
 tentpole confirmed in September gets its item in September; that is what the
@@ -535,8 +538,8 @@ Ship with the token blank, so deploying the code changes nothing visible.
    `sync_square_catalog --dry-run` and read what it would push.
 3. **Cutover, on a run boundary.** After the last show of the current runs
    has started: delete every hand-made ticket item in Square (not the Movies
-   category); mark those runs `ENDED`; confirm the new week's runs in the
-   dashboard and watch the items appear. Staff pin the new items to the
+   category); those runs end at their `end_date` and the nightly reconcile
+   retires their items; confirm the new week's runs in the dashboard and watch the items appear. Staff pin the new items to the
    register's favorites grid and stop using the matinee discount. The empty
    Events and Pre-Sales categories can be removed in Square or left; Django
    never uses them.
@@ -589,3 +592,30 @@ Nothing in Phase 1 needs to change for this; it is additive.
 - Both reports send nightly; a quiet day's email says so.
 - Senior members pay $4 and ring as Member. New priced tiers are new entries
   in `TICKET_PRICES`, nothing more.
+
+## Amendments (implementation, 2026-10-05)
+
+- `SquareItem.engagement` is a foreign key with a partial unique constraint
+  ("one live item per engagement", where `deleted_at` is null) instead of a
+  OneToOne, so a retired row can sit beside the live one.
+- `SquareItem.square_id` is nullable: a row for a push that never created an
+  item carries `last_error` and no Square ID.
+- `ecom_visibility` is not sent: SDK 42 has no such key.
+- `SquareVariation.sku` is not unique: a re-confirmed run reuses its SKUs on
+  a fresh item, and the retired row keeps the old ones so old sales resolve.
+- The engagement has no `ENDED` status; "ended" means today > `end_date`.
+- The Retry button runs the full sync (push or delete, by the state table),
+  not a bare push.
+- The pill has a fifth state: a live row with no Square ID and no error shows
+  as failed, with Retry.
+- Dashboard toasts travel in the `HX-Trigger` header. A save whose Square
+  sync failed says "Saved. Square sync failed — see the run".
+- A re-pull keeps a line's existing attribution when its variation no longer
+  resolves, and recomputes admissions for engagements that lost lines.
+- A `SalesPull` row is created `FAILED` ("Pull did not finish") and flipped
+  to `OK` on completion, so a killed pull still raises the dashboard alert.
+- Email failures are recorded on `pull.error` with the status left `OK`.
+- The nightly reconcile also restores items deleted or moved out of the
+  ticket category by hand in Square, and retires live rows whose engagement
+  was deleted outside the dashboard; one bad row is reported and skipped.
+- `typing_extensions` is pinned to 4.16.0 (the SDK's `anyio` needs it).

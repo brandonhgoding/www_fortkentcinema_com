@@ -451,9 +451,12 @@ Deploy note: `requirements.txt` bumped `typing_extensions` from 4.14.0 to
 
 ### Cron lines (Ansible repo, `webservers.yml`)
 
-Adjust the path to the deployed checkout.
+Adjust the path to the deployed checkout. The times are Eastern wall-clock
+(the pull at 23:45 must see the whole evening's sales); `CRON_TZ` makes cron
+read them that way even if the server's clock is UTC.
 
 ```
+CRON_TZ=America/New_York
 45 23 * * *  cd /srv/www_fortkentcinema_com && .venv/bin/python manage.py pull_square_sales
 0  2  * * *  cd /srv/www_fortkentcinema_com && .venv/bin/python manage.py sync_square_catalog
 ```
@@ -476,15 +479,33 @@ not count as a To address, and a report with no To address is skipped.
 2. **Server side.** Add `SQUARE_*` and `EMAIL_*` to `webservers.yml`; deploy;
    `migrate`. In the admin, enter the recipients for both reports. Run
    `sync_square_catalog --dry-run` and read what it would push.
+   - **Sandbox smoke test, before production.** With sandbox credentials
+     (`SQUARE_ENVIRONMENT=sandbox` and the sandbox token, location and
+     category IDs), create one run in the dashboard and confirm it; watch its
+     item appear in the sandbox Square dashboard. Rename it and watch the item
+     rename. Cancel it and watch the item disappear. Then run both commands
+     for real once (`sync_square_catalog` and `pull_square_sales`, without
+     `--dry-run`) and check their output. Only then switch to production
+     credentials.
+   - **Warning: until the Square-side deletion in step 3, only use
+     `--dry-run`.** On production credentials, a non-dry `sync_square_catalog`
+     or any dashboard save of a *current* confirmed run creates a Django item
+     beside the still-present hand-made one, and the register shows both. On
+     cutover evening, do the Square-side deletion first, and do not edit
+     current runs in the dashboard before it.
 3. **Cutover, on a run boundary.** After the last show of the current runs
    has started: delete every hand-made ticket item in Square (not the Movies
-   category); mark those runs `ENDED`; confirm the new week's runs in the
-   dashboard and watch the items appear. Staff pin the new items to the
+   category). There is nothing to mark in Django: those runs end at their
+   `end_date`, and the 02:00 reconcile retires any Django items for them the
+   next night. Then confirm the new week's runs in the dashboard and watch the
+   items appear. Staff pin the new items to the
    register's favorites grid and stop using the matinee discount. The empty
    Events and Pre-Sales categories can be removed in Square or left; Django
    never uses them.
 4. **Reports.** Run `pull_square_sales --dry-run` for the cutover day and
-   compare against the old script's output for the same day. Then add the two
+   compare against the old script's output for the same day. The old script
+   lives outside this repository, so this comparison is manual: run it as
+   usual and set the two outputs side by side. Then add the two
    cron entries and retire the script's cron.
 5. **Verify over the first week** that `admissions` is filling and the
    ticket report matches what the booker received before.
