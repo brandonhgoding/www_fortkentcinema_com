@@ -140,6 +140,20 @@
   box-shadow: 0 0 8px rgba(184, 149, 108, 0.4);
 }
 
+/* Count of items waiting, e.g. new voicemails. */
+.sidebarBadge {
+  margin-left: auto;
+  min-width: 1.25rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--brass);
+  color: var(--charcoal);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.25rem;
+  text-align: center;
+}
+
 .sidebarIcon {
   flex-shrink: 0;
   opacity: 0.6;

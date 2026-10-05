@@ -214,4 +214,19 @@ urlpatterns = [
         voicemail_views.VoicemailStatusView.as_view(),
         name="voicemail_status",
     ),
+    path(
+        "voicemails/<int:pk>/notes",
+        voicemail_views.VoicemailNotesView.as_view(),
+        name="voicemail_notes",
+    ),
+    path(
+        "voicemails/<int:pk>/delete",
+        voicemail_views.VoicemailDeleteView.as_view(),
+        name="voicemail_delete",
+    ),
+    path(
+        "voicemails/<int:pk>/audio",
+        voicemail_views.VoicemailAudioView.as_view(),
+        name="voicemail_audio",
+    ),
 ]

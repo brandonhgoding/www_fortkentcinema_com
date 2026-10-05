@@ -496,8 +496,9 @@ class MemberPageQueryCountTests(StaffClient):
 
     def test_query_count_is_fixed(self) -> None:
         self.add_rows(1)
-        with self.assertNumQueries(5):
+        # 6 includes the sidebar's new-voicemail badge count.
+        with self.assertNumQueries(6):
             self.client.get(self.url)
         self.add_rows(4)
-        with self.assertNumQueries(5):
+        with self.assertNumQueries(6):
             self.client.get(self.url)

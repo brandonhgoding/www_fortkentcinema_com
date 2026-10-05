@@ -44,6 +44,8 @@ class Voicemail(models.Model):
     status = models.CharField(
         max_length=20, choices=VoicemailStatus.choices, default=VoicemailStatus.NEW
     )
+    # Staff-only, e.g. "Called back Tue, wants a rental quote".
+    notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

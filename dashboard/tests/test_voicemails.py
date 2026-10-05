@@ -1,37 +1,67 @@
+import re
+from unittest.mock import Mock, patch
+
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from phone.models import Voicemail, VoicemailStatus
+from phone.recordings import RecordingError
+
+SID = "RE" + "1" * 32
+RECORDING_URL = f"https://api.twilio.com/2010-04-01/Accounts/AC1/Recordings/{SID}"
+CONFIGURED = override_settings(
+    TWILIO_ACCOUNT_SID="AC" + "0" * 32, TWILIO_AUTH_TOKEN="tok"
+)
+UNCONFIGURED = override_settings(TWILIO_ACCOUNT_SID="")
 
 
-class VoicemailListTests(TestCase):
+class VoicemailTestCase(TestCase):
     def setUp(self) -> None:
         self.staff = get_user_model().objects.create_user(
             username="staff", password="pw", is_staff=True
         )
         self.voicemail = Voicemail.objects.create(
-            recording_sid="RE1",
+            recording_sid=SID,
             caller="+12075550100",
-            recording_url="https://api.twilio.com/Recordings/RE1",
+            recording_url=RECORDING_URL,
             transcript="Are you showing Hamnet on Friday?",
         )
 
+    def login(self) -> None:
+        self.client.force_login(self.staff)
+
+
+class VoicemailListTests(VoicemailTestCase):
     def test_requires_staff(self):
         response = self.client.get(reverse("dashboard:voicemails"))
         self.assertNotEqual(response.status_code, 200)
 
-    def test_lists_voicemails_with_transcript_and_audio(self):
-        self.client.force_login(self.staff)
+    def test_lists_voicemails_with_transcript(self):
+        self.login()
         response = self.client.get(reverse("dashboard:voicemails"))
         self.assertContains(response, "+12075550100")
         self.assertContains(response, "Are you showing Hamnet on Friday?")
-        self.assertContains(response, "https://api.twilio.com/Recordings/RE1.mp3")
         self.assertEqual(response.context["new_count"], 1)
+
+    @CONFIGURED
+    def test_audio_streams_through_the_dashboard_without_exposing_twilio(self):
+        self.login()
+        response = self.client.get(reverse("dashboard:voicemails"))
+        self.assertContains(
+            response, reverse("dashboard:voicemail_audio", args=[self.voicemail.pk])
+        )
+        self.assertNotContains(response, "api.twilio.com")
+
+    @UNCONFIGURED
+    def test_audio_links_twilio_directly_without_an_account_sid(self):
+        self.login()
+        response = self.client.get(reverse("dashboard:voicemails"))
+        self.assertContains(response, RECORDING_URL + ".mp3")
 
     def test_pending_and_failed_transcripts_are_labelled(self):
         Voicemail.objects.create(recording_sid="RE2")
         Voicemail.objects.create(recording_sid="RE3", transcription_status="failed")
-        self.client.force_login(self.staff)
+        self.login()
         response = self.client.get(reverse("dashboard:voicemails"))
         self.assertContains(response, "Transcript pending")
         self.assertContains(response, "Transcript unavailable")
@@ -40,7 +70,7 @@ class VoicemailListTests(TestCase):
         Voicemail.objects.create(
             recording_sid="RE2", caller="+12075550111", status=VoicemailStatus.HANDLED
         )
-        self.client.force_login(self.staff)
+        self.login()
         response = self.client.get(
             reverse("dashboard:voicemails"), {"status": "HANDLED"}
         )
@@ -48,7 +78,7 @@ class VoicemailListTests(TestCase):
         self.assertNotContains(response, "+12075550100")
 
     def test_mark_handled(self):
-        self.client.force_login(self.staff)
+        self.login()
         self.client.post(
             reverse("dashboard:voicemail_status", args=[self.voicemail.pk]),
             {"status": "HANDLED"},
@@ -57,7 +87,7 @@ class VoicemailListTests(TestCase):
         self.assertEqual(self.voicemail.status, VoicemailStatus.HANDLED)
 
     def test_invalid_status_is_ignored(self):
-        self.client.force_login(self.staff)
+        self.login()
         self.client.post(
             reverse("dashboard:voicemail_status", args=[self.voicemail.pk]),
             {"status": "BOGUS"},
@@ -67,6 +97,157 @@ class VoicemailListTests(TestCase):
 
     def test_home_alert_counts_new_voicemails(self):
         Voicemail.objects.create(recording_sid="RE2", status=VoicemailStatus.HANDLED)
-        self.client.force_login(self.staff)
+        self.login()
         response = self.client.get(reverse("dashboard:home"))
         self.assertContains(response, "You have 1 new voicemail")
+
+
+class VoicemailNotesTests(VoicemailTestCase):
+    def notes_url(self) -> str:
+        return reverse("dashboard:voicemail_notes", args=[self.voicemail.pk])
+
+    def test_requires_staff(self):
+        self.client.post(self.notes_url(), {"notes": "x"})
+        self.voicemail.refresh_from_db()
+        self.assertEqual(self.voicemail.notes, "")
+
+    def test_saves_and_shows_the_note(self):
+        self.login()
+        response = self.client.post(
+            self.notes_url(), {"notes": "  Called back Tue, wants a rental quote  "}
+        )
+        self.assertRedirects(response, reverse("dashboard:voicemails"))
+        self.voicemail.refresh_from_db()
+        self.assertEqual(self.voicemail.notes, "Called back Tue, wants a rental quote")
+        page = self.client.get(reverse("dashboard:voicemails"))
+        self.assertContains(page, "Called back Tue, wants a rental quote")
+
+    def test_blank_clears_the_note(self):
+        self.voicemail.notes = "old"
+        self.voicemail.save()
+        self.login()
+        self.client.post(self.notes_url(), {"notes": ""})
+        self.voicemail.refresh_from_db()
+        self.assertEqual(self.voicemail.notes, "")
+
+
+class VoicemailDeleteTests(VoicemailTestCase):
+    def delete(self):
+        return self.client.post(
+            reverse("dashboard:voicemail_delete", args=[self.voicemail.pk])
+        )
+
+    @patch("dashboard.voicemail_views.recordings.delete_recording")
+    def test_requires_staff(self, delete_recording: Mock):
+        self.delete()
+        self.assertTrue(Voicemail.objects.exists())
+        delete_recording.assert_not_called()
+
+    @patch("dashboard.voicemail_views.recordings.delete_recording")
+    def test_deletes_the_twilio_recording_then_the_row(self, delete_recording: Mock):
+        self.login()
+        response = self.delete()
+        self.assertRedirects(response, reverse("dashboard:voicemails"))
+        delete_recording.assert_called_once_with(SID)
+        self.assertFalse(Voicemail.objects.exists())
+
+    @patch(
+        "dashboard.voicemail_views.recordings.delete_recording",
+        side_effect=RecordingError("Twilio answered 500"),
+    )
+    def test_twilio_failure_keeps_the_voicemail(self, _: Mock):
+        self.login()
+        response = self.delete()
+        self.assertTrue(Voicemail.objects.exists())
+        messages = [str(m) for m in response.wsgi_request._messages]
+        self.assertIn("voicemail was kept", messages[0])
+
+    @UNCONFIGURED
+    def test_without_an_account_sid_nothing_is_deleted(self):
+        # The real delete_recording refuses, so the row survives rather than
+        # orphaning a recording in Twilio.
+        self.login()
+        self.delete()
+        self.assertTrue(Voicemail.objects.exists())
+
+    def test_get_does_not_delete(self):
+        self.login()
+        self.client.get(reverse("dashboard:voicemail_delete", args=[self.voicemail.pk]))
+        self.assertTrue(Voicemail.objects.exists())
+
+
+def upstream(status: int, body: bytes = b"ID3audio", **headers: str) -> Mock:
+    response = Mock(status_code=status, headers=headers)
+    response.iter_content.return_value = iter([body])
+    return response
+
+
+@CONFIGURED
+class VoicemailAudioTests(VoicemailTestCase):
+    def audio_url(self) -> str:
+        return reverse("dashboard:voicemail_audio", args=[self.voicemail.pk])
+
+    @patch("dashboard.voicemail_views.recordings.open_recording")
+    def test_requires_staff(self, open_recording: Mock):
+        self.assertNotEqual(self.client.get(self.audio_url()).status_code, 200)
+        open_recording.assert_not_called()
+
+    @patch("dashboard.voicemail_views.recordings.open_recording")
+    def test_streams_the_mp3(self, open_recording: Mock):
+        source = upstream(200, **{"Content-Length": "8", "Accept-Ranges": "bytes"})
+        open_recording.return_value = source
+        self.login()
+        response = self.client.get(self.audio_url())
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "audio/mpeg")
+        self.assertEqual(response["Content-Length"], "8")
+        self.assertEqual(response["Accept-Ranges"], "bytes")
+        self.assertEqual(b"".join(response.streaming_content), b"ID3audio")
+        source.close.assert_called_once()
+
+    @patch("dashboard.voicemail_views.recordings.open_recording")
+    def test_passes_range_through_so_the_player_can_seek(self, open_recording: Mock):
+        open_recording.return_value = upstream(206, **{"Content-Range": "bytes 4-7/8"})
+        self.login()
+        response = self.client.get(self.audio_url(), HTTP_RANGE="bytes=4-")
+        open_recording.assert_called_once_with(SID, "bytes=4-")
+        self.assertEqual(response.status_code, 206)
+        self.assertEqual(response["Content-Range"], "bytes 4-7/8")
+
+    @patch("dashboard.voicemail_views.recordings.open_recording")
+    def test_missing_recording_is_404(self, open_recording: Mock):
+        open_recording.return_value = upstream(404)
+        self.login()
+        self.assertEqual(self.client.get(self.audio_url()).status_code, 404)
+
+    @patch("dashboard.voicemail_views.recordings.open_recording")
+    def test_twilio_errors_are_502(self, open_recording: Mock):
+        self.login()
+        for outcome in (upstream(401), RecordingError("down")):
+            with self.subTest(outcome=outcome):
+                if isinstance(outcome, Exception):
+                    open_recording.side_effect = outcome
+                else:
+                    open_recording.return_value = outcome
+                self.assertEqual(self.client.get(self.audio_url()).status_code, 502)
+
+
+class SidebarBadgeTests(VoicemailTestCase):
+    def sidebar_link(self) -> str:
+        self.login()
+        html = self.client.get(reverse("dashboard:engagements")).content.decode()
+        match = re.search(r'<a href="/dashboard/voicemails".*?</a>', html, re.S)
+        assert match
+        return match.group(0)
+
+    def test_shows_the_new_count_on_every_page(self):
+        Voicemail.objects.create(recording_sid="RE2")
+        Voicemail.objects.create(recording_sid="RE3", status=VoicemailStatus.HANDLED)
+        self.assertIn(
+            '<span class="sidebarBadge" aria-label="2 new">2</span>',
+            self.sidebar_link(),
+        )
+
+    def test_hidden_when_nothing_is_new(self):
+        Voicemail.objects.update(status=VoicemailStatus.HANDLED)
+        self.assertNotIn("sidebarBadge", self.sidebar_link())

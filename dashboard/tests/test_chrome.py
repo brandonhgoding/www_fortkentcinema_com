@@ -28,7 +28,8 @@ class ChromeTests(TestCase):
         # is this same sidebar slid in, so this pins both.
         html = self.client.get(reverse("dashboard:home")).content.decode()
         nav = html.split('data-cy="sidebar-nav"', 1)[1].split("</nav>", 1)[0]
-        labels = re.findall(r"</svg>([^<]+)</a>", nav)
+        # A link may end in a count badge (Voicemails); the label precedes it.
+        labels = re.findall(r"</svg>([^<]+)(?:<span[^>]*>[^<]*</span>)?</a>", nav)
         self.assertEqual(
             labels,
             [

@@ -235,6 +235,9 @@ TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/"
 # X-Twilio-Signature using this token; empty means every webhook gets a 403,
 # so a missing env var fails closed rather than open.
 TWILIO_AUTH_TOKEN = config("TWILIO_AUTH_TOKEN", default="")
+# Only for calls *to* Twilio (phone/recordings.py): streaming recordings into
+# the dashboard and deleting them. Webhooks need just the token.
+TWILIO_ACCOUNT_SID = config("TWILIO_ACCOUNT_SID", default="")
 # Twilio signs the exact public URL it called. Behind nginx, Django rebuilds
 # that from X-Forwarded-Proto/Host (USE_PROXY_HEADERS). Set this — e.g.
 # "https://www.fortkentcinema.com" or an ngrok URL — to sign against a fixed

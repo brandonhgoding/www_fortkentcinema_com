@@ -462,5 +462,6 @@ class MemberRosterQueryCountTests(TestCase):
             if i % 2 == 0:
                 FreeAdmission.objects.create(member=member)
 
-        with self.assertNumQueries(7):
+        # 8 includes the sidebar's new-voicemail badge count.
+        with self.assertNumQueries(8):
             self.client.get(reverse("dashboard:members"))
