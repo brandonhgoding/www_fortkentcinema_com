@@ -3,6 +3,7 @@ import datetime
 import json
 
 from django.conf import settings
+from django.core import signing
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxLengthValidator, validate_email
 from django.http import Http404, HttpResponseBadRequest
@@ -12,7 +13,7 @@ from django.utils import timezone
 from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView
 
-from audience.models import Member, MembershipTier
+from audience.models import Member, MembershipTier, Subscriber
 from blog.models import BlogPost
 from cinema import voting as vote_engine
 from cinema.models import (
@@ -495,16 +496,36 @@ class MovieDetailView(DetailView):
         return ctx
 
 
-def _vote_context(poll=None, vote=None, message="", form=None):
+# Signs the vote behind the mailing-list ask on the thanks screen, so the
+# only address that can be subscribed is the one that just voted. A day is
+# plenty: the ask is answered on the spot or not at all.
+_SUBSCRIBE_SALT = "vote-subscribe"
+_SUBSCRIBE_MAX_AGE = 60 * 60 * 24
+
+
+def _vote_context(poll=None, vote=None, message="", form=None, subscribed=False):
     """Shared context for every rendering of the vote panel.
 
     `vote` is the ballot just cast. `form` carries a rejected ballot back
     to the template: what was typed and why it was refused, so nobody has
-    to fill it in twice.
+    to fill it in twice. `subscribed` is True once the thanks screen's
+    mailing-list ask has been accepted.
     """
     ctx = vote_service.resolve_vote_page(poll=poll, vote=vote)
     ctx["message"] = message
     ctx["form"] = form or {}
+    ctx["subscribed"] = subscribed
+    # The ask appears only for an address we have never heard from: not on
+    # the list, and not someone who opted out, who must not be asked again.
+    ctx["offer_subscribe"] = bool(
+        vote
+        and vote.email
+        and not subscribed
+        and not Subscriber.objects.filter(email=vote.email).exists()
+    )
+    ctx["subscribe_token"] = (
+        signing.dumps(vote.pk, salt=_SUBSCRIBE_SALT) if ctx["offer_subscribe"] else ""
+    )
     return ctx
 
 
@@ -623,6 +644,40 @@ class VoteCastView(View):
     @staticmethod
     def _respond(request, poll, vote=None, message="", form=None):
         ctx = _vote_context(poll=poll, vote=vote, message=message, form=form)
+        if request.headers.get("HX-Request"):
+            return render(request, "partials/vote_panel.html", ctx)
+        return render(request, "web/vote.html", ctx)
+
+
+class VoteSubscribeView(View):
+    """POST /vote/subscribe — the mailing-list ask on the thanks screen.
+
+    The ballot itself promises no email, so joining the list is a separate,
+    explicit yes. The request carries a signed vote id rather than an
+    address: the only address that can be added is the one that just voted,
+    and nobody can subscribe someone else by posting their email.
+    """
+
+    SOURCE = "poll_vote"
+
+    def post(self, request):
+        try:
+            vote_pk = signing.loads(
+                request.POST.get("token", ""),
+                salt=_SUBSCRIBE_SALT,
+                max_age=_SUBSCRIBE_MAX_AGE,
+            )
+        except signing.BadSignature:
+            return HttpResponseBadRequest("That link has expired.")
+        vote = Vote.objects.filter(pk=vote_pk).select_related("poll").first()
+        if vote is None or not vote.email:
+            return HttpResponseBadRequest("Unknown vote.")
+
+        # Idempotent, and never re-adds an address that opted out.
+        Subscriber.objects.record(
+            vote.email, source=self.SOURCE, ip=vote_engine.client_ip(request)
+        )
+        ctx = _vote_context(poll=vote.poll, vote=vote, subscribed=True)
         if request.headers.get("HX-Request"):
             return render(request, "partials/vote_panel.html", ctx)
         return render(request, "web/vote.html", ctx)

@@ -105,6 +105,7 @@ def resolve_vote_page(poll: Poll | None = None, vote: Vote | None = None) -> dic
         "show_results": False,
         "voted_option": None,
         "vote": None,
+        "other_rounds": [],
         "archive": archive,
     }
 
@@ -144,6 +145,8 @@ def resolve_vote_page(poll: Poll | None = None, vote: Vote | None = None) -> dic
     ctx["state"] = STATE_VOTED
     ctx["voted_option"] = vote.option
     ctx["vote"] = vote
+    # Anything else taking votes right now, so one ballot leads to the next.
+    ctx["other_rounds"] = [p for p in open_polls() if p.pk != poll.pk]
     ctx["show_results"] = poll.results_visible
     if poll.results_visible:
         ctx["tallies"] = poll.tallies(by_rank=True)

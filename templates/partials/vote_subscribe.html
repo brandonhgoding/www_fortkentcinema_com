@@ -1,0 +1,30 @@
+{% comment %}
+  The mailing-list ask on the thanks screen, for an address we have never
+  heard from. One click; the signed token names the vote, so the address
+  added is the one that just voted. The copy must never say "newsletter"
+  or promise a schedule; nothing in this project sends mail yet.
+{% endcomment %}
+{% if subscribed %}
+  <p class="vote-subscribe vote-subscribe--done" role="status">
+    You're on the list &mdash; thanks.
+  </p>
+{% elif offer_subscribe %}
+  <form
+    class="vote-subscribe"
+    method="post"
+    action="{% url 'vote_subscribe' %}"
+    hx-post="{% url 'vote_subscribe' %}"
+    hx-target="#vote-panel"
+    hx-swap="outerHTML"
+  >
+    {% csrf_token %}
+    <input type="hidden" name="token" value="{{ subscribe_token }}" />
+    <p class="vote-subscribe__ask">
+      Want to hear what won and what's playing next? We can add
+      <strong>{{ vote.email }}</strong> to our mailing list.
+    </p>
+    <button type="submit" class="vote-subscribe__button" data-track="vote_subscribe">
+      Yes, add me
+    </button>
+  </form>
+{% endif %}

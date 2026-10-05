@@ -10,21 +10,7 @@
   {% if state == "choose" %}
     {% comment %} Several rounds are open; each has its own page. {% endcomment %}
     <p class="vote-panel__idle">Pick a round:</p>
-    <ul class="vote-rounds">
-      {% for round in open_rounds %}
-        <li class="vote-round">
-          <a class="vote-round__link" href="{{ round.get_absolute_url }}">
-            <span class="vote-round__title">{{ round.title }}</span>
-            {% if round.blurb %}<span class="vote-round__blurb">{{ round.blurb }}</span>{% endif %}
-            <span class="vote-round__meta">
-              {{ round.options.count }} film{{ round.options.count|pluralize }} on the ballot
-              {% if round.closes_at %}&middot; voting closes {{ round.closes_at|date:"F j" }}{% endif %}
-            </span>
-            <span class="vote-round__cta">Vote in this round &rarr;</span>
-          </a>
-        </li>
-      {% endfor %}
-    </ul>
+    {% include "partials/vote_round_cards.html" with rounds=open_rounds %}
 
   {% elif state == "ballot" %}
     {% include "partials/vote_ballot.html" %}
@@ -40,6 +26,13 @@
       <p class="vote-panel__hidden-results">
         Results stay under wraps until voting closes.
       </p>
+    {% endif %}
+    {% include "partials/vote_subscribe.html" %}
+    {% if other_rounds %}
+      <section class="vote-panel__more">
+        <h2 class="vote-panel__more-title">Also open right now</h2>
+        {% include "partials/vote_round_cards.html" with rounds=other_rounds %}
+      </section>
     {% endif %}
 
   {% elif state == "closed" %}

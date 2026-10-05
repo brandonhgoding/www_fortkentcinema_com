@@ -1,0 +1,20 @@
+{% comment %}
+  One card per open round, each linking to its own page. Used by the
+  chooser on /vote and by the thanks screen for the other rounds still open.
+  Expects `rounds`.
+{% endcomment %}
+<ul class="vote-rounds">
+  {% for round in rounds %}
+    <li class="vote-round">
+      <a class="vote-round__link" href="{{ round.get_absolute_url }}">
+        <span class="vote-round__title">{{ round.title }}</span>
+        {% if round.blurb %}<span class="vote-round__blurb">{{ round.blurb }}</span>{% endif %}
+        <span class="vote-round__meta">
+          {{ round.options.count }} film{{ round.options.count|pluralize }} on the ballot
+          {% if round.closes_at %}&middot; voting closes {{ round.closes_at|date:"F j" }}{% endif %}
+        </span>
+        <span class="vote-round__cta">Vote in this round &rarr;</span>
+      </a>
+    </li>
+  {% endfor %}
+</ul>

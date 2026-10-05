@@ -37,7 +37,8 @@ class VotePageTests(TestCase):
     def test_visiting_sets_no_cookie(self) -> None:
         # The address is the voter's identity; nothing is stored on the browser.
         response = self.client.get(reverse("vote"))
-        self.assertEqual(dict(response.cookies), {})
+        # Django's CSRF cookie is the only one allowed; no voter token.
+        self.assertEqual(set(response.cookies) - {"csrftoken"}, set())
 
     def test_no_template_comment_leaks(self) -> None:
         self._open_poll()
@@ -139,7 +140,8 @@ class CastVoteViewTests(TestCase):
             reverse("vote_cast"), _ballot(self.option), HTTP_HX_REQUEST="true"
         )
         self.assertEqual(Vote.objects.count(), 1)
-        self.assertEqual(dict(response.cookies), {})
+        # Django's CSRF cookie is the only one allowed; no voter token.
+        self.assertEqual(set(response.cookies) - {"csrftoken"}, set())
 
 
 class SeveralOpenRoundsTests(TestCase):
