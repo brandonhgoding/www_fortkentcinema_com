@@ -66,11 +66,13 @@
           </tr>
           <tr>
             <td colspan="5">
-              <p class="text-muted">
-                {% if voicemail.transcript %}{{ voicemail.transcript }}
-                {% elif voicemail.transcription_status == "failed" %}Transcript unavailable — listen to the recording.
-                {% else %}Transcript pending…{% endif %}
-              </p>
+              {% if voicemail.transcript %}
+                <p class="text-muted">{{ voicemail.transcript }}</p>
+              {% elif voicemail.transcription_status == "failed" %}
+                <p class="text-muted">Transcript unavailable — listen to the recording.</p>
+              {% elif transcribing %}
+                <p class="text-muted">Transcript pending…</p>
+              {% endif %}
               <div class="voicemailActions">
                 <form method="post" action="{% url 'dashboard:voicemail_notes' voicemail.pk %}" class="voicemailNotes">
                   {% csrf_token %}

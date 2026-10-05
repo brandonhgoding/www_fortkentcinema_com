@@ -13,6 +13,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 from phone import recordings
 from phone.models import Voicemail, VoicemailStatus
+from phone.views import TRANSCRIBE
 
 from .mixins import StaffRequiredMixin
 
@@ -40,6 +41,8 @@ class VoicemailListView(StaffRequiredMixin, View):
                 "selected_status": status,
                 # Without an account SID, fall back to linking Twilio directly.
                 "stream_audio": recordings.is_configured(),
+                # With transcription off, a missing transcript isn't "pending".
+                "transcribing": TRANSCRIBE,
             },
         )
 

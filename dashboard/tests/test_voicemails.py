@@ -58,6 +58,13 @@ class VoicemailListTests(VoicemailTestCase):
         response = self.client.get(reverse("dashboard:voicemails"))
         self.assertContains(response, RECORDING_URL + ".mp3")
 
+    def test_no_transcript_shows_no_pending_label_while_transcription_is_off(self):
+        Voicemail.objects.create(recording_sid="RE2")
+        self.login()
+        response = self.client.get(reverse("dashboard:voicemails"))
+        self.assertNotContains(response, "Transcript pending")
+
+    @patch("dashboard.voicemail_views.TRANSCRIBE", True)
     def test_pending_and_failed_transcripts_are_labelled(self):
         Voicemail.objects.create(recording_sid="RE2")
         Voicemail.objects.create(recording_sid="RE3", transcription_status="failed")

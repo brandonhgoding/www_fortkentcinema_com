@@ -76,14 +76,22 @@ class MenuTests(PhoneTestCase):
     def test_2_reads_hours_and_prices(self) -> None:
         self.assertIn(escape(hours_and_prices_speech()), self.press("2"))
 
-    def test_3_records_a_transcribed_voicemail_of_at_most_two_minutes(self) -> None:
+    def test_3_records_a_voicemail_of_at_most_two_minutes(self) -> None:
         twiml = self.press("3")
         self.assertIn("after the beep", twiml)
         self.assertIn('action="/phone/voicemail/recorded/"', twiml)
         self.assertIn('maxLength="120"', twiml)
+        self.assertIn("<Hangup />", twiml)
+
+    def test_3_does_not_pay_for_transcription_by_default(self) -> None:
+        twiml = self.press("3")
+        self.assertNotIn("transcribe", twiml)
+
+    @patch("phone.views.TRANSCRIBE", True)
+    def test_3_transcribes_when_switched_on(self) -> None:
+        twiml = self.press("3")
         self.assertIn('transcribe="true"', twiml)
         self.assertIn('transcribeCallback="/phone/voicemail/transcribed/"', twiml)
-        self.assertIn("<Hangup />", twiml)
 
     def test_invalid_digit_repeats_the_menu_once(self) -> None:
         twiml = self.press("9")

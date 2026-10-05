@@ -14,15 +14,19 @@ from .models import CallLog, Voicemail
 from .speech import hours_and_prices_speech, showtimes_speech
 
 GREETING = "Thanks for calling Fort Kent Cinema."
-MENU = (
-    "Press 1 for today's showtimes, 2 for hours and prices, " "or 3 to leave a message."
-)
+MENU = "Press 1 for today's showtimes, 2 for hours and prices, or 3 to leave a message."
 GOODBYE = "Thanks for calling Fort Kent Cinema. Goodbye."
 
 # The menu plays at most twice in a row without a valid key: once, then
 # repeated once after a miss, then goodbye.
 LAST_ATTEMPT = 2
 VOICEMAIL_MAX_SECONDS = 120
+
+# Twilio transcription costs ~$0.05 a minute — most of a voicemail's cost —
+# so it is off; staff listen in the dashboard instead. Setting this to True
+# turns it back on: the transcription webhook and Voicemail.transcript are
+# kept for exactly that.
+TRANSCRIBE = False
 
 # Amazon Polly voice for everything the line says. Every <Say> goes through
 # _say() so the whole call is one voice; swapping it is this one line (e.g.
@@ -99,8 +103,14 @@ def menu(request: HttpRequest) -> HttpResponse:
             play_beep=True,
             finish_on_key="#",
             action=reverse("phone:voicemail_recorded"),
-            transcribe=True,
-            transcribe_callback=reverse("phone:voicemail_transcribed"),
+            **(
+                {
+                    "transcribe": True,
+                    "transcribe_callback": reverse("phone:voicemail_transcribed"),
+                }
+                if TRANSCRIBE
+                else {}
+            ),
         )
         # Twilio skips the action and falls through here when nothing was
         # recorded (the caller stayed silent).
