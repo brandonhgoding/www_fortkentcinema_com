@@ -6,7 +6,6 @@ are the first real customer PII in this database, so every view is
 staff-only, the CSV export included.
 """
 
-import csv
 import json
 
 from audience.dates import month_bounds
@@ -20,6 +19,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views import View
 
+from .csv_export import safe_csv_writer
 from .forms import MemberForm, MembershipTermForm
 from .mixins import StaffRequiredMixin
 
@@ -369,7 +369,7 @@ class MemberExportView(StaffRequiredMixin, View):
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="members.csv"'
 
-        writer = csv.writer(response)
+        writer = safe_csv_writer(response)
         writer.writerow([
             "first_name", "last_name", "email", "phone",
             "tier", "started_on", "expires_on", "price_paid", "status",

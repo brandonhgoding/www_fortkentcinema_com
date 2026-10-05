@@ -6,14 +6,13 @@ are filtered here rather than only in the database, so an opt-out cannot
 leak into a send.
 """
 
-import csv
-
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.views import View
 
 from audience.models import Subscriber
 
+from .csv_export import safe_csv_writer
 from .mixins import StaffRequiredMixin
 
 
@@ -37,7 +36,7 @@ class SubscriberExportView(StaffRequiredMixin, View):
             'attachment; filename="subscribers.csv"'
         )
 
-        writer = csv.writer(response)
+        writer = safe_csv_writer(response)
         writer.writerow(["email", "source", "consent_at"])
         for sub in Subscriber.objects.active().order_by("consent_at"):
             writer.writerow(

@@ -11,7 +11,6 @@ per renewal per member per year and has no ceiling, where the roster is
 bounded by the number of people.
 """
 
-import csv
 import datetime
 
 from audience.models import MembershipTerm, MembershipTier, MemberStatus
@@ -22,6 +21,7 @@ from django.shortcuts import render
 from django.utils import timezone
 from django.views import View
 
+from .csv_export import safe_csv_writer
 from .mixins import StaffRequiredMixin
 
 WINDOW_FILTERS = [
@@ -147,7 +147,7 @@ class TermExportView(StaffRequiredMixin, View):
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="membership-terms.csv"'
 
-        writer = csv.writer(response)
+        writer = safe_csv_writer(response)
         writer.writerow([
             "first_name", "last_name", "email", "tier",
             "started_on", "expires_on", "price_paid", "purchased_at", "notes",
