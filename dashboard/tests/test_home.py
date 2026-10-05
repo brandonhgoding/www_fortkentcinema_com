@@ -50,6 +50,27 @@ class HomeViewTests(TestCase):
         resp = self.client.get(reverse("dashboard:home"))
         self.assertEqual(resp.context["today_showtimes_count"], 1)
 
+    def test_active_count_leaves_out_ended_and_upcoming_runs(self) -> None:
+        today = timezone.localdate()
+        make_eng(self.screen, self.film)  # running now
+        make_eng(self.screen, self.film, start=today - datetime.timedelta(days=30),
+                 end=today - datetime.timedelta(days=20))
+        make_eng(self.screen, self.film, start=today + datetime.timedelta(days=5))
+        resp = self.client.get(reverse("dashboard:home"))
+        self.assertEqual(resp.context["active_engagements_count"], 1)
+
+    def test_cancelled_showtimes_are_not_counted(self) -> None:
+        eng = make_eng(self.screen, self.film)
+        today = timezone.localdate()
+        tomorrow = today + datetime.timedelta(days=1)
+        Showtime.objects.create(engagement=eng, starts_at=self._local(today, 23),
+                                is_cancelled=True)
+        Showtime.objects.create(engagement=eng, starts_at=self._local(tomorrow, 19),
+                                is_cancelled=True)
+        resp = self.client.get(reverse("dashboard:home"))
+        self.assertEqual(resp.context["today_showtimes_count"], 0)
+        self.assertIn("no-showtimes-tomorrow", [a["id"] for a in resp.context["alerts"]])
+
     def test_display_name_first_name(self) -> None:
         resp = self.client.get(reverse("dashboard:home"))
         self.assertEqual(resp.context["display_name"], "Bran")

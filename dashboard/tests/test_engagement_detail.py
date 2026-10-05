@@ -146,6 +146,39 @@ class ShowtimeCreateEditTests(TestCase):
         self.assertTrue(a.is_cancelled)
 
 
+    def test_malformed_time_is_a_form_error_not_a_500(self) -> None:
+        resp = self.client.post(reverse("dashboard:showtime_create", args=[self.eng.pk]),
+                                {"date": "2026-07-04", "time": "7pm", "captions": ""})
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("Enter a valid date and time.", resp.content.decode())
+        self.assertFalse(Showtime.objects.exists())
+
+    def test_cancelled_engagement_refuses_new_showtimes(self) -> None:
+        self.eng.status = "CANCELLED"
+        self.eng.save()
+        resp = self.client.post(reverse("dashboard:showtime_create", args=[self.eng.pk]),
+                                {"date": "2026-07-04", "time": "19:30", "captions": ""})
+        self.assertIn("This engagement is cancelled", resp.content.decode())
+        self.assertFalse(Showtime.objects.exists())
+
+    def test_edit_checks_the_showtime_screen_not_the_engagement_screen(self) -> None:
+        import datetime as d
+        from django.utils import timezone
+        other = make_eng(self.screen, films=[self.film])
+        Showtime.objects.create(engagement=other,
+                                starts_at=timezone.make_aware(d.datetime(2026, 7, 4, 19, 0)))
+        a = Showtime.objects.create(engagement=self.eng,
+                                    starts_at=timezone.make_aware(d.datetime(2026, 7, 5, 19, 0)))
+        # The run moves screens; its existing showtime stays on Screen 1.
+        self.eng.screen = Screen.objects.create(name="Screen 2", capacity=50)
+        self.eng.save()
+        resp = self.client.post(reverse("dashboard:showtime_edit", args=[a.pk]),
+                                {"date": "2026-07-04", "time": "19:00", "captions": ""})
+        self.assertIn("overlaps with", resp.content.decode())
+        a.refresh_from_db()
+        self.assertEqual(a.starts_at.day, 5)
+
+
 class ShowtimeDeleteTests(TestCase):
     def setUp(self) -> None:
         User.objects.create_user(username="s", password="pw12345", is_staff=True)

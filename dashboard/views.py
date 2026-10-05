@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 from cinema.models import (
     Engagement,
     EngagementFilm,
+    EngagementStatus,
     Film,
     InquiryStatus,
     Screen,
@@ -31,7 +32,7 @@ from cinema.social_cards import (
 from cinema.tmdb import TMDBAPIError
 from cinema.tmdb.services import TMDBService
 from django.db import transaction
-from django.db.models import ProtectedError
+from django.db.models import ProtectedError, Q
 from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
@@ -68,17 +69,20 @@ class HomeView(StaffRequiredMixin, TemplateView):
             .order_by("starts_at")
         )
         tomorrow_count = Showtime.objects.filter(
-            starts_at__gte=tomo_start, starts_at__lt=tomo_end).count()
+            starts_at__gte=tomo_start, starts_at__lt=tomo_end, is_cancelled=False).count()
 
+        # Only what the alerts can mention: drafts, and runs not over yet.
         engagements = list(
-            Engagement.objects.prefetch_related("engagement_films__film"))
+            Engagement.objects.filter(Q(status=EngagementStatus.DRAFT) | Q(end_date__gte=today))
+            .prefetch_related("engagement_films__film"))
 
         user = self.request.user
         ctx.update({
-            "active_engagements_count": sum(1 for e in engagements if e.status == "CONFIRMED"),
+            # Same rule as the engagements page's Current tab.
+            "active_engagements_count": sum(1 for e in engagements if e.is_active),
             "screens_count": Screen.objects.count(),
             "today_showtimes": today_showtimes,
-            "today_showtimes_count": today_showtimes.count(),
+            "today_showtimes_count": sum(1 for st in today_showtimes if not st.is_cancelled),
             "alerts": build_smart_alerts(
                 engagements,
                 tomorrow_count,
@@ -453,9 +457,17 @@ def _showtime_list_response(request, engagement, toast, close_drawer=False):
 
 
 def _parse_starts_at(date_str, time_str):
-    d = datetime.date.fromisoformat(date_str)
-    t = datetime.time.fromisoformat(time_str)
+    """The local start as an aware datetime, or None if either part is malformed."""
+    try:
+        d = datetime.date.fromisoformat(date_str)
+        t = datetime.time.fromisoformat(time_str)
+    except ValueError:
+        return None
     return datetime.datetime.combine(d, t, tzinfo=CINEMA_TZ)
+
+
+INVALID_DATE_TIME = "Enter a valid date and time."
+CANCELLED_ENGAGEMENT = "This engagement is cancelled. Confirm it before adding showtimes."
 
 
 def _render_showtime_form(request, engagement, action_url, submit_label, mode,
@@ -479,18 +491,29 @@ class ShowtimeCreateView(StaffRequiredMixin, View):
         date_str, time_str = request.POST.get("date", ""), request.POST.get("time", "")
         captions = request.POST.get("captions") or None
         action = reverse("dashboard:showtime_create", args=[eng_pk])
+
+        def again(errors):
+            return _render_showtime_form(request, engagement, action, "Create Showtime", "create",
+                                         date=date_str, time=time_str, captions=captions,
+                                         errors=errors)
+
+        if engagement.status == EngagementStatus.CANCELLED:
+            return again([CANCELLED_ENGAGEMENT])
         if not date_str or not time_str:
-            return _render_showtime_form(request, engagement, action, "Create Showtime", "create",
-                                         date=date_str, time=time_str, captions=captions,
-                                         errors=["Date and time are required."])
+            return again(["Date and time are required."])
         starts_at = _parse_starts_at(date_str, time_str)
-        conflicts = check_overlap_against_existing(
-            engagement.screen, starts_at, engagement.total_runtime_minutes, engagement.display_title)
-        if conflicts:
-            return _render_showtime_form(request, engagement, action, "Create Showtime", "create",
-                                         date=date_str, time=time_str, captions=captions,
-                                         errors=[format_overlap_error(c) for c in conflicts])
-        Showtime.objects.create(engagement=engagement, starts_at=starts_at, captions=captions)
+        if starts_at is None:
+            return again([INVALID_DATE_TIME])
+        with transaction.atomic():
+            # Same lock as the bulk view, so two quick submits for one slot
+            # can't both pass the overlap check.
+            Screen.objects.select_for_update().get(pk=engagement.screen_id)
+            conflicts = check_overlap_against_existing(
+                engagement.screen, starts_at, engagement.total_runtime_minutes,
+                engagement.display_title)
+            if conflicts:
+                return again([format_overlap_error(c) for c in conflicts])
+            Showtime.objects.create(engagement=engagement, starts_at=starts_at, captions=captions)
         return _showtime_list_response(request, engagement,
                                        {"kind": "success", "message": "Showtime created"}, close_drawer=True)
 
@@ -505,30 +528,37 @@ class ShowtimeEditView(StaffRequiredMixin, View):
             time=local.strftime("%H:%M"), captions=st.captions or "", is_cancelled=st.is_cancelled)
 
     def post(self, request, pk):
-        st = get_object_or_404(Showtime.objects.select_related("engagement"), pk=pk)
+        st = get_object_or_404(Showtime.objects.select_related("engagement", "screen"), pk=pk)
         engagement = st.engagement
         date_str, time_str = request.POST.get("date", ""), request.POST.get("time", "")
         captions = request.POST.get("captions") or None
         is_cancelled = request.POST.get("is_cancelled") == "on"
         action = reverse("dashboard:showtime_edit", args=[pk])
-        if not date_str or not time_str:
+
+        def again(errors):
             return _render_showtime_form(request, engagement, action, "Save Changes", "edit",
                                          date=date_str, time=time_str, captions=captions,
-                                         is_cancelled=is_cancelled, errors=["Date and time are required."])
+                                         is_cancelled=is_cancelled, errors=errors)
+
+        if not date_str or not time_str:
+            return again(["Date and time are required."])
         starts_at = _parse_starts_at(date_str, time_str)
-        if not is_cancelled:  # cancelling skips the overlap check (matches source)
-            conflicts = check_overlap_against_existing(
-                engagement.screen, starts_at, engagement.total_runtime_minutes,
-                engagement.display_title, exclude_showtime_id=st.pk)
-            if conflicts:
-                return _render_showtime_form(request, engagement, action, "Save Changes", "edit",
-                                             date=date_str, time=time_str, captions=captions,
-                                             is_cancelled=is_cancelled,
-                                             errors=[format_overlap_error(c) for c in conflicts])
-        st.starts_at = starts_at
-        st.captions = captions
-        st.is_cancelled = is_cancelled
-        st.save()
+        if starts_at is None:
+            return again([INVALID_DATE_TIME])
+        with transaction.atomic():
+            # The showtime's own screen, which can differ from the
+            # engagement's after the engagement is moved to another screen.
+            Screen.objects.select_for_update().get(pk=st.screen_id)
+            if not is_cancelled:  # cancelling skips the overlap check (matches source)
+                conflicts = check_overlap_against_existing(
+                    st.screen, starts_at, engagement.total_runtime_minutes,
+                    engagement.display_title, exclude_showtime_id=st.pk)
+                if conflicts:
+                    return again([format_overlap_error(c) for c in conflicts])
+            st.starts_at = starts_at
+            st.captions = captions
+            st.is_cancelled = is_cancelled
+            st.save()
         return _showtime_list_response(request, engagement,
                                        {"kind": "success", "message": "Showtime updated"}, close_drawer=True)
 
@@ -568,12 +598,18 @@ class ShowtimeBulkView(StaffRequiredMixin, View):
             return _render_bulk_form(request, engagement, start_date=start_str,
                                      end_date=end_str, captions=captions, errors=errors)
 
+        if engagement.status == EngagementStatus.CANCELLED:
+            return again([CANCELLED_ENGAGEMENT])
         if not start_str or not end_str:
             return again(["Start and end date are required."])
         if not times:
             return again(["Add at least one time."])
-        start_date = datetime.date.fromisoformat(start_str)
-        end_date = datetime.date.fromisoformat(end_str)
+        try:
+            start_date = datetime.date.fromisoformat(start_str)
+            end_date = datetime.date.fromisoformat(end_str)
+            parsed_times = [datetime.time.fromisoformat(t) for t in times]
+        except ValueError:
+            return again(["Enter valid dates and times."])
         if end_date < start_date:
             return again(["End date cannot be before start date."])
 
@@ -584,8 +620,8 @@ class ShowtimeBulkView(StaffRequiredMixin, View):
         current = start_date
         one_day = datetime.timedelta(days=1)
         while current <= end_date:
-            for t in times:
-                starts_at = datetime.datetime.combine(current, datetime.time.fromisoformat(t), tzinfo=CINEMA_TZ)
+            for t in parsed_times:
+                starts_at = datetime.datetime.combine(current, t, tzinfo=CINEMA_TZ)
                 proposed_showtimes.append(starts_at)
             current += one_day
 
