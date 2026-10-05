@@ -134,6 +134,27 @@ class Poll(models.Model):
     def total_votes(self) -> int:
         return self.votes.count()
 
+    def contact_counts(self) -> dict[str, int]:
+        """How many voters chose each email preference. Votes cast before
+        the ballot asked for an address are left out."""
+        counts = {key: 0 for key in EmailPreference.values}
+        rows = (
+            self.votes.exclude(email="")
+            .values("email_preference")
+            .annotate(n=models.Count("id"))
+        )
+        for row in rows:
+            counts[row["email_preference"]] = row["n"]
+        return counts
+
+    def contactable_votes(self):
+        """Votes whose address we may write to, oldest first."""
+        return (
+            self.votes.exclude(email="")
+            .exclude(email_preference=EmailPreference.NONE)
+            .order_by("created_at")
+        )
+
     def tallies(self, by_rank: bool = False) -> list[dict]:
         """Per-option counts and whole-number percentages.
 
@@ -194,19 +215,39 @@ class PollOption(models.Model):
         return self.blurb or self.film.description
 
 
+class EmailPreference(models.TextChoices):
+    """What a voter asked us to do with the address they gave."""
+
+    RESULTS = "RESULTS", "Tell me the results, but don't add me to the mailing list"
+    SUBSCRIBE = "SUBSCRIBE", "Add me to the mailing list"
+    NONE = "NONE", "Don't email me"
+
+
 class Vote(models.Model):
     """A single ballot cast.
 
-    `voter_key` is a random token from a long-lived cookie.
+    `voter_key` is a random token from a long-lived cookie. `email` is
+    required on the public ballot (one vote per address per round, enforced
+    below) and `email_preference` is the voter's own say in what we do with
+    it; see EmailPreference. Blank email and NONE only on votes cast before
+    the address was asked for.
     """
 
     objects: ClassVar[Manager["Vote"]]
+
+    EMAIL_MAX_LENGTH: ClassVar[int] = 254
 
     poll = models.ForeignKey(Poll, on_delete=models.CASCADE, related_name="votes")
     option = models.ForeignKey(
         PollOption, on_delete=models.CASCADE, related_name="votes"
     )
     voter_key = models.CharField(max_length=36, db_index=True)
+    email = models.EmailField(max_length=EMAIL_MAX_LENGTH, blank=True, default="")
+    email_preference = models.CharField(
+        max_length=20,
+        choices=EmailPreference.choices,
+        default=EmailPreference.NONE,
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -214,8 +255,23 @@ class Vote(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["poll", "voter_key"], name="cinema_vote_one_per_poll_per_voter"
-            )
+            ),
+            models.UniqueConstraint(
+                fields=["poll", "email"],
+                condition=~models.Q(email=""),
+                name="cinema_vote_one_per_poll_per_email",
+            ),
         ]
 
     def __str__(self) -> str:
         return f"{self.voter_key[:8]}… → {self.option.film.title}"
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        # Lowercased so the per-address constraint cannot be sidestepped by
+        # capitalisation. Same rule as Subscriber.
+        self.email = (self.email or "").strip().lower()
+        super().save(*args, **kwargs)
+
+    @property
+    def wants_email(self) -> bool:
+        return bool(self.email) and self.email_preference != EmailPreference.NONE

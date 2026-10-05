@@ -22,6 +22,7 @@
           name="option"
           id="option-{{ option.pk }}"
           value="{{ option.pk }}"
+          {% if form.option == option.pk|stringformat:"s" %}checked{% endif %}
           required
         />
         {% if option.film.poster_url %}
@@ -43,6 +44,54 @@
       </label>
     {% endfor %}
   </fieldset>
+
+  {% comment %}
+    Both fields are required: the address keeps a round to one vote per
+    person, and the choice is the voter's consent for what we do with it.
+    Only the middle option joins the mailing list. The copy must never say
+    "newsletter" or promise a schedule; nothing in this project sends mail
+    yet, and results go out by hand from the dashboard export.
+  {% endcomment %}
+  <fieldset class="vote-contact">
+    <legend class="vote-ballot__legend">Your email</legend>
+    <label class="vote-contact__label" for="vote-email-input">Email address</label>
+    <input
+      class="vote-contact__input"
+      type="email"
+      name="email"
+      id="vote-email-input"
+      value="{{ form.email|default:'' }}"
+      placeholder="you@example.com"
+      autocomplete="email"
+      required
+    />
+    <div class="vote-contact__choices" role="radiogroup" aria-label="May we email you?">
+      {% for value, label in email_preferences %}
+        <label class="vote-contact__choice" for="email-preference-{{ value|lower }}">
+          <input
+            class="vote-contact__radio"
+            type="radio"
+            name="email_preference"
+            id="email-preference-{{ value|lower }}"
+            value="{{ value }}"
+            {% if form.email_preference == value %}checked{% endif %}
+            required
+          />
+          <span>{{ label }}</span>
+        </label>
+      {% endfor %}
+    </div>
+    {% comment %} Honeypot: hidden from people, irresistible to bots. {% endcomment %}
+    <div class="vote-contact__hp" aria-hidden="true">
+      <label for="vote-email-website">Website</label>
+      <input type="text" name="website" id="vote-email-website" tabindex="-1"
+             autocomplete="off" />
+    </div>
+    {% if form.error %}
+      <p class="vote-contact__error" role="alert">{{ form.error }}</p>
+    {% endif %}
+  </fieldset>
+
   <button type="submit" class="vote-ballot__submit" data-track="vote_cast">
     Cast my vote
   </button>

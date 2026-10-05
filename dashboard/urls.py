@@ -43,6 +43,11 @@ urlpatterns = [
     path("polls/<int:pk>/edit", poll_views.PollEditView.as_view(), name="poll_edit"),
     path("polls/<int:pk>", poll_views.PollDetailView.as_view(), name="poll_detail"),
     path(
+        "polls/<int:pk>/emails.csv",
+        poll_views.PollVotesExportView.as_view(),
+        name="poll_votes_export",
+    ),
+    path(
         "polls/<int:pk>/delete",
         poll_views.PollDeleteView.as_view(),
         name="poll_delete",

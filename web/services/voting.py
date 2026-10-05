@@ -89,6 +89,7 @@ def resolve_vote_page(voter_key: str | None, poll: Poll | None = None) -> dict:
         "tallies": [],
         "show_results": False,
         "voted_option": None,
+        "vote": None,
         "archive": archive,
     }
 
@@ -126,6 +127,7 @@ def resolve_vote_page(voter_key: str | None, poll: Poll | None = None) -> dict:
 
     ctx["state"] = STATE_VOTED
     ctx["voted_option"] = vote.option
+    ctx["vote"] = vote
     ctx["show_results"] = poll.results_visible
     if poll.results_visible:
         ctx["tallies"] = poll.tallies(by_rank=True)

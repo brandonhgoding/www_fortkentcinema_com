@@ -13,8 +13,16 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views import View
 
-from cinema.models import Engagement, Film, Poll, PollOption, PollStatus
+from cinema.models import (
+    EmailPreference,
+    Engagement,
+    Film,
+    Poll,
+    PollOption,
+    PollStatus,
+)
 
+from .csv_export import safe_csv_writer
 from .forms import PollForm
 from .mixins import StaffRequiredMixin
 
@@ -133,11 +141,50 @@ def _poll_options_response(request, poll, toast_message: str = "") -> HttpRespon
 class PollDetailView(StaffRequiredMixin, View):
     def get(self, request, pk):
         poll = get_object_or_404(Poll, pk=pk)
+        counts = poll.contact_counts()
         return render(
             request,
             "dashboard/poll_detail.html",
-            {"poll": poll, "tallies": poll.tallies()},
+            {
+                "poll": poll,
+                "tallies": poll.tallies(),
+                "contact_rows": [
+                    (EmailPreference(key).label, counts[key])
+                    for key in EmailPreference.values
+                ],
+                "contactable_count": poll.contactable_votes().count(),
+            },
         )
+
+
+class PollVotesExportView(StaffRequiredMixin, View):
+    """CSV of the voters we may write to, for telling them what won.
+
+    Nothing in this project sends mail yet, so this export is how the
+    "tell me the results" promise gets kept: close the round, download,
+    send by hand. Voters who asked not to be emailed are not in it, and
+    the preference column separates a one-off results note from the
+    mailing list (whose members are also on the Subscribers page).
+    """
+
+    def get(self, request, pk):
+        poll = get_object_or_404(Poll, pk=pk)
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = (
+            f'attachment; filename="poll-{poll.slug}-emails.csv"'
+        )
+        writer = safe_csv_writer(response)
+        writer.writerow(["email", "preference", "film", "voted_at"])
+        for vote in poll.contactable_votes().select_related("option__film"):
+            writer.writerow(
+                [
+                    vote.email,
+                    vote.email_preference,
+                    vote.option.film.title,
+                    vote.created_at.isoformat(),
+                ]
+            )
+        return response
 
 
 class PollOptionAddView(StaffRequiredMixin, View):

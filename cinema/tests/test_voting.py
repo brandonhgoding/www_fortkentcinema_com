@@ -4,7 +4,7 @@ from django.test import RequestFactory, TestCase
 from django.utils import timezone
 
 from cinema import voting
-from cinema.models import Film, Poll, PollOption, PollStatus, Vote
+from cinema.models import EmailPreference, Film, Poll, PollOption, PollStatus, Vote
 
 
 class ClientIPTests(TestCase):
@@ -40,9 +40,7 @@ class ClientIPTests(TestCase):
         self.assertIsNone(voting.client_ip(request))
 
     def test_ipv6_forwarded_address_is_accepted(self) -> None:
-        request = self.factory.get(
-            "/vote", HTTP_X_FORWARDED_FOR="2001:db8::1"
-        )
+        request = self.factory.get("/vote", HTTP_X_FORWARDED_FOR="2001:db8::1")
         self.assertEqual(voting.client_ip(request), "2001:db8::1")
 
 
@@ -113,3 +111,38 @@ class CastVoteTests(TestCase):
         for i in range(10):
             voting.cast_vote(self.poll, self.option, f"k{i}")
         self.assertEqual(Vote.objects.count(), 10)
+
+    def test_email_is_stored_lowercased_with_the_preference(self) -> None:
+        vote = voting.cast_vote(
+            self.poll,
+            self.option,
+            "k1",
+            email="  Fan@Example.COM ",
+            email_preference=EmailPreference.RESULTS,
+        )
+        self.assertEqual(vote.email, "fan@example.com")
+        self.assertEqual(vote.email_preference, EmailPreference.RESULTS)
+
+    def test_second_vote_from_same_email_raises_email_already_voted(self) -> None:
+        voting.cast_vote(self.poll, self.option, "k1", email="fan@example.com")
+        with self.assertRaises(voting.EmailAlreadyVoted):
+            voting.cast_vote(self.poll, self.option, "k2", email="FAN@example.com")
+        self.assertEqual(Vote.objects.count(), 1)
+
+    def test_same_email_may_vote_in_another_poll(self) -> None:
+        voting.cast_vote(self.poll, self.option, "k1", email="fan@example.com")
+        other = Poll.objects.create(title="Round Two", status=PollStatus.DRAFT)
+        other_option = PollOption.objects.create(
+            poll=other, film=Film.objects.create(title="The Thing")
+        )
+        # The first poll is the one that is OPEN; cast directly to skip the
+        # one-open-poll rule, which is not what this test is about.
+        Vote.objects.create(
+            poll=other, option=other_option, voter_key="k1", email="fan@example.com"
+        )
+        self.assertEqual(Vote.objects.filter(email="fan@example.com").count(), 2)
+
+    def test_legacy_votes_without_an_email_do_not_collide(self) -> None:
+        Vote.objects.create(poll=self.poll, option=self.option, voter_key="k1")
+        Vote.objects.create(poll=self.poll, option=self.option, voter_key="k2")
+        self.assertEqual(Vote.objects.filter(email="").count(), 2)

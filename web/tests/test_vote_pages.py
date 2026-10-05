@@ -5,7 +5,12 @@ from django.urls import reverse
 from django.utils import timezone
 
 from cinema import voting
-from cinema.models import Film, Poll, PollOption, PollStatus, Vote
+from cinema.models import EmailPreference, Film, Poll, PollOption, PollStatus, Vote
+
+
+def _ballot(option, email="fan@example.com", preference=EmailPreference.NONE):
+    """A complete ballot submission; email and preference are required."""
+    return {"option": option.pk, "email": email, "email_preference": preference}
 
 
 class VotePageTests(TestCase):
@@ -55,7 +60,7 @@ class CastVoteViewTests(TestCase):
         self.client.cookies[voting.VOTER_COOKIE] = "k1"
         response = self.client.post(
             reverse("vote_cast"),
-            {"option": self.option.pk},
+            _ballot(self.option),
             HTTP_HX_REQUEST="true",
         )
         self.assertEqual(response.status_code, 200)
@@ -64,15 +69,17 @@ class CastVoteViewTests(TestCase):
 
     def test_plain_post_redirects_back_to_vote(self) -> None:
         self.client.cookies[voting.VOTER_COOKIE] = "k1"
-        response = self.client.post(reverse("vote_cast"), {"option": self.option.pk})
+        response = self.client.post(reverse("vote_cast"), _ballot(self.option))
         self.assertRedirects(response, reverse("vote"))
         self.assertEqual(Vote.objects.count(), 1)
 
     def test_voting_twice_shows_the_voted_state_not_a_500(self) -> None:
         self.client.cookies[voting.VOTER_COOKIE] = "k1"
-        self.client.post(reverse("vote_cast"), {"option": self.option.pk})
+        self.client.post(reverse("vote_cast"), _ballot(self.option))
         response = self.client.post(
-            reverse("vote_cast"), {"option": self.other.pk}, HTTP_HX_REQUEST="true"
+            reverse("vote_cast"),
+            _ballot(self.other, "two@example.com"),
+            HTTP_HX_REQUEST="true",
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Vote.objects.count(), 1)
@@ -83,7 +90,7 @@ class CastVoteViewTests(TestCase):
         self.poll.save()
         self.client.cookies[voting.VOTER_COOKIE] = "k1"
         response = self.client.post(
-            reverse("vote_cast"), {"option": self.option.pk}, HTTP_HX_REQUEST="true"
+            reverse("vote_cast"), _ballot(self.option), HTTP_HX_REQUEST="true"
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Vote.objects.count(), 0)
@@ -95,7 +102,7 @@ class CastVoteViewTests(TestCase):
 
     def test_vote_without_a_cookie_still_works_and_sets_one(self) -> None:
         response = self.client.post(
-            reverse("vote_cast"), {"option": self.option.pk}, HTTP_HX_REQUEST="true"
+            reverse("vote_cast"), _ballot(self.option), HTTP_HX_REQUEST="true"
         )
         self.assertEqual(Vote.objects.count(), 1)
         self.assertIn(voting.VOTER_COOKIE, response.cookies)
@@ -104,16 +111,12 @@ class CastVoteViewTests(TestCase):
 class VoteArchiveTests(TestCase):
     def test_open_poll_slug_redirects_to_the_canonical_page(self) -> None:
         poll = Poll.objects.create(title="Round One", status=PollStatus.OPEN)
-        response = self.client.get(
-            reverse("vote_archive", kwargs={"slug": poll.slug})
-        )
+        response = self.client.get(reverse("vote_archive", kwargs={"slug": poll.slug}))
         self.assertRedirects(response, reverse("vote"))
 
     def test_closed_poll_has_its_own_page(self) -> None:
         poll = Poll.objects.create(title="Round One", status=PollStatus.CLOSED)
-        response = self.client.get(
-            reverse("vote_archive", kwargs={"slug": poll.slug})
-        )
+        response = self.client.get(reverse("vote_archive", kwargs={"slug": poll.slug}))
         self.assertEqual(response.status_code, 200)
         self.assertIn("Round One", response.content.decode())
 
@@ -137,9 +140,7 @@ class VoteArchiveTests(TestCase):
 
     def test_draft_poll_is_not_public(self) -> None:
         poll = Poll.objects.create(title="Secret", status=PollStatus.DRAFT)
-        response = self.client.get(
-            reverse("vote_archive", kwargs={"slug": poll.slug})
-        )
+        response = self.client.get(reverse("vote_archive", kwargs={"slug": poll.slug}))
         self.assertEqual(response.status_code, 404)
 
     def test_cast_is_not_swallowed_by_the_slug_route(self) -> None:

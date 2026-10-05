@@ -22,7 +22,17 @@
         Results stay under wraps until voting closes.
       </p>
     {% endif %}
-    {% include "partials/vote_email_capture.html" %}
+    {% if vote.email_preference == "SUBSCRIBE" %}
+      <p class="vote-panel__contact">
+        You're on the list &mdash; we'll email <strong>{{ vote.email }}</strong>
+        with what won and when it's playing.
+      </p>
+    {% elif vote.email_preference == "RESULTS" %}
+      <p class="vote-panel__contact">
+        We'll email <strong>{{ vote.email }}</strong> once with what won and
+        when it's playing, and nothing else.
+      </p>
+    {% endif %}
 
   {% elif state == "closed" %}
     <p class="vote-panel__closed">

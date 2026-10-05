@@ -1,7 +1,7 @@
 from .engagement import Engagement, EngagementStatus
 from .engagement_film import EngagementFilm
 from .film import Film
-from .poll import Poll, PollOption, PollStatus, Vote
+from .poll import EmailPreference, Poll, PollOption, PollStatus, Vote
 from .screen import Screen
 from .showtime import Showtime
 from .sponsorship_inquiry import InquiryStatus, SponsorshipInquiry
@@ -19,6 +19,7 @@ __all__ = [
     "PollOption",
     "PollStatus",
     "Vote",
+    "EmailPreference",
     "InquiryStatus",
     "SponsorshipInquiry",
     "Studio",

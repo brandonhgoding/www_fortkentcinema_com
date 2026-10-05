@@ -16,12 +16,14 @@ from audience.models import Member, MembershipTier, Subscriber
 from blog.models import BlogPost
 from cinema import voting as vote_engine
 from cinema.models import (
+    EmailPreference,
     Engagement,
     EngagementStatus,
     Film,
     Poll,
     PollStatus,
     StudioTitle,
+    Vote,
 )
 from web.constants import (
     ADVANCE_TICKETS,
@@ -152,8 +154,7 @@ class HomeView(TemplateView):
 
         ns_dates = sorted(date_keys)
         ns_dates_labeled = [
-            {"key": d, "label": format_showtime_date(d, today=today)}
-            for d in ns_dates
+            {"key": d, "label": format_showtime_date(d, today=today)} for d in ns_dates
         ]
         today_index = ns_dates.index(today) if today in ns_dates else 0
 
@@ -314,10 +315,9 @@ class MembershipView(TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["tiers"] = (
-            MembershipTier.objects.filter(show_on_membership_page=True)
-            .prefetch_related("benefits")
-        )
+        ctx["tiers"] = MembershipTier.objects.filter(
+            show_on_membership_page=True
+        ).prefetch_related("benefits")
         ctx["faqs"] = MEMBERSHIP_FAQ
         return ctx
 
@@ -479,7 +479,9 @@ class MovieDetailView(DetailView):
         ctx["is_now_showing"] = bool(page["upcoming"])
         ctx["runtime_display"] = _format_runtime(film.runtime_minutes)
         # ISO-8601 duration for schema.org Movie.duration (120 -> PT120M).
-        ctx["runtime_iso"] = f"PT{film.runtime_minutes}M" if film.runtime_minutes else ""
+        ctx["runtime_iso"] = (
+            f"PT{film.runtime_minutes}M" if film.runtime_minutes else ""
+        )
         ctx["now_showing"] = get_now_showing()
         # Internal linking: push crawlers (and people) between the movie
         # pages and /vote while this film is up for a vote.
@@ -492,12 +494,30 @@ class MovieDetailView(DetailView):
         return ctx
 
 
-def _vote_context(request, poll=None, message=""):
-    """Shared context for every rendering of the vote panel."""
+def _vote_context(request, poll=None, message="", form=None):
+    """Shared context for every rendering of the vote panel.
+
+    `form` carries a rejected ballot back to the template: what was typed
+    and why it was refused, so nobody has to fill it in twice.
+    """
     voter_key = vote_engine.voter_key_from(request) or request.vote_key
     ctx = vote_service.resolve_vote_page(voter_key=voter_key, poll=poll)
     ctx["message"] = message
+    ctx["form"] = form or {}
+    ctx["email_preferences"] = EmailPreference.choices
     return ctx
+
+
+def _clean_ballot_email(raw: str) -> str:
+    """The address as we store it, or a ValidationError.
+
+    validate_email allows 320 characters; the column holds 254, and Postgres
+    refuses the INSERT rather than truncating it.
+    """
+    email = (raw or "").strip()
+    validate_email(email)
+    MaxLengthValidator(Vote.EMAIL_MAX_LENGTH)(email)
+    return email.lower()
 
 
 def _with_voter_cookie(response, request):
@@ -558,9 +578,18 @@ class VoteArchiveView(View):
 class VoteCastView(View):
     """POST /vote/cast — record one ballot.
 
+    The ballot asks for an email address and what to do with it, and both
+    are required: the address is what keeps a round to one vote per person,
+    and the choice is the voter's consent. Only "add me to the mailing list"
+    creates a Subscriber; the other two are kept on the vote alone and
+    reached, if at all, through the dashboard's per-poll export. Nothing in
+    this project sends mail yet, so the copy never promises a cadence.
+
     HTMX gets the swapped panel back; a plain form POST is redirected to /vote
     so a refresh cannot re-submit.
     """
+
+    SOURCE = "poll_vote"
 
     def post(self, request):
         request.vote_key = (
@@ -572,6 +601,28 @@ class VoteCastView(View):
         if not option_id:
             return HttpResponseBadRequest("No option selected.")
 
+        # Honeypot. A real person never fills this in; bots fill everything.
+        # Answered like a success so the bot learns nothing.
+        if request.POST.get("website"):
+            return self._respond(request, message="")
+
+        raw_email = request.POST.get("email") or ""
+        preference = request.POST.get("email_preference") or ""
+        form = {
+            "option": option_id,
+            "email": raw_email.strip(),
+            "email_preference": preference,
+        }
+
+        try:
+            email = _clean_ballot_email(raw_email)
+        except ValidationError:
+            form["error"] = "That doesn't look like a valid email address."
+            return self._respond(request, form=form)
+        if preference not in EmailPreference.values:
+            form["error"] = "Tell us whether we may email you."
+            return self._respond(request, form=form)
+
         message = ""
         if poll is None:
             message = "Voting has closed for this round."
@@ -580,59 +631,41 @@ class VoteCastView(View):
             if option is None:
                 return HttpResponseBadRequest("Unknown option.")
             try:
-                vote_engine.cast_vote(poll, option, request.vote_key)
+                vote_engine.cast_vote(
+                    poll,
+                    option,
+                    request.vote_key,
+                    email=email,
+                    email_preference=preference,
+                )
             except vote_engine.AlreadyVoted:
                 message = "You've already voted in this round."
+            except vote_engine.EmailAlreadyVoted:
+                form["error"] = "That email address has already voted in this round."
+                return self._respond(request, form=form)
             except vote_engine.PollNotOpen:
                 message = "Voting has closed for this round."
             except vote_engine.OptionMismatch:
                 return HttpResponseBadRequest("Unknown option.")
+            else:
+                if preference == EmailPreference.SUBSCRIBE:
+                    # Idempotent, and never re-adds an address that opted out.
+                    Subscriber.objects.record(
+                        email, source=self.SOURCE, ip=vote_engine.client_ip(request)
+                    )
 
+        return self._respond(request, message=message)
+
+    @staticmethod
+    def _respond(request, message="", form=None):
         if request.headers.get("HX-Request"):
-            ctx = _vote_context(request, message=message)
+            ctx = _vote_context(request, message=message, form=form)
             response = render(request, "partials/vote_panel.html", ctx)
             return _with_voter_cookie(response, request)
-
+        # Without JavaScript the browser's own required/email checks catch
+        # a bad form first, so losing the error on this redirect is rare.
         response = redirect("vote")
         return _with_voter_cookie(response, request)
-
-
-class VoteSubscribeView(View):
-    """POST /vote/subscribe — the ask that follows a vote.
-
-    Deliberately says only that we'll let them know what won. Nothing here
-    promises a cadence, because nothing in this project sends mail yet; the
-    list is exported from the dashboard and sent by hand.
-    """
-
-    SOURCE = "poll_vote"
-
-    def post(self, request):
-        # Honeypot. A real person never fills this in; bots fill everything.
-        if request.POST.get("website"):
-            return render(
-                request, "partials/vote_email_capture.html", {"subscribed": True}
-            )
-
-        email = (request.POST.get("email") or "").strip()
-        try:
-            validate_email(email)
-            # validate_email allows 320 characters; the column holds 254,
-            # and Postgres refuses the INSERT rather than truncating it.
-            MaxLengthValidator(Subscriber.EMAIL_MAX_LENGTH)(email)
-        except ValidationError:
-            return render(
-                request,
-                "partials/vote_email_capture.html",
-                {"error": "That doesn't look like a valid email address."},
-            )
-
-        Subscriber.objects.record(
-            email, source=self.SOURCE, ip=vote_engine.client_ip(request)
-        )
-        return render(
-            request, "partials/vote_email_capture.html", {"subscribed": True}
-        )
 
 
 # Whitelist of sort keys. The querystring never reaches order_by directly.
@@ -725,9 +758,7 @@ class SponsorView(SponsorCatalogMixin, ListView):
                 "showcase": SPONSORSHIP_SHOWCASE,
                 "total_count": available.count(),
                 "ratings": sorted(
-                    r for r in set(
-                        available.values_list("mpa_rating", flat=True)
-                    ) if r
+                    r for r in set(available.values_list("mpa_rating", flat=True)) if r
                 ),
                 "decades": sorted({(year // 10) * 10 for year in years}, reverse=True),
                 "q": self.request.GET.get("q", ""),

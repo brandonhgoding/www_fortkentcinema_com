@@ -7,10 +7,11 @@ defense is the curated ballot: every option is a film we already approved,
 so a stuffed ballot still returns something we are happy to screen.
 
 What IS hard: a poll accepts writes only while open and inside its
-opens_at/closes_at window, and one browser gets one vote per poll (a
-database constraint, see cinema/models/poll.py). There is no per-address
-cap: the only address we can see past the proxy is X-Forwarded-For, which
-the client writes, so a cap would stop nobody who meant to get past it.
+opens_at/closes_at window, and one browser gets one vote per poll and one
+email address gets one vote per poll (database constraints, see
+cinema/models/poll.py). There is no per-IP cap: the only address we can
+see past the proxy is X-Forwarded-For, which the client writes, so a cap
+would stop nobody who meant to get past it.
 """
 
 import uuid
@@ -19,7 +20,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import validate_ipv46_address
 from django.db import IntegrityError, transaction
 
-from .models import Vote
+from .models import EmailPreference, Vote
 
 VOTER_COOKIE = "fkc_voter"
 VOTER_COOKIE_MAX_AGE = 60 * 60 * 24 * 365  # one year
@@ -34,6 +35,10 @@ class PollNotOpen(VoteError):
 
 
 class AlreadyVoted(VoteError):
+    pass
+
+
+class EmailAlreadyVoted(VoteError):
     pass
 
 
@@ -86,21 +91,45 @@ def existing_vote(poll, voter_key: str | None) -> Vote | None:
     )
 
 
-def cast_vote(poll, option, voter_key: str) -> Vote:
-    """Record one vote, or raise a VoteError subclass explaining the refusal."""
+def cast_vote(
+    poll,
+    option,
+    voter_key: str,
+    email: str = "",
+    email_preference: str = EmailPreference.NONE,
+) -> Vote:
+    """Record one vote, or raise a VoteError subclass explaining the refusal.
+
+    The address is checked here but what to do with it (a mailing-list
+    signup) is the caller's business: this module knows nothing about the
+    audience app.
+    """
     if not poll.is_accepting_votes():
         raise PollNotOpen(f"Poll {poll.pk} is not taking votes.")
 
     if option.poll_id != poll.pk:
         raise OptionMismatch("That option does not belong to this poll.")
 
+    email = (email or "").strip().lower()
+
     if Vote.objects.filter(poll=poll, voter_key=voter_key).exists():
         raise AlreadyVoted("This browser has already voted in this poll.")
+    if email and Vote.objects.filter(poll=poll, email=email).exists():
+        raise EmailAlreadyVoted("This address has already voted in this poll.")
 
     try:
         with transaction.atomic():
-            return Vote.objects.create(poll=poll, option=option, voter_key=voter_key)
+            return Vote.objects.create(
+                poll=poll,
+                option=option,
+                voter_key=voter_key,
+                email=email,
+                email_preference=email_preference,
+            )
     except IntegrityError as exc:
-        # Two concurrent requests from the same browser. The database
-        # constraint is the authority; translate it into our own error.
-        raise AlreadyVoted("This browser has already voted in this poll.") from exc
+        # Two concurrent requests from the same browser or address. The
+        # database constraints are the authority; translate whichever one
+        # fired into our own error.
+        if Vote.objects.filter(poll=poll, voter_key=voter_key).exists():
+            raise AlreadyVoted("This browser has already voted in this poll.") from exc
+        raise EmailAlreadyVoted("This address has already voted in this poll.") from exc

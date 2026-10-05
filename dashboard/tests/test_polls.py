@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from cinema.models import Film, Poll, PollOption, PollStatus, Vote
+from cinema.models import EmailPreference, Film, Poll, PollOption, PollStatus, Vote
 
 User = get_user_model()
 
@@ -189,3 +189,70 @@ class PollDeleteTests(TestCase):
         ).content.decode()
         self.assertIn(f'action="{url}"', detail_html)
         self.assertIn("2 votes go with it", detail_html)
+
+
+class PollVotersTests(TestCase):
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+        self.poll = Poll.objects.create(title="Round One", status=PollStatus.OPEN)
+        option = PollOption.objects.create(
+            poll=self.poll, film=Film.objects.create(title="Casablanca")
+        )
+        Vote.objects.create(
+            poll=self.poll,
+            option=option,
+            voter_key="k1",
+            email="=results@example.com",
+            email_preference=EmailPreference.RESULTS,
+        )
+        Vote.objects.create(
+            poll=self.poll,
+            option=option,
+            voter_key="k2",
+            email="list@example.com",
+            email_preference=EmailPreference.SUBSCRIBE,
+        )
+        Vote.objects.create(
+            poll=self.poll,
+            option=option,
+            voter_key="k3",
+            email="quiet@example.com",
+            email_preference=EmailPreference.NONE,
+        )
+        Vote.objects.create(poll=self.poll, option=option, voter_key="k4")  # legacy
+
+    def test_detail_counts_each_choice_and_offers_the_export(self) -> None:
+        html = self.client.get(
+            reverse("dashboard:poll_detail", args=[self.poll.pk])
+        ).content.decode()
+        self.assertIn("Voters", html)
+        self.assertIn("Download 2 emails (CSV)", html)
+        self.assertIn(reverse("dashboard:poll_votes_export", args=[self.poll.pk]), html)
+
+    def test_detail_hides_the_export_when_nobody_may_be_emailed(self) -> None:
+        self.poll.votes.exclude(email_preference=EmailPreference.NONE).delete()
+        html = self.client.get(
+            reverse("dashboard:poll_detail", args=[self.poll.pk])
+        ).content.decode()
+        self.assertNotIn("Download", html)
+
+    def test_export_lists_only_those_who_may_be_emailed(self) -> None:
+        response = self.client.get(
+            reverse("dashboard:poll_votes_export", args=[self.poll.pk])
+        )
+        self.assertEqual(response["Content-Type"], "text/csv")
+        self.assertIn("poll-round-one-emails.csv", response["Content-Disposition"])
+        rows = response.content.decode().splitlines()
+        self.assertEqual(rows[0], "email,preference,film,voted_at")
+        self.assertEqual(len(rows), 3)
+        self.assertTrue(rows[1].startswith("'=results@example.com,RESULTS,Casablanca,"))
+        self.assertTrue(rows[2].startswith("list@example.com,SUBSCRIBE,Casablanca,"))
+        self.assertNotIn("quiet@example.com", response.content.decode())
+
+    def test_export_requires_staff(self) -> None:
+        self.client.logout()
+        response = self.client.get(
+            reverse("dashboard:poll_votes_export", args=[self.poll.pk])
+        )
+        self.assertEqual(response.status_code, 302)

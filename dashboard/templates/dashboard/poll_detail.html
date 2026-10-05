@@ -32,6 +32,25 @@
     {% include "dashboard/_poll_options.html" %}
   </section>
 
+  {% if poll.total_votes %}
+    <section>
+      <h2 class="panelTitle">Voters</h2>
+      <div class="pollContact">
+        <ul class="pollContactCounts">
+          {% for label, count in contact_rows %}
+            <li><strong>{{ count }}</strong> {{ label|lower }}</li>
+          {% endfor %}
+        </ul>
+        {% if contactable_count %}
+          <a class="btn btn-secondary btn-sm" href="{% url 'dashboard:poll_votes_export' poll.pk %}">
+            Download {{ contactable_count }} email{{ contactable_count|pluralize }} (CSV)
+          </a>
+          <p class="fieldHint">Everyone who said we may email them, with a column saying whether they want just the result or the mailing list. People who asked not to be emailed are left out.</p>
+        {% endif %}
+      </div>
+    </section>
+  {% endif %}
+
   {% if poll.status == "DRAFT" %}
     <section>
       <h2 class="panelTitle">Add a film</h2>
