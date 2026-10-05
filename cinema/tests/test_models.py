@@ -200,3 +200,11 @@ class EngagementAdmissionsTests(TestCase):
         eng.save()
         eng.refresh_from_db()
         self.assertEqual(eng.admissions, 472)
+
+
+class InTicketReportTests(TestCase):
+    def test_defaults_true(self) -> None:
+        screen = Screen.objects.create(name="S", capacity=10)
+        day = datetime.date(2026, 10, 9)
+        eng = Engagement.objects.create(screen=screen, start_date=day, end_date=day)
+        self.assertTrue(eng.in_ticket_report)

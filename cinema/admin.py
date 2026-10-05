@@ -51,7 +51,12 @@ class EngagementAdmin(admin.ModelAdmin):
         "admissions",
         "presentation_format",
     )
-    list_filter = ("status", "presentation_format", "is_free_for_members")
+    list_filter = (
+        "status",
+        "presentation_format",
+        "is_free_for_members",
+        "in_ticket_report",
+    )
     search_fields = ("engagement_films__film__title",)
     date_hierarchy = "start_date"
 

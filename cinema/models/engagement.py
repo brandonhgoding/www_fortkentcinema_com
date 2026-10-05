@@ -60,6 +60,12 @@ class Engagement(models.Model):
         help_text="Show a 'Free for Members' badge on the public listings "
         "and movie page for this run.",
     )
+    in_ticket_report = models.BooleanField(
+        default=True,
+        help_text="Include this run's ticket sales in the nightly ticket report "
+        "sent to the booker. Untick for runs that owe no distributor royalty, "
+        "such as a Classic Movie Night; they still appear in the owner's summary.",
+    )
 
     # TODO: Validation that an 3d engagement can't be book on non 3d screens
 

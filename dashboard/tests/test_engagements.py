@@ -197,6 +197,17 @@ class EngagementCreateTests(TestCase):
                          self._payload(end_date=(self.today - datetime.timedelta(days=1)).isoformat()))
         self.assertEqual(Engagement.objects.count(), 0)
 
+    def test_in_ticket_report_unticked_saves_false(self) -> None:
+        payload = self._payload()
+        payload.pop("in_ticket_report", None)  # an unticked checkbox is absent from POST
+        self.client.post(reverse("dashboard:engagement_create"), payload)
+        self.assertFalse(Engagement.objects.get().in_ticket_report)
+
+    def test_in_ticket_report_ticked_saves_true(self) -> None:
+        self.client.post(reverse("dashboard:engagement_create"),
+                         self._payload(in_ticket_report="on"))
+        self.assertTrue(Engagement.objects.get().in_ticket_report)
+
 
 class EngagementEditTests(TestCase):
     def setUp(self) -> None:
