@@ -113,3 +113,23 @@ class VoicemailAlertTests(TestCase):
 
     def test_alert_is_plural_for_many(self):
         self.assertEqual(self._message(2), "You have 2 new voicemails")
+
+    def _square_ids(self, **kwargs) -> list[str]:
+        alerts = build_smart_alerts([], 1, self.today, **kwargs)
+        return [a["id"] for a in alerts if a["id"].startswith("square")]
+
+    def test_square_alerts(self) -> None:
+        ids = self._square_ids(square_pull_status="FAILED", square_sync_failures=2)
+        self.assertIn("square-pull-failed", ids)
+        self.assertIn("square-sync-failed", ids)
+        missing = build_smart_alerts(
+            [], 1, self.today, square_pull_status="MISSING")
+        self.assertEqual(missing[0]["message"], "No Square sales pull ran yesterday")
+        self.assertEqual(self._square_ids(square_pull_status=None), [])
+        self.assertEqual(self._square_ids(square_pull_status="OK"), [])
+
+    def test_square_sync_failed_message_pluralises(self) -> None:
+        one = build_smart_alerts([], 1, self.today, square_sync_failures=1)
+        self.assertEqual(one[0]["message"], "1 run failed to sync to Square")
+        two = build_smart_alerts([], 1, self.today, square_sync_failures=2)
+        self.assertEqual(two[0]["message"], "2 runs failed to sync to Square")

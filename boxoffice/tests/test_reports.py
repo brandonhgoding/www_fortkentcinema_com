@@ -4,8 +4,8 @@ from boxoffice.models import (
     EmailRecipient, EmailReport, SaleLine, SalesPull, SquareItem, SquareVariation,
 )
 from boxoffice.reports import (
-    ItemTotal, owner_summary, render_report, send_reports, ticket_report,
-    tier_totals,
+    DaySales, ItemTotal, owner_summary, pull_status, render_report,
+    sales_panel, send_reports, ticket_report, tier_totals,
 )
 from boxoffice.tests.test_pull import make_eng
 from django.core import mail
@@ -156,3 +156,46 @@ class SendReportsTests(TestCase):
         self.owner.save()
         send_reports(DAY, self.pull)
         self.assertEqual(mail.outbox[0].subject, "Flash gross")
+
+
+class SalesPanelTests(TestCase):
+    @override_settings(SQUARE_ACCESS_TOKEN="")
+    def test_none_when_disabled(self) -> None:
+        self.assertIsNone(sales_panel(datetime.date(2026, 10, 9)))
+
+    @override_settings(SQUARE_ACCESS_TOKEN="tok")
+    def test_yesterday_and_same_weekday_last_week(self) -> None:
+        eng = make_eng()
+        oct8 = datetime.date(2026, 10, 8)
+        oct1 = datetime.date(2026, 10, 1)
+        make_line("Dune", 1600, quantity=2, engagement=eng, business_date=oct8)
+        make_line("Popcorn", 500, business_date=oct8)
+        make_line("Dune", 800, engagement=eng, business_date=oct1)
+        panel = sales_panel(datetime.date(2026, 10, 9))
+        self.assertEqual(panel["yesterday"], DaySales(2100, 2, 500))
+        self.assertEqual(panel["last_week"], DaySales(800, 1, 0))
+        self.assertFalse(panel["has_pulls"])
+        self.assertEqual(panel["yesterday_label"], "Yesterday")
+        self.assertEqual(panel["last_week_label"], "Last Thursday")
+        self.assertEqual(panel["yesterday"].gross_dollars, "21.00")
+        self.assertEqual(panel["yesterday"].concessions_dollars, "5.00")
+
+    @override_settings(SQUARE_ACCESS_TOKEN="tok")
+    def test_zeros_and_has_pulls(self) -> None:
+        SalesPull.objects.create(
+            business_date=datetime.date(2026, 10, 8), status=SalesPull.Status.OK)
+        panel = sales_panel(datetime.date(2026, 10, 9))
+        self.assertEqual(panel["yesterday"], DaySales(0, 0, 0))
+        self.assertTrue(panel["has_pulls"])
+
+
+class PullStatusTests(TestCase):
+    def test_missing_failed_ok(self) -> None:
+        day = datetime.date(2026, 10, 8)
+        self.assertEqual(pull_status(day), "MISSING")
+        earlier = timezone.now() - datetime.timedelta(hours=2)
+        SalesPull.objects.create(
+            business_date=day, status=SalesPull.Status.FAILED, started_at=earlier)
+        self.assertEqual(pull_status(day), "FAILED")
+        SalesPull.objects.create(business_date=day, status=SalesPull.Status.OK)
+        self.assertEqual(pull_status(day), "OK")

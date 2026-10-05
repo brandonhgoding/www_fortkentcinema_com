@@ -3,6 +3,8 @@ import json
 from zoneinfo import ZoneInfo
 
 from boxoffice.gateway import GatewayError
+from boxoffice.models import SquareItem
+from boxoffice.reports import pull_status, sales_panel
 from boxoffice.sync import delete, live_item, push, schedule
 from cinema.models import (
     Engagement,
@@ -96,7 +98,13 @@ class HomeView(StaffRequiredMixin, TemplateView):
                 new_voicemails=Voicemail.objects.filter(
                     status=VoicemailStatus.NEW
                 ).count(),
+                square_pull_status=(
+                    pull_status(today - datetime.timedelta(days=1))
+                    if settings.SQUARE_ACCESS_TOKEN else None),
+                square_sync_failures=SquareItem.objects.filter(
+                    deleted_at__isnull=True).exclude(last_error="").count(),
             ),
+            "sales_panel": sales_panel(today),
             "display_name": user.get_short_name() or user.get_username(),
         })
         return ctx

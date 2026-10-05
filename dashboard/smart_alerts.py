@@ -6,7 +6,9 @@ import datetime
 def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
                        today: datetime.date,
                        new_inquiries: int = 0,
-                       new_voicemails: int = 0) -> list[dict]:
+                       new_voicemails: int = 0,
+                       square_pull_status: str | None = None,
+                       square_sync_failures: int = 0) -> list[dict]:
     """Server-side port of the React useSmartAlerts hook.
 
     engagements: iterable of Engagement (all engagements).
@@ -54,6 +56,24 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
         alerts.append({
             "id": "new-voicemails", "type": "info",
             "message": f"You have {new_voicemails} new {unit}",
+        })
+
+    if square_pull_status == "FAILED":
+        alerts.append({
+            "id": "square-pull-failed", "type": "warning",
+            "message": "Yesterday's Square sales pull failed",
+        })
+    elif square_pull_status == "MISSING":
+        alerts.append({
+            "id": "square-pull-missing", "type": "warning",
+            "message": "No Square sales pull ran yesterday",
+        })
+
+    if square_sync_failures > 0:
+        unit = "run" if square_sync_failures == 1 else "runs"
+        alerts.append({
+            "id": "square-sync-failed", "type": "warning",
+            "message": f"{square_sync_failures} {unit} failed to sync to Square",
         })
 
     return alerts

@@ -28,6 +28,19 @@
       <p class="cardValue">{{ screens_count }}</p>
       <a href="{% url 'dashboard:screens' %}" class="cardLink">Manage &rarr;</a>
     </div></div>
+    {% if sales_panel %}
+    <div class="card"><div class="cardBody">
+      <p class="cardLabel">Yesterday's Sales</p>
+      {% if sales_panel.has_pulls %}
+      <p class="cardValue">${{ sales_panel.yesterday.gross_dollars }}</p>
+      <p class="cardLabel">{{ sales_panel.yesterday.tickets }} tickets &middot; ${{ sales_panel.yesterday.concessions_dollars }} concessions</p>
+      <p class="cardLabel">{{ sales_panel.last_week_label }}: ${{ sales_panel.last_week.gross_dollars }} &middot; {{ sales_panel.last_week.tickets }} tickets</p>
+      {% else %}
+      <p class="cardValue">&mdash;</p>
+      <p class="cardLabel">No sales pulled yet.</p>
+      {% endif %}
+    </div></div>
+    {% endif %}
   </div>
 
   <section class="section">

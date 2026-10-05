@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.db.models import Q, QuerySet, Sum
+from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 
 from .models import EmailReport, SaleLine, SalesPull
@@ -100,3 +101,46 @@ def send_reports(day: datetime.date, pull: SalesPull, *, dry_run: bool = False) 
         setattr(pull, flag, True)
         pull.save(update_fields=[flag])
         logger.info("Sent %s email for %s to %s", kind, day, ", ".join(to))
+
+
+@dataclass(frozen=True)
+class DaySales:
+    gross_cents: int
+    tickets: int
+    concessions_cents: int
+
+    @property
+    def gross_dollars(self) -> str:
+        return f"{self.gross_cents / 100:.2f}"
+
+    @property
+    def concessions_dollars(self) -> str:
+        return f"{self.concessions_cents / 100:.2f}"
+
+
+def day_sales(day: datetime.date) -> DaySales:
+    tickets = Q(engagement__isnull=False)
+    totals = SaleLine.objects.filter(business_date=day).aggregate(
+        gross=Coalesce(Sum("gross_cents"), 0),
+        tickets=Coalesce(Sum("quantity", filter=tickets), 0),
+        concessions=Coalesce(Sum("gross_cents", filter=~tickets), 0),
+    )
+    return DaySales(totals["gross"], totals["tickets"], totals["concessions"])
+
+
+def sales_panel(today: datetime.date) -> dict | None:
+    if not settings.SQUARE_ACCESS_TOKEN:
+        return None
+    last_week = today - datetime.timedelta(days=8)
+    return {
+        "yesterday": day_sales(today - datetime.timedelta(days=1)),
+        "last_week": day_sales(last_week),
+        "yesterday_label": "Yesterday",
+        "last_week_label": f"Last {last_week:%A}",
+        "has_pulls": SalesPull.objects.exists(),
+    }
+
+
+def pull_status(day: datetime.date) -> str:
+    latest = SalesPull.objects.filter(business_date=day).order_by("-started_at").first()
+    return latest.status if latest else "MISSING"

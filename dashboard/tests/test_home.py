@@ -1,8 +1,9 @@
 import datetime
 
+from boxoffice.models import SaleLine, SalesPull
 from cinema.models import Engagement, EngagementFilm, Film, Screen, Showtime
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -121,3 +122,28 @@ class HomeRenderTests(TestCase):
         self.assertIn("No showtimes scheduled for tomorrow", html)
         self.assertIn("alertContainer", html)
         self.assertIn("dismissButton", html)
+
+    @override_settings(SQUARE_ACCESS_TOKEN="")
+    def test_sales_panel_hidden_without_token(self) -> None:
+        html = self.client.get(reverse("dashboard:home")).content.decode()
+        self.assertNotIn("Yesterday&#x27;s Sales", html)
+        self.assertNotIn("Yesterday's Sales", html)
+
+    @override_settings(SQUARE_ACCESS_TOKEN="tok")
+    def test_sales_panel_empty_state(self) -> None:
+        html = self.client.get(reverse("dashboard:home")).content.decode()
+        self.assertIn("No sales pulled yet", html)
+
+    @override_settings(SQUARE_ACCESS_TOKEN="tok")
+    def test_sales_panel_with_sales_and_missing_pull_alert(self) -> None:
+        yesterday = timezone.localdate() - datetime.timedelta(days=1)
+        SalesPull.objects.create(
+            business_date=yesterday, status=SalesPull.Status.FAILED)
+        SaleLine.objects.create(
+            order_id="O1", line_uid="L1", business_date=yesterday,
+            closed_at=timezone.now(), item_name="Popcorn", quantity=1,
+            gross_cents=500)
+        html = self.client.get(reverse("dashboard:home")).content.decode()
+        self.assertIn("$5.00", html)
+        self.assertIn("0 tickets", html)
+        self.assertIn("Square sales pull failed", html)
