@@ -71,8 +71,13 @@ class PushTests(TestCase):
 
     def test_version_mismatch_refetches_and_wins(self) -> None:
         item = push(self.eng, self.gw)
+        remote_ids = {
+            sku: f"rv-{sku.rsplit('-', 1)[1]}"
+            for sku in self.gw.items[item.square_id].variation_ids_by_sku
+        }
         self.gw.items[item.square_id] = dataclasses.replace(
-            self.gw.items[item.square_id], version=99, name="Varity")
+            self.gw.items[item.square_id], version=99, name="Varity",
+            variation_ids_by_sku=remote_ids)
         # The brief set event_title to "Dune", which equals the stored name and
         # so would never reach Square; a real rename forces the push.
         self.eng.event_title = "Dune: Part One"
@@ -83,9 +88,14 @@ class PushTests(TestCase):
         self.assertEqual(self.gw.items[item.square_id].name, "Dune: Part One")
         self.assertEqual([c[0] for c in self.gw.calls[-3:]],
                          ["upsert_item", "retrieve_item", "upsert_item"])
+        expected = {t: f"rv-{t}"
+                    for t in ("adult", "senior", "child", "matinee", "member")}
+        self.assertEqual(self.gw.calls[-1][1]["variation_ids_by_tier"], expected)
         item.refresh_from_db()
         self.assertEqual(item.version, 100)
         self.assertEqual(item.last_error, "")
+        self.assertEqual(dict(item.variations.values_list("tier", "square_id")),
+                         expected)
 
     def test_gateway_failure_records_error_and_keeps_engagement(self) -> None:
         item = push(self.eng, self.gw)
@@ -209,10 +219,34 @@ class SyncAndScheduleTests(TestCase):
             sync(self.eng, self.gw)  # does not raise
         self.assertIsNotNone(live_item(self.eng))
 
+    def test_sync_logs_unexpected_error_without_raising(self) -> None:
+        self.gw.fail_with = RuntimeError("SDK exploded")
+        with self.assertLogs(LOGGER, "ERROR") as logs:
+            sync(self.eng, self.gw)  # does not raise
+        self.assertIn("SDK exploded", "\n".join(logs.output))
+
     def test_schedule_runs_after_commit(self) -> None:
         with mock.patch("boxoffice.sync.get_gateway", return_value=self.gw):
             with self.captureOnCommitCallbacks(execute=True) as callbacks:
                 schedule(self.eng)
                 self.assertEqual(SquareItem.objects.count(), 0)
+                self.assertEqual(self.gw.calls, [])
         self.assertEqual(len(callbacks), 1)
         self.assertEqual(live_item(self.eng).square_id, "item-1")
+
+    def test_schedule_uses_fresh_row_and_skips_deleted(self) -> None:
+        with mock.patch("boxoffice.sync.get_gateway", return_value=self.gw):
+            with self.captureOnCommitCallbacks(execute=True):
+                schedule(self.eng)
+                # A rename saved elsewhere before commit; the stale instance
+                # passed to schedule still holds the old (empty) event_title.
+                Engagement.objects.filter(pk=self.eng.pk).update(
+                    event_title="Fresh Title")
+            self.assertEqual(self.gw.items["item-1"].name, "Fresh Title")
+
+            gone = make_eng(end_date=datetime.date(2099, 1, 1))
+            self.gw.calls.clear()
+            with self.captureOnCommitCallbacks(execute=True):
+                schedule(gone)
+                gone.delete()
+        self.assertEqual(self.gw.calls, [])

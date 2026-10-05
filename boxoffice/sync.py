@@ -139,8 +139,9 @@ def delete(engagement: Engagement, gateway: SquareGateway | None = None) -> None
 
 
 def sync(engagement: Engagement, gateway: SquareGateway | None = None) -> None:
-    gateway = gateway if gateway is not None else get_gateway()
+    """Never raises: it runs after commit, where an error would fail the save."""
     try:
+        gateway = gateway if gateway is not None else get_gateway()
         if should_have_item(engagement, timezone.localdate()):
             push(engagement, gateway)
         else:
@@ -148,7 +149,17 @@ def sync(engagement: Engagement, gateway: SquareGateway | None = None) -> None:
     except (GatewayError, ValueError) as exc:
         logger.warning("Square sync failed for engagement %s: %s",
                        engagement.pk, exc)
+    except Exception:
+        logger.exception("Unexpected error syncing engagement %s to Square",
+                         engagement.pk)
+
+
+def _sync_by_pk(pk: int) -> None:
+    engagement = Engagement.objects.filter(pk=pk).first()
+    if engagement is not None:
+        sync(engagement)
 
 
 def schedule(engagement: Engagement) -> None:
-    transaction.on_commit(lambda: sync(engagement))
+    pk = engagement.pk
+    transaction.on_commit(lambda: _sync_by_pk(pk))
