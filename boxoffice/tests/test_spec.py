@@ -18,8 +18,8 @@ class DesiredItemTests(TestCase):
         self.eng = Engagement.objects.create(
             screen=screen, start_date=datetime.date(2026, 10, 9),
             end_date=datetime.date(2026, 10, 15), status="CONFIRMED")
-        EngagementFilm.objects.create(engagement=self.eng,
-                                      film=Film.objects.create(title="Dune"), position=1)
+        film = Film.objects.create(title="Dune")
+        EngagementFilm.objects.create(engagement=self.eng, film=film, position=1)
 
     def test_item_name_is_display_title(self) -> None:
         self.assertEqual(desired_item(self.eng).name, "Dune")
