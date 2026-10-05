@@ -23,10 +23,18 @@ class HomepageVoteCTATests(TestCase):
         html = self.client.get(reverse("home")).content.decode()
         self.assertIn("vote-cta", html)
         self.assertIn(f'href="{reverse("vote")}"', html)
-        self.assertIn("Vote on what plays next", html)
+        self.assertIn("VOTE ON WHAT PLAYS NEXT", html)
         self.assertIn("One round is open right now", html)
         # It does not advertise one round over another.
         self.assertNotIn("Round One", html.split('class="vote-cta"')[1])
+
+    def test_cta_sits_just_above_the_blog(self) -> None:
+        Poll.objects.create(title="Round One", status=PollStatus.OPEN)
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertLess(html.index('class="cta-pair"'), html.index('class="vote-cta"'))
+        self.assertLess(
+            html.index('class="vote-cta"'), html.index('<section class="blog"')
+        )
 
     def test_one_cta_however_many_rounds_are_open(self) -> None:
         Poll.objects.create(title="Round One", status=PollStatus.OPEN)

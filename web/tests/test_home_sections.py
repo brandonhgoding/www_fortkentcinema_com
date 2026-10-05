@@ -37,13 +37,13 @@ from web.constants import (
 SECTION_MARKERS = (
     "hero",
     "sponsored-cta",
-    "vote-cta",
     "now-showing",
     "open-mic-cta",
     "coming-soon",
     "gift-card-cta",
     "history-cta",
     "sponsor-cta",
+    "vote-cta",
     "blog",
 )
 

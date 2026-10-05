@@ -29,7 +29,6 @@
 
   {# Sponsored-screening banner, top slot — self-expiring; see the partial. #}
   {% include "partials/cta_sponsored.html" %}
-  {% include "partials/cta_vote.html" %}
   {# Advance tickets for a tentpole — self-expiring; see the partial. #}
   {% include "partials/cta_advance_tickets.html" %}
 
@@ -51,6 +50,8 @@
     {% include "partials/cta_history.html" %}
     {% include "partials/cta_sponsor.html" %}
   </div>
+  {# Open vote, just above the blog — self-expiring; see the partial. #}
+  {% include "partials/cta_vote.html" %}
   {% include "partials/blog_teaser.html" %}
   {% comment %}
     Last on the page, deliberately. An ask for money reads very differently
