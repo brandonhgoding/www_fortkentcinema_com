@@ -1,4 +1,5 @@
 """Keep one Square ticket item per confirmed engagement in step with Django."""
+import dataclasses
 import datetime
 import logging
 
@@ -163,3 +164,87 @@ def _sync_by_pk(pk: int) -> None:
 def schedule(engagement: Engagement) -> None:
     pk = engagement.pk
     transaction.on_commit(lambda: _sync_by_pk(pk))
+
+
+@dataclasses.dataclass
+class ReconcileReport:
+    pushed: list[int] = dataclasses.field(default_factory=list)
+    deleted: list[int] = dataclasses.field(default_factory=list)
+    unknown_items: list[str] = dataclasses.field(default_factory=list)
+    errors: list[str] = dataclasses.field(default_factory=list)
+
+
+def _audit_remote(gateway: SquareGateway, report: ReconcileReport) -> None:
+    try:
+        remote_items = gateway.list_ticket_items()
+    except GatewayError as exc:
+        report.errors.append(f"Could not list Square ticket items: {exc}")
+        return
+    known = set(SquareItem.objects.filter(
+        deleted_at__isnull=True, square_id__isnull=False
+    ).values_list("square_id", flat=True))
+    for remote in remote_items:
+        if remote.item_id in known:
+            continue
+        if any(sku.startswith("fkc-eng-") for sku in remote.variation_ids_by_sku):
+            report.errors.append(
+                f"Django-made item without a link row: {remote.item_id}")
+        else:
+            report.unknown_items.append(f"{remote.name} ({remote.item_id})")
+
+
+def _reconcile_pushes(today: datetime.date, gateway: SquareGateway,
+                      dry_run: bool, report: ReconcileReport) -> None:
+    wanted = Engagement.objects.filter(
+        status=EngagementStatus.CONFIRMED, end_date__gte=today).order_by("pk")
+    for engagement in wanted:
+        try:
+            spec = desired_item(engagement)
+        except ValueError as exc:
+            if not dry_run:
+                _record_error(engagement, str(exc))
+            report.errors.append(f"Engagement {engagement.pk}: {exc}")
+            continue
+        if _unchanged(live_item(engagement), spec):
+            continue
+        if dry_run:
+            report.pushed.append(engagement.pk)
+            continue
+        item = push(engagement, gateway)
+        if item is not None and item.last_error:
+            report.errors.append(f"Engagement {engagement.pk}: {item.last_error}")
+        else:
+            report.pushed.append(engagement.pk)
+
+
+def _reconcile_deletes(today: datetime.date, gateway: SquareGateway,
+                       dry_run: bool, report: ReconcileReport) -> None:
+    live_rows = SquareItem.objects.filter(
+        deleted_at__isnull=True).select_related("engagement").order_by("pk")
+    for row in live_rows:
+        engagement = row.engagement
+        if should_have_item(engagement, today):
+            continue
+        if dry_run:
+            report.deleted.append(engagement.pk)
+            continue
+        try:
+            delete(engagement, gateway)
+        except GatewayError as exc:
+            report.errors.append(f"Engagement {engagement.pk}: {exc}")
+        else:
+            report.deleted.append(engagement.pk)
+
+
+def reconcile(today: datetime.date, gateway: SquareGateway | None = None,
+              *, dry_run: bool = False) -> ReconcileReport:
+    """Bring Square in line with Django; with dry_run, only report the plan."""
+    report = ReconcileReport()
+    gateway = _resolve(gateway)
+    if gateway is None:
+        return report
+    # Audit first: the listing is a snapshot of what Square held before we write.
+    _audit_remote(gateway, report)
+    _reconcile_pushes(today, gateway, dry_run, report)
+    _reconcile_deletes(today, gateway, dry_run, report)
+    return report

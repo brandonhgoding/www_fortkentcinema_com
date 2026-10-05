@@ -1,0 +1,31 @@
+from boxoffice.gateway import get_gateway
+from boxoffice.sync import reconcile
+from django.core.management.base import BaseCommand, CommandError
+from django.utils import timezone
+
+
+class Command(BaseCommand):
+    help = "Bring Square ticket items in line with confirmed engagements."
+
+    def add_arguments(self, parser) -> None:
+        parser.add_argument("--dry-run", action="store_true",
+                            help="Report what would change without writing.")
+
+    def handle(self, *args, **options) -> None:
+        gateway = get_gateway()
+        if gateway is None:
+            self.stdout.write("Square sync disabled (no SQUARE_ACCESS_TOKEN)")
+            return
+        dry_run = options["dry_run"]
+        report = reconcile(timezone.localdate(), gateway, dry_run=dry_run)
+        self.stdout.write(
+            f"{'Would push' if dry_run else 'Pushed'} {len(report.pushed)}")
+        self.stdout.write(
+            f"{'Would delete' if dry_run else 'Deleted'} {len(report.deleted)}")
+        if report.unknown_items:
+            self.stdout.write("Unknown items in ticket category: "
+                              + ", ".join(report.unknown_items))
+        for error in report.errors:
+            self.stdout.write(f"ERROR: {error}")
+        if report.errors:
+            raise CommandError(f"{len(report.errors)} error(s) during reconcile")

@@ -2,9 +2,17 @@ import dataclasses
 import datetime
 from unittest import mock
 
-from boxoffice.gateway import GatewayError
+from boxoffice.gateway import GatewayError, RemoteItem
 from boxoffice.models import SquareItem
-from boxoffice.sync import delete, live_item, push, schedule, should_have_item, sync
+from boxoffice.sync import (
+    delete,
+    live_item,
+    push,
+    reconcile,
+    schedule,
+    should_have_item,
+    sync,
+)
 from boxoffice.tests.fakes import FakeGateway
 from cinema.models import Engagement, EngagementFilm, Film, Screen
 from django.test import TestCase, override_settings
@@ -250,3 +258,91 @@ class SyncAndScheduleTests(TestCase):
                 schedule(gone)
                 gone.delete()
         self.assertEqual(self.gw.calls, [])
+
+
+class ReconcileTests(TestCase):
+    def setUp(self) -> None:
+        self.gw = FakeGateway()
+        self.today = datetime.date(2026, 10, 9)
+
+    def test_pushes_confirmed_future_and_deletes_ended(self) -> None:
+        live = make_eng(end_date=datetime.date(2026, 10, 20))
+        ended = make_eng(end_date=datetime.date(2026, 10, 1))
+        push(ended, self.gw)
+        cancelled = make_eng()
+        push(cancelled, self.gw)
+        Engagement.objects.filter(pk=cancelled.pk).update(status="CANCELLED")
+        report = reconcile(self.today, self.gw)
+        self.assertEqual(report.pushed, [live.pk])
+        self.assertEqual(sorted(report.deleted), sorted([ended.pk, cancelled.pk]))
+        self.assertIsNone(live_item(ended))
+        self.assertIsNone(live_item(cancelled))
+        self.assertEqual(report.errors, [])
+
+    def test_repushes_item_edited_in_admin(self) -> None:
+        eng = make_eng()
+        push(eng, self.gw)
+        Engagement.objects.filter(pk=eng.pk).update(event_title="Renamed")
+        report = reconcile(self.today, self.gw)
+        self.assertEqual(report.pushed, [eng.pk])
+        self.assertEqual(self.gw.items[live_item(eng).square_id].name, "Renamed")
+
+    def test_unchanged_engagement_is_not_reported_pushed(self) -> None:
+        eng = make_eng()
+        push(eng, self.gw)
+        self.assertEqual(reconcile(self.today, self.gw).pushed, [])
+
+    def test_unknown_items_reported_not_deleted(self) -> None:
+        self.gw.items["hand"] = RemoteItem("hand", 1, "Varity", {})
+        report = reconcile(self.today, self.gw)
+        self.assertEqual(report.unknown_items, ["Varity (hand)"])
+        self.assertIn("hand", self.gw.items)
+
+    def test_django_made_item_without_link_row_is_an_error(self) -> None:
+        self.gw.items["orphan"] = RemoteItem(
+            "orphan", 1, "Old", {"fkc-eng-9-adult": "v"})
+        report = reconcile(self.today, self.gw)
+        self.assertEqual(report.unknown_items, [])
+        self.assertEqual(
+            report.errors, ["Django-made item without a link row: orphan"])
+        self.assertIn("orphan", self.gw.items)
+
+    def test_dry_run_changes_nothing(self) -> None:
+        eng = make_eng()
+        report = reconcile(self.today, self.gw, dry_run=True)
+        self.assertEqual(report.pushed, [eng.pk])
+        self.assertEqual(
+            self.gw.calls, [c for c in self.gw.calls if c[0] == "list_ticket_items"])
+        self.assertEqual(SquareItem.objects.count(), 0)
+
+    def test_dry_run_reports_deletes_without_deleting(self) -> None:
+        ended = make_eng(end_date=datetime.date(2026, 10, 1))
+        push(ended, self.gw)
+        self.gw.calls.clear()
+        report = reconcile(self.today, self.gw, dry_run=True)
+        self.assertEqual(report.deleted, [ended.pk])
+        self.assertIsNotNone(live_item(ended))
+        self.assertNotIn("delete_item", [c[0] for c in self.gw.calls])
+
+    def test_listing_failure_is_reported_and_reconcile_continues(self) -> None:
+        eng = make_eng()
+
+        def failing_list():
+            raise GatewayError("boom")
+
+        self.gw.list_ticket_items = failing_list
+        report = reconcile(self.today, self.gw)
+        self.assertEqual(report.pushed, [eng.pk])
+        self.assertEqual(len(report.errors), 1)
+        self.assertIn("boom", report.errors[0])
+
+    def test_delete_failure_is_reported_and_loop_continues(self) -> None:
+        a = make_eng(end_date=datetime.date(2026, 10, 1))
+        b = make_eng(end_date=datetime.date(2026, 10, 2))
+        push(a, self.gw)
+        push(b, self.gw)
+        del self.gw.items[live_item(a).square_id]  # Square now refuses a's delete
+        report = reconcile(self.today, self.gw)
+        self.assertEqual(report.deleted, [b.pk])
+        self.assertEqual(len(report.errors), 1)
+        self.assertIsNotNone(live_item(a))
