@@ -78,7 +78,12 @@ def _temp_variation_id(spec: ItemSpec, tier: str) -> str:
 
 
 def _category_ids(obj: Any) -> list[str]:
-    return [c.id for c in (obj.item_data.categories or [])]
+    # batch_get's related_objects carry every type (images, categories, taxes);
+    # only ITEM objects have item_data, and pydantic raises on the rest.
+    item_data = getattr(obj, "item_data", None)
+    if item_data is None:
+        return []
+    return [c.id for c in (item_data.categories or [])]
 
 
 def _remote_item(obj: Any) -> RemoteItem:
@@ -186,7 +191,10 @@ class SquareGateway:
                 item_category[item.id] = cats[0]
         result = {}
         for var in response.objects or []:
-            cat = item_category.get(var.item_variation_data.item_id)
+            data = getattr(var, "item_variation_data", None)
+            if data is None:
+                continue  # a line's catalog_object_id that is not a variation
+            cat = item_category.get(data.item_id)
             if cat:
                 result[var.id] = cat
         return result

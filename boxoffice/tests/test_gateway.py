@@ -252,6 +252,23 @@ class CatalogCallTests(SimpleTestCase):
             include_deleted_objects=True)
         self.assertEqual(result, {"V1": "CAT", "V2": "POP"})
 
+    def test_lookup_categories_ignores_related_objects_that_are_not_items(self) -> None:
+        # Square returns every related object type (images, categories, taxes);
+        # a pydantic model without item_data raises AttributeError, as a real
+        # CatalogObjectImage did on the first production pull.
+        image = mock.Mock(spec=["id", "type"])
+        image.id, image.type = "IMG1", "IMAGE"
+        stray = mock.Mock(spec=["id", "type"])  # an object id that is not a variation
+        stray.id, stray.type = "X1", "CATEGORY"
+        client = mock.Mock()
+        client.catalog.batch_get.return_value = mock.Mock(
+            objects=[mock.Mock(id="V1", item_variation_data=mock.Mock(item_id="I1")),
+                     stray],
+            related_objects=[image, _catalog_item("I1", ["CAT"])],
+        )
+        result = SquareGateway(client, "LOC", "CAT").lookup_categories(["V1", "X1"])
+        self.assertEqual(result, {"V1": "CAT"})
+
     def test_variation_without_sku_is_left_out(self) -> None:
         obj = _catalog_item("H1", ["CAT"])
         obj.item_data.variations = [
