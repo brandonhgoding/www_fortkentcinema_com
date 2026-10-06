@@ -21,7 +21,15 @@ class SyncSquareCatalogCommandTests(TestCase):
         out = StringIO()
         with override_settings(SQUARE_ACCESS_TOKEN=""):
             call_command("sync_square_catalog", stdout=out)
-        self.assertIn("disabled", out.getvalue())
+        self.assertIn("disabled (no SQUARE_ACCESS_TOKEN)", out.getvalue())
+
+    def test_disabled_names_the_blank_id(self) -> None:
+        out = StringIO()
+        with override_settings(SQUARE_ACCESS_TOKEN="tok", SQUARE_LOCATION_ID="",
+                               SQUARE_TICKET_CATEGORY_ID="C"), \
+                self.assertLogs("boxoffice.gateway", "ERROR"):
+            call_command("sync_square_catalog", stdout=out)
+        self.assertIn("disabled (SQUARE_LOCATION_ID is blank)", out.getvalue())
 
     def test_dry_run_prints_plan(self) -> None:
         make_eng()
@@ -135,5 +143,14 @@ class PullSquareSalesCommandTests(TestCase):
     def test_disabled_without_token(self) -> None:
         for args in ((), ("--dry-run",)):
             out = self.run_command(*args, gateway=None)
-            self.assertIn("disabled", out)
+            self.assertIn("disabled (no SQUARE_ACCESS_TOKEN)", out)
+        self.assertEqual(SalesPull.objects.count(), 0)
+
+    def test_disabled_names_the_blank_id(self) -> None:
+        out = StringIO()
+        with override_settings(SQUARE_ACCESS_TOKEN="tok", SQUARE_LOCATION_ID="L",
+                               SQUARE_TICKET_CATEGORY_ID=""), \
+                self.assertLogs("boxoffice.gateway", "ERROR"):
+            call_command("pull_square_sales", stdout=out)
+        self.assertIn("disabled (SQUARE_TICKET_CATEGORY_ID is blank)", out.getvalue())
         self.assertEqual(SalesPull.objects.count(), 0)

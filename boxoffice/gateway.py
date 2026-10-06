@@ -1,5 +1,6 @@
 """The only module that talks to Square. Everything else uses these types."""
 import datetime
+import logging
 from dataclasses import dataclass
 from typing import Any, Callable, TypeVar
 from uuid import uuid4
@@ -13,6 +14,7 @@ from square.core.api_error import ApiError
 from square.environment import SquareEnvironment
 
 T = TypeVar("T")
+logger = logging.getLogger(__name__)
 
 
 class GatewayError(Exception):
@@ -236,10 +238,30 @@ class SquareGateway:
         return obj
 
 
-def get_gateway() -> SquareGateway | None:
-    token = settings.SQUARE_ACCESS_TOKEN
-    if not token:
+def disabled_reason() -> str | None:
+    """Why the sync is off, or None when every Square setting is present.
+
+    A blank token is the deliberate off switch and is not an error. A token
+    with a blank location or category ID is a misconfiguration: pushing
+    would create items Square rejects, so the sync stays off and says why.
+    """
+    if not settings.SQUARE_ACCESS_TOKEN:
+        return "no SQUARE_ACCESS_TOKEN"
+    blank = [name for name in ("SQUARE_LOCATION_ID", "SQUARE_TICKET_CATEGORY_ID")
+             if not getattr(settings, name)]
+    if not blank:
         return None
+    verb = "is" if len(blank) == 1 else "are"
+    return f"{' and '.join(blank)} {verb} blank"
+
+
+def get_gateway() -> SquareGateway | None:
+    reason = disabled_reason()
+    if reason is not None:
+        if settings.SQUARE_ACCESS_TOKEN:
+            logger.error("Square sync disabled: %s", reason)
+        return None
+    token = settings.SQUARE_ACCESS_TOKEN
     environment = (SquareEnvironment.PRODUCTION
                    if settings.SQUARE_ENVIRONMENT == "production"
                    else SquareEnvironment.SANDBOX)

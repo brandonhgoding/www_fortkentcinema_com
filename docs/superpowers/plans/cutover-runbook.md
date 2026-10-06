@@ -430,13 +430,18 @@ If verification fails, revert to serving the static React build:
 
 Ship with the token blank, so deploying the code changes nothing visible.
 With `SQUARE_ACCESS_TOKEN` empty, `pull_square_sales` and `sync_square_catalog`
-print `Square sync disabled (no SQUARE_ACCESS_TOKEN)` and exit 0.
+print `Square sync disabled (no SQUARE_ACCESS_TOKEN)` and exit 0. The three
+Square IDs go together: a token with a blank `SQUARE_LOCATION_ID` or
+`SQUARE_TICKET_CATEGORY_ID` also leaves the sync off, logs an ERROR naming the
+blank variable, and the commands print it (`Square sync disabled
+(SQUARE_LOCATION_ID is blank)`). Nothing is sent to Square until all three
+are set.
 
 ### Environment variables (`webservers.yml`)
 
 - `SQUARE_ACCESS_TOKEN` (leave blank until cutover)
-- `SQUARE_LOCATION_ID`
-- `SQUARE_TICKET_CATEGORY_ID` (the Movies category)
+- `SQUARE_LOCATION_ID` (required with the token)
+- `SQUARE_TICKET_CATEGORY_ID` (the Movies category; required with the token)
 - `SQUARE_ENVIRONMENT=production` (defaults to `sandbox`)
 - `EMAIL_HOST`
 - `EMAIL_PORT` (default 587)

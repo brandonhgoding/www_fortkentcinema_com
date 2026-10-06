@@ -1,4 +1,4 @@
-from boxoffice.gateway import get_gateway
+from boxoffice.gateway import disabled_reason, get_gateway
 from boxoffice.sync import reconcile
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
@@ -14,7 +14,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options) -> None:
         gateway = get_gateway()
         if gateway is None:
-            self.stdout.write("Square sync disabled (no SQUARE_ACCESS_TOKEN)")
+            self.stdout.write(f"Square sync disabled ({disabled_reason()})")
             return
         dry_run = options["dry_run"]
         report = reconcile(timezone.localdate(), gateway, dry_run=dry_run)

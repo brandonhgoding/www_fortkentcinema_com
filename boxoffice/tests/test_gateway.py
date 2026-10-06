@@ -14,6 +14,7 @@ from boxoffice.gateway import (
     SquareGateway,
     UpsertResult,
     VersionMismatch,
+    disabled_reason,
     get_gateway,
 )
 from boxoffice.spec import ItemSpec, VariationSpec
@@ -363,6 +364,46 @@ class GetGatewayTests(SimpleTestCase):
                          SquareEnvironment.SANDBOX)
         self.assertIs(gw.client, Square.return_value)
         self.assertEqual((gw.location_id, gw.category_id), ("L", "C"))
+
+    @override_settings(SQUARE_ACCESS_TOKEN="tok", SQUARE_LOCATION_ID="",
+                       SQUARE_TICKET_CATEGORY_ID="C")
+    def test_token_without_location_is_disabled_and_logged(self) -> None:
+        with mock.patch("boxoffice.gateway.Square") as Square, \
+                self.assertLogs("boxoffice.gateway", "ERROR") as logs:
+            self.assertIsNone(get_gateway())
+        Square.assert_not_called()
+        self.assertIn("SQUARE_LOCATION_ID", logs.output[0])
+        self.assertEqual(disabled_reason(), "SQUARE_LOCATION_ID is blank")
+
+    @override_settings(SQUARE_ACCESS_TOKEN="tok", SQUARE_LOCATION_ID="L",
+                       SQUARE_TICKET_CATEGORY_ID="")
+    def test_token_without_category_is_disabled_and_logged(self) -> None:
+        with mock.patch("boxoffice.gateway.Square") as Square, \
+                self.assertLogs("boxoffice.gateway", "ERROR") as logs:
+            self.assertIsNone(get_gateway())
+        Square.assert_not_called()
+        self.assertIn("SQUARE_TICKET_CATEGORY_ID", logs.output[0])
+        self.assertEqual(disabled_reason(), "SQUARE_TICKET_CATEGORY_ID is blank")
+
+    @override_settings(SQUARE_ACCESS_TOKEN="tok", SQUARE_LOCATION_ID="",
+                       SQUARE_TICKET_CATEGORY_ID="")
+    def test_both_ids_blank_are_both_named(self) -> None:
+        self.assertEqual(
+            disabled_reason(),
+            "SQUARE_LOCATION_ID and SQUARE_TICKET_CATEGORY_ID are blank",
+        )
+
+    @override_settings(SQUARE_ACCESS_TOKEN="", SQUARE_LOCATION_ID="",
+                       SQUARE_TICKET_CATEGORY_ID="")
+    def test_blank_token_reason_does_not_log(self) -> None:
+        self.assertEqual(disabled_reason(), "no SQUARE_ACCESS_TOKEN")
+        with self.assertNoLogs("boxoffice.gateway"):
+            self.assertIsNone(get_gateway())
+
+    @override_settings(SQUARE_ACCESS_TOKEN="tok", SQUARE_LOCATION_ID="L",
+                       SQUARE_TICKET_CATEGORY_ID="C")
+    def test_fully_configured_has_no_reason(self) -> None:
+        self.assertIsNone(disabled_reason())
 
     @override_settings(SQUARE_ACCESS_TOKEN="tok", SQUARE_LOCATION_ID="L",
                        SQUARE_TICKET_CATEGORY_ID="C", SQUARE_ENVIRONMENT="production")

@@ -1,7 +1,7 @@
 import datetime
 import logging
 
-from boxoffice.gateway import GatewayError, get_gateway
+from boxoffice.gateway import GatewayError, disabled_reason, get_gateway
 from boxoffice.models import SalesPull
 from boxoffice.pull import EASTERN, day_bounds, pull_day
 from boxoffice.reports import owner_summary, render_report, send_reports, ticket_report
@@ -29,7 +29,7 @@ class Command(BaseCommand):
             raise CommandError("--days must be at least 1")
         gateway = get_gateway()
         if gateway is None:
-            self.stdout.write("Square sync disabled (no SQUARE_ACCESS_TOKEN)")
+            self.stdout.write(f"Square sync disabled ({disabled_reason()})")
             return
         target = options["date"] or datetime.datetime.now(EASTERN).date()
         window = [target - datetime.timedelta(days=n) for n in range(days - 1, -1, -1)]
