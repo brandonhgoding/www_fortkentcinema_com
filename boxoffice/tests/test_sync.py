@@ -18,6 +18,8 @@ from cinema.models import Engagement, EngagementFilm, Film, Screen
 from django.test import TestCase, override_settings
 
 LOGGER = "boxoffice.sync"
+FETCH = "boxoffice.sync.fetch_poster"
+POSTER = "https://image.tmdb.org/t/p/w500/dune.jpg"
 
 
 def make_eng(**over):
@@ -456,3 +458,90 @@ class ReconcileTests(TestCase):
         self.assertEqual(len(report.errors), 1)
         self.assertIn("would be restored", report.errors[0])
         self.assertEqual(live_item(eng).pk, old.pk)
+
+
+class ReconcileImageTests(TestCase):
+    def setUp(self) -> None:
+        self.gw = FakeGateway()
+        self.today = datetime.date(2026, 10, 9)
+        self.eng = make_eng()
+        Film.objects.filter(title="Dune").update(poster_url=POSTER)
+        push(self.eng, self.gw)
+        self.item = live_item(self.eng)
+
+    def test_attaches_poster_once(self) -> None:
+        with mock.patch(FETCH, return_value=b"jpg") as fetch:
+            report = reconcile(self.today, self.gw)
+            reconcile(self.today, self.gw)
+        fetch.assert_called_once_with(POSTER)
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.image_id, "img-1")
+        self.assertEqual(self.gw.images["img-1"], (self.item.square_id, b"jpg"))
+        self.assertEqual(report.images, [self.eng.pk])
+        uploads = [c for c in self.gw.calls if c[0] == "upload_item_image"]
+        self.assertEqual(len(uploads), 1)
+        self.assertEqual(uploads[0][1]["name"], "Dune")
+
+    def test_poster_fetch_failure_is_skipped_not_an_error(self) -> None:
+        with mock.patch(FETCH, return_value=None):
+            report = reconcile(self.today, self.gw)
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.image_id, "")
+        self.assertEqual(report.errors, [])
+        self.assertEqual(len(report.image_skips), 1)
+        self.assertIn("Dune", report.image_skips[0])
+
+    def test_upload_failure_is_skipped_not_an_error(self) -> None:
+        with mock.patch(FETCH, return_value=b"jpg"), \
+                mock.patch.object(self.gw, "upload_item_image",
+                                  side_effect=GatewayError("too big")):
+            report = reconcile(self.today, self.gw)
+        self.assertEqual(report.errors, [])
+        self.assertIn("too big", report.image_skips[0])
+
+    def test_film_without_poster_is_left_alone(self) -> None:
+        Film.objects.filter(title="Dune").update(poster_url="")
+        with mock.patch(FETCH) as fetch:
+            report = reconcile(self.today, self.gw)
+        fetch.assert_not_called()
+        self.assertEqual((report.images, report.image_skips), ([], []))
+
+    def test_dry_run_reports_without_fetching_or_uploading(self) -> None:
+        with mock.patch(FETCH) as fetch:
+            report = reconcile(self.today, self.gw, dry_run=True)
+        fetch.assert_not_called()
+        self.assertEqual(report.images, [self.eng.pk])
+        self.assertEqual(self.gw.images, {})
+
+    def test_ended_run_gets_no_image(self) -> None:
+        Engagement.objects.filter(pk=self.eng.pk).update(
+            end_date=datetime.date(2026, 10, 1))
+        with mock.patch(FETCH, return_value=b"jpg") as fetch:
+            report = reconcile(self.today, self.gw)
+        fetch.assert_not_called()
+        self.assertEqual(report.deleted, [self.eng.pk])
+        self.assertEqual(self.gw.images, {})
+
+    def test_delete_removes_the_image_too(self) -> None:
+        with mock.patch(FETCH, return_value=b"jpg"):
+            reconcile(self.today, self.gw)
+        self.assertIn("img-1", self.gw.images)
+        delete(self.eng, self.gw)
+        self.assertNotIn("img-1", self.gw.images)
+        self.assertNotIn(self.item.square_id, self.gw.items)
+
+    def test_image_delete_failure_does_not_block_the_delete(self) -> None:
+        with mock.patch(FETCH, return_value=b"jpg"):
+            reconcile(self.today, self.gw)
+        real_delete = self.gw.delete_item
+
+        def flaky(object_id):
+            if object_id.startswith("img-"):
+                raise GatewayError("image locked")
+            real_delete(object_id)
+
+        with mock.patch.object(self.gw, "delete_item", side_effect=flaky), \
+                self.assertLogs(LOGGER, "WARNING"):
+            delete(self.eng, self.gw)
+        self.item.refresh_from_db()
+        self.assertIsNotNone(self.item.deleted_at)

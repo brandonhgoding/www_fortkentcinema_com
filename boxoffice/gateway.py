@@ -178,6 +178,25 @@ class SquareGateway:
         return [_remote_item(obj) for obj in objects
                 if self.category_id in _category_ids(obj)]
 
+    def upload_item_image(self, item_id: str, image: bytes, name: str) -> str:
+        """Attach ``image`` to the item as its primary picture; returns the image id.
+
+        Square cannot fetch from a URL, so the caller downloads the poster and
+        hands over the bytes. TMDB posters are JPEGs.
+        """
+        response = _call(
+            self.client.catalog.images.create,
+            request={
+                "idempotency_key": str(uuid4()),
+                "object_id": item_id,
+                "is_primary": True,
+                "image": {"type": "IMAGE", "id": "#poster",
+                          "image_data": {"name": name}},
+            },
+            image_file=("poster.jpg", image, "image/jpeg"),
+        )
+        return response.image.id
+
     def lookup_categories(self, variation_ids: list[str]) -> dict[str, str]:
         if not variation_ids:
             return {}

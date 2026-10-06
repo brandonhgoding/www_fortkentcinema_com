@@ -15,6 +15,9 @@ class SquareItem(models.Model):
     synced_at = models.DateTimeField(null=True, blank=True)
     last_error = models.TextField(blank=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
+    # The Square image attached as the item's icon (the film's poster), set by
+    # the nightly reconcile; blank until then or when the film has no poster.
+    image_id = models.CharField(max_length=64, blank=True, default="")
 
     class Meta:
         constraints = [

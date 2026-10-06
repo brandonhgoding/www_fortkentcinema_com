@@ -17,10 +17,12 @@ class FakeGateway:
         self.items: dict[str, RemoteItem] = {}
         self.orders: list[OrderData] = []
         self.categories: dict[str, str] = {}
+        self.images: dict[str, tuple[str, bytes]] = {}
         self.calls: list[tuple[str, dict]] = []
         self.fail_with = fail_with
         self._item_ids = itertools.count(1)
         self._var_ids = itertools.count(1)
+        self._image_ids = itertools.count(1)
 
     def _record(self, method: str, **kwargs) -> None:
         self.calls.append((method, kwargs))
@@ -57,6 +59,7 @@ class FakeGateway:
         self._record("delete_item", item_id=item_id)
         # Like Square's batch_delete, an unknown id succeeds silently.
         self.items.pop(item_id, None)
+        self.images.pop(item_id, None)
 
     def retrieve_item(self, item_id: str) -> RemoteItem:
         self._record("retrieve_item", item_id=item_id)
@@ -72,6 +75,14 @@ class FakeGateway:
     def list_ticket_items(self) -> list[RemoteItem]:
         self._record("list_ticket_items")
         return list(self.items.values())
+
+    def upload_item_image(self, item_id: str, image: bytes, name: str) -> str:
+        self._record("upload_item_image", item_id=item_id, image=image, name=name)
+        if item_id not in self.items:
+            raise GatewayError(f"Unknown item {item_id}")
+        image_id = f"img-{next(self._image_ids)}"
+        self.images[image_id] = (item_id, image)
+        return image_id
 
     def lookup_categories(self, variation_ids: list[str]) -> dict[str, str]:
         self._record("lookup_categories", variation_ids=variation_ids)

@@ -22,6 +22,11 @@ class Command(BaseCommand):
             f"{'Would push' if dry_run else 'Pushed'} {len(report.pushed)}")
         self.stdout.write(
             f"{'Would delete' if dry_run else 'Deleted'} {len(report.deleted)}")
+        self.stdout.write(
+            f"{'Would attach' if dry_run else 'Attached'} {len(report.images)} "
+            f"poster{'' if len(report.images) == 1 else 's'}")
+        if report.image_skips:
+            self.stdout.write("Posters skipped: " + "; ".join(report.image_skips))
         if report.unknown_items:
             self.stdout.write("Unknown items in ticket category: "
                               + ", ".join(report.unknown_items))

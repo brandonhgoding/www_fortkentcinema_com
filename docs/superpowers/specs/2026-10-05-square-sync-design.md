@@ -619,3 +619,8 @@ Nothing in Phase 1 needs to change for this; it is additive.
   ticket category by hand in Square, and retires live rows whose engagement
   was deleted outside the dashboard; one bad row is reported and skipped.
 - `typing_extensions` is pinned to 4.16.0 (the SDK's `anyio` needs it).
+- Each item's icon is the primary film's TMDB poster, attached by the nightly
+  reconcile (not during the dashboard save) and removed with the item. A
+  poster that cannot be fetched or uploaded is reported as a skip and retried
+  the next night; it is never an error. `SquareItem.image_id` records it
+  (migration 0005).

@@ -11,6 +11,7 @@ from boxoffice.gateway import (
     get_gateway,
 )
 from boxoffice.models import SquareItem, SquareVariation
+from boxoffice.posters import fetch_poster
 from boxoffice.spec import ItemSpec, desired_item
 from cinema.models import Engagement, EngagementStatus
 from django.db import transaction
@@ -129,13 +130,31 @@ def _retire(item: SquareItem) -> None:
     item.save(update_fields=["deleted_at"])
 
 
+def _delete_remote(gateway: SquareGateway, item: SquareItem) -> None:
+    """Remove the item from Square, then its poster image as best effort.
+
+    Square keeps images as separate catalog objects, so deleting the item
+    alone would leave an orphan picture behind for every finished run. A
+    failure to remove the picture is logged, not raised: the item is gone,
+    which is what matters for the register.
+    """
+    if item.square_id is not None:
+        gateway.delete_item(item.square_id)
+    if item.image_id:
+        try:
+            gateway.delete_item(item.image_id)
+        except GatewayError as exc:
+            logger.warning("Could not delete image %s for item %s: %s",
+                           item.image_id, item.square_id, exc)
+
+
 def delete(engagement: Engagement, gateway: SquareGateway | None = None) -> None:
     item = live_item(engagement)
     if item is None:
         return
     gateway = _resolve(gateway)
-    if item.square_id is not None and gateway is not None:
-        gateway.delete_item(item.square_id)
+    if gateway is not None:
+        _delete_remote(gateway, item)
     _retire(item)
 
 
@@ -170,14 +189,19 @@ def schedule(engagement: Engagement) -> None:
 class ReconcileReport:
     """What a reconcile did (or, with dry_run, would do).
 
-    ``pushed`` and ``deleted`` hold engagement pks. A live row whose engagement
-    was deleted from Django is still removed from Square and retired, but has no
-    engagement pk to list, so it is not counted in ``deleted``.
+    ``pushed``, ``deleted`` and ``images`` hold engagement pks. A live row whose
+    engagement was deleted from Django is still removed from Square and
+    retired, but has no engagement pk to list, so it is not counted in
+    ``deleted``.
     """
     pushed: list[int] = dataclasses.field(default_factory=list)
     deleted: list[int] = dataclasses.field(default_factory=list)
     unknown_items: list[str] = dataclasses.field(default_factory=list)
     errors: list[str] = dataclasses.field(default_factory=list)
+    # Poster icons: ``images`` holds engagement pks whose item got one; a
+    # poster that could not be fetched or uploaded is a skip, not an error.
+    images: list[int] = dataclasses.field(default_factory=list)
+    image_skips: list[str] = dataclasses.field(default_factory=list)
 
 
 def _audit_remote(today: datetime.date, gateway: SquareGateway, dry_run: bool,
@@ -293,8 +317,7 @@ def _reconcile_delete(row: SquareItem, today: datetime.date,
     if engagement is None:
         # The engagement was deleted outside the dashboard (e.g. the admin).
         if not dry_run:
-            if row.square_id is not None:
-                gateway.delete_item(row.square_id)
+            _delete_remote(gateway, row)
             _retire(row)
         return
     if should_have_item(engagement, today):
@@ -304,6 +327,43 @@ def _reconcile_delete(row: SquareItem, today: datetime.date,
         return
     delete(engagement, gateway)
     report.deleted.append(engagement.pk)
+
+
+def _reconcile_images(gateway: SquareGateway, dry_run: bool,
+                      report: ReconcileReport) -> None:
+    """Give every live item without a picture its film's poster as the icon.
+
+    Deferred to the nightly run on purpose: the download and upload would
+    otherwise sit inside the dashboard save. Posters are decoration, so a
+    missing or unreachable one is reported as a skip and tried again the
+    next night, never as an error.
+    """
+    rows = SquareItem.objects.filter(
+        deleted_at__isnull=True, square_id__isnull=False, image_id="",
+        engagement__isnull=False,
+    ).select_related("engagement").order_by("pk")
+    for row in rows:
+        engagement = row.engagement
+        film = engagement.primary_film
+        url = film.poster_url if film is not None else ""
+        if not url:
+            continue
+        if dry_run:
+            report.images.append(engagement.pk)
+            continue
+        try:
+            image = fetch_poster(url)
+            if image is None:
+                report.image_skips.append(
+                    f"{engagement.display_title}: poster could not be fetched "
+                    f"from {url}")
+                continue
+            row.image_id = gateway.upload_item_image(
+                row.square_id, image, engagement.display_title)
+            row.save(update_fields=["image_id"])
+            report.images.append(engagement.pk)
+        except Exception as exc:
+            report.image_skips.append(f"{engagement.display_title}: {exc!r}")
 
 
 def reconcile(today: datetime.date, gateway: SquareGateway | None = None,
@@ -318,4 +378,6 @@ def reconcile(today: datetime.date, gateway: SquareGateway | None = None,
     _audit_remote(today, gateway, dry_run, report)
     _reconcile_pushes(today, gateway, dry_run, report)
     _reconcile_deletes(today, gateway, dry_run, report)
+    # Posters last, so nothing is uploaded to an item the delete pass removed.
+    _reconcile_images(gateway, dry_run, report)
     return report

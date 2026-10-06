@@ -6,7 +6,9 @@ from boxoffice.gateway import GatewayError, RemoteItem
 from boxoffice.models import EmailRecipient, EmailReport, SaleLine, SalesPull
 from boxoffice.tests.fakes import FakeGateway
 from boxoffice.tests.test_pull import at_eastern, line, order
+from boxoffice.sync import push
 from boxoffice.tests.test_sync import make_eng
+from cinema.models import Film
 from django.core import mail
 from django.core.management import CommandError, call_command
 from django.test import TestCase, override_settings
@@ -37,6 +39,30 @@ class SyncSquareCatalogCommandTests(TestCase):
         with mock.patch(COMMAND_GATEWAY, return_value=FakeGateway()):
             call_command("sync_square_catalog", "--dry-run", stdout=out)
         self.assertIn("Would push 1", out.getvalue())
+
+    def test_dry_run_counts_posters_to_attach(self) -> None:
+        eng = make_eng()
+        Film.objects.filter(pk=eng.primary_film.pk).update(
+            poster_url="https://image.tmdb.org/t/p/w500/dune.jpg")
+        gw = FakeGateway()
+        push(eng, gw)
+        out = StringIO()
+        with mock.patch(COMMAND_GATEWAY, return_value=gw):
+            call_command("sync_square_catalog", "--dry-run", stdout=out)
+        self.assertIn("Would attach 1 poster", out.getvalue())
+
+    def test_image_skips_are_printed_but_not_errors(self) -> None:
+        eng = make_eng()
+        Film.objects.filter(pk=eng.primary_film.pk).update(
+            poster_url="https://image.tmdb.org/t/p/w500/dune.jpg")
+        gw = FakeGateway()
+        push(eng, gw)
+        out = StringIO()
+        with mock.patch(COMMAND_GATEWAY, return_value=gw), \
+                mock.patch("boxoffice.sync.fetch_poster", return_value=None):
+            call_command("sync_square_catalog", stdout=out)  # no CommandError
+        self.assertIn("Posters skipped:", out.getvalue())
+        self.assertIn("Attached 0 posters", out.getvalue())
 
     def test_real_run_prints_counts(self) -> None:
         make_eng()

@@ -281,6 +281,30 @@ class CatalogCallTests(SimpleTestCase):
         self.assertEqual(item.variation_ids_by_sku, {"s": "H1-c"})
         self.assertNotIn(None, item.variation_ids_by_sku)
 
+    def test_upload_item_image_attaches_primary_image_and_returns_id(self) -> None:
+        client = mock.Mock()
+        client.catalog.images.create.return_value = mock.Mock(
+            image=mock.Mock(id="IMG1"))
+        image_id = SquareGateway(client, "LOC", "CAT").upload_item_image(
+            "I1", b"jpegbytes", "Dune")
+        self.assertEqual(image_id, "IMG1")
+        kwargs = client.catalog.images.create.call_args.kwargs
+        request = kwargs["request"]
+        self.assertEqual(request["object_id"], "I1")
+        self.assertTrue(request["is_primary"])
+        self.assertTrue(request["idempotency_key"])
+        self.assertEqual(request["image"]["type"], "IMAGE")
+        self.assertEqual(request["image"]["image_data"]["name"], "Dune")
+        self.assertEqual(kwargs["image_file"],
+                         ("poster.jpg", b"jpegbytes", "image/jpeg"))
+
+    def test_upload_item_image_translates_api_errors(self) -> None:
+        client = mock.Mock()
+        client.catalog.images.create.side_effect = ApiError(
+            status_code=400, body={"errors": [{"code": "INVALID_VALUE"}]})
+        with self.assertRaises(GatewayError):
+            SquareGateway(client, "LOC", "CAT").upload_item_image("I1", b"x", "Dune")
+
     def test_lookup_categories_with_no_ids_makes_no_call(self) -> None:
         client = mock.Mock()
         self.assertEqual(SquareGateway(client, "LOC", "CAT").lookup_categories([]), {})
@@ -434,10 +458,22 @@ class GetGatewayTests(SimpleTestCase):
 class FakeGatewayTests(SimpleTestCase):
     def test_public_methods_match_the_real_gateway(self) -> None:
         public = [n for n in vars(SquareGateway) if not n.startswith("_")]
-        self.assertEqual(len(public), 6)
+        self.assertEqual(len(public), 7)
         for name in public:
             self.assertEqual(inspect.signature(getattr(FakeGateway, name)),
                              inspect.signature(getattr(SquareGateway, name)), name)
+
+    def test_upload_item_image_mints_ids_and_delete_removes_them(self) -> None:
+        gw = FakeGateway()
+        result = gw.upsert_item(SPEC_FOR_7, item_id=None, version=None,
+                                variation_ids_by_tier={})
+        image_id = gw.upload_item_image(result.item_id, b"jpg", "Dune")
+        self.assertEqual(image_id, "img-1")
+        self.assertEqual(gw.images[image_id], (result.item_id, b"jpg"))
+        gw.delete_item(image_id)
+        self.assertNotIn(image_id, gw.images)
+        with self.assertRaises(GatewayError):
+            gw.upload_item_image("nope", b"jpg", "Dune")
 
     def test_create_mints_ids_and_update_bumps_version(self) -> None:
         gw = FakeGateway()
