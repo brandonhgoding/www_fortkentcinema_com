@@ -1,4 +1,4 @@
-<div id="poll-options" class="pollOptions">
+<div id="poll-options" class="pollOptions"{% if oob %} hx-swap-oob="true"{% endif %}>
   {% for row in tallies %}
     <div class="pollOptionRow">
       <div>

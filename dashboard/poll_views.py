@@ -137,20 +137,46 @@ def _poll_options_response(request, poll, toast_message: str = "") -> HttpRespon
     return response
 
 
+def _voters_context(poll) -> dict:
+    """What the Voters section needs: the detail page and the swap share it."""
+    return {
+        "poll": poll,
+        "tallies": poll.tallies(),
+        "email_count": poll.votes_with_email().count(),
+        # Newest first, the model's default, so a fresh vote is on top.
+        "votes": poll.votes.select_related("option__film"),
+    }
+
+
 class PollDetailView(StaffRequiredMixin, View):
     def get(self, request, pk):
         poll = get_object_or_404(Poll, pk=pk)
-        return render(
+        return render(request, "dashboard/poll_detail.html", _voters_context(poll))
+
+
+class PollVoteRemoveView(StaffRequiredMixin, View):
+    """POST: delete one vote from the Voters table.
+
+    For cleaning up after a test run on production. Allowed in any status,
+    since that is exactly when the test votes are sitting in an open round.
+    The address is then free to vote in the round again. The swap returns
+    the Voters section, and out of band the ballot's tally bars and the
+    header's vote count, which both just changed.
+    """
+
+    def post(self, request, pk, vote_pk):
+        poll = get_object_or_404(Poll, pk=pk)
+        vote = get_object_or_404(poll.votes, pk=vote_pk)
+        vote.delete()
+        response = render(
             request,
-            "dashboard/poll_detail.html",
-            {
-                "poll": poll,
-                "tallies": poll.tallies(),
-                "email_count": poll.votes_with_email().count(),
-                # Newest first, the model's default, so a fresh vote is on top.
-                "votes": poll.votes.select_related("option__film"),
-            },
+            "dashboard/_poll_voters.html",
+            {**_voters_context(poll), "oob": True},
         )
+        response["HX-Trigger"] = json.dumps(
+            {"dashboard-toast": {"kind": "success", "message": "Vote removed"}}
+        )
+        return response
 
 
 class PollVotesExportView(StaffRequiredMixin, View):

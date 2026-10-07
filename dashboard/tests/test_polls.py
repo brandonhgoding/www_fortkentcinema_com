@@ -240,3 +240,128 @@ class PollVotersTests(TestCase):
             reverse("dashboard:poll_votes_export", args=[self.poll.pk])
         )
         self.assertEqual(response.status_code, 302)
+
+
+class PollVoteRemoveTests(TestCase):
+    """Removing one vote from the dashboard's Voters table.
+
+    For cleaning up after testing on production: test addresses go, real
+    ones stay, and the address removed may vote in that round again.
+    """
+
+    def setUp(self) -> None:
+        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        self.client.login(username="s", password="pw12345")
+        self.poll = Poll.objects.create(title="Round One", status=PollStatus.OPEN)
+        self.option = PollOption.objects.create(
+            poll=self.poll, film=Film.objects.create(title="Casablanca")
+        )
+        self.other_option = PollOption.objects.create(
+            poll=self.poll, film=Film.objects.create(title="The Thing")
+        )
+        self.test_vote = Vote.objects.create(
+            poll=self.poll, option=self.option, email="me+test@example.com"
+        )
+        self.real_vote = Vote.objects.create(
+            poll=self.poll, option=self.other_option, email="fan@example.com"
+        )
+
+    def remove(self, vote, poll=None, **extra):
+        poll = poll or self.poll
+        return self.client.post(
+            reverse("dashboard:poll_vote_remove", args=[poll.pk, vote.pk]),
+            HTTP_HX_REQUEST="true",
+            **extra,
+        )
+
+    def test_detail_offers_remove_on_every_row_with_a_confirm(self) -> None:
+        html = self.client.get(
+            reverse("dashboard:poll_detail", args=[self.poll.pk])
+        ).content.decode()
+        for vote in (self.test_vote, self.real_vote):
+            self.assertIn(
+                reverse("dashboard:poll_vote_remove", args=[self.poll.pk, vote.pk]),
+                html,
+            )
+        self.assertIn("data-dashboard-confirm", html)
+        self.assertIn("me+test@example.com", html)
+        self.assertIn("They can vote again in this round", html)
+
+    def test_remove_deletes_only_that_vote_and_swaps_the_table(self) -> None:
+        response = self.remove(self.test_vote)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Vote.objects.filter(pk=self.test_vote.pk).exists())
+        self.assertTrue(Vote.objects.filter(pk=self.real_vote.pk).exists())
+        html = response.content.decode()
+        self.assertIn('id="poll-voters"', html)
+        self.assertNotIn("me+test@example.com", html)
+        self.assertIn("fan@example.com", html)
+        self.assertEqual(
+            json.loads(response["HX-Trigger"])["dashboard-toast"]["message"],
+            "Vote removed",
+        )
+
+    def test_remove_refreshes_the_tallies_and_the_count_out_of_band(self) -> None:
+        html = self.remove(self.test_vote).content.decode()
+        # The ballot's bars and the header's count are elsewhere on the page.
+        self.assertRegex(html, r'id="poll-options"[^>]*hx-swap-oob="true"')
+        self.assertRegex(html, r'id="poll-summary"[^>]*hx-swap-oob="true"')
+        self.assertIn("Open &middot; 1 vote", html)
+        self.assertIn("0 votes", html)  # Casablanca's tally after the removal
+
+    def test_removing_the_last_vote_leaves_an_empty_section(self) -> None:
+        self.remove(self.test_vote)
+        html = self.remove(self.real_vote).content.decode()
+        self.assertIn('id="poll-voters"', html)
+        self.assertNotIn("<table", html)
+        self.assertNotIn("Download", html)
+
+    def test_the_address_may_vote_again_afterwards(self) -> None:
+        self.remove(self.test_vote)
+        self.client.logout()
+        response = self.client.post(
+            reverse("vote_cast"),
+            {
+                "poll": self.poll.pk,
+                "option": self.other_option.pk,
+                "email": "me+test@example.com",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            Vote.objects.get(email="me+test@example.com").option, self.other_option
+        )
+
+    def test_remove_leaves_the_same_address_in_other_rounds_alone(self) -> None:
+        other = Poll.objects.create(title="Round Two", status=PollStatus.OPEN)
+        other_option = PollOption.objects.create(
+            poll=other, film=Film.objects.create(title="Alien")
+        )
+        kept = Vote.objects.create(
+            poll=other, option=other_option, email="me+test@example.com"
+        )
+        self.remove(self.test_vote)
+        self.assertTrue(Vote.objects.filter(pk=kept.pk).exists())
+
+    def test_a_vote_from_another_poll_is_not_found(self) -> None:
+        other = Poll.objects.create(title="Round Two", status=PollStatus.OPEN)
+        response = self.remove(self.test_vote, poll=other)
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(Vote.objects.filter(pk=self.test_vote.pk).exists())
+
+    def test_remove_is_post_only(self) -> None:
+        response = self.client.get(
+            reverse(
+                "dashboard:poll_vote_remove", args=[self.poll.pk, self.test_vote.pk]
+            )
+        )
+        self.assertEqual(response.status_code, 405)
+        self.assertTrue(Vote.objects.filter(pk=self.test_vote.pk).exists())
+
+    def test_remove_requires_staff(self) -> None:
+        self.client.logout()
+        self.assertEqual(self.remove(self.test_vote).status_code, 302)
+        User.objects.create_user(username="p", password="pw12345", is_staff=False)
+        self.client.login(username="p", password="pw12345")
+        self.assertEqual(self.remove(self.test_vote).status_code, 403)
+        self.assertTrue(Vote.objects.filter(pk=self.test_vote.pk).exists())

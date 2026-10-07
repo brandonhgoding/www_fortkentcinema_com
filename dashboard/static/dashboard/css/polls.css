@@ -98,3 +98,8 @@
   font-size: var(--text-sm);
   color: var(--text-secondary);
 }
+
+.pollVoterActions {
+  text-align: right;
+  white-space: nowrap;
+}
