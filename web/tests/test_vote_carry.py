@@ -1,9 +1,10 @@
 """Carrying the address from one round to the next.
 
 A voter with several rounds open should type the address once. The thanks
-screen signs the vote just cast and hands that token to the next ballot,
-inline, and to the cards for the rounds after it. Nothing is stored on the
-browser: the token is the only thing that travels, and it lapses in a day.
+screen signs the vote just cast and puts that token on the cards for the
+other open rounds, so each of their ballots already knows the address.
+Nothing is stored on the browser: the token is the only thing that
+travels, and it lapses in a day.
 """
 
 import time
@@ -48,53 +49,29 @@ class CarryAddressTests(TestCase):
 
     # --- the thanks screen ---
 
-    def test_thanks_screen_shows_the_next_round_ballot_inline(self) -> None:
-        html, vote = self.vote_in_first()
-        # An eyebrow over a real heading: the round's title is the point.
-        self.assertIn('<p class="vote-panel__eyebrow">Next up</p>', html)
-        self.assertIn('<h2 class="vote-panel__next-title">Round Two</h2>', html)
-        self.assertIn("Alien", html)
-        self.assertIn("Jaws", html)
-        self.assertIn("Cast my vote", html)
-        self.assertIn(
-            f'<input type="hidden" name="poll" value="{self.second.pk}"', html
-        )
-
-    def test_inline_ballot_carries_a_token_instead_of_an_email_field(self) -> None:
-        html, vote = self.vote_in_first()
-        self.assertIn(f'name="token" value="{_token(vote)}"', html)
-        self.assertNotIn('name="email"', html)
-        self.assertIn(f"Voting as <strong>{EMAIL}</strong>", html)
-        # The way out for a second person at the same keyboard.
-        self.assertIn(f'href="{self.second.get_absolute_url()}"', html)
-        self.assertIn("Use a different address", html)
-
-    def test_only_the_next_round_is_inline_the_rest_are_cards(self) -> None:
+    def test_thanks_screen_lists_the_other_rounds_with_the_token(self) -> None:
         third = _round("Round Three", "Heat")
-        fourth = _round("Round Four", "Rocky")
         html, vote = self.vote_in_first()
-        # Open rounds run oldest first, the same order as the /vote list.
-        self.assertIn(
-            f'<input type="hidden" name="poll" value="{self.second.pk}"', html
-        )
-        self.assertNotIn(f'<input type="hidden" name="poll" value="{third.pk}"', html)
-        self.assertNotIn(f'<input type="hidden" name="poll" value="{fourth.pk}"', html)
-        self.assertIn("Also open right now", html)
         token = _token(vote)
+        self.assertIn("Also open right now", html)
+        # Open rounds run oldest first, the same order as the /vote list.
+        self.assertIn(f'href="{self.second.get_absolute_url()}?voter={token}"', html)
         self.assertIn(f'href="{third.get_absolute_url()}?voter={token}"', html)
-        self.assertIn(f'href="{fourth.get_absolute_url()}?voter={token}"', html)
+        # No ballot on the thanks screen: the next vote is a click away.
+        self.assertNotIn("Cast my vote", html)
+        self.assertNotIn("Voting as", html)
 
-    def test_no_next_up_when_nothing_else_is_open(self) -> None:
+    def test_no_section_when_nothing_else_is_open(self) -> None:
         self.second.status = PollStatus.CLOSED
         self.second.save()
         html, vote = self.vote_in_first()
-        self.assertNotIn("Next up", html)
-        self.assertNotIn("Voting as", html)
+        self.assertNotIn("Also open right now", html)
+        self.assertNotIn("?voter=", html)
 
     def test_submitting_brings_the_top_of_the_panel_into_view(self) -> None:
-        # The inline ballot can sit far down the page; after the swap the
-        # thanks line is at the top of the new panel, so scroll to it.
-        html, vote = self.vote_in_first()
+        # The ballot can sit well below the hero; after the swap the thanks
+        # line is at the top of the new panel, so scroll to it.
+        html = self.client.get(self.second.get_absolute_url()).content.decode()
         self.assertIn('hx-swap="outerHTML show:#vote-panel:top"', html)
 
     def test_thanks_screen_sets_no_cookie(self) -> None:
@@ -123,9 +100,10 @@ class CarryAddressTests(TestCase):
         response = self.cast(self.second, option, token=_token(vote))
         html = response.content.decode()
         second_vote = Vote.objects.get(poll=self.second)
-        # The next ballot is signed with the vote just cast, not the first one.
-        self.assertIn(f'name="token" value="{_token(second_vote)}"', html)
-        self.assertIn(f'<input type="hidden" name="poll" value="{third.pk}"', html)
+        # The next card is signed with the vote just cast, not the first one.
+        self.assertIn(
+            f'href="{third.get_absolute_url()}?voter={_token(second_vote)}"', html
+        )
 
     def test_rounds_this_address_already_voted_in_are_not_offered(self) -> None:
         third = _round("Round Three", "Heat")
@@ -134,11 +112,8 @@ class CarryAddressTests(TestCase):
         # only thing left to offer is Round Two.
         response = self.cast(third, third.options.first(), token=_token(vote))
         html = response.content.decode()
-        self.assertIn(
-            f'<input type="hidden" name="poll" value="{self.second.pk}"', html
-        )
+        self.assertIn(f'href="{self.second.get_absolute_url()}?voter=', html)
         self.assertNotIn(self.first.get_absolute_url(), html)
-        self.assertNotIn("Also open right now", html)
 
     def test_nothing_left_once_every_round_has_this_vote(self) -> None:
         _, vote = self.vote_in_first()
@@ -146,7 +121,6 @@ class CarryAddressTests(TestCase):
             self.second, self.second.options.first(), token=_token(vote)
         )
         html = response.content.decode()
-        self.assertNotIn("Next up", html)
         self.assertNotIn("Also open right now", html)
 
     def test_token_does_not_bypass_one_vote_per_address(self) -> None:
@@ -197,6 +171,11 @@ class CarryAddressTests(TestCase):
         self.assertIn(f'name="token" value="{_token(vote)}"', html)
         self.assertNotIn('name="email"', html)
         self.assertIn(f"Voting as <strong>{EMAIL}</strong>", html)
+        # The way out for a second person at the same keyboard.
+        self.assertIn(f'href="{self.second.get_absolute_url()}"', html)
+        self.assertIn("Use a different address", html)
+        # Same place as the email field: above the films.
+        self.assertLess(html.index("Voting as"), html.index('name="option"'))
 
     def test_round_page_with_a_bad_token_renders_the_plain_ballot(self) -> None:
         url = f"{self.second.get_absolute_url()}?voter=not-a-token"

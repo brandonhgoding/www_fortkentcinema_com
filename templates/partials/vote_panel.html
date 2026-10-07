@@ -29,20 +29,9 @@
     {% endif %}
     {% include "partials/vote_subscribe.html" %}
     {% comment %}
-      The next open round's ballot, right here, already knowing the address
-      (voter_token is the vote just cast). The rounds after it are cards
-      whose links carry the same token.
+      The other open rounds, as cards whose links carry the vote just cast
+      (voter_token), so each of their ballots already knows the address.
     {% endcomment %}
-    {% if next_round %}
-      <section class="vote-panel__next">
-        <header class="vote-panel__next-header">
-          <p class="vote-panel__eyebrow">Next up</p>
-          <h2 class="vote-panel__next-title">{{ next_round.title }}</h2>
-          {% if next_round.blurb %}<p class="vote-panel__next-blurb">{{ next_round.blurb }}</p>{% endif %}
-        </header>
-        {% include "partials/vote_ballot.html" with poll=next_round options=next_round_options form=None %}
-      </section>
-    {% endif %}
     {% if other_rounds %}
       <section class="vote-panel__more">
         <h2 class="vote-panel__more-title">Also open right now</h2>

@@ -126,10 +126,6 @@ def resolve_vote_page(poll: Poll | None = None, vote: Vote | None = None) -> dic
         "show_results": False,
         "voted_option": None,
         "vote": None,
-        # After a vote: the round to take next, with its ballot rendered
-        # inline, and the rest as cards.
-        "next_round": None,
-        "next_round_options": [],
         "other_rounds": [],
         "archive": archive,
     }
@@ -172,16 +168,13 @@ def resolve_vote_page(poll: Poll | None = None, vote: Vote | None = None) -> dic
     ctx["state"] = STATE_VOTED
     ctx["voted_option"] = vote.option
     ctx["vote"] = vote
-    # Anything else taking votes right now, so one ballot leads to the next:
-    # the first of them is shown as a ballot right there, the rest as cards.
-    # Rounds this address has already voted in are left out, since the next
-    # ballot would only refuse them.
+    # Anything else taking votes right now, as cards, so one ballot leads to
+    # the next. Rounds this address has already voted in are left out, since
+    # their ballots would only refuse it.
     done = set(Vote.objects.filter(email=vote.email).values_list("poll_id", flat=True))
-    remaining = [p for p in open_polls() if p.pk != poll.pk and p.pk not in done]
-    if remaining:
-        ctx["next_round"] = remaining[0]
-        ctx["next_round_options"] = list(remaining[0].options.select_related("film"))
-    ctx["other_rounds"] = remaining[1:]
+    ctx["other_rounds"] = [
+        p for p in open_polls() if p.pk != poll.pk and p.pk not in done
+    ]
     ctx["show_results"] = poll.results_visible
     if poll.results_visible:
         ctx["tallies"] = poll.tallies(by_rank=True)
