@@ -495,31 +495,22 @@
   cursor: pointer;
 }
 
-/* Thanks screen: the next round's ballot, and the other rounds still open */
-.vote-panel__next,
-.vote-panel__more {
+/* Thanks screen: the next round's ballot, and the other rounds still open.
+   The next ballot is a room of its own, so a rule opens it; the eyebrow
+   says what it is and the round's title carries the weight. */
+.vote-panel__next {
   margin-top: 2.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(32, 57, 130, 0.15);
 }
 
-.vote-panel__next-blurb {
-  margin: -0.25rem 0 1rem;
+.vote-panel__next-header {
+  margin: 0 auto 1.5rem;
+  max-width: 36rem;
   text-align: center;
-  opacity: 0.8;
 }
 
-/* Address carried from the last ballot: no field, just who is voting. */
-.vote-contact__known {
-  margin: 1.25rem 0 0;
-  font-size: 0.9rem;
-  text-align: center;
-  opacity: 0.85;
-}
-
-.vote-contact__known a {
-  color: var(--color-accent);
-  text-decoration: underline;
-}
-
+.vote-panel__eyebrow,
 .vote-panel__more-title {
   margin: 0 0 0.75rem;
   font-size: 0.8rem;
@@ -527,6 +518,47 @@
   text-transform: uppercase;
   color: var(--color-accent);
   text-align: center;
+}
+
+.vote-panel__eyebrow {
+  margin-bottom: 0.25rem;
+}
+
+.vote-panel__next-title {
+  margin: 0;
+  font-size: clamp(1.4rem, 4vw, 2rem);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.vote-panel__next-blurb {
+  margin: 0.5rem 0 0;
+  opacity: 0.85;
+}
+
+.vote-panel__more {
+  margin-top: 2.5rem;
+}
+
+/* Address carried from the last ballot: no field, just who is voting.
+   Same rule above it as the email fieldset, so the ballot keeps its shape. */
+.vote-contact__known {
+  margin: 1.5rem 0 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(32, 57, 130, 0.15);
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.vote-contact__known a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.vote-contact__known a:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
 }
 
 /* Archive */

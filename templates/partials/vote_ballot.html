@@ -13,7 +13,7 @@
   action="{% url 'vote_cast' %}"
   hx-post="{% url 'vote_cast' %}"
   hx-target="#vote-panel"
-  hx-swap="outerHTML"
+  hx-swap="outerHTML show:#vote-panel:top"
 >
   {% csrf_token %}
   <input type="hidden" name="poll" value="{{ poll.pk }}" />

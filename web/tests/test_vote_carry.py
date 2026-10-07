@@ -50,8 +50,9 @@ class CarryAddressTests(TestCase):
 
     def test_thanks_screen_shows_the_next_round_ballot_inline(self) -> None:
         html, vote = self.vote_in_first()
-        self.assertIn("Next up", html)
-        self.assertIn("Round Two", html)
+        # An eyebrow over a real heading: the round's title is the point.
+        self.assertIn('<p class="vote-panel__eyebrow">Next up</p>', html)
+        self.assertIn('<h2 class="vote-panel__next-title">Round Two</h2>', html)
         self.assertIn("Alien", html)
         self.assertIn("Jaws", html)
         self.assertIn("Cast my vote", html)
@@ -89,6 +90,12 @@ class CarryAddressTests(TestCase):
         html, vote = self.vote_in_first()
         self.assertNotIn("Next up", html)
         self.assertNotIn("Voting as", html)
+
+    def test_submitting_brings_the_top_of_the_panel_into_view(self) -> None:
+        # The inline ballot can sit far down the page; after the swap the
+        # thanks line is at the top of the new panel, so scroll to it.
+        html, vote = self.vote_in_first()
+        self.assertIn('hx-swap="outerHTML show:#vote-panel:top"', html)
 
     def test_thanks_screen_sets_no_cookie(self) -> None:
         option = self.first.options.first()

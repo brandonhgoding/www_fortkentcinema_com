@@ -35,8 +35,11 @@
     {% endcomment %}
     {% if next_round %}
       <section class="vote-panel__next">
-        <h2 class="vote-panel__more-title">Next up: {{ next_round.title }}</h2>
-        {% if next_round.blurb %}<p class="vote-panel__next-blurb">{{ next_round.blurb }}</p>{% endif %}
+        <header class="vote-panel__next-header">
+          <p class="vote-panel__eyebrow">Next up</p>
+          <h2 class="vote-panel__next-title">{{ next_round.title }}</h2>
+          {% if next_round.blurb %}<p class="vote-panel__next-blurb">{{ next_round.blurb }}</p>{% endif %}
+        </header>
         {% include "partials/vote_ballot.html" with poll=next_round options=next_round_options form=None %}
       </section>
     {% endif %}
