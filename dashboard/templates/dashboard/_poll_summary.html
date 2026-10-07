@@ -1,0 +1,3 @@
+<p class="page-subtitle" id="poll-summary"{% if oob %} hx-swap-oob="true"{% endif %}>
+  {{ poll.get_status_display }} &middot; {{ poll.total_votes }} vote{{ poll.total_votes|pluralize }}
+</p>

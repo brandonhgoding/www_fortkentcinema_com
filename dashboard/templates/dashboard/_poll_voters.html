@@ -1,0 +1,45 @@
+{% comment %}
+  The Voters section: export link and one row per vote, each with a Remove
+  button that swaps this section. With `oob` set (the response to a removal)
+  the ballot's tallies and the header's vote count ride along out of band,
+  since both just changed.
+{% endcomment %}
+<section id="poll-voters">
+  {% if votes %}
+    <h2 class="panelTitle">Voters</h2>
+    {% if email_count %}
+      <div class="pollContact">
+        <a class="btn btn-secondary btn-sm" href="{% url 'dashboard:poll_votes_export' poll.pk %}">
+          Download {{ email_count }} email{{ email_count|pluralize }} (CSV)
+        </a>
+        <p class="fieldHint">Every voter's address with their pick and when they voted. The ballot promises them nothing by email, so what you send is up to you.</p>
+      </div>
+    {% endif %}
+    <div class="tableWrapper">
+      <table class="table">
+        <thead>
+          <tr><th>Email</th><th>Voted for</th><th>When</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for vote in votes %}
+            <tr>
+              <td>{% if vote.email %}{{ vote.email }}{% else %}<span class="pollVoterNone">No address (voted before we asked)</span>{% endif %}</td>
+              <td>{{ vote.option.film.title }}</td>
+              <td>{{ vote.created_at|date:"M j, Y g:i A" }}</td>
+              <td class="pollVoterActions">
+                <button class="btn btn-danger btn-sm"
+                        hx-post="{% url 'dashboard:poll_vote_remove' poll.pk vote.pk %}"
+                        hx-target="#poll-voters" hx-swap="outerHTML"
+                        data-dashboard-confirm='{"title": "Remove Vote", "message": "Remove the vote {% if vote.email %}from {{ vote.email|escapejs }} {% endif %}for {{ vote.option.film.title|escapejs }}? They can vote again in this round.", "confirmLabel": "Remove", "variant": "danger"}'>Remove</button>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+</section>
+{% if oob %}
+  {% include "dashboard/_poll_options.html" with oob=True %}
+  {% include "dashboard/_poll_summary.html" with oob=True %}
+{% endif %}
