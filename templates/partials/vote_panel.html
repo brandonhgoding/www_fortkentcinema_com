@@ -28,6 +28,10 @@
       </p>
     {% endif %}
     {% include "partials/vote_subscribe.html" %}
+    {% comment %}
+      The other open rounds, as cards whose links carry the vote just cast
+      (voter_token), so each of their ballots already knows the address.
+    {% endcomment %}
     {% if other_rounds %}
       <section class="vote-panel__more">
         <h2 class="vote-panel__more-title">Also open right now</h2>

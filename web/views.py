@@ -488,19 +488,60 @@ class MovieDetailView(DetailView):
 _SUBSCRIBE_SALT = "vote-subscribe"
 _SUBSCRIBE_MAX_AGE = 60 * 60 * 24
 
+# Signs the vote just cast so the next ballot can reuse its address without
+# asking again: the thanks screen puts it in the inline ballot for the next
+# round and on the links to the rounds after that. It is a convenience, not
+# an identity: a bad or stale token just means typing the address again.
+# Separate salt from the subscribe token, so one can never stand in for the
+# other. A day, like the subscribe token: nobody chains rounds across days.
+_VOTER_SALT = "vote-voter"
+_VOTER_MAX_AGE = 60 * 60 * 24
 
-def _vote_context(poll=None, vote=None, message="", form=None, subscribed=False):
+
+def _voter_token(vote) -> str:
+    return signing.dumps(vote.pk, salt=_VOTER_SALT)
+
+
+def _voter_from_token(raw) -> Vote | None:
+    """The vote a carry token names, or None for anything but a good one.
+
+    None covers a missing, forged or expired token, a vote since deleted,
+    and a vote with no address (cast before the address was required): in
+    every case the ballot falls back to asking for the address.
+    """
+    if not raw:
+        return None
+    try:
+        vote_pk = signing.loads(raw, salt=_VOTER_SALT, max_age=_VOTER_MAX_AGE)
+    except signing.BadSignature:
+        return None
+    vote = Vote.objects.filter(pk=vote_pk).first()
+    if vote is None or not vote.email:
+        return None
+    return vote
+
+
+def _vote_context(
+    poll=None, vote=None, message="", form=None, subscribed=False, voter=None
+):
     """Shared context for every rendering of the vote panel.
 
     `vote` is the ballot just cast. `form` carries a rejected ballot back
     to the template: what was typed and why it was refused, so nobody has
     to fill it in twice. `subscribed` is True once the thanks screen's
-    mailing-list ask has been accepted.
+    mailing-list ask has been accepted. `voter` is an earlier vote whose
+    address the ballot on this page should reuse; after a vote it is the
+    vote itself, so the next round's ballot already knows the address.
     """
     ctx = vote_service.resolve_vote_page(poll=poll, vote=vote)
     ctx["message"] = message
     ctx["form"] = form or {}
     ctx["subscribed"] = subscribed
+    # The vote just cast outranks the one that carried the address here: same
+    # address, but a fresh signature, so a long chain never runs out the clock.
+    voter = vote or voter
+    ctx["voter"] = voter
+    ctx["voter_token"] = _voter_token(voter) if voter else ""
     # The ask appears only for an address we have never heard from: not on
     # the list, and not someone who opted out, who must not be asked again.
     ctx["offer_subscribe"] = bool(
@@ -558,7 +599,10 @@ class VoteArchiveView(View):
         poll = get_object_or_404(Poll, slug=slug)
         if poll.status == PollStatus.DRAFT or not poll.has_started():
             raise Http404("No such poll.")
-        return render(request, "web/vote.html", _vote_context(poll=poll))
+        # ?voter=<token> arrives from the thanks screen of another round and
+        # saves typing the address again. Anything else is simply ignored.
+        voter = _voter_from_token(request.GET.get("voter"))
+        return render(request, "web/vote.html", _vote_context(poll=poll, voter=voter))
 
 
 class VoteCastView(View):
@@ -569,6 +613,12 @@ class VoteCastView(View):
     reached, if at all, through the dashboard's per-poll export. It does
     not join the mailing list; that is a separate opt-in. Nothing in this
     project sends mail yet, so the copy never promises a cadence.
+
+    The address comes typed in `email`, or carried by `token`: the signed
+    vote from a round just voted in, so the next ballot does not ask again.
+    The token wins when both are present, because it is the one the ballot
+    showed as "voting as"; a token that fails to verify falls back to the
+    plain ballot with a note, never a 400, since it was only a convenience.
 
     HTMX gets the swapped panel back. A plain form POST gets the whole page
     with the same panel: there is no cookie to carry "you voted" across a
@@ -593,11 +643,27 @@ class VoteCastView(View):
         raw_email = request.POST.get("email") or ""
         form = {"option": option_id, "email": raw_email.strip()}
 
-        try:
-            email = _clean_ballot_email(raw_email)
-        except ValidationError:
-            form["error"] = "That doesn't look like a valid email address."
-            return self._respond(request, poll, form=form)
+        voter = None
+        raw_token = request.POST.get("token") or ""
+        if raw_token:
+            voter = _voter_from_token(raw_token)
+            if voter is None:
+                return self._respond(
+                    request,
+                    poll,
+                    message=(
+                        "That link has expired — please enter your email "
+                        "to cast this vote."
+                    ),
+                    form=form,
+                )
+            email = voter.email
+        else:
+            try:
+                email = _clean_ballot_email(raw_email)
+            except ValidationError:
+                form["error"] = "That doesn't look like a valid email address."
+                return self._respond(request, poll, form=form)
 
         option = poll.options.filter(pk=option_id).first()
         if option is None:
@@ -619,17 +685,20 @@ class VoteCastView(View):
                     "email address has already cast one."
                 ),
                 form=form,
+                voter=voter,
             )
         except vote_engine.PollNotOpen:
             message = "Voting has closed for this round."
         except vote_engine.OptionMismatch:
             return HttpResponseBadRequest("Unknown option.")
 
-        return self._respond(request, poll, vote=vote, message=message)
+        return self._respond(request, poll, vote=vote, message=message, voter=voter)
 
     @staticmethod
-    def _respond(request, poll, vote=None, message="", form=None):
-        ctx = _vote_context(poll=poll, vote=vote, message=message, form=form)
+    def _respond(request, poll, vote=None, message="", form=None, voter=None):
+        ctx = _vote_context(
+            poll=poll, vote=vote, message=message, form=form, voter=voter
+        )
         if request.headers.get("HX-Request"):
             return render(request, "partials/vote_panel.html", ctx)
         return render(request, "web/vote.html", ctx)

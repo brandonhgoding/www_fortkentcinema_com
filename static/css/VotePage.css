@@ -301,12 +301,11 @@
   color: var(--color-accent);
 }
 
-/* Email and consent, part of the ballot */
+/* The address, first thing on the ballot, as wide as the films below it. */
 .vote-contact {
   border: 0;
-  padding: 1.25rem 0 0;
-  margin: 1.5rem 0 0;
-  border-top: 1px solid rgba(32, 57, 130, 0.15);
+  padding: 0;
+  margin: 0 0 1.5rem;
 }
 
 .vote-contact__label {
@@ -318,7 +317,6 @@
 .vote-contact__input {
   display: block;
   width: 100%;
-  max-width: 24rem;
   padding: 0.6rem 0.75rem;
   border-radius: 4px;
   border: 1px solid rgba(32, 57, 130, 0.25);
@@ -507,6 +505,25 @@
   text-transform: uppercase;
   color: var(--color-accent);
   text-align: center;
+}
+
+/* Address carried from the last ballot: no field, just who is voting.
+   Same place as the email field, above the films. */
+.vote-contact__known {
+  margin: 0 0 1.5rem;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.vote-contact__known a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.vote-contact__known a:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
 }
 
 /* Archive */

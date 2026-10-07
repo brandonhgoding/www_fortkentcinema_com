@@ -1,7 +1,12 @@
 {% comment %}
-  The unvoted ballot. One choice, one submit — single-choice by design.
-  Posts to vote_cast; HTMX swaps #vote-panel, and without JavaScript the
-  same form does a plain POST and gets redirected back to /vote.
+  The unvoted ballot: the address first, then one choice, one submit —
+  single-choice by design. Posts to vote_cast; HTMX swaps #vote-panel, and
+  without JavaScript the same form does a plain POST and gets redirected
+  back to /vote.
+
+  With `voter_token` set (a vote just cast in another round), the address
+  is carried by the token and the email field is not shown; the round's own
+  page, linked, is the plain ballot for a second person at the same keyboard.
 {% endcomment %}
 <form
   class="vote-ballot"
@@ -9,10 +14,42 @@
   action="{% url 'vote_cast' %}"
   hx-post="{% url 'vote_cast' %}"
   hx-target="#vote-panel"
-  hx-swap="outerHTML"
+  hx-swap="outerHTML show:#vote-panel:top"
 >
   {% csrf_token %}
   <input type="hidden" name="poll" value="{{ poll.pk }}" />
+  {% if voter_token %}
+    <input type="hidden" name="token" value="{{ voter_token }}" />
+    <p class="vote-contact__known">
+      Voting as <strong>{{ voter.email }}</strong>.
+      Not you? <a href="{{ poll.get_absolute_url }}">Use a different address</a>.
+    </p>
+  {% else %}
+    {% comment %}
+      The address is required: it keeps a round to one vote per person. It is
+      not a mailing-list signup, and the copy must never say "newsletter" or
+      promise a schedule; nothing in this project sends mail yet.
+    {% endcomment %}
+    <fieldset class="vote-contact">
+      <legend class="vote-ballot__legend">Your email</legend>
+      <label class="vote-contact__label" for="vote-email-input">Email address</label>
+      <input
+        class="vote-contact__input"
+        type="email"
+        name="email"
+        id="vote-email-input"
+        value="{{ form.email|default:'' }}"
+        placeholder="you@example.com"
+        autocomplete="email"
+        required
+      />
+      <p class="vote-contact__hint">One vote per email address per round. We won't sign you up to anything.</p>
+      {% if form.error %}
+        <p class="vote-contact__error" role="alert">{{ form.error }}</p>
+      {% endif %}
+    </fieldset>
+  {% endif %}
+
   <fieldset class="vote-ballot__fieldset">
     <legend class="vote-ballot__legend">Pick one</legend>
     {% for option in options %}
@@ -46,35 +83,12 @@
     {% endfor %}
   </fieldset>
 
-  {% comment %}
-    The address is required: it keeps a round to one vote per person. It is
-    not a mailing-list signup, and the copy must never say "newsletter" or
-    promise a schedule; nothing in this project sends mail yet.
-  {% endcomment %}
-  <fieldset class="vote-contact">
-    <legend class="vote-ballot__legend">Your email</legend>
-    <label class="vote-contact__label" for="vote-email-input">Email address</label>
-    <input
-      class="vote-contact__input"
-      type="email"
-      name="email"
-      id="vote-email-input"
-      value="{{ form.email|default:'' }}"
-      placeholder="you@example.com"
-      autocomplete="email"
-      required
-    />
-    <p class="vote-contact__hint">One vote per email address per round. We won't sign you up to anything.</p>
-    {% comment %} Honeypot: hidden from people, irresistible to bots. {% endcomment %}
-    <div class="vote-contact__hp" aria-hidden="true">
-      <label for="vote-email-website">Website</label>
-      <input type="text" name="website" id="vote-email-website" tabindex="-1"
-             autocomplete="off" />
-    </div>
-    {% if form.error %}
-      <p class="vote-contact__error" role="alert">{{ form.error }}</p>
-    {% endif %}
-  </fieldset>
+  {% comment %} Honeypot, in both modes: hidden from people, irresistible to bots. {% endcomment %}
+  <div class="vote-contact__hp" aria-hidden="true">
+    <label for="vote-email-website">Website</label>
+    <input type="text" name="website" id="vote-email-website" tabindex="-1"
+           autocomplete="off" />
+  </div>
 
   <button type="submit" class="vote-ballot__submit" data-track="vote_cast">
     Cast my vote

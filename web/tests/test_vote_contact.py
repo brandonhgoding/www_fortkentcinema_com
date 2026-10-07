@@ -40,6 +40,15 @@ class VoteContactTests(TestCase):
         self.assertNotIn("mailing list", html_lib.unescape(html).lower())
         self.assertIn("One vote per email address per round", html)
 
+    def test_email_comes_first_and_the_button_last(self) -> None:
+        # The address is asked before the films; the button stays under them.
+        html = self.client.get(self.poll.get_absolute_url()).content.decode()
+        email_at = html.index('name="email"')
+        option_at = html.index('name="option"')
+        button_at = html.index("Cast my vote")
+        self.assertLess(email_at, option_at)
+        self.assertLess(option_at, button_at)
+
     def test_copy_does_not_promise_a_newsletter(self) -> None:
         for page in (self.client.get(self.poll.get_absolute_url()), self.cast()):
             html = page.content.decode().lower()
@@ -219,9 +228,11 @@ class ThanksScreenOtherRoundsTests(TestCase):
         html = self.vote()
         self.assertIn("Also open right now", html)
         self.assertIn("Next classic movie", html)
-        self.assertIn(other.get_absolute_url(), html)
-        # Not the round just voted in.
+        # The card already knows the address (see test_vote_carry).
+        self.assertIn(f'href="{other.get_absolute_url()}?voter=', html)
+        # Not the round just voted in, and no second ballot on this screen.
         self.assertNotIn(self.poll.get_absolute_url(), html)
+        self.assertNotIn("Cast my vote", html)
 
     def test_no_section_when_nothing_else_is_open(self) -> None:
         Poll.objects.create(title="Done", status=PollStatus.CLOSED)
