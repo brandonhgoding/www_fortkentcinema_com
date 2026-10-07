@@ -2,12 +2,13 @@
   One card per open round, each linking to its own page: the round on the
   left, every poster on its ballot as a thumbnail on the right. Used by the
   list on /vote and by the thanks screen for the other rounds still open.
-  Expects `rounds`.
+  Expects `rounds`; with `voter_token` set, each link carries it so the
+  round's ballot already knows the address.
 {% endcomment %}
 <ul class="vote-rounds">
   {% for round in rounds %}
     <li class="vote-round">
-      <a class="vote-round__link" href="{{ round.get_absolute_url }}">
+      <a class="vote-round__link" href="{{ round.get_absolute_url }}{% if voter_token %}?voter={{ voter_token }}{% endif %}">
         <span class="vote-round__body">
           <span class="vote-round__title">{{ round.title }}</span>
           {% if round.blurb %}<span class="vote-round__blurb">{{ round.blurb }}</span>{% endif %}

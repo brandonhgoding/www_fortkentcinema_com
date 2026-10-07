@@ -213,17 +213,31 @@ class ThanksScreenOtherRoundsTests(TestCase):
             HTTP_HX_REQUEST="true",
         ).content.decode()
 
-    def test_other_open_rounds_are_offered_after_voting(self) -> None:
+    def test_the_next_open_round_is_offered_after_voting(self) -> None:
         other = Poll.objects.create(title="Next classic movie", status=PollStatus.OPEN)
         PollOption.objects.create(poll=other, film=Film.objects.create(title="Alien"))
         html = self.vote()
-        self.assertIn("Also open right now", html)
-        self.assertIn("Next classic movie", html)
+        # One other round: its ballot is right there, already knowing the
+        # address (see test_vote_carry for the token itself).
+        self.assertIn("Next up: Next classic movie", html)
+        self.assertIn("Alien", html)
         self.assertIn(other.get_absolute_url(), html)
         # Not the round just voted in.
         self.assertNotIn(self.poll.get_absolute_url(), html)
 
+    def test_rounds_beyond_the_next_are_cards(self) -> None:
+        for title in ("Next classic movie", "Opening weekend"):
+            poll = Poll.objects.create(title=title, status=PollStatus.OPEN)
+            PollOption.objects.create(
+                poll=poll, film=Film.objects.create(title=f"Film for {title}")
+            )
+        html = self.vote()
+        self.assertIn("Next up: Next classic movie", html)
+        self.assertIn("Also open right now", html)
+        self.assertIn("Opening weekend", html)
+
     def test_no_section_when_nothing_else_is_open(self) -> None:
         Poll.objects.create(title="Done", status=PollStatus.CLOSED)
         html = self.vote()
+        self.assertNotIn("Next up", html)
         self.assertNotIn("Also open right now", html)

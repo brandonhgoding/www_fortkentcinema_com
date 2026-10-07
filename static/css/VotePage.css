@@ -495,9 +495,29 @@
   cursor: pointer;
 }
 
-/* Thanks screen: the other rounds still open */
+/* Thanks screen: the next round's ballot, and the other rounds still open */
+.vote-panel__next,
 .vote-panel__more {
   margin-top: 2.5rem;
+}
+
+.vote-panel__next-blurb {
+  margin: -0.25rem 0 1rem;
+  text-align: center;
+  opacity: 0.8;
+}
+
+/* Address carried from the last ballot: no field, just who is voting. */
+.vote-contact__known {
+  margin: 1.25rem 0 0;
+  font-size: 0.9rem;
+  text-align: center;
+  opacity: 0.85;
+}
+
+.vote-contact__known a {
+  color: var(--color-accent);
+  text-decoration: underline;
 }
 
 .vote-panel__more-title {
