@@ -196,8 +196,8 @@ class ExistingMemberTests(MembershipOrderTestCase):
         self.membership_order()
         sale = process_order("O1", self.gw)
         self.assertEqual(sale.status, "FAILED")
-        self.assertEqual(sale.error, "A 12-month term from this date runs past "
-                                     "31 December 9999. Enter an expiry date.")
+        self.assertEqual(sale.error, "A 12-month term from 9999-07-01 runs past "
+                                     "31 December 9999. Enter the term by hand.")
         self.assertEqual(MembershipTerm.objects.count(), 1)
 
 
@@ -356,3 +356,20 @@ class IdempotencyTests(MembershipOrderTestCase):
         self.assertEqual(Member.objects.count(), 1)
         self.assertEqual(MembershipSale.objects.count(), 1)
         self.assertEqual(sale.term, MembershipTerm.objects.get())
+
+    def test_failed_fetch_after_another_event_finished_keeps_the_sale(self):
+        second_event_gw = FakeGateway()
+        self.membership_order(gateway=second_event_gw)
+
+        class FailingAfterGateway(FakeGateway):
+            def retrieve_order(self, order_id):
+                # The second event finishes, then this fetch fails.
+                process_order(order_id, second_event_gw)
+                raise GatewayError("boom")
+
+        sale = process_order("O1", FailingAfterGateway())
+        term = MembershipTerm.objects.get()
+        stored = MembershipSale.objects.get()
+        self.assertEqual((sale.status, sale.term), ("OK", term))
+        self.assertEqual((stored.status, stored.error, stored.term, stored.email),
+                         ("OK", "", term, "ann@example.com"))

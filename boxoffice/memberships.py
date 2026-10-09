@@ -66,6 +66,7 @@ def split_name(display_name: str) -> tuple[str, str]:
 def membership_lines(
     order: OrderData, tiers_by_variation: dict[str, MembershipTier]
 ) -> list[tuple[OrderLine, MembershipTier]]:
+    """Each line that sells a tier, paired with that tier, in order."""
     return [(line, tiers_by_variation[line.catalog_object_id])
             for line in order.lines
             if line.catalog_object_id in tiers_by_variation]
@@ -106,6 +107,19 @@ def _finish(sale: MembershipSale, status: str, error: str = "") -> MembershipSal
     return sale
 
 
+def _fail_unless_finished(sale_pk: int, error: str) -> MembershipSale:
+    """Record a failure that happened before the order was read.
+
+    The row is locked and re-read first: another event for the same order may
+    have finished it meanwhile, and overwriting that would get it retried.
+    """
+    with transaction.atomic():
+        sale = MembershipSale.objects.select_for_update().get(pk=sale_pk)
+        if sale.status in FINISHED:
+            return sale
+        return _finish(sale, MembershipSale.Status.FAILED, error)
+
+
 def _member(buyer: _Buyer) -> Member:
     member = Member.objects.filter(email=buyer.email).first()
     if member is None:
@@ -132,8 +146,8 @@ def _create_term(order_id: str, facts: _Facts) -> MembershipTerm:
     try:
         expires_on = MembershipTerm.default_expiry(started_on, months)
     except OverflowError:
-        raise _Refused(f"A {months}-month term from this date runs past "
-                       "31 December 9999. Enter an expiry date.") from None
+        raise _Refused(f"A {months}-month term from {started_on} runs past "
+                       "31 December 9999. Enter the term by hand.") from None
     return MembershipTerm.objects.create(
         member=member, tier=facts.tier, started_on=started_on,
         expires_on=expires_on, price_paid=Decimal(facts.gross_cents) / 100,
@@ -186,12 +200,12 @@ def process_order(order_id: str,
         return sale
     gateway = gateway or get_gateway()
     if gateway is None:
-        return _finish(sale, MembershipSale.Status.FAILED,
-                       f"Square sync disabled: {disabled_reason()}")
+        return _fail_unless_finished(
+            sale.pk, f"Square sync disabled: {disabled_reason()}")
     try:
         order = gateway.retrieve_order(order_id)
     except GatewayError as exc:
-        return _finish(sale, MembershipSale.Status.FAILED, str(exc))
+        return _fail_unless_finished(sale.pk, str(exc))
     lines = membership_lines(order, _tiers_by_variation())
     if not lines:
         # Not a membership after all: drop the placeholder or earlier failure.
