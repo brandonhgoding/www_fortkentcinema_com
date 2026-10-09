@@ -10,6 +10,7 @@ from boxoffice.gateway import (
     GatewayError,
     OrderData,
     OrderLine,
+    Recipient,
     RemoteItem,
     SquareGateway,
     UpsertResult,
@@ -57,8 +58,19 @@ def _line(uid: str = "L1", catalog_object_id: str | None = "V0",
     return line
 
 
-def _order(order_id: str, closed_at: str, lines: list[mock.Mock]) -> mock.Mock:
-    return mock.Mock(id=order_id, closed_at=closed_at, line_items=lines)
+def _order(order_id: str, closed_at: str, lines: list[mock.Mock],
+           fulfillments: list[mock.Mock] | None = None) -> mock.Mock:
+    return mock.Mock(id=order_id, closed_at=closed_at, line_items=lines,
+                     fulfillments=fulfillments)
+
+
+def _shipment(display_name: str | None = "Ann Lee",
+              email_address: str | None = "Ann@Example.com",
+              phone_number: str | None = "+12075550100") -> mock.Mock:
+    recipient = mock.Mock(display_name=display_name, email_address=email_address,
+                          phone_number=phone_number)
+    return mock.Mock(shipment_details=mock.Mock(recipient=recipient),
+                     pickup_details=None, delivery_details=None)
 
 
 def _catalog_item(item_id: str, cats: list[str] | None) -> mock.Mock:
@@ -388,6 +400,50 @@ class SearchOrdersTests(SimpleTestCase):
             SquareGateway(client, "LOC", "CAT").search_orders(START, END)
 
 
+class RetrieveOrderTests(SimpleTestCase):
+    @staticmethod
+    def _gateway(order: mock.Mock) -> tuple[SquareGateway, mock.Mock]:
+        client = mock.Mock()
+        client.orders.get.return_value = mock.Mock(order=order)
+        return SquareGateway(client, "LOC", "CAT"), client
+
+    def test_reads_lines_and_shipment_recipient(self) -> None:
+        gw, client = self._gateway(_order(
+            "O1", "2026-10-02T23:12:33.034Z", [_line()], [_shipment()]))
+        data = gw.retrieve_order("O1")
+        self.assertEqual(data.order_id, "O1")
+        self.assertEqual(data.lines[0].catalog_object_id, "V0")
+        self.assertEqual(data.recipient,
+                         Recipient("Ann Lee", "Ann@Example.com", "+12075550100"))
+        client.orders.get.assert_called_once_with("O1")
+
+    def test_no_fulfillment_means_no_recipient(self) -> None:
+        gw, _ = self._gateway(_order("O1", "2026-10-02T23:12:33.034Z", [_line()]))
+        self.assertIsNone(gw.retrieve_order("O1").recipient)
+
+    def test_recipient_fields_default_to_empty_strings(self) -> None:
+        gw, _ = self._gateway(_order(
+            "O1", "2026-10-02T23:12:33.034Z", [_line()],
+            [_shipment(email_address=None, phone_number=None)]))
+        self.assertEqual(gw.retrieve_order("O1").recipient,
+                         Recipient("Ann Lee", "", ""))
+
+    def test_api_error_becomes_gateway_error(self) -> None:
+        client = mock.Mock()
+        client.orders.get.side_effect = ApiError(
+            status_code=404, body={"errors": [{"code": "NOT_FOUND"}]})
+        with self.assertRaises(GatewayError):
+            SquareGateway(client, "LOC", "CAT").retrieve_order("O1")
+
+    def test_search_orders_also_fills_the_recipient(self) -> None:
+        client = mock.Mock()
+        client.orders.search.return_value = mock.Mock(
+            orders=[_order("O1", "2026-10-04T12:00:00Z", [_line()], [_shipment()])],
+            cursor=None)
+        [o] = SquareGateway(client, "LOC", "CAT").search_orders(START, END)
+        self.assertEqual(o.recipient.email_address, "Ann@Example.com")
+
+
 class GetGatewayTests(SimpleTestCase):
     @override_settings(SQUARE_ACCESS_TOKEN="")
     def test_blank_token_returns_none(self) -> None:
@@ -458,10 +514,18 @@ class GetGatewayTests(SimpleTestCase):
 class FakeGatewayTests(SimpleTestCase):
     def test_public_methods_match_the_real_gateway(self) -> None:
         public = [n for n in vars(SquareGateway) if not n.startswith("_")]
-        self.assertEqual(len(public), 7)
+        self.assertEqual(len(public), 8)
         for name in public:
             self.assertEqual(inspect.signature(getattr(FakeGateway, name)),
                              inspect.signature(getattr(SquareGateway, name)), name)
+
+    def test_retrieve_order_returns_by_id_or_raises(self) -> None:
+        gw = FakeGateway()
+        order = OrderData("O1", None, (), Recipient("Ann", "a@b.c", ""))
+        gw.orders.append(order)
+        self.assertIs(gw.retrieve_order("O1"), order)
+        with self.assertRaises(GatewayError):
+            gw.retrieve_order("nope")
 
     def test_upload_item_image_mints_ids_and_delete_removes_them(self) -> None:
         gw = FakeGateway()

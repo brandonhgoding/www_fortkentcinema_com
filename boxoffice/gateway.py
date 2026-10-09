@@ -51,10 +51,18 @@ class OrderLine:
 
 
 @dataclass(frozen=True)
+class Recipient:
+    display_name: str  # each "" when Square omits it
+    email_address: str
+    phone_number: str
+
+
+@dataclass(frozen=True)
 class OrderData:
     order_id: str
     closed_at: datetime.datetime | None  # aware; None when Square omits it
     lines: tuple[OrderLine, ...]
+    recipient: Recipient | None = None  # the buyer, on payment-link orders
 
 
 def _call(fn: Callable[..., T], *args: Any, **kwargs: Any) -> T:
@@ -110,12 +118,24 @@ def _order_line(line: Any) -> OrderLine:
     )
 
 
+def _recipient(order: Any) -> Recipient | None:
+    for fulfillment in order.fulfillments or []:
+        for kind in ("pickup_details", "shipment_details", "delivery_details"):
+            recipient = getattr(getattr(fulfillment, kind, None), "recipient", None)
+            if recipient is not None:
+                return Recipient(*(getattr(recipient, field, None) or ""
+                                   for field in ("display_name", "email_address",
+                                                 "phone_number")))
+    return None
+
+
 def _order_data(order: Any) -> OrderData:
     return OrderData(
         order_id=order.id,
         closed_at=(datetime.datetime.fromisoformat(order.closed_at)
                    if order.closed_at else None),
         lines=tuple(_order_line(li) for li in (order.line_items or [])),
+        recipient=_recipient(order),
     )
 
 
@@ -172,6 +192,10 @@ class SquareGateway:
             if not response.cursor:
                 return orders
             page = {"cursor": response.cursor}
+
+    def retrieve_order(self, order_id: str) -> OrderData:
+        response = _call(self.client.orders.get, order_id)
+        return _order_data(response.order)
 
     def list_ticket_items(self) -> list[RemoteItem]:
         objects = _call(lambda: list(self.client.catalog.list(types="ITEM")))
