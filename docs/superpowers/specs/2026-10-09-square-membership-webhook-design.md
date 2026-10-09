@@ -1,7 +1,7 @@
 # Square membership webhook — paid in Square, entered in Django — Design
 
 **Date:** 2026-10-09
-**Status:** Approved, not yet built
+**Status:** Implemented on feat/square-membership-webhook (see Amendments)
 **Repo:** `www_fortkentcinema_com` (branch: `feat/square-membership-webhook`)
 **Builds on:** `2026-10-05-square-sync-design.md` (the `boxoffice` app and
 its gateway), `2026-09-11-membership-records-design.md` (members and terms)
@@ -292,6 +292,8 @@ Cases:
    | `family-plus` | Family Plus Membership | `YJEGADIF7G23EQX67DK744LO` |
 
    The sandbox has its own IDs; a sandbox tier is wired the same way.
+   The sales list lives at `/dashboard/memberships/square-sales/` and is
+   linked from the Memberships page.
 3. In the Square developer dashboard, add a webhook subscription for the
    production application: URL `https://www.fortkentcinema.com/boxoffice/square/webhook/`,
    API version matching the SDK, event `order.updated` only. Copy its
@@ -301,3 +303,28 @@ Cases:
 5. Use Square's "Send test event" and confirm a 200 in its log and no
    row created (the test order has no membership line).
 6. Watch the first real sale land in the roster.
+
+## Amendments (implementation, 2026-10-09)
+
+- `process_order` creates a placeholder `MembershipSale` row (FAILED, "Processing
+  did not finish") before fetching the order, so a request killed mid-way still
+  raises the dashboard alert. An order with no membership line deletes the
+  placeholder again, so every completed register order costs one insert and
+  one delete.
+- After the fetch the row is re-read under `select_for_update()` inside
+  `transaction.atomic()` and left untouched if another request already
+  finished it (OK or SKIPPED). The early failure writes (gateway disabled,
+  gateway error) use the same guard. This closes a two-events-for-one-order
+  race the spec did not name. The lock is real on Postgres and a no-op on
+  sqlite.
+- An order with no `closed_at` is recorded FAILED with "Order has no closed_at".
+- A term that would run past 31 December 9999 is FAILED with
+  `A {months}-month term from {YYYY-MM-DD} runs past 31 December 9999. Enter
+  the term by hand.`
+- The webhook decodes the body strictly; a body that is not valid UTF-8 is a
+  403, so the verified text is exactly the bytes Square signed.
+- The home-page alert links to the sales list (an optional `url` key on the
+  alert, rendered by `_alerts.html`); other alerts are unchanged.
+- The webhook returns 400 for malformed JSON, a non-object body, or an
+  `order.updated` event missing its order keys. Every other event type and
+  every non-COMPLETED state is a 200 with nothing recorded.
