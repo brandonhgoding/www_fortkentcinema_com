@@ -1,4 +1,5 @@
 import datetime
+from decimal import Decimal
 
 from django.db import models
 
@@ -51,3 +52,7 @@ class MembershipSale(models.Model):
         from boxoffice.pull import business_date
 
         return business_date(self.closed_at)
+
+    @property
+    def gross_dollars(self) -> Decimal:
+        return Decimal(self.gross_cents) / 100

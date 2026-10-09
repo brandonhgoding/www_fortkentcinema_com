@@ -1,0 +1,16 @@
+<tr id="square-sale-{{ sale.pk }}">
+  <td>{% if sale.purchase_date %}{{ sale.purchase_date|date:"M j, Y" }}{% else %}—{% endif %}</td>
+  <td>{% if sale.tier %}{{ sale.tier.name }}{% else %}—{% endif %}</td>
+  <td>{% if sale.display_name %}{{ sale.display_name }}{% else %}—{% endif %}<br />{% if sale.email %}{{ sale.email }}{% else %}—{% endif %}</td>
+  <td>${{ sale.gross_dollars|floatformat:2 }}</td>
+  <td>
+    <span class="status-badge {% if sale.status == 'OK' %}status-active{% elif sale.status == 'SKIPPED' %}status-draft{% else %}status-cancelled{% endif %}">{{ sale.get_status_display }}</span>
+    {% if sale.error %}<span class="fieldHint">{{ sale.error }}</span>{% endif %}
+    {% if sale.status == 'FAILED' %}
+    <form method="post" action="{% url 'dashboard:square_sale_retry' sale.pk %}"
+          hx-post="{% url 'dashboard:square_sale_retry' sale.pk %}"
+          hx-target="#square-sale-{{ sale.pk }}" hx-swap="outerHTML">{% csrf_token %}<button class="btn btn-secondary btn-sm">Retry</button></form>
+    {% endif %}
+  </td>
+  <td>{% if sale.term %}<a href="{% url 'dashboard:member_detail' sale.term.member.pk %}">{{ sale.term.member }}</a>{% elif sale.status == 'OK' %}term removed{% else %}—{% endif %}</td>
+</tr>

@@ -1,0 +1,35 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Square membership sales · LeprinceOS{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Square membership sales</h1>
+      <p class="page-subtitle">{{ failed_count }} need{{ failed_count|pluralize:"s," }} attention</p>
+    </div>
+  </div>
+
+  {% if sales %}
+    <div class="tableWrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Purchased</th><th>Tier</th><th>Buyer</th>
+          <th>Amount</th><th>Status</th><th>Member</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sale in sales %}
+          {% include "dashboard/_square_sale_row.html" %}
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <h3 class="empty-state-title">No Square membership sales yet</h3>
+      <p class="empty-state-description">They'll show up here when someone pays through a membership link.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

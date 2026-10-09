@@ -4,7 +4,7 @@
   <div class="alert alert{{ alert.type|capfirst }}" role="alert" aria-live="polite"
        x-data="{ shown: true }" x-show="shown">
     <div class="alertIcon">{% if alert.type == 'warning' %}⚠{% elif alert.type == 'success' %}✓{% elif alert.type == 'error' %}✕{% else %}ℹ{% endif %}</div>
-    <p class="alertMessage">{{ alert.message }}</p>
+    <p class="alertMessage">{% if alert.url %}<a href="{{ alert.url }}">{{ alert.message }}</a>{% else %}{{ alert.message }}{% endif %}</p>
     <button type="button" class="dismissButton" aria-label="Dismiss alert" @click="shown = false"><span aria-hidden="true">&times;</span></button>
   </div>
   {% endfor %}
