@@ -47,6 +47,7 @@ class MembershipTierAdmin(admin.ModelAdmin):
         "slug",
         "price",
         "free_admissions_per_month",
+        "square_variation_id",
         "show_on_membership_page",
         "sort_order",
     )

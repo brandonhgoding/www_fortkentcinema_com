@@ -204,7 +204,8 @@ class MembershipTierForm(forms.ModelForm):
         model = MembershipTier
         fields = [
             "name", "slug", "eyebrow", "price", "duration_months",
-            "free_admissions_per_month", "checkout_url", "benefits",
+            "free_admissions_per_month", "checkout_url", "square_variation_id",
+            "benefits",
             "featured", "is_family_tier", "show_on_membership_page",
             "sort_order", "description",
         ]
@@ -227,6 +228,9 @@ class MembershipTierForm(forms.ModelForm):
             ),
             "checkout_url": forms.URLInput(
                 attrs={"class": "input", "placeholder": "https://square.link/..."}
+            ),
+            "square_variation_id": forms.TextInput(
+                attrs={"class": "input", "placeholder": "e.g. LUXWXSDRQGNENE7XDBXPNYXY"}
             ),
             "sort_order": forms.NumberInput(attrs={"class": "input", "step": "1"}),
             "description": forms.Textarea(attrs={"class": "input", "rows": 3}),

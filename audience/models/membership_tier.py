@@ -49,6 +49,14 @@ class MembershipTier(models.Model):
         default=False, help_text="Shows the 'For Families' ribbon."
     )
     checkout_url = models.URLField(blank=True, help_text="The Square payment link.")
+    square_variation_id = models.CharField(
+        max_length=64,
+        blank=True,
+        default="",
+        help_text="The ID of this tier's 'Annual' variation in Square "
+        "(Items → the item → the variation's ID in the URL). Sales of that "
+        "variation create terms for this tier.",
+    )
     benefits = models.ManyToManyField(MembershipBenefit, blank=True)
     show_on_membership_page = models.BooleanField(
         default=True,
@@ -72,6 +80,11 @@ class MembershipTier(models.Model):
             models.CheckConstraint(
                 condition=models.Q(duration_months__gte=1),
                 name="audience_membershiptier_duration_at_least_one_month",
+            ),
+            models.UniqueConstraint(
+                fields=["square_variation_id"],
+                condition=~models.Q(square_variation_id=""),
+                name="audience_membershiptier_square_variation_id_unique",
             ),
         ]
 
