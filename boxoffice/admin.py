@@ -1,7 +1,7 @@
 # mypy: disable-error-code="type-arg"
 from django.contrib import admin
 
-from .models import EmailRecipient, EmailReport, SalesPull
+from .models import EmailRecipient, EmailReport, MembershipSale, SalesPull
 
 
 class EmailRecipientInline(admin.TabularInline):
@@ -41,4 +41,29 @@ class SalesPullAdmin(admin.ModelAdmin):
         return False
 
     def has_change_permission(self, request, obj=None) -> bool:
+        return False
+
+
+@admin.register(MembershipSale)
+class MembershipSaleAdmin(admin.ModelAdmin):
+    list_display = ("order_id", "closed_at", "tier", "email", "status")
+    list_filter = ("status",)
+    search_fields = ("order_id", "email", "display_name")
+    readonly_fields = (
+        "order_id",
+        "closed_at",
+        "tier",
+        "quantity",
+        "gross_cents",
+        "display_name",
+        "email",
+        "phone",
+        "status",
+        "error",
+        "term",
+        "created_at",
+        "processed_at",
+    )
+
+    def has_add_permission(self, request, obj=None) -> bool:
         return False
