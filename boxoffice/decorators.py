@@ -33,8 +33,14 @@ def square_webhook(view: View) -> View:
                          "not set; rejecting Square webhook.")
             return HttpResponseForbidden()
 
+        try:
+            body = request.body.decode("utf-8")
+        except UnicodeDecodeError:
+            logger.warning("Rejected Square webhook with a non-UTF-8 body.")
+            return HttpResponseForbidden()
+
         if not verify_signature(
-            request_body=request.body.decode("utf-8", errors="replace"),
+            request_body=body,
             signature_header=request.META.get("HTTP_X_SQUARE_HMACSHA256_SIGNATURE", ""),
             signature_key=key,
             notification_url=url,

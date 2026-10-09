@@ -54,7 +54,7 @@ def event(order_id="O1", state="COMPLETED", type="order.updated") -> dict:
 
 class WebhookTestCase(TestCase):
     def setUp(self):
-        self.enterContext(patch_logger())
+        self.logger = self.enterContext(patch_logger())
         self.process = self.enterContext(
             mock.patch("boxoffice.views.process_order"))
 
@@ -74,6 +74,17 @@ class SignatureTests(WebhookTestCase):
 
     def test_forged_signature_is_403(self):
         self.assertRejected(post(self.client, event(), signature="forged"))
+        self.logger.warning.assert_called_once()
+        self.logger.error.assert_not_called()
+
+    def test_non_utf8_body_is_403(self):
+        resp = self.client.post(
+            reverse("boxoffice:square_webhook"),
+            data=b'\xff{"type": "order.updated"}',
+            content_type="application/json",
+            HTTP_X_SQUARE_HMACSHA256_SIGNATURE="anything")
+        self.assertRejected(resp)
+        self.logger.warning.assert_called_once()
 
     def test_tampered_body_is_403(self):
         signed = sign(json.dumps(event("O1")))
@@ -82,10 +93,14 @@ class SignatureTests(WebhookTestCase):
     @override_settings(SQUARE_WEBHOOK_SIGNATURE_KEY="")
     def test_blank_key_is_403(self):
         self.assertRejected(post(self.client, event()))
+        self.logger.error.assert_called_once()
+        self.logger.warning.assert_not_called()
 
     @override_settings(SQUARE_WEBHOOK_URL="")
     def test_blank_url_is_403(self):
         self.assertRejected(post(self.client, event()))
+        self.logger.error.assert_called_once()
+        self.logger.warning.assert_not_called()
 
     def test_get_is_405(self):
         resp = self.client.get(reverse("boxoffice:square_webhook"))
