@@ -125,6 +125,7 @@ class RetryTests(StaffTestCase):
         def fake(order_id):
             MembershipSale.objects.filter(order_id=order_id).update(
                 status="OK", error="", term=term)
+            return MembershipSale.objects.get(order_id=order_id)
 
         with mock.patch(
             "dashboard.membership_sale_views.process_order", side_effect=fake
@@ -144,6 +145,7 @@ class RetryTests(StaffTestCase):
         def fake(order_id):
             MembershipSale.objects.filter(order_id=order_id).update(
                 error="still boom")
+            return MembershipSale.objects.get(order_id=order_id)
 
         with mock.patch(
             "dashboard.membership_sale_views.process_order", side_effect=fake
@@ -154,6 +156,35 @@ class RetryTests(StaffTestCase):
         html = resp.content.decode()
         self.assertIn("still boom", html)
         self.assertIn("Retry", html)
+
+    def test_retry_of_a_non_membership_order_removes_the_row(self) -> None:
+        def fake(order_id):
+            MembershipSale.objects.filter(order_id=order_id).delete()
+            return None
+
+        with mock.patch(
+            "dashboard.membership_sale_views.process_order", side_effect=fake
+        ):
+            resp = self.client.post(self.url, HTTP_HX_REQUEST="true")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.content, b"")
+        toast = json.loads(resp["HX-Trigger"])["dashboard-toast"]
+        self.assertEqual(
+            toast, {"kind": "info", "message": "Not a membership order; removed"})
+        self.assertFalse(MembershipSale.objects.filter(pk=self.sale.pk).exists())
+
+    def test_retry_that_ends_skipped_toasts_info(self) -> None:
+        def fake(order_id):
+            MembershipSale.objects.filter(order_id=order_id).update(
+                status="SKIPPED", error="No buyer email (register sale)")
+            return MembershipSale.objects.get(order_id=order_id)
+
+        with mock.patch(
+            "dashboard.membership_sale_views.process_order", side_effect=fake
+        ):
+            resp = self.client.post(self.url, HTTP_HX_REQUEST="true")
+        toast = json.loads(resp["HX-Trigger"])["dashboard-toast"]
+        self.assertEqual(toast, {"kind": "info", "message": "Skipped"})
 
     def test_non_htmx_post_redirects_to_the_list(self) -> None:
         with mock.patch("dashboard.membership_sale_views.process_order") as po:

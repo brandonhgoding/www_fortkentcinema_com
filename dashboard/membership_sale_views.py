@@ -9,6 +9,7 @@ import json
 
 from boxoffice.memberships import process_order
 from boxoffice.models import MembershipSale
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
@@ -32,7 +33,7 @@ def _toast_for(sale: MembershipSale) -> dict:
     if sale.status == MembershipSale.Status.OK:
         return {"kind": "success", "message": f"Entered: {sale.display_name}"}
     if sale.status == MembershipSale.Status.SKIPPED:
-        return {"kind": "error", "message": "Skipped"}
+        return {"kind": "info", "message": "Skipped"}
     return {"kind": "error", "message": sale.error}
 
 
@@ -40,9 +41,16 @@ class SquareSaleRetryView(StaffRequiredMixin, View):
     def post(self, request, pk):
         sale = get_object_or_404(MembershipSale, pk=pk)
         # Never raises on gateway failure: the outcome lands on the row.
-        process_order(sale.order_id)
+        result = process_order(sale.order_id)
         if not request.headers.get("HX-Request"):
             return redirect("dashboard:square_sales")
+        if result is None:
+            # The order had no membership line, so its row was deleted; the
+            # empty body swaps the row out of the list.
+            resp = HttpResponse("")
+            resp["HX-Trigger"] = json.dumps({"dashboard-toast": {
+                "kind": "info", "message": "Not a membership order; removed"}})
+            return resp
         sale = MembershipSale.objects.select_related("tier", "term__member").get(
             pk=pk
         )
