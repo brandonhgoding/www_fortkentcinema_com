@@ -155,6 +155,21 @@ class TierCreateTests(StaffTestCase):
             MembershipTier.objects.filter(square_variation_id="VARXYZ").exists()
         )
 
+    def test_duplicate_square_variation_id_is_refused_with_a_message(self) -> None:
+        MembershipTier.objects.filter(slug="individual").update(
+            square_variation_id="VARXYZ"
+        )
+        resp = self.client.post(
+            reverse("dashboard:tier_create"),
+            tier_payload(square_variation_id="VARXYZ"),
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(
+            "Another tier already uses this Square variation ID.",
+            resp.content.decode(),
+        )
+        self.assertFalse(MembershipTier.objects.filter(slug="matinee-club").exists())
+
     def test_creates_a_tier(self) -> None:
         resp = self.client.post(reverse("dashboard:tier_create"), tier_payload())
         self.assertEqual(resp.status_code, 200)

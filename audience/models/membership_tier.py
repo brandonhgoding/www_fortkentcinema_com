@@ -85,6 +85,9 @@ class MembershipTier(models.Model):
                 fields=["square_variation_id"],
                 condition=~models.Q(square_variation_id=""),
                 name="audience_membershiptier_square_variation_id_unique",
+                violation_error_message=(
+                    "Another tier already uses this Square variation ID."
+                ),
             ),
         ]
 
