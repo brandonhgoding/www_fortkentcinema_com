@@ -1,6 +1,13 @@
 import datetime
 
-from boxoffice.models import SaleLine, SalesPull, SquareItem, SquareVariation
+from audience.models import Member, MembershipTerm, MembershipTier
+from boxoffice.models import (
+    MembershipSale,
+    SaleLine,
+    SalesPull,
+    SquareItem,
+    SquareVariation,
+)
 from cinema.models import Engagement, Screen
 from django.db import IntegrityError, transaction
 from django.test import TestCase
@@ -75,3 +82,39 @@ class SalesPullTests(TestCase):
     def test_status_choices(self) -> None:
         self.assertEqual(SalesPull.Status.OK, "OK")
         self.assertEqual(SalesPull.Status.FAILED, "FAILED")
+
+
+class MembershipSaleTests(TestCase):
+    def test_order_id_is_unique(self) -> None:
+        MembershipSale.objects.create(
+            order_id="O1", status=MembershipSale.Status.FAILED
+        )
+        with self.assertRaises(IntegrityError):
+            MembershipSale.objects.create(
+                order_id="O1", status=MembershipSale.Status.FAILED
+            )
+
+    def test_deleting_the_term_keeps_the_sale(self) -> None:
+        tier = MembershipTier.objects.get(slug="individual")
+        member = Member.objects.create(first_name="A", last_name="B", email="a@b.c")
+        term = MembershipTerm.objects.create(
+            member=member,
+            tier=tier,
+            started_on=datetime.date(2026, 10, 2),
+            expires_on=datetime.date(2027, 10, 1),
+            price_paid=60,
+        )
+        sale = MembershipSale.objects.create(
+            order_id="O1", tier=tier, term=term, status=MembershipSale.Status.OK
+        )
+        term.delete()
+        sale.refresh_from_db()
+        self.assertIsNone(sale.term)
+
+    def test_purchase_date_is_the_eastern_day(self) -> None:
+        sale = MembershipSale(
+            order_id="O1",
+            paid_at=datetime.datetime(2026, 10, 3, 3, 12, tzinfo=datetime.UTC),
+        )
+        self.assertEqual(sale.purchase_date, datetime.date(2026, 10, 2))
+        self.assertIsNone(MembershipSale(order_id="O2").purchase_date)

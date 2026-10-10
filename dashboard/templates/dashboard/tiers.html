@@ -10,6 +10,7 @@
       <p class="page-subtitle">The tiers sold on the membership page, and the perks they list.</p>
     </div>
     <div class="actions">
+      <a class="btn btn-secondary" href="{% url 'dashboard:square_sales' %}">Square sales</a>
       <a class="btn btn-secondary" href="{% url 'dashboard:terms' %}">Terms sold</a>
       <button class="btn btn-primary" hx-get="{% url 'dashboard:tier_create' %}"
               hx-target="#drawer-content" @click="$store.drawer.show('New Tier')">+ New Tier</button>

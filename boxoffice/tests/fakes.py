@@ -72,6 +72,13 @@ class FakeGateway:
         self._record("search_orders", start=start, end=end)
         return [o for o in self.orders if start <= o.closed_at < end]
 
+    def retrieve_order(self, order_id: str) -> OrderData:
+        self._record("retrieve_order", order_id=order_id)
+        for order in self.orders:
+            if order.order_id == order_id:
+                return order
+        raise GatewayError(f"Unknown order {order_id}")
+
     def list_ticket_items(self) -> list[RemoteItem]:
         self._record("list_ticket_items")
         return list(self.items.values())

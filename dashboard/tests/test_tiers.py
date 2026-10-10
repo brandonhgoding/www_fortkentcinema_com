@@ -26,6 +26,7 @@ def tier_payload(**overrides) -> dict:
         "duration_months": "12",
         "free_admissions_per_month": "1",
         "checkout_url": "https://square.link/u/matinee",
+        "square_variation_id": "",
         "featured": "",
         "is_family_tier": "",
         "show_on_membership_page": "on",
@@ -145,6 +146,30 @@ class CatalogueOrderTests(StaffTestCase):
 
 
 class TierCreateTests(StaffTestCase):
+    def test_square_variation_id_is_saved(self) -> None:
+        self.client.post(
+            reverse("dashboard:tier_create"),
+            tier_payload(square_variation_id="VARXYZ"),
+        )
+        self.assertTrue(
+            MembershipTier.objects.filter(square_variation_id="VARXYZ").exists()
+        )
+
+    def test_duplicate_square_variation_id_is_refused_with_a_message(self) -> None:
+        MembershipTier.objects.filter(slug="individual").update(
+            square_variation_id="VARXYZ"
+        )
+        resp = self.client.post(
+            reverse("dashboard:tier_create"),
+            tier_payload(square_variation_id="VARXYZ"),
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(
+            "Another tier already uses this Square variation ID.",
+            resp.content.decode(),
+        )
+        self.assertFalse(MembershipTier.objects.filter(slug="matinee-club").exists())
+
     def test_creates_a_tier(self) -> None:
         resp = self.client.post(reverse("dashboard:tier_create"), tier_payload())
         self.assertEqual(resp.status_code, 200)

@@ -133,3 +133,12 @@ class VoicemailAlertTests(TestCase):
         self.assertEqual(one[0]["message"], "1 run failed to sync to Square")
         two = build_smart_alerts([], 1, self.today, square_sync_failures=2)
         self.assertEqual(two[0]["message"], "2 runs failed to sync to Square")
+
+    def test_square_membership_failed_pluralises(self) -> None:
+        one = build_smart_alerts([], 1, self.today, square_membership_failures=1)
+        self.assertIn(
+            "1 Square membership sale needs attention", [a["message"] for a in one])
+        two = build_smart_alerts([], 1, self.today, square_membership_failures=2)
+        self.assertIn(
+            "2 Square membership sales need attention", [a["message"] for a in two])
+        self.assertNotIn("square-membership-failed", self._square_ids())

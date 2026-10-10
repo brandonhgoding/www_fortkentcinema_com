@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import datetime
 
+from django.urls import reverse
+
 
 def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
                        today: datetime.date,
                        new_inquiries: int = 0,
                        new_voicemails: int = 0,
                        square_pull_status: str | None = None,
-                       square_sync_failures: int = 0) -> list[dict]:
+                       square_sync_failures: int = 0,
+                       square_membership_failures: int = 0) -> list[dict]:
     """Server-side port of the React useSmartAlerts hook.
 
     engagements: iterable of Engagement (all engagements).
@@ -74,6 +77,18 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
         alerts.append({
             "id": "square-sync-failed", "type": "warning",
             "message": f"{square_sync_failures} {unit} failed to sync to Square",
+        })
+
+    if square_membership_failures > 0:
+        n = square_membership_failures
+        if n == 1:
+            message = "1 Square membership sale needs attention"
+        else:
+            message = f"{n} Square membership sales need attention"
+        alerts.append({
+            "id": "square-membership-failed", "type": "warning",
+            "message": message,
+            "url": reverse("dashboard:square_sales"),
         })
 
     return alerts

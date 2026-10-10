@@ -51,10 +51,22 @@ class OrderLine:
 
 
 @dataclass(frozen=True)
+class Recipient:
+    display_name: str  # each "" when Square omits it
+    email_address: str
+    phone_number: str
+
+
+@dataclass(frozen=True)
 class OrderData:
     order_id: str
     closed_at: datetime.datetime | None  # aware; None when Square omits it
     lines: tuple[OrderLine, ...]
+    recipient: Recipient | None = None  # the buyer, on payment-link orders
+    # When the buyer paid: the first tender's created_at, else the order's
+    # created_at; aware, None when Square gives neither. Payment-link orders
+    # reach COMPLETED (closed_at) only when staff mark the shipment done.
+    paid_at: datetime.datetime | None = None
 
 
 def _call(fn: Callable[..., T], *args: Any, **kwargs: Any) -> T:
@@ -110,12 +122,34 @@ def _order_line(line: Any) -> OrderLine:
     )
 
 
+def _recipient(order: Any) -> Recipient | None:
+    for fulfillment in order.fulfillments or []:
+        for kind in ("pickup_details", "shipment_details", "delivery_details"):
+            recipient = getattr(getattr(fulfillment, kind, None), "recipient", None)
+            if recipient is not None:
+                return Recipient(*(getattr(recipient, field, None) or ""
+                                   for field in ("display_name", "email_address",
+                                                 "phone_number")))
+    return None
+
+
+def _timestamp(value: str | None) -> datetime.datetime | None:
+    return datetime.datetime.fromisoformat(value) if value else None
+
+
+def _paid_at(order: Any) -> datetime.datetime | None:
+    tenders = order.tenders or []
+    first_tender = tenders[0].created_at if tenders else None
+    return _timestamp(first_tender or order.created_at)
+
+
 def _order_data(order: Any) -> OrderData:
     return OrderData(
         order_id=order.id,
-        closed_at=(datetime.datetime.fromisoformat(order.closed_at)
-                   if order.closed_at else None),
+        closed_at=_timestamp(order.closed_at),
         lines=tuple(_order_line(li) for li in (order.line_items or [])),
+        recipient=_recipient(order),
+        paid_at=_paid_at(order),
     )
 
 
@@ -172,6 +206,10 @@ class SquareGateway:
             if not response.cursor:
                 return orders
             page = {"cursor": response.cursor}
+
+    def retrieve_order(self, order_id: str) -> OrderData:
+        response = _call(self.client.orders.get, order_id)
+        return _order_data(response.order)
 
     def list_ticket_items(self) -> list[RemoteItem]:
         objects = _call(lambda: list(self.client.catalog.list(types="ITEM")))

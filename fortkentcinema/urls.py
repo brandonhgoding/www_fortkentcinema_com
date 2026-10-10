@@ -47,6 +47,7 @@ urlpatterns = [
     path("logout/", LogoutView.as_view(next_page="/login"), name="logout"),
     path("dashboard/", include("dashboard.urls")),
     path("phone/", include("phone.urls")),
+    path("boxoffice/", include("boxoffice.urls")),
     *legacy_urlpatterns,
     path("", include("web.urls")),
 ]

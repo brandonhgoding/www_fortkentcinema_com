@@ -1,5 +1,6 @@
 import uuid
 
+from django.db import IntegrityError
 from django.test import TestCase
 
 from audience.models import MembershipBenefit, MembershipTier
@@ -278,3 +279,23 @@ class SlugImmutabilityTests(TestCase):
 
     def test_a_new_tier_chooses_its_slug(self) -> None:
         self.assertEqual(make_tier(slug="brand-new").slug, "brand-new")
+
+
+class SquareVariationIdTests(TestCase):
+    def test_defaults_blank_and_two_blanks_coexist(self) -> None:
+        a = MembershipTier.objects.create(
+            slug="a", name="A", price=1, checkout_url="https://square.link/u/a"
+        )
+        b = MembershipTier.objects.create(
+            slug="b", name="B", price=1, checkout_url="https://square.link/u/b"
+        )
+        self.assertEqual((a.square_variation_id, b.square_variation_id), ("", ""))
+
+    def test_set_ids_are_unique(self) -> None:
+        MembershipTier.objects.create(
+            slug="a", name="A", price=1, square_variation_id="VAR1"
+        )
+        with self.assertRaises(IntegrityError):
+            MembershipTier.objects.create(
+                slug="b", name="B", price=1, square_variation_id="VAR1"
+            )

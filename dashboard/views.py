@@ -3,7 +3,7 @@ import json
 from zoneinfo import ZoneInfo
 
 from boxoffice.gateway import GatewayError
-from boxoffice.models import SquareItem
+from boxoffice.models import MembershipSale, SquareItem
 from boxoffice.reports import pull_status, sales_panel
 from boxoffice.sync import delete, live_item, schedule, sync
 from cinema.models import (
@@ -103,6 +103,8 @@ class HomeView(StaffRequiredMixin, TemplateView):
                     if settings.SQUARE_ACCESS_TOKEN else None),
                 square_sync_failures=SquareItem.objects.filter(
                     deleted_at__isnull=True).exclude(last_error="").count(),
+                square_membership_failures=MembershipSale.objects.filter(
+                    status=MembershipSale.Status.FAILED).count(),
             ),
             "sales_panel": sales_panel(today),
             "display_name": user.get_short_name() or user.get_username(),
