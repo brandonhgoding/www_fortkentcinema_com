@@ -63,7 +63,7 @@
  * one's height and the boxes line up whatever the answer lengths. */
 .membership-faq__list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
   gap: var(--spacing-lg);
   margin: 0;
   padding: 0;

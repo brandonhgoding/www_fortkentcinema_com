@@ -1,7 +1,9 @@
 import datetime
+from pathlib import Path
 from unittest import mock
 
 from cinema.models import SponsorshipInquiry, Studio, StudioTitle
+from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
 
@@ -194,6 +196,25 @@ class SponsorPageTests(TestCase):
         self.assertIn("PG", context["ratings"])
         self.assertIn(1970, context["decades"])
         self.assertIn(2020, context["decades"])
+
+    def test_phone_layout_hooks_mark_every_dropped_cell(self):
+        """SponsorPage.css hides these columns on a phone so the Sponsor
+        button stays on screen. A header marked without its cells (or the
+        reverse) would shift every column after it."""
+        html = self.client.get(reverse("sponsor")).content.decode()
+        table = html.split('<table class="sponsor-table">', 1)[1].split(
+            "</table>", 1
+        )[0]
+        rows = table.count("<tr>")  # the header row plus one per title
+        self.assertEqual(table.count("sponsor-table__wide-only"), 2 * rows)
+        self.assertEqual(table.count("sponsor-table__rating"), rows)
+
+    def test_table_scroller_contains_positioned_descendants(self):
+        """The header's absolutely positioned .sr-only label escaped a static
+        scroller and widened the whole page to 704px on a phone."""
+        css = (Path(settings.BASE_DIR) / "static/css/SponsorPage.css").read_text()
+        rule = css.split(".sponsor-table__scroll {", 1)[1].split("}", 1)[0]
+        self.assertIn("position: relative", rule)
 
 
 class SponsorSitemapTests(TestCase):
