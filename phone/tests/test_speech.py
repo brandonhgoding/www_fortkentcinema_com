@@ -103,10 +103,7 @@ class ShowtimesSpeechTests(TestCase):
 
 # Fixed values, so this pins the wording rather than today's prices and hours:
 # a reprice in web/constants.py shouldn't fail the suite.
-HOURS = {
-    "weekday": {"days": "Monday - Thursday", "open": "4:00 PM", "close": "9:00 PM"},
-    "weekend": {"days": "Saturday & Sunday", "open": "2:00 PM", "close": "10:00 PM"},
-}
+BOX_OFFICE = {"opens_before_show_minutes": 45}
 PRICES = {
     "adult": 8,
     "senior": 7,
@@ -119,13 +116,12 @@ PRICES = {
 
 class HoursAndPricesSpeechTests(TestCase):
     @patch.dict(TICKET_PRICES, PRICES)
-    @patch.dict(SITE_CONFIG, {"hours": HOURS})
+    @patch.dict(SITE_CONFIG, {"box_office": BOX_OFFICE})
     def test_reads_hours_and_every_price(self) -> None:
         self.assertEqual(
             hours_and_prices_speech(),
-            "We're at 13 Hall Street in Fort Kent, and we're open "
-            "Monday through Thursday, 4:00 PM to 9:00 PM and "
-            "Saturday and Sunday, 2:00 PM to 10:00 PM. "
+            "We're at 13 Hall Street in Fort Kent, and the box office opens "
+            "45 minutes before every show. "
             "Tickets are $8 for adults, $7 for seniors, and $6 for children. "
             "Matinees, for shows starting at 4:00 PM or earlier, are $5. "
             "Members pay $4 for any show, and some shows are free for members.",

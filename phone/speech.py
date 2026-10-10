@@ -117,17 +117,12 @@ def _clock(t: datetime.time) -> str:
 
 
 def hours_and_prices_speech() -> str:
-    hours = _spoken_list(
-        [
-            f"{block['days'].replace(' - ', ' through ').replace(' & ', ' and ')}, "
-            f"{block['open']} to {block['close']}"
-            for block in SITE_CONFIG["hours"].values()
-        ]
-    )
+    minutes = SITE_CONFIG["box_office"]["opens_before_show_minutes"]
     street = SITE_CONFIG["cinema"]["address"]["street"]
     p = TICKET_PRICES
     return (
-        f"We're at {street} in Fort Kent, and we're open {hours}. "
+        f"We're at {street} in Fort Kent, and the box office opens "
+        f"{minutes} minutes before every show. "
         f"Tickets are ${p['adult']} for adults, ${p['senior']} for seniors, "
         f"and ${p['child']} for children. "
         f"Matinees, for shows starting at {_clock(p['matinee_until'])} or earlier, "

@@ -7,7 +7,8 @@ site's search clicks:
     two of them stacked, and a hidden section left one leading or trailing;
   * showtimes marked up as <button> with no handler anywhere and no online
     ticket path in the project at all;
-  * SITE_CONFIG["hours"] rendered in zero templates;
+  * SITE_CONFIG["hours"] rendered in zero templates (since replaced by
+    "opens before every show" — the fixed hours contradicted the schedule);
   * empty states that were a flat sentence or a blank void.
 
 The dividers were then removed outright rather than placed correctly, and
@@ -26,13 +27,7 @@ from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 from django.utils.html import escape
 
-from web.constants import (
-    _WEEK,
-    OPENING_HOURS_SPECIFICATION,
-    SITE_CONFIG,
-    SPONSORSHIP_TIERS,
-    _expand_days,
-)
+from web.constants import SITE_CONFIG, SPONSORSHIP_TIERS
 
 SECTION_MARKERS = (
     "hero",
@@ -179,36 +174,39 @@ class ShowtimeChipTests(TestCase):
 
 
 class FooterHoursTests(TestCase):
+    """The box office has no fixed weekly hours: it opens ahead of each show.
+
+    A fixed table (Wednesday - Thursday, Saturday & Sunday) contradicted the
+    schedule beside it — Friday Heckle Night, Tuesday shows, an 11 AM Saturday
+    matinee — so the footer now says the one thing that is always true.
+    """
+
     def footer(self, path="/"):
         html = self.client.get(path).content.decode()
         match = re.search(r"<footer\b.*?</footer>", html, re.S)
         self.assertIsNotNone(match, "no footer on the page")
         return match.group(0)
 
-    def test_hours_render_in_the_footer(self):
+    def test_footer_says_the_box_office_opens_before_every_show(self):
         footer = self.footer()
         self.assertIn('class="footer-column footer-hours"', footer)
-        self.assertIn('class="footer-heading"', footer)
-        for period in SITE_CONFIG["hours"].values():
-            self.assertIn(escape(period["days"]), footer)
-            self.assertIn(period["open"], footer)
-            self.assertIn(period["close"], footer)
+        minutes = SITE_CONFIG["box_office"]["opens_before_show_minutes"]
+        self.assertIn(f"{minutes} minutes before every show", footer)
 
-    def test_every_period_gets_its_own_row(self):
+    def test_footer_points_at_the_showtimes(self):
+        self.assertIn('href="/#now-showing"', self.footer())
+
+    def test_no_fixed_weekly_hours_remain(self):
         footer = self.footer()
-        rows = SITE_CONFIG["hours"]
-        self.assertEqual(footer.count('class="footer-hours-row"'), len(rows))
-        self.assertEqual(footer.count('class="footer-hours-days"'), len(rows))
-        self.assertEqual(footer.count('class="footer-hours-time"'), len(rows))
+        self.assertNotIn("footer-hours-row", footer)
+        self.assertNotIn("Wednesday", footer)
+        self.assertNotIn("hours", SITE_CONFIG)
 
     def test_hours_are_sitewide_not_just_the_home_page(self):
         self.assertIn("footer-hours", self.footer(reverse("membership")))
 
 
-class OpeningHoursSchemaTests(TestCase):
-    """SITE_CONFIG is the single source of truth; base.html reads the derived
-    rows rather than restating them."""
-
+class TheaterSchemaTests(TestCase):
     def theater(self, path="/"):
         html = self.client.get(path).content.decode()
         for raw in re.findall(
@@ -224,30 +222,14 @@ class OpeningHoursSchemaTests(TestCase):
 
     def test_new_keys_are_present(self):
         block = self.theater()
-        for key in ("openingHoursSpecification", "image", "hasMap"):
+        for key in ("image", "hasMap"):
             self.assertIn(key, block)
 
-    def test_opening_hours_match_the_config(self):
-        specs = self.theater()["openingHoursSpecification"]
-        self.assertEqual(len(specs), len(SITE_CONFIG["hours"]))
-        for spec in specs:
-            self.assertEqual(spec["@type"], "OpeningHoursSpecification")
-            # 24h ISO, not the "4:00 PM" the config carries for humans.
-            self.assertRegex(spec["opens"], r"^\d{2}:\d{2}$")
-            self.assertRegex(spec["closes"], r"^\d{2}:\d{2}$")
-        # Derived from SITE_CONFIG rather than restated here, so changing the
-        # hours doesn't fail this test; _expand_days is pinned separately.
-        self.assertEqual(
-            [
-                {k: spec[k] for k in ("dayOfWeek", "opens", "closes")}
-                for spec in specs
-            ],
-            OPENING_HOURS_SPECIFICATION,
-        )
-        for spec in specs:
-            for day in spec["dayOfWeek"]:
-                self.assertIn(day, _WEEK)
-
+    def test_no_fixed_opening_hours_are_published(self):
+        """Google shows openingHoursSpecification as "Closed" on every other
+        day, and show nights fall on those days. Better no hours than wrong
+        ones."""
+        self.assertNotIn("openingHoursSpecification", self.theater())
 
     def test_has_map_points_at_the_configured_address(self):
         self.assertIn("Hall+Street", self.theater()["hasMap"])
@@ -255,34 +237,6 @@ class OpeningHoursSchemaTests(TestCase):
     def test_image_is_absolute(self):
         self.assertRegex(self.theater()["image"], r"^https?://")
 
-
-class ExpandDaysTests(SimpleTestCase):
-    def test_range(self):
-        self.assertEqual(
-            _expand_days("Monday - Thursday"),
-            ["Monday", "Tuesday", "Wednesday", "Thursday"],
-        )
-
-    def test_range_wraps_the_week(self):
-        self.assertEqual(
-            _expand_days("Saturday - Monday"), ["Saturday", "Sunday", "Monday"]
-        )
-
-    def test_single_day(self):
-        self.assertEqual(_expand_days("Friday"), ["Friday"])
-
-    def test_days_joined_with_ampersand(self):
-        self.assertEqual(_expand_days("Saturday & Sunday"), ["Saturday", "Sunday"])
-
-    def test_days_and_ranges_joined_with_commas(self):
-        self.assertEqual(
-            _expand_days("Monday, Wednesday - Friday"),
-            ["Monday", "Wednesday", "Thursday", "Friday"],
-        )
-
-    def test_misspelt_day_raises(self):
-        with self.assertRaises(ValueError):
-            _expand_days("Saturday & Sundy")
 
 class EmptyStateTests(TestCase):
     @mock.patch("web.views.get_coming_soon", return_value=[])
