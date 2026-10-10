@@ -25,7 +25,9 @@ A reading of the live account (2026-10-09) found:
   buyer lives.
 - Nine membership orders since June, all one line of quantity one.
 - Square's `order.updated` event payload is a stub: order ID, location,
-  state, version, timestamps. No line items, no buyer.
+  state, version, timestamps. No line items, no buyer. Implementation moved
+  the trigger to the payment events, which carry the order ID the same way;
+  see Amendments.
 
 The site already has one webhook pattern, the Twilio phone line: a
 decorator that verifies the signature, a base-URL setting for the public
@@ -67,7 +69,8 @@ that, staff see why on the dashboard and can retry.
 - Backfilling the payment-link sales already in Square. Same call as the
   term backfill and the ticket backfill: no importer for a one-time job.
 - Updating an existing member's name from what the buyer typed.
-- Subscribing to any event other than `order.updated`.
+- Subscribing to any event other than Square's payment events
+  (`payment.updated`, and `payment.created` as a harmless second tick).
 
 ## Section 1: endpoint and flow
 
@@ -264,10 +267,10 @@ Cases:
 
 - Missing, forged, or tampered signature: 403, no `MembershipSale`.
 - Blank key or blank URL setting: 403.
-- Event type other than `order.updated`, or state not COMPLETED: 200,
-  nothing recorded.
+- Event type other than a payment event, or payment status not COMPLETED:
+  200, nothing recorded.
 - Order with only ticket lines: 200, nothing recorded.
-- New buyer: member created, term dated from `closed_at` in Eastern
+- New buyer: member created, term dated from `paid_at` (the first tender's `created_at`) in Eastern
   (a UTC timestamp after 8 pm Eastern lands on the right day), expiry
   from the tier's duration, `price_paid` from the gross, notes carry the
   order ID, sale OK and linked.
@@ -327,7 +330,7 @@ Cases:
   gateway error) use the same guard. This closes a two-events-for-one-order
   race the spec did not name. The lock is real on Postgres and a no-op on
   sqlite.
-- An order with no `closed_at` is recorded FAILED with "Order has no closed_at".
+- An order with no payment time is recorded FAILED with "Order has no payment time".
 - A term that would run past 31 December 9999 is FAILED with
   `A {months}-month term from {YYYY-MM-DD} runs past 31 December 9999. Enter
   the term by hand.`
@@ -335,11 +338,11 @@ Cases:
   403, so the verified text is exactly the bytes Square signed.
 - The home-page alert links to the sales list (an optional `url` key on the
   alert, rendered by `_alerts.html`); other alerts are unchanged.
-- The webhook returns 400 for malformed JSON, a non-object body, or an
-  `order.updated` event missing its order keys. Every other event type and
-  every non-COMPLETED state is a 200 with nothing recorded.
+- The webhook returns 400 for malformed JSON, a non-object body, or a
+  payment event missing its `payment` object or `status`. Every other event
+  type and every non-COMPLETED payment status is a 200 with nothing recorded.
 - The webhook returns 503 when the order was never fetched (the sale is FAILED
-  with no `closed_at`: gateway disabled, gateway error, or a placeholder left
+  with no `paid_at` and no tier: gateway disabled, gateway error, or a placeholder left
   behind; `order_never_fetched()`). Square retries a non-2xx, and a retry that
   fetches resolves the event without a staff click: a non-membership order
   drops its placeholder, a membership is attributed. The FAILED row stays as

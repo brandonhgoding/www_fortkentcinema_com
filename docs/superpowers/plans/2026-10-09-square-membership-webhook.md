@@ -28,6 +28,7 @@
   - FAILED gateway off: `Square sync disabled: {disabled_reason()}`
   - FAILED never-expiring term: `Current term never expires`
   - FAILED overflow: `A {months}-month term from {date} runs past 31 December 9999. Enter the term by hand.`
+  - FAILED no payment time: `Order has no payment time`
   - Term notes: `Square order {order_id}`
   - Alert: `{n} Square membership sale needs attention` / `{n} Square membership sales need attention`
 - **Every dashboard view is staff-only** via `StaffRequiredMixin` from `dashboard/mixins.py`.
