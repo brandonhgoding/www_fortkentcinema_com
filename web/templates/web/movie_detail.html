@@ -88,9 +88,7 @@ not the TMDB blurb — the local intent is what we can actually win.
             </ul>
           </div>
         {% endfor %}
-        <p class="movie-page-boxoffice">
-          Tickets at the box office &mdash; 13 Hall Street, Fort Kent, Maine.
-        </p>
+        {% include "partials/ticket_info.html" %}
       </section>
     {% else %}
       {% comment %} Archive state. Real content (our run history), not an empty shell. {% endcomment %}

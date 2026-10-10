@@ -1,0 +1,39 @@
+/* The ticket line under the showtimes (partials/ticket_info.html).
+ *
+ * Prices on one line, where to pay on the next. Centred under the NOW
+ * SHOWING header on the home page; left-aligned on a movie page, where it
+ * closes the showtimes column. Muted ink for the sentence, full ink for the
+ * numbers — the prices are what the reader is scanning for. */
+.ticket-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: 40rem;
+  margin: 0 auto var(--spacing-xl);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  text-align: center;
+  color: var(--color-cream-muted);
+}
+
+.ticket-info__prices {
+  color: var(--color-text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.ticket-info a {
+  color: var(--color-accent-light);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.ticket-info a:hover {
+  color: var(--color-accent);
+}
+
+.movie-page-showtimes .ticket-info {
+  margin: var(--spacing-lg) 0 0;
+  text-align: left;
+}

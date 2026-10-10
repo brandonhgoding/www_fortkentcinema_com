@@ -8,6 +8,8 @@
     </div>
 
     {% if ns_dates %}
+    {% include "partials/ticket_info.html" %}
+
     {% comment %}Desktop: date navigation + spotlight movie grid. Phone: film-first
     schedule list. Both are rendered; home.css toggles visibility by viewport.{% endcomment %}
     <div class="date-nav">
