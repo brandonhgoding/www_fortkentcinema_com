@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 
 from audience.models import Member, MembershipTerm, MembershipTier
 from boxoffice.gateway import GatewayError, OrderData, OrderLine, Recipient
-from boxoffice.memberships import process_order, split_name
+from boxoffice.memberships import order_never_fetched, process_order, split_name
 from boxoffice.models import MembershipSale
 from boxoffice.tests.fakes import FakeGateway
 from django.test import SimpleTestCase, TestCase, override_settings
@@ -56,6 +56,21 @@ class SplitNameTests(SimpleTestCase):
 
     def test_blank_stays_blank(self):
         self.assertEqual(split_name("  "), ("", ""))
+
+
+class OrderNeverFetchedTests(SimpleTestCase):
+    def test_failed_without_closed_at_was_never_fetched(self):
+        sale = MembershipSale(order_id="O1", status="FAILED", closed_at=None)
+        self.assertTrue(order_never_fetched(sale))
+
+    def test_attribution_failure_was_fetched(self):
+        sale = MembershipSale(order_id="O1", status="FAILED",
+                              closed_at=at_eastern(2026, 10, 2, 19, 12))
+        self.assertFalse(order_never_fetched(sale))
+
+    def test_ok_sale_was_fetched(self):
+        sale = MembershipSale(order_id="O1", status="OK", closed_at=None)
+        self.assertFalse(order_never_fetched(sale))
 
 
 class NewMemberTests(MembershipOrderTestCase):
@@ -248,7 +263,8 @@ class FailureTests(MembershipOrderTestCase):
         sale = process_order("O1", self.gw)
         stored = MembershipSale.objects.get(order_id="O1")
         self.assertEqual((sale.pk, stored.status, stored.error),
-                         (stored.pk, "FAILED", "boom"))
+                         (stored.pk, "FAILED",
+                          "Could not fetch the order from Square: boom"))
         self.assertIsNone(stored.tier)
         self.assertIsNone(stored.closed_at)
         self.assertEqual(stored.email, "")
@@ -324,6 +340,7 @@ class IdempotencyTests(MembershipOrderTestCase):
 
     def test_failed_sale_is_retried(self):
         failed = process_order("O1", FakeGateway(fail_with=GatewayError("boom")))
+        self.assertEqual(failed.error, "Could not fetch the order from Square: boom")
         self.membership_order()
         sale = process_order("O1", self.gw)
         self.assertEqual((sale.pk, sale.status, sale.error), (failed.pk, "OK", ""))

@@ -147,7 +147,19 @@ class DispatchTests(WebhookTestCase):
 
     def test_failed_outcome_still_returns_200(self):
         self.process.return_value = MembershipSale(
-            order_id="O9", status="FAILED", error="boom")
+            order_id="O9", status="FAILED", error="boom", closed_at=CLOSED_AT)
+        self.assertEqual(post(self.client, event("O9")).status_code, 200)
+
+    def test_fetch_failure_returns_503_so_square_retries(self):
+        self.process.return_value = MembershipSale(
+            order_id="O9", status="FAILED", closed_at=None,
+            error="Could not fetch the order from Square: boom")
+        self.assertEqual(post(self.client, event("O9")).status_code, 503)
+
+    def test_attribution_failure_still_returns_200(self):
+        self.process.return_value = MembershipSale(
+            order_id="O9", status="FAILED", closed_at=CLOSED_AT,
+            error="Ordered 2 memberships; enter by hand")
         self.assertEqual(post(self.client, event("O9")).status_code, 200)
 
 

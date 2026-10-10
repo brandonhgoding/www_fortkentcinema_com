@@ -120,6 +120,17 @@ def _fail_unless_finished(sale_pk: int, error: str) -> MembershipSale:
         return _finish(sale, MembershipSale.Status.FAILED, error)
 
 
+def order_never_fetched(sale: MembershipSale) -> bool:
+    """True when the sale failed before Square's order was read.
+
+    That is the "gateway disabled or gateway error" outcome: both go through
+    ``_fail_unless_finished`` before any order data is known, so ``closed_at``
+    is still blank. A placeholder row left by a killed request has the same
+    shape. Square's own retry of the event can fix these without staff.
+    """
+    return sale.status == MembershipSale.Status.FAILED and sale.closed_at is None
+
+
 def _member(buyer: _Buyer) -> Member:
     member = Member.objects.filter(email=buyer.email).first()
     if member is None:
@@ -205,7 +216,8 @@ def process_order(order_id: str,
     try:
         order = gateway.retrieve_order(order_id)
     except GatewayError as exc:
-        return _fail_unless_finished(sale.pk, str(exc))
+        return _fail_unless_finished(
+            sale.pk, f"Could not fetch the order from Square: {exc}")
     lines = membership_lines(order, _tiers_by_variation())
     if not lines:
         # Not a membership after all: drop the placeholder or earlier failure.

@@ -1,7 +1,7 @@
 import json
 
 from boxoffice import decorators
-from boxoffice.memberships import process_order
+from boxoffice.memberships import order_never_fetched, process_order
 from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
 
 
@@ -9,8 +9,10 @@ from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
 def square_webhook(request: HttpRequest) -> HttpResponse:
     """Square's order.updated event: record the sale once the order completes.
 
-    Square retries anything but a 2xx, and process_order records its own
-    failures on the sale row, so every well-formed event gets a 200.
+    Square retries anything but a 2xx. process_order records its own failures
+    on the sale row, so a well-formed event gets a 200, except a 503 when the
+    order was never fetched: Square's retry then fetches it again, and the
+    FAILED row stays as the backstop if Square gives up.
     """
     try:
         payload = json.loads(request.body)
@@ -27,5 +29,7 @@ def square_webhook(request: HttpRequest) -> HttpResponse:
     except (KeyError, TypeError):
         return HttpResponseBadRequest()
     if state == "COMPLETED":
-        process_order(order_id)
+        sale = process_order(order_id)
+        if sale is not None and order_never_fetched(sale):
+            return HttpResponse(status=503)
     return HttpResponse()
