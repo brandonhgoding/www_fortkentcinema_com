@@ -42,7 +42,7 @@ from web.constants import (
     SPONSORSHIP_SHOWCASE,
     SPONSORSHIP_TIERS,
 )
-from web.forms import SponsorshipInquiryForm
+from web.forms import RentalInquiryForm, SponsorshipInquiryForm
 from web.services.cinema_data import (
     CINEMA_TZ,
     _format_runtime,
@@ -316,7 +316,41 @@ class RentalsView(TemplateView):
         # One list, two renderings: the visible FAQ and the FAQPage markup in
         # the head. Same arrangement as /membership/ and /sponsor/.
         ctx["faqs"] = RENTALS_FAQ
+        # A bound form arrives via kwargs when RentalInquiryView re-renders
+        # after a validation error; otherwise start empty.
+        ctx["form"] = kwargs.get("form") or RentalInquiryForm()
+        ctx["sent"] = self.request.GET.get("sent") == "1"
         return ctx
+
+
+class RentalInquiryView(RentalsView):
+    """POST /rentals/inquire.
+
+    The rentals twin of SponsorInquiryView, and for the same reasons: it
+    saves the lead and emails nobody (the dashboard list and the smart-alert
+    count are the delivery mechanism), it re-renders the whole page on a
+    validation error because there is no htmx here, and it redirects on
+    success so a refresh cannot resubmit.
+    """
+
+    def get(self, request, *args, **kwargs):
+        return redirect("rentals")
+
+    def post(self, request, *args, **kwargs):
+        form = RentalInquiryForm(request.POST)
+        sent_url = f"{reverse('rentals')}?sent=1#inquire"
+
+        if form.is_bot:
+            # Indistinguishable from success, so a bot learns nothing.
+            return redirect(sent_url)
+
+        if form.is_valid():
+            inquiry = form.save(commit=False)
+            inquiry.ip = vote_engine.client_ip(request)
+            inquiry.save()
+            return redirect(sent_url)
+
+        return self.render_to_response(self.get_context_data(form=form))
 
 
 class CraftNightView(TemplateView):

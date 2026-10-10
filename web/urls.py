@@ -9,6 +9,7 @@ from .views import (
     MembershipView,
     MovieDetailView,
     OpenMicView,
+    RentalInquiryView,
     RentalsView,
     SponsorCatalogView,
     SponsorFilmOptionsView,
@@ -25,6 +26,7 @@ urlpatterns = [
     path("", HomeView.as_view(), name="home"),
     path("membership/", MembershipView.as_view(), name="membership"),
     path("rentals/", RentalsView.as_view(), name="rentals"),
+    path("rentals/inquire", RentalInquiryView.as_view(), name="rentals_inquire"),
     # Trailing slash, like the other section pages. "craft-night" rather
     # than "craft-cinema-night": the event keeps its full name, the URL
     # is the short thing people say and type.

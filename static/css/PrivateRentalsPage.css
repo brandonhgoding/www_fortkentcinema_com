@@ -230,11 +230,20 @@
   margin-bottom: var(--spacing-lg);
 }
 
+/* The booking form borrows the sponsor form's fields and grid
+ * (.sponsor-inquire__* in SponsorPage.css). This box only undoes the CTA's
+ * centring, which suits a heading but not a column of labels, and keeps the
+ * form to a readable width inside the full-width gold frame. */
+.rentals-inquire {
+  max-width: 44rem;
+  margin: 0 auto var(--spacing-lg);
+  text-align: left;
+}
+
 .rentals-cta-contact {
-  display: flex;
-  justify-content: center;
-  gap: var(--spacing-xl);
-  flex-wrap: wrap;
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  color: var(--color-cream-muted);
 }
 
 .rentals-cta-contact a {
@@ -265,11 +274,6 @@
 
   .rentals-grid {
     grid-template-columns: 1fr;
-  }
-
-  .rentals-cta-contact {
-    flex-direction: column;
-    gap: var(--spacing-md);
   }
 
   .rentals-cta-title {

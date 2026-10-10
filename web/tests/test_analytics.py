@@ -68,10 +68,13 @@ class ClickEventMarkupTests(TestCase):
         self.assertEqual(len(hits), 1)
         self.assertIn('data-track-location="footer"', hits[0])
 
-    def test_rentals_phone_and_email_tagged(self):
+    def test_rentals_phone_and_inquiry_tagged(self):
+        """The personal-email link became an inquiry form; its submit button
+        carries the tracking the mailto link used to."""
         html = self.client.get(reverse("rentals")).content.decode()
         self.assertIn('data-track-location="rentals"', html)
-        self.assertEqual(len(tracked(html, "rental_email_click")), 1)
+        self.assertEqual(len(tracked(html, "rental_email_click")), 0)
+        self.assertEqual(len(tracked(html, "rental_inquiry_submit")), 1)
 
 
 class ThanksPageTests(TestCase):

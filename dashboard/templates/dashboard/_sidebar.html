@@ -19,6 +19,8 @@
       <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2.5l2.3 4.7 5.2.8-3.75 3.65.9 5.15L10 14.35 5.35 16.8l.9-5.15L2.5 8l5.2-.8L10 2.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>Memberships</a>
     <a href="{% url 'dashboard:polls' %}" class="sidebarLink {% nav_active request 'dashboard:polls' %}" @click="sidebarOpen = false">
       <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 15V9M10 15V5M15 15v-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Polls</a>
+    <a href="{% url 'dashboard:rental_inquiries' %}" class="sidebarLink {% nav_active request 'dashboard:rental_inquiries' %}" @click="sidebarOpen = false">
+      <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="4.5" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M3 8.5h14M7 3v3M13 3v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Rental Inquiries</a>
     <a href="{% url 'dashboard:screens' %}" class="sidebarLink {% nav_active request 'dashboard:screens' %}" @click="sidebarOpen = false">
       <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="3" width="16" height="11" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M7 17h6M10 14v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Screens</a>
     <a href="{% url 'dashboard:subscribers' %}" class="sidebarLink {% nav_active request 'dashboard:subscribers' %}" @click="sidebarOpen = false">
