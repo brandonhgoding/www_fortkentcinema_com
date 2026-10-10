@@ -108,7 +108,8 @@ exists: behind nginx the rebuilt URL is wrong without proxy headers.
    recorded. Other states are open or cancelled orders.
 4. `order_id = data.object.order_updated.order_id`. Call
    `boxoffice.memberships.process_order(order_id)`. Return 200 whatever
-   the outcome: the outcome lives on the `MembershipSale` row, and a
+   the outcome, except 503 when the order was never fetched (see
+   Amendments): the outcome lives on the `MembershipSale` row, and a
    non-2xx would only make Square retry something the dashboard already
    shows.
 
@@ -328,3 +329,15 @@ Cases:
 - The webhook returns 400 for malformed JSON, a non-object body, or an
   `order.updated` event missing its order keys. Every other event type and
   every non-COMPLETED state is a 200 with nothing recorded.
+- The webhook returns 503 when the order was never fetched (the sale is FAILED
+  with no `closed_at`: gateway disabled, gateway error, or a placeholder left
+  behind; `order_never_fetched()`). Square retries a non-2xx, and a retry that
+  fetches resolves the event without a staff click: a non-membership order
+  drops its placeholder, a membership is attributed. The FAILED row stays as
+  the backstop alert if Square gives up. Gateway errors read "Could not fetch
+  the order from Square: {error}". Every other outcome is still a 200.
+- Buyer fields are cut to their columns before they are stored: display name
+  to 200 characters, phone to 40, and the split first and last names to 100
+  each. Square allows longer, and Postgres would refuse them. The final OK
+  save sits inside the savepoint and `try`, so any failure there is recorded
+  FAILED with `repr(exc)` and the member and term roll back.

@@ -583,3 +583,31 @@ Expected: `200` (an OPEN order is ignored, but the signature passed). This uses 
 git add docs/superpowers/specs/2026-10-09-square-membership-webhook-design.md
 git commit -m "docs: mark the Square membership webhook spec implemented"
 ```
+
+---
+
+### Task 8: Trigger on the payment, not the order's completion (added after the final review, 2026-10-09)
+
+**Why:** The nine live payment-link orders were all created at checkout but reached `COMPLETED` days later, in bursts seconds apart, when staff marked their shipments done in Square. `order.updated` with `COMPLETED` therefore fires on that click, not on payment, and an order fetched at payment time is `OPEN` with no `closed_at`, which the current code records as FAILED. Square's `payment.created` arrives as `APPROVED`; `payment.updated` fires when the payment completes. The payment moment on the fetched order is its first tender's `created_at` (one to two minutes after the order's `created_at` on every live sale).
+
+**Files:**
+- Modify: `boxoffice/gateway.py` (`OrderData` gains `paid_at: datetime | None = None` set from the first tender's `created_at`, else the order's `created_at`, else `None`; both `_order_data` paths)
+- Modify: `boxoffice/tests/fakes.py` only if a helper needs it; `boxoffice/tests/test_gateway.py` (tender parsing)
+- Modify: `boxoffice/models/membership_sale.py` + `boxoffice/migrations/0007_membershipsale_paid_at.py` (generated `RenameField` `closed_at` → `paid_at`; `purchase_date` reads `paid_at`; the ordering comment follows)
+- Modify: `boxoffice/memberships.py` (`paid_at` replaces `closed_at` everywhere; the FAILED copy becomes `Order has no payment time`; `order_never_fetched` tests `paid_at is None`)
+- Modify: `boxoffice/views.py` (accept `type in {"payment.created", "payment.updated"}`; require `data.object.payment.status == "COMPLETED"`; `order_id = data.object.payment.order_id`; a payment with no `order_id` → 200, nothing recorded; `order.updated` and every other type → 200, nothing recorded; missing `payment` object or keys → 400)
+- Modify: `boxoffice/admin.py`, `dashboard/membership_sale_views.py`, `dashboard/templates/dashboard/_square_sale_row.html` (field rename only)
+- Modify: tests `boxoffice/tests/test_memberships.py`, `boxoffice/tests/test_webhook.py`, `boxoffice/tests/test_models.py`, `dashboard/tests/test_square_sales.py`, `dashboard/tests/test_home.py` (rename; the webhook `event()` helper builds a payment event: `{"type": "payment.updated", "event_id": "E1", "data": {"type": "payment", "id": "<payment id>", "object": {"payment": {"id": "<payment id>", "order_id": order_id, "status": status, "created_at": "..."}}}}`)
+- Modify: spec `docs/superpowers/specs/2026-10-09-square-membership-webhook-design.md` (Section 1 event name and view steps, Section 3 purchase date, Rollout step 3 ticks `payment.updated` only, an Amendments bullet explaining the finding), and the plan's Global Constraints copy line.
+
+**Interfaces:**
+- `OrderData.paid_at` — aware datetime or `None`; `closed_at` stays for the nightly pull.
+- `MembershipSale.paid_at` — same meaning as the old `closed_at` column, correctly sourced.
+- View contract: `payment.updated` or `payment.created` with `status == "COMPLETED"` → `process_order(order_id)`; 503 when `order_never_fetched`; otherwise 200.
+
+- [ ] **Step 1: Gateway tests** — a tender mock `mock.Mock(created_at="2026-09-29T15:11:16Z", payment_id="P1")` on `tenders=[...]` yields `paid_at` equal to that instant; `tenders=None` falls back to the order's `created_at`; both `None` → `paid_at is None`. Run `boxoffice.tests.test_gateway`; expect failures on the missing field; implement; expect pass.
+- [ ] **Step 2: Rename and memberships** — `makemigrations boxoffice -n membershipsale_paid_at` must produce a `RenameField`. Update `memberships.py` and its tests (`membership_order` helper takes `paid_at=`; the Eastern-day test uses a late-evening UTC `paid_at`; the `closed_at=None` test becomes `test_missing_payment_time_fails` with the new copy). Run `boxoffice.tests.test_memberships boxoffice.tests.test_models`; expect pass.
+- [ ] **Step 3: Webhook** — rewrite the `event()` helper and dispatch tests: `payment.updated` COMPLETED → processed; `payment.created` COMPLETED → processed; `payment.updated` APPROVED → 200 not called; `order.updated` COMPLETED → 200 not called; payment without `order_id` → 200 not called; missing `payment` object → 400. End-to-end test unchanged in substance. Run `boxoffice.tests.test_webhook`; expect pass.
+- [ ] **Step 4: Dashboard rename** — admin, views, row template, tests. Run `dashboard`; expect pass.
+- [ ] **Step 5: Docs** — spec and plan edits above.
+- [ ] **Step 6: Full suite, `makemigrations --check`, flake8 on touched files; commit** `feat(boxoffice): trigger membership entry on the payment, not the order's completion`.

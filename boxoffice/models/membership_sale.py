@@ -39,6 +39,8 @@ class MembershipSale(models.Model):
     processed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
+        # Postgres sorts NULL closed_at first on DESC, sqlite last: in production
+        # never-fetched rows head the list.
         ordering = ["-closed_at", "-created_at"]
 
     def __str__(self) -> str:
