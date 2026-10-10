@@ -69,10 +69,10 @@ class ListTests(StaffTestCase):
         term = make_term()
         make_sale(
             order_id="OK1", status="OK", error="", term=term, display_name="Ann Lee",
-            closed_at=datetime.datetime(2026, 10, 2, 16, tzinfo=UTC))
+            paid_at=datetime.datetime(2026, 10, 2, 16, tzinfo=UTC))
         make_sale(
             order_id="BAD1", display_name="Bob Roe", email="bob@example.com",
-            closed_at=datetime.datetime(2026, 10, 3, 16, tzinfo=UTC))
+            paid_at=datetime.datetime(2026, 10, 3, 16, tzinfo=UTC))
         html = self.client.get(self.url).content.decode()
         self.assertLess(html.index("Bob Roe"), html.index("Ann Lee"))
         self.assertIn("Needs attention", html)

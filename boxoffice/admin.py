@@ -46,12 +46,12 @@ class SalesPullAdmin(admin.ModelAdmin):
 
 @admin.register(MembershipSale)
 class MembershipSaleAdmin(admin.ModelAdmin):
-    list_display = ("order_id", "closed_at", "tier", "email", "status")
+    list_display = ("order_id", "paid_at", "tier", "email", "status")
     list_filter = ("status",)
     search_fields = ("order_id", "email", "display_name")
     readonly_fields = (
         "order_id",
-        "closed_at",
+        "paid_at",
         "tier",
         "quantity",
         "gross_cents",

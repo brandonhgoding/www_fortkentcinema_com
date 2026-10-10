@@ -114,7 +114,7 @@ class MembershipSaleTests(TestCase):
     def test_purchase_date_is_the_eastern_day(self) -> None:
         sale = MembershipSale(
             order_id="O1",
-            closed_at=datetime.datetime(2026, 10, 3, 3, 12, tzinfo=datetime.UTC),
+            paid_at=datetime.datetime(2026, 10, 3, 3, 12, tzinfo=datetime.UTC),
         )
         self.assertEqual(sale.purchase_date, datetime.date(2026, 10, 2))
         self.assertIsNone(MembershipSale(order_id="O2").purchase_date)

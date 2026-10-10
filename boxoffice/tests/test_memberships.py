@@ -33,16 +33,18 @@ class MembershipOrderTestCase(TestCase):
         self.gw = FakeGateway()
 
     def membership_order(self, order_id="O1",
-                         closed_at=at_eastern(2026, 10, 2, 19, 12), quantity=1,
+                         paid_at=at_eastern(2026, 10, 2, 19, 12), quantity=1,
                          recipient=ANN, extra_lines=(), gross_cents=None,
-                         gateway=None) -> OrderData:
+                         gateway=None, closed_at=None) -> OrderData:
         if gross_cents is None:
             gross_cents = 6000 * quantity
         line = OrderLine(uid="L1", name="Individual Membership",
                          variation_name="Annual", catalog_object_id=INDIVIDUAL,
                          quantity=quantity, gross_cents=gross_cents)
+        # A payment-link order is still OPEN, with no closed_at, when paid.
         order = OrderData(order_id=order_id, closed_at=closed_at,
-                          lines=(line, *extra_lines), recipient=recipient)
+                          lines=(line, *extra_lines), recipient=recipient,
+                          paid_at=paid_at)
         (gateway or self.gw).orders.append(order)
         return order
 
@@ -59,17 +61,23 @@ class SplitNameTests(SimpleTestCase):
 
 
 class OrderNeverFetchedTests(SimpleTestCase):
-    def test_failed_without_closed_at_was_never_fetched(self):
-        sale = MembershipSale(order_id="O1", status="FAILED", closed_at=None)
+    def test_failed_without_paid_at_was_never_fetched(self):
+        sale = MembershipSale(order_id="O1", status="FAILED", paid_at=None)
         self.assertTrue(order_never_fetched(sale))
 
     def test_attribution_failure_was_fetched(self):
         sale = MembershipSale(order_id="O1", status="FAILED",
-                              closed_at=at_eastern(2026, 10, 2, 19, 12))
+                              paid_at=at_eastern(2026, 10, 2, 19, 12))
+        self.assertFalse(order_never_fetched(sale))
+
+    def test_fetched_order_without_payment_time_was_fetched(self):
+        # Attribution writes the tier before refusing "Order has no payment time".
+        sale = MembershipSale(order_id="O1", status="FAILED", paid_at=None,
+                              tier_id=1)
         self.assertFalse(order_never_fetched(sale))
 
     def test_ok_sale_was_fetched(self):
-        sale = MembershipSale(order_id="O1", status="OK", closed_at=None)
+        sale = MembershipSale(order_id="O1", status="OK", paid_at=None)
         self.assertFalse(order_never_fetched(sale))
 
 
@@ -97,12 +105,23 @@ class NewMemberTests(MembershipOrderTestCase):
 
     def test_late_evening_utc_lands_on_the_eastern_day(self):
         # 03:12 UTC on 3 October is 23:12 Eastern on 2 October.
-        self.membership_order(closed_at=datetime.datetime(
+        self.membership_order(paid_at=datetime.datetime(
             2026, 10, 3, 3, 12, tzinfo=datetime.timezone.utc))
-        process_order("O1", self.gw)
+        sale = process_order("O1", self.gw)
         term = MembershipTerm.objects.get()
         self.assertEqual((term.started_on, term.purchased_at),
                          (date(2026, 10, 2), date(2026, 10, 2)))
+        self.assertEqual(sale.purchase_date, date(2026, 10, 2))
+
+    def test_term_dates_from_the_payment_not_the_completion(self):
+        # Staff mark the shipment done days later; that closes the order.
+        self.membership_order(paid_at=at_eastern(2026, 9, 29, 11, 11),
+                              closed_at=at_eastern(2026, 10, 2, 9, 0))
+        sale = process_order("O1", self.gw)
+        term = MembershipTerm.objects.get()
+        self.assertEqual((term.started_on, term.purchased_at),
+                         (date(2026, 9, 29), date(2026, 9, 29)))
+        self.assertEqual(sale.paid_at, at_eastern(2026, 9, 29, 11, 11))
 
     def test_price_paid_is_the_gross_not_the_list_price(self):
         self.membership_order(gross_cents=4500)
@@ -266,9 +285,9 @@ class FailureTests(MembershipOrderTestCase):
         self.assertEqual(MembershipTerm.objects.count(), 0)
 
     def test_ticket_only_order_records_nothing(self):
-        self.gw.orders.append(OrderData(order_id="O1",
-                                        closed_at=at_eastern(2026, 10, 2, 19, 12),
-                                        lines=(ticket_line(),)))
+        self.gw.orders.append(OrderData(order_id="O1", closed_at=None,
+                                        lines=(ticket_line(),),
+                                        paid_at=at_eastern(2026, 10, 2, 19, 12)))
         self.assertIsNone(process_order("O1", self.gw))
         self.assertEqual(MembershipSale.objects.count(), 0)
 
@@ -280,7 +299,7 @@ class FailureTests(MembershipOrderTestCase):
                          (stored.pk, "FAILED",
                           "Could not fetch the order from Square: boom"))
         self.assertIsNone(stored.tier)
-        self.assertIsNone(stored.closed_at)
+        self.assertIsNone(stored.paid_at)
         self.assertEqual(stored.email, "")
         self.assertIsNotNone(stored.processed_at)
 
@@ -297,18 +316,21 @@ class FailureTests(MembershipOrderTestCase):
     def test_failed_row_for_a_non_membership_order_is_removed(self):
         process_order("O1", FakeGateway(fail_with=GatewayError("boom")))
         self.assertEqual(MembershipSale.objects.get().status, "FAILED")
-        self.gw.orders.append(OrderData(order_id="O1",
-                                        closed_at=at_eastern(2026, 10, 2, 19, 12),
-                                        lines=(ticket_line(),)))
+        self.gw.orders.append(OrderData(order_id="O1", closed_at=None,
+                                        lines=(ticket_line(),),
+                                        paid_at=at_eastern(2026, 10, 2, 19, 12)))
         self.assertIsNone(process_order("O1", self.gw))
         self.assertEqual(MembershipSale.objects.count(), 0)
 
-    def test_missing_closed_at_fails(self):
-        self.membership_order(closed_at=None)
+    def test_missing_payment_time_fails(self):
+        self.membership_order(paid_at=None)
         sale = process_order("O1", self.gw)
         self.assertEqual((sale.status, sale.error),
-                         ("FAILED", "Order has no closed_at"))
-        self.assertEqual(MembershipSale.objects.get().status, "FAILED")
+                         ("FAILED", "Order has no payment time"))
+        stored = MembershipSale.objects.get()
+        self.assertEqual((stored.status, stored.tier.slug), ("FAILED", "individual"))
+        # Permanent: the webhook must not ask Square to retry it.
+        self.assertFalse(order_never_fetched(stored))
         self.assertEqual(Member.objects.count(), 0)
 
     def test_unexpected_exception_fails_and_logs(self):

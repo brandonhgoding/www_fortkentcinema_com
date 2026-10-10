@@ -59,9 +59,13 @@ def _line(uid: str = "L1", catalog_object_id: str | None = "V0",
 
 
 def _order(order_id: str, closed_at: str, lines: list[mock.Mock],
-           fulfillments: list[mock.Mock] | None = None) -> mock.Mock:
+           fulfillments: list[mock.Mock] | None = None,
+           tenders: list[mock.Mock] | None = None,
+           created_at: str | None = None) -> mock.Mock:
+    # A Mock invents missing attributes, so "absent" must be an explicit None.
     return mock.Mock(id=order_id, closed_at=closed_at, line_items=lines,
-                     fulfillments=fulfillments)
+                     fulfillments=fulfillments, tenders=tenders,
+                     created_at=created_at)
 
 
 def _shipment(display_name: str | None = "Ann Lee",
@@ -427,6 +431,44 @@ class RetrieveOrderTests(SimpleTestCase):
             [_shipment(email_address=None, phone_number=None)]))
         self.assertEqual(gw.retrieve_order("O1").recipient,
                          Recipient("Ann Lee", "", ""))
+
+    def test_paid_at_is_the_first_tenders_created_at(self) -> None:
+        tenders = [mock.Mock(created_at="2026-09-29T15:11:16Z", payment_id="P1"),
+                   mock.Mock(created_at="2026-09-29T15:20:00Z", payment_id="P2")]
+        gw, _ = self._gateway(_order("O1", None, [_line()], tenders=tenders,
+                                     created_at="2026-09-29T15:09:40Z"))
+        self.assertEqual(gw.retrieve_order("O1").paid_at, datetime.datetime(
+            2026, 9, 29, 15, 11, 16, tzinfo=datetime.timezone.utc))
+
+    def test_paid_at_falls_back_to_the_orders_created_at(self) -> None:
+        gw, _ = self._gateway(_order("O1", None, [_line()], tenders=None,
+                                     created_at="2026-09-29T15:09:40.5Z"))
+        paid_at = gw.retrieve_order("O1").paid_at
+        self.assertEqual(paid_at, datetime.datetime(
+            2026, 9, 29, 15, 9, 40, 500000, tzinfo=datetime.timezone.utc))
+        self.assertIsNotNone(paid_at.tzinfo)
+
+    def test_tender_without_created_at_falls_back_to_the_order(self) -> None:
+        tenders = [mock.Mock(created_at=None, payment_id="P1")]
+        gw, _ = self._gateway(_order("O1", None, [_line()], tenders=tenders,
+                                     created_at="2026-09-29T15:09:40Z"))
+        self.assertEqual(gw.retrieve_order("O1").paid_at, datetime.datetime(
+            2026, 9, 29, 15, 9, 40, tzinfo=datetime.timezone.utc))
+
+    def test_paid_at_is_none_without_tenders_or_created_at(self) -> None:
+        gw, _ = self._gateway(_order("O1", None, [_line()], tenders=None,
+                                     created_at=None))
+        self.assertIsNone(gw.retrieve_order("O1").paid_at)
+
+    def test_search_orders_also_fills_paid_at(self) -> None:
+        client = mock.Mock()
+        client.orders.search.return_value = mock.Mock(
+            orders=[_order("O1", "2026-10-04T12:00:00Z", [_line()],
+                           tenders=[mock.Mock(created_at="2026-10-01T12:00:00Z")])],
+            cursor=None)
+        [o] = SquareGateway(client, "LOC", "CAT").search_orders(START, END)
+        self.assertEqual(o.paid_at, datetime.datetime(
+            2026, 10, 1, 12, 0, tzinfo=datetime.timezone.utc))
 
     def test_api_error_becomes_gateway_error(self) -> None:
         client = mock.Mock()

@@ -103,10 +103,13 @@ exists: behind nginx the rebuilt URL is wrong without proxy headers.
 
 1. Parse the JSON body. Unparseable: 400. (Square will retry; a 400 on a
    malformed body is correct and visible in Square's webhook log.)
-2. `type != "order.updated"`: 200, nothing recorded.
-3. `data.object.order_updated.state != "COMPLETED"`: 200, nothing
-   recorded. Other states are open or cancelled orders.
-4. `order_id = data.object.order_updated.order_id`. Call
+2. `type` not `payment.created` or `payment.updated`: 200, nothing
+   recorded. That includes `order.updated` (see Amendments).
+3. `data.object.payment` missing, not an object, or without `status`:
+   400. `data.object.payment.status != "COMPLETED"`: 200, nothing
+   recorded (`payment.created` usually arrives `APPROVED`). A payment
+   with no `order_id`: 200, nothing recorded.
+4. `order_id = data.object.payment.order_id`. Call
    `boxoffice.memberships.process_order(order_id)`. Return 200 whatever
    the outcome, except 503 when the order was never fetched (see
    Amendments): the outcome lives on the `MembershipSale` row, and a
@@ -119,7 +122,9 @@ exists: behind nginx the rebuilt URL is wrong without proxy headers.
 `client.orders.get`. `OrderData` gains an optional `recipient:
 Recipient | None` (`display_name`, `email_address`, `phone_number`, each
 `""` when absent), read from the first fulfillment that has one.
-`search_orders` keeps setting it too, so the type has one shape. The fake
+`search_orders` keeps setting it too, so the type has one shape.
+`OrderData` also gains `paid_at`: the first tender's `created_at`, else
+the order's `created_at`, else None (see Amendments). The fake
 gateway in `boxoffice/tests/fakes.py` gains `retrieve_order` and a way to
 raise `GatewayError`.
 
@@ -130,8 +135,9 @@ def process_order(order_id, gateway=None) -> MembershipSale | None
 ```
 
 - Existing `MembershipSale` for `order_id` with status OK or SKIPPED:
-  return it, do nothing. Square sends `order.updated` more than once per
-  order (version bumps, fulfillment changes); the row is the idempotency
+  return it, do nothing. Square can send more than one COMPLETED payment
+  event per order (`payment.created` and `payment.updated`, redeliveries);
+  the row is the idempotency
   key. FAILED: fall through and retry.
 - Gateway disabled (`get_gateway()` is None): record FAILED with
   `error="Square sync disabled: <disabled_reason()>"`. The sale is not
@@ -142,7 +148,7 @@ def process_order(order_id, gateway=None) -> MembershipSale | None
   `square_variation_id`: return None, record nothing. Tickets and
   popcorn pass through here many times a day.
 - Record or update the row with tier, quantity, gross, buyer fields and
-  `closed_at`, then run attribution (Section 3) inside
+  `paid_at`, then run attribution (Section 3) inside
   `transaction.atomic()` together with setting status OK and `term`. Any
   exception leaves status FAILED with `repr(exc)` and a
   `logger.exception` so the traceback reaches the server log.
@@ -169,7 +175,7 @@ One row per Square order that contained a membership line.
 | field | type | notes |
 |---|---|---|
 | `order_id` | `CharField(64, unique=True)` | the idempotency key |
-| `closed_at` | `DateTimeField(null=True)` | from the order; null when the fetch failed |
+| `paid_at` | `DateTimeField(null=True)` | the order's payment time; null when the fetch failed |
 | `tier` | `FK(MembershipTier, null=True, PROTECT)` | null when the fetch failed |
 | `quantity` | `PositiveIntegerField(default=0)` | total membership quantity across lines |
 | `gross_cents` | `IntegerField(default=0)` | sum of membership lines' `total_money` |
@@ -206,7 +212,8 @@ line as an unattributed line; the two tables answer different questions
   name; blank stays blank.
 - **Price.** `price_paid = gross_cents / 100` as a Decimal, not the
   tier's list price, so a discounted or repriced sale stays truthful.
-- **Purchase date.** `closed_at` converted to Eastern via
+- **Purchase date.** `paid_at` (the first tender's `created_at`, else the
+  order's `created_at`; not `closed_at`) converted to Eastern via
   `boxoffice.pull.business_date`. It is `purchased_at`, and the start of
   a new or lapsed member's term.
 - **New member** (no `Member` with that email): create with name, email,
@@ -297,8 +304,10 @@ Cases:
    linked from the Memberships page.
 3. In the Square developer dashboard, add a webhook subscription for the
    production application: URL `https://www.fortkentcinema.com/boxoffice/square/webhook/`,
-   API version matching the SDK, event `order.updated` only. Copy its
-   signature key.
+   API version matching the SDK, event `payment.updated`. Ticking
+   `payment.created` as well is harmless (it arrives `APPROVED` and is
+   ignored, or is processed idempotently if it arrives `COMPLETED`).
+   Do not tick `order.updated`. Copy its signature key.
 4. Set `SQUARE_WEBHOOK_SIGNATURE_KEY` and `SQUARE_WEBHOOK_URL` in
    `webservers.yml`; deploy.
 5. Use Square's "Send test event" and confirm a 200 in its log and no
@@ -341,3 +350,25 @@ Cases:
   each. Square allows longer, and Postgres would refuse them. The final OK
   save sits inside the savepoint and `try`, so any failure there is recorded
   FAILED with `repr(exc)` and the member and term roll back.
+- **Trigger moved to the payment (Task 8).** On the nine live payment-link
+  orders, Square created the order at checkout but moved it to `COMPLETED`
+  days later, in bursts seconds apart, when staff marked the shipments done.
+  `order.updated` with `COMPLETED` fired on that click, not on payment, and
+  would have dated the term from it; an order fetched at payment time is
+  `OPEN` with no `closed_at`, which the first version recorded FAILED. The
+  webhook now acts on `payment.created` or `payment.updated` whose
+  `data.object.payment.status` is `COMPLETED`, taking `order_id` from that
+  payment; `order.updated` and every other type are a 200 with nothing
+  recorded, a payment with no `order_id` likewise, and a missing `payment`
+  object or `status` is a 400. The purchase time is the order's first
+  tender's `created_at` (one to two minutes after the order's `created_at`
+  on every live sale), falling back to the order's `created_at`.
+  `OrderData.paid_at` carries it; `closed_at` stays for the nightly pull.
+  `MembershipSale.closed_at` is renamed `paid_at` (migration
+  `boxoffice.0007_membershipsale_paid_at`, a `RenameField`), and the
+  earlier "Order has no closed_at" failure now reads "Order has no payment
+  time". The amendments above that name `closed_at` on the sale mean
+  `paid_at`. `order_never_fetched()` is true only for a FAILED row with
+  neither `paid_at` nor `tier`: a fetched order with no payment time has its
+  tier written first, and that failure is permanent, so it is a 200, not a
+  503 that Square would retry until it gives up.

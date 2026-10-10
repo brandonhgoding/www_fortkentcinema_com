@@ -47,7 +47,7 @@ class _Buyer:
 @dataclasses.dataclass(frozen=True)
 class _Facts:
     """What the order says, worked out before the sale row is locked."""
-    closed_at: datetime.datetime | None
+    paid_at: datetime.datetime | None
     tier: MembershipTier
     line_count: int
     quantity: int
@@ -92,7 +92,7 @@ def _buyer(recipient: Recipient | None) -> _Buyer:
 def _facts(order: OrderData,
            lines: list[tuple[OrderLine, MembershipTier]]) -> _Facts:
     return _Facts(
-        closed_at=order.closed_at,
+        paid_at=order.paid_at,
         tier=lines[0][1],
         line_count=len(lines),
         quantity=sum(line.quantity for line, _ in lines),
@@ -126,11 +126,15 @@ def order_never_fetched(sale: MembershipSale) -> bool:
     """True when the sale failed before Square's order was read.
 
     That is the "gateway disabled or gateway error" outcome: both go through
-    ``_fail_unless_finished`` before any order data is known, so ``closed_at``
-    is still blank. A placeholder row left by a killed request has the same
-    shape. Square's own retry of the event can fix these without staff.
+    ``_fail_unless_finished`` before any order data is known, so ``paid_at``
+    and ``tier`` are still blank. A placeholder row left by a killed request
+    has the same shape. Square's own retry of the event can fix these without
+    staff. A fetched order with no payment time also leaves ``paid_at`` blank,
+    but its tier is written first; that failure is permanent, so a retry
+    would not help and it does not count.
     """
-    return sale.status == MembershipSale.Status.FAILED and sale.closed_at is None
+    return (sale.status == MembershipSale.Status.FAILED
+            and sale.paid_at is None and sale.tier_id is None)
 
 
 def _member(buyer: _Buyer) -> Member:
@@ -148,9 +152,9 @@ def _member(buyer: _Buyer) -> Member:
 
 
 def _create_term(order_id: str, facts: _Facts) -> MembershipTerm:
-    if facts.closed_at is None:
-        raise _Refused("Order has no closed_at")
-    purchase = business_date(facts.closed_at)
+    if facts.paid_at is None:
+        raise _Refused("Order has no payment time")
+    purchase = business_date(facts.paid_at)
     member = _member(facts.buyer)
     latest = latest_term(member.terms.all())
     started_on = purchase if latest is None else renewal_start(latest, purchase)
@@ -174,7 +178,7 @@ def _attribute(sale_pk: int, order_id: str, facts: _Facts) -> MembershipSale:
         if sale.status in FINISHED:
             # Another event for this order finished while this one was fetching.
             return sale
-        sale.closed_at = facts.closed_at
+        sale.paid_at = facts.paid_at
         sale.tier = facts.tier
         sale.quantity = facts.quantity
         sale.gross_cents = facts.gross_cents
