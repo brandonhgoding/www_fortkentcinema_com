@@ -122,6 +122,20 @@ class NewMemberTests(MembershipOrderTestCase):
         self.assertEqual((mary.first_name, mary.last_name), ("Mary Ann Smith", "Jr."))
         self.assertEqual((cher.first_name, cher.last_name), ("Cher", ""))
 
+    def test_long_name_and_phone_are_cut_to_fit(self):
+        name = "A" * 150 + " " + "B" * 149
+        self.membership_order(recipient=Recipient(
+            name, "long@example.com", "+1" + "2" * 48))
+        sale = process_order("O1", self.gw)
+        self.assertEqual(sale.status, "OK")
+        stored = MembershipSale.objects.get()
+        self.assertEqual(len(stored.display_name), 200)
+        self.assertEqual(len(stored.phone), 40)
+        member = Member.objects.get(email="long@example.com")
+        self.assertLessEqual(len(member.first_name), 100)
+        self.assertLessEqual(len(member.last_name), 100)
+        self.assertEqual(len(member.phone), 40)
+
     def test_membership_with_tickets_in_the_same_order(self):
         self.membership_order(extra_lines=(ticket_line(),))
         sale = process_order("O1", self.gw)
@@ -306,6 +320,26 @@ class FailureTests(MembershipOrderTestCase):
         self.assertEqual((sale.status, sale.error), ("FAILED", "RuntimeError('x')"))
         self.assertEqual(MembershipSale.objects.get().status, "FAILED")
         self.assertIn("O1", logs.output[0])
+        self.assertEqual(Member.objects.count(), 0)
+        self.assertEqual(MembershipTerm.objects.count(), 0)
+
+    def test_failure_saving_the_ok_status_fails_and_rolls_back(self):
+        from boxoffice import memberships
+
+        real_finish = memberships._finish
+
+        def finish(sale, status, error=""):
+            if status == MembershipSale.Status.OK:
+                raise RuntimeError("save")
+            return real_finish(sale, status, error)
+
+        self.membership_order()
+        with mock.patch("boxoffice.memberships._finish", side_effect=finish), \
+                self.assertLogs("boxoffice.memberships", "ERROR"):
+            sale = process_order("O1", self.gw)
+        stored = MembershipSale.objects.get()
+        self.assertEqual((sale.status, stored.status, stored.error, stored.term),
+                         ("FAILED", "FAILED", "RuntimeError('save')", None))
         self.assertEqual(Member.objects.count(), 0)
         self.assertEqual(MembershipTerm.objects.count(), 0)
 

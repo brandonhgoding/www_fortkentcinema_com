@@ -81,10 +81,12 @@ def _tiers_by_variation() -> dict[str, MembershipTier]:
 def _buyer(recipient: Recipient | None) -> _Buyer:
     if recipient is None:
         return _Buyer("", "", "")
-    # Normalised exactly as Member.save does, so the lookup matches.
-    return _Buyer(recipient.display_name,
+    # Normalised exactly as Member.save does, so the lookup matches. Square
+    # allows longer names and phones than our columns; Postgres would refuse
+    # them, so cut them to fit.
+    return _Buyer(recipient.display_name[:200],
                   recipient.email_address.strip().lower(),
-                  recipient.phone_number)
+                  recipient.phone_number[:40])
 
 
 def _facts(order: OrderData,
@@ -135,7 +137,8 @@ def _member(buyer: _Buyer) -> Member:
     member = Member.objects.filter(email=buyer.email).first()
     if member is None:
         first_name, last_name = split_name(buyer.display_name)
-        return Member.objects.create(first_name=first_name, last_name=last_name,
+        return Member.objects.create(first_name=first_name[:100],
+                                     last_name=last_name[:100],
                                      email=buyer.email, phone=buyer.phone)
     # Staff own an existing member's name; only fill a phone they lack.
     if not member.phone and buyer.phone:
@@ -186,14 +189,18 @@ def _attribute(sale_pk: int, order_id: str, facts: _Facts) -> MembershipSale:
                            "No buyer email (register sale)")
         try:
             # A savepoint, so a failure leaves no member or term behind.
+            # The OK save is inside it too: if that save fails, the member
+            # and term roll back with it and the failure is recorded below.
             with transaction.atomic():
                 sale.term = _create_term(order_id, facts)
+                return _finish(sale, MembershipSale.Status.OK)
         except _Refused as exc:
+            sale.term = None
             return _finish(sale, MembershipSale.Status.FAILED, str(exc))
         except Exception as exc:
             logger.exception("Square membership order %s failed", order_id)
+            sale.term = None
             return _finish(sale, MembershipSale.Status.FAILED, repr(exc))
-        return _finish(sale, MembershipSale.Status.OK)
 
 
 def process_order(order_id: str,
