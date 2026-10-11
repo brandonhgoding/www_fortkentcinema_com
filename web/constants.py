@@ -1,5 +1,4 @@
 import datetime
-import re
 from urllib.parse import quote_plus
 
 # Ported verbatim from the React SPA's src/data/siteConfig.json.

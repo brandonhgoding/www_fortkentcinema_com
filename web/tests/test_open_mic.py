@@ -11,7 +11,7 @@ import datetime
 from django.test import TestCase
 from django.urls import reverse
 
-from web.constants import OPEN_MIC, OPEN_MIC_FAQ, SITE_CONFIG
+from web.constants import OPEN_MIC, OPEN_MIC_FAQ
 from web.services.open_mic import upcoming_nights
 from web.services.showtimes import CINEMA_TZ
 

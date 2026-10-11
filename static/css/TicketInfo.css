@@ -23,6 +23,11 @@
   font-variant-numeric: tabular-nums;
 }
 
+.ticket-info__prices > *,
+.ticket-info__where > * {
+  white-space: nowrap;
+}
+
 .ticket-info a {
   color: var(--color-accent-light);
   text-decoration: underline;

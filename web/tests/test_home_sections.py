@@ -23,9 +23,8 @@ import json
 import re
 from unittest import mock
 
-from django.test import SimpleTestCase, TestCase
+from django.test import TestCase
 from django.urls import reverse
-from django.utils.html import escape
 
 from web.constants import SITE_CONFIG, SPONSORSHIP_TIERS
 
