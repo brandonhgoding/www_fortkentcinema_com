@@ -137,9 +137,9 @@
   font-style: italic;
 }
 
-/* The price belongs in the hero on this page and not on craft night's.
- * Craft night has two rates and a membership caveat, which is a section.
- * This is one number, and it is half the pitch. */
+/* The price and place close the hero card. Craft night's card now carries
+ * the same line (.craft-next__price) — its two rates fit on one line, and
+ * the section further down still explains the membership caveat. */
 .heckle-next__price {
   font-family: var(--font-body);
   font-size: 0.85rem;

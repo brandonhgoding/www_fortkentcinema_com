@@ -70,6 +70,7 @@ page, so both renderings read from the one list — same as /craft-night/,
             {% endif %}
             <p class="heckle-next__price">
               ${{ heckle_night.general_price }} at the door{% if heckle_night.members_free %} &middot; Free for members{% endif %}
+              &middot; {{ site_config.cinema.address.street }}
             </p>
           </div>
         {% endif %}
