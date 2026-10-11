@@ -1,6 +1,8 @@
 import json
 import re
+from pathlib import Path
 
+from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
 
@@ -405,3 +407,30 @@ class HistorySocialCardTests(TestCase):
         path = Path(settings.BASE_DIR) / "static" / self.CARD
         with Image.open(path) as im:
             self.assertEqual(len(im.getexif()), 0)
+
+
+class HistoryNavigationTests(TestCase):
+    """A 5-7 screen page with no way to move around it, arrow keys that
+    turned the playbill from anywhere on the page, and bold text in the link
+    colour."""
+
+    def setUp(self):
+        self.html = self.client.get(reverse("history")).content.decode()
+
+    def test_contents_links_every_section(self):
+        toc = self.html.split('class="history-toc"', 1)[1].split("</nav>", 1)[0]
+        targets = re.findall(r'href="#([\w-]+)"', toc)
+        self.assertGreaterEqual(len(targets), 6)
+        for target in targets:
+            self.assertIn(f'id="{target}"', self.html)
+
+    def test_arrow_keys_are_scoped_to_the_carousel(self):
+        self.assertNotIn("keydown.left.window", self.html)
+        self.assertNotIn("keydown.right.window", self.html)
+        self.assertIn("@keydown.left=", self.html)
+
+    def test_bold_text_is_not_link_coloured(self):
+        css = (Path(settings.BASE_DIR) / "static/css/HistoryPage.css").read_text()
+        rule = css.split(".history-section strong {", 1)[1].split("}", 1)[0]
+        self.assertNotIn("gold-light", rule)
+        self.assertNotIn("accent", rule)

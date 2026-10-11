@@ -179,7 +179,27 @@
       </p>
     </aside>
 
-    <section class="history-section">
+    {% comment %}
+      The page runs five to seven screens. A short contents list lets a
+      reader jump to the drive-in or the sources without scrolling past
+      eighty years to find them. The ids are on the <section>s below.
+    {% endcomment %}
+    <nav class="history-toc" aria-label="On this page">
+      <p class="history-toc__label">On this page</p>
+      <ol class="history-toc__list">
+        <li><a href="#barn">The barn, 1917</a></li>
+        <li><a href="#the-dime">A dime and a piano</a></li>
+        <li><a href="#playbills">What was playing</a></li>
+        <li><a href="#convent">Under the convent</a></li>
+        <li><a href="#drive-in">The drive-in</a></li>
+        <li><a href="#century">The Century</a></li>
+        <li><a href="#the-gem">The Gem</a></li>
+        <li><a href="#video">The video</a></li>
+        <li><a href="#sources">Sources</a></li>
+      </ol>
+    </nav>
+
+    <section class="history-section" id="barn">
       <h2 class="history-section__title">A barn on the Stevens homestead</h2>
       <p>
         In 1904 the Fort Kent chapter of the Modern Woodmen of America, a
@@ -198,7 +218,7 @@
       </p>
     </section>
 
-    <section class="history-section">
+    <section class="history-section" id="the-dime">
       <h2 class="history-section__title">A dime, a folding chair, and a piano</h2>
       <p>
         The early Savoy was a make-do operation. For a dime, moviegoers sat on
@@ -234,11 +254,16 @@
       flash of all of them stacked — and the arrows, which would do nothing,
       never appear. Alpine is already loaded sitewide and [x-cloak] is already
       defined in the bundle, so this adds no new dependency.
+
+      The arrow keys listen on this section, not the window: they used to
+      turn the playbill from anywhere on the page, which surprised anyone
+      scrolling or reading with a screen reader. They work once focus is on
+      the carousel (its arrow buttons).
     {% endcomment %}
-    <section class="history-section history-playbills"
+    <section class="history-section history-playbills" id="playbills"
              x-data="{ i: 0, n: {{ playbills|length }} }"
-             @keydown.left.window="i = (i - 1 + n) % n"
-             @keydown.right.window="i = (i + 1) % n">
+             @keydown.left="i = (i - 1 + n) % n"
+             @keydown.right="i = (i + 1) % n">
       <h2 class="history-section__title">What was playing</h2>
       <p class="history-playbills__lead">
         Six of the Savoy&rsquo;s weekly playbills survive, covering April to
@@ -300,7 +325,7 @@
       </p>
     </section>
 
-    <section class="history-section">
+    <section class="history-section" id="convent">
       <h2 class="history-section__title">The theater under the convent</h2>
       <p>
         Fort Kent&rsquo;s second cinema opened around 1939, and it was a parish
@@ -338,7 +363,7 @@
       </p>
     </section>
 
-    <section class="history-section">
+    <section class="history-section" id="drive-in">
       <h2 class="history-section__title">Three hundred and fifty cars</h2>
       <p>
         In the summer of 1951 Brooks opened the 240-speaker Fort Kent Drive-In
@@ -356,7 +381,7 @@
       </p>
     </section>
 
-    <section class="history-section">
+    <section class="history-section" id="century">
       <h2 class="history-section__title">The Century, and after</h2>
       <p>
         The Savoy found its last owners in 1969 &mdash; a local group
@@ -384,7 +409,7 @@
       newspaper, no database, and not in Ornstein — only in the Society's own
       exhibit, from one poster. That is worth telling and worth flagging.
     {% endcomment %}
-    <section class="history-section history-open">
+    <section class="history-section history-open" id="the-gem">
       <h2 class="history-section__title">One name we are not sure about</h2>
       <p>
         The Fort Kent Historical Society&rsquo;s centennial exhibit records that
@@ -412,7 +437,7 @@
       makes no request to YouTube unless someone asks. The plain link below it
       is the escape hatch for when an embed is blocked and shows a dead grey box.
     {% endcomment %}
-    <section class="history-section history-video" x-data="{ playing: false }">
+    <section class="history-section history-video" id="video" x-data="{ playing: false }">
       <h2 class="history-section__title">The Society&rsquo;s own telling</h2>
       <p class="history-video__lead">
         {{ video.blurb }} It runs {{ video.duration }}, and it is the source for
@@ -444,7 +469,7 @@
       </p>
     </section>
 
-    <section class="history-section history-sources">
+    <section class="history-section history-sources" id="sources">
       <h2 class="history-section__title">Sources &amp; thanks</h2>
       <ul class="history-sources__list">
         <li>
