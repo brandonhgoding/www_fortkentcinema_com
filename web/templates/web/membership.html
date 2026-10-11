@@ -72,7 +72,7 @@ markup that isn't on the page.
             </svg>
           </span>
           <h3 class="membership-benefits__heading">Popcorn Discounts</h3>
-          <p class="membership-benefits__text">Show your card. We pop the corn.</p>
+          <p class="membership-benefits__text">Up to $2 off every popcorn. Give your name at the counter.</p>
         </li>
         <li class="membership-benefits__item">
           <span class="membership-benefits__medallion" aria-hidden="true">
@@ -84,7 +84,7 @@ markup that isn't on the page.
             </svg>
           </span>
           <h3 class="membership-benefits__heading">Birthday surprise</h3>
-          <p class="membership-benefits__text">Free popcorn on your birthday</p>
+          <p class="membership-benefits__text">A free small popcorn during your birthday month.</p>
         </li>
         <li class="membership-benefits__item">
           <span class="membership-benefits__medallion" aria-hidden="true">
@@ -112,6 +112,17 @@ markup that isn't on the page.
           {% include "partials/tier_card.html" %}
         {% endfor %}
       </div>
+      {% comment %}
+        What Join does and what $4 is cheaper than. The page never said
+        either: Join opens a Square checkout in a new tab, and "$4
+        Admission" meant nothing without the regular price beside it.
+        Prices come from TICKET_PRICES, like the ticket line on the home page.
+      {% endcomment %}
+      <p class="membership-tiers__note">
+        Regular admission is ${{ ticket_prices.adult }} (${{ ticket_prices.matinee }} for matinees); members pay ${{ ticket_prices.member }}.
+        Join opens Square's secure checkout. There's no card to carry: at the
+        box office, your name is all we need.
+      </p>
     </section>
 
     {% comment %}

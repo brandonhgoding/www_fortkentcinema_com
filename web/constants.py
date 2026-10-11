@@ -174,11 +174,17 @@ RENTALS_FAQ = [
 MEMBERSHIP_FAQ = [
     {
         "question": "How long does a membership last?",
-        "answer": "Each tier specifies its duration (most are annual). Your card shows the exact end date.",
+        "answer": (
+            "The length shown on your tier, counted from the day you join. "
+            "Ask at the box office and we'll tell you the exact end date."
+        ),
     },
     {
         "question": "What's included with a family tier?",
-        "answer": "Family tiers cover the cardholder plus immediate family members. Just give your name at the box office.",
+        "answer": (
+            "Everyone in your household, with no headcount limit. Just give "
+            "your name at the box office."
+        ),
     },
     {
         # The badge this answer points at is Engagement.is_free_for_members,
@@ -199,10 +205,6 @@ MEMBERSHIP_FAQ = [
     {
         "question": "Can I get a refund?",
         "answer": "Memberships are non-refundable. Reach out to the box office if you have questions.",
-    },
-    {
-        "question": "Do I get a card?",
-        "answer": "Yes — a printable PDF card is emailed to you immediately after purchase.",
     },
 ]
 

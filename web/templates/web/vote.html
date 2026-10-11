@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Vote on Our Next Classic | Fort Kent Cinema{% endblock %}
-{% block description %}You pick what we screen next. Vote on the shortlist for our next classic movie night at Fort Kent Cinema.{% endblock %}
-{% block og_title %}Vote on Our Next Classic | Fort Kent Cinema{% endblock %}
-{% block og_description %}You pick what we screen next. Vote on the shortlist for our next classic movie night.{% endblock %}
+{% block title %}Vote on What Plays Next | Fort Kent Cinema{% endblock %}
+{% block description %}You pick what we screen next. Vote on the shortlist of films coming to Fort Kent Cinema.{% endblock %}
+{% block og_title %}Vote on What Plays Next | Fort Kent Cinema{% endblock %}
+{% block og_description %}You pick what we screen next. Vote on the shortlist of films coming to Fort Kent Cinema.{% endblock %}
 
 {% block content %}
   <div class="vote-page">
@@ -39,7 +39,7 @@
         {% elif poll %}
           <p class="vote-subtitle">You choose what plays here.</p>
         {% else %}
-          <p class="vote-subtitle">You choose what plays on our next classic night.</p>
+          <p class="vote-subtitle">You choose what plays here next.</p>
         {% endif %}
         {% if state == "ballot" or state == "voted" %}
           <p class="vote-hero__status">

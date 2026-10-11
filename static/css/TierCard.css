@@ -156,6 +156,16 @@
   margin: 0;
 }
 
+/* Family tiers only: who the card covers, which is what a family weighing
+   Family against Cinema Supporter needs to know first. */
+.tier-card__covers {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: var(--spacing-xs) 0 0;
+}
+
 /* Perks list */
 .tier-card__perks {
   list-style: none;

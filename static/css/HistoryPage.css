@@ -82,6 +82,39 @@
   border-radius: 0 var(--radius-md) var(--radius-md) 0;
 }
 
+/* "On this page" — a compact numbered list under the source note. */
+.history-toc {
+  margin: 0 0 var(--spacing-2xl);
+  font-family: var(--font-body);
+}
+
+.history-toc__label {
+  font-family: var(--font-condensed);
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--color-cream-muted);
+  margin: 0 0 var(--spacing-sm);
+}
+
+.history-toc__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem var(--spacing-lg);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.history-toc__list a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--color-accent-light);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .history-sourcenote p {
   font-family: var(--font-body);
   font-size: 0.98rem;
@@ -98,6 +131,8 @@
 
 .history-section {
   margin-bottom: var(--spacing-2xl);
+  /* Contents-list jumps clear the fixed nav instead of sliding under it. */
+  scroll-margin-top: 90px;
 }
 
 .history-section__title {
@@ -121,9 +156,11 @@
   margin-bottom: 0;
 }
 
+/* Ink, not the link blue: bold names and figures in the link colour read
+   as links that went nowhere. Weight alone carries the emphasis. */
 .history-section strong {
-  color: var(--color-gold-light);
-  font-weight: 600;
+  color: var(--color-text);
+  font-weight: 700;
 }
 
 .history-section em {

@@ -338,3 +338,24 @@ class VoteHeroTests(TestCase):
         html = self.client.get(reverse("vote")).content.decode()
         self.assertIn("You pick the picture", html)
         self.assertNotIn("vote-hero__posters", html)
+
+
+class VoteWordingTests(TestCase):
+    """The audit: round cards named their films only in hover tooltips, and
+    the page described itself as a classic night while the rounds were new
+    releases."""
+
+    def test_round_card_names_its_films_in_text(self) -> None:
+        poll = Poll.objects.create(title="Opening weekend", status=PollStatus.OPEN)
+        for i, title in enumerate(("Dune", "Wicked", "Sinners")):
+            PollOption.objects.create(
+                poll=poll, film=Film.objects.create(title=title), sort_order=i
+            )
+        Poll.objects.create(title="Another round", status=PollStatus.OPEN)
+        html = self.client.get(reverse("vote")).content.decode()
+        meta = html.split('class="vote-round__meta">', 1)[1].split("</span>", 1)[0]
+        self.assertIn("On the ballot: Dune, Wicked and Sinners.", " ".join(meta.split()))
+
+    def test_page_no_longer_calls_itself_a_classic_night(self) -> None:
+        html = self.client.get(reverse("vote")).content.decode().lower()
+        self.assertEqual(html.count("classic"), 0)

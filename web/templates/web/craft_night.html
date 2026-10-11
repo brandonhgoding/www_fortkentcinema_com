@@ -74,6 +74,12 @@ page, so both renderings read from the one list — same as /rentals/ and
                 Film to be announced &mdash; we book two to three weeks out.
               </p>
             {% endif %}
+            {% comment %} The price and place, as the Heckle Night and Open Mic
+            cards give theirs — this card was the only one without. {% endcomment %}
+            <p class="craft-next__price">
+              ${{ craft_night.general_price }} at the door &middot; ${{ craft_night.member_price }} members
+              &middot; {{ site_config.cinema.address.street }}
+            </p>
           </div>
         {% endif %}
       </header>
