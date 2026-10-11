@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from . import rendering
+from .images import optimise_header_image
 from .mixins import SlugModelMixin
 
 HEADER_IMAGE_DIR = "blog/images/"
@@ -214,6 +215,7 @@ class BlogPost(SlugModelMixin):
         update_fields = kwargs.get("update_fields")
         if update_fields is not None and {"content", "body_format"} & set(update_fields):
             kwargs["update_fields"] = {*update_fields, "lead_text"}
+        _optimise_new_upload(self)
         super().save(*args, **kwargs)
         if "header_image" not in self.__dict__:
             return  # deferred and untouched
@@ -251,6 +253,25 @@ class BlogPost(SlugModelMixin):
         from django.urls import reverse
 
         return reverse("blog_detail", kwargs={"slug": self.slug})
+
+
+def _optimise_new_upload(post: BlogPost) -> None:
+    """Swap a fresh, heavy upload for its WebP copy before it is written.
+
+    Only an uncommitted file is a new upload; a stored one is left alone
+    (the optimise_blog_images command handles those). The replacement is
+    still uncommitted, so super().save() names and writes it through
+    blog_header_image_path like any other upload, and the old-file cleanup
+    in save() sees an ordinary replacement.
+    """
+    if "header_image" not in post.__dict__:
+        return
+    image = post.header_image
+    if not image or getattr(image, "_committed", True):
+        return
+    optimised = optimise_header_image(image.file)
+    if optimised is not None:
+        post.header_image = optimised
 
 
 def _delete_header_image(storage, name: str) -> None:
