@@ -40,6 +40,7 @@ class ChromeTests(TestCase):
                 "Members",
                 "Memberships",
                 "Polls",
+                "Rental Inquiries",
                 "Screens",
                 "Subscribers",
                 "Voicemails",

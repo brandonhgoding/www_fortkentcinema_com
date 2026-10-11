@@ -79,21 +79,22 @@ class MemberListTests(TestCase):
     def test_status_filter(self) -> None:
         # Surnames that appear nowhere in the page chrome: an assertNotIn
         # against the whole document is only meaningful if the sentinel
-        # can't also arrive from a nav link or a column heading.
-        give_term(make_member("Cur", "Rent", "current@example.com"))
+        # can't also arrive from a nav link or a column heading. (It was
+        # "Rent" until the sidebar grew a "Rental Inquiries" link.)
+        give_term(make_member("Cur", "Qwyllt", "current@example.com"))
         make_member("No", "Zzyzx", "never@example.com")
 
         active = self.client.get(
             reverse("dashboard:members"), {"status": "active"}
         ).content.decode()
-        self.assertIn("Rent", active)
+        self.assertIn("Qwyllt", active)
         self.assertNotIn("Zzyzx", active)
 
         lapsed = self.client.get(
             reverse("dashboard:members"), {"status": "lapsed"}
         ).content.decode()
         self.assertIn("Zzyzx", lapsed)
-        self.assertNotIn("Rent", lapsed)
+        self.assertNotIn("Qwyllt", lapsed)
 
     def test_active_filter_includes_expiring_members(self) -> None:
         """Expiring soon is still active: the header count and the Active

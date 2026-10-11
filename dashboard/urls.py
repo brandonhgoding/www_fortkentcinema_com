@@ -6,6 +6,7 @@ from . import (
     member_views,
     membership_sale_views,
     poll_views,
+    rental_inquiry_views,
     subscriber_views,
     term_views,
     tier_views,
@@ -288,6 +289,16 @@ urlpatterns = [
         "inquiries/<int:pk>/status",
         inquiry_views.InquiryStatusView.as_view(),
         name="inquiry_status",
+    ),
+    path(
+        "rental-inquiries",
+        rental_inquiry_views.RentalInquiryListView.as_view(),
+        name="rental_inquiries",
+    ),
+    path(
+        "rental-inquiries/<int:pk>/status",
+        rental_inquiry_views.RentalInquiryStatusView.as_view(),
+        name="rental_inquiry_status",
     ),
     path("voicemails", voicemail_views.VoicemailListView.as_view(), name="voicemails"),
     path(

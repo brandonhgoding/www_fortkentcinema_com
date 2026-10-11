@@ -12,6 +12,7 @@ from cinema.models import (
     EngagementStatus,
     Film,
     InquiryStatus,
+    RentalInquiry,
     Screen,
     Showtime,
     SponsorshipInquiry,
@@ -93,6 +94,9 @@ class HomeView(StaffRequiredMixin, TemplateView):
                 tomorrow_count,
                 today,
                 new_inquiries=SponsorshipInquiry.objects.filter(
+                    status=InquiryStatus.NEW
+                ).count(),
+                new_rental_inquiries=RentalInquiry.objects.filter(
                     status=InquiryStatus.NEW
                 ).count(),
                 new_voicemails=Voicemail.objects.filter(
