@@ -63,3 +63,22 @@ class MembershipFaqWordingTests(TestCase):
         answer = self.answer("What's included with a family tier")
         self.assertIn("household", answer)
         self.assertNotIn("immediate family", answer)
+
+
+class NoPrintableCardTests(TestCase):
+    """Owner, 2026-10-10: no printable card is promised. Members are looked
+    up by name at the box office."""
+
+    def test_membership_page_promises_no_card(self):
+        html = self.client.get(reverse("membership")).content.decode().lower()
+        for phrase in ("printable", "pdf", "your card", "get a card"):
+            self.assertNotIn(phrase, html)
+
+    def test_thanks_page_promises_no_card(self):
+        tier = MembershipTier.objects.first()
+        html = self.client.get(
+            reverse("thanks"), {"tier": tier.slug}
+        ).content.decode().lower()
+        self.assertNotIn("printable", html)
+        self.assertNotIn("pdf", html)
+        self.assertIn("give us your name", html)

@@ -176,7 +176,7 @@ MEMBERSHIP_FAQ = [
         "question": "How long does a membership last?",
         "answer": (
             "The length shown on your tier, counted from the day you join. "
-            "Your card shows the exact end date."
+            "Ask at the box office and we'll tell you the exact end date."
         ),
     },
     {
@@ -205,10 +205,6 @@ MEMBERSHIP_FAQ = [
     {
         "question": "Can I get a refund?",
         "answer": "Memberships are non-refundable. Reach out to the box office if you have questions.",
-    },
-    {
-        "question": "Do I get a card?",
-        "answer": "Yes — a printable PDF card is emailed to you immediately after purchase.",
     },
 ]
 
