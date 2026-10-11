@@ -12,8 +12,13 @@
         <span class="vote-round__body">
           <span class="vote-round__title">{{ round.title }}</span>
           {% if round.blurb %}<span class="vote-round__blurb">{{ round.blurb }}</span>{% endif %}
+          {% comment %}
+            The films by name. The posters beside this are aria-hidden and
+            only titled on hover, so this line is the one place a voter (or a
+            screen reader) learns what is on the ballot without opening it.
+          {% endcomment %}
           <span class="vote-round__meta">
-            {{ round.options.count }} film{{ round.options.count|pluralize }} on the ballot{% if round.closes_at %}. Voting closes {{ round.closes_at|date:"F j" }}{% endif %}.
+            {% if round.options.all %}On the ballot: {% for option in round.options.all %}{% if not forloop.first %}{% if forloop.last %} and {% else %}, {% endif %}{% endif %}{{ option.film.title }}{% endfor %}.{% else %}No films on the ballot yet.{% endif %}{% if round.closes_at %} Voting closes {{ round.closes_at|date:"F j" }}.{% endif %}
           </span>
           <span class="vote-round__cta">Vote in this round &rarr;</span>
         </span>
