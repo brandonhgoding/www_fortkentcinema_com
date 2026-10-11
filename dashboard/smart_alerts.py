@@ -8,6 +8,7 @@ from django.urls import reverse
 def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
                        today: datetime.date,
                        new_inquiries: int = 0,
+                       new_rental_inquiries: int = 0,
                        new_voicemails: int = 0,
                        square_pull_status: str | None = None,
                        square_sync_failures: int = 0,
@@ -52,6 +53,13 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
         alerts.append({
             "id": "new-sponsorship-inquiries", "type": "info",
             "message": f"You have {new_inquiries} new sponsorship {unit}",
+        })
+
+    if new_rental_inquiries > 0:
+        unit = "inquiry" if new_rental_inquiries == 1 else "inquiries"
+        alerts.append({
+            "id": "new-rental-inquiries", "type": "info",
+            "message": f"You have {new_rental_inquiries} new rental {unit}",
         })
 
     if new_voicemails > 0:

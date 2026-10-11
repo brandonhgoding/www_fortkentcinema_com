@@ -151,48 +151,20 @@
 
 /* Box office hours — the second real column.
 
-   .footer-hours was written for the React block that never shipped and sat
-   unused, as did .footer-heading above. Both are now what the template
-   emits, so this is the same class doing the job it was written for, with
-   the row parts it needs added.
-
-   Capped measure: the column is half the footer on a desktop, and a days /
-   time pair set with space-between across ~660px would put a canyon between
-   "Fri – Sun" and its time. The rows stay a readable table. */
+   One sentence rather than a days / times table: the box office opens ahead
+   of each show, not on fixed weekly hours. Capped measure so the line
+   doesn't run the width of half a desktop footer. */
 .footer-hours {
   color: var(--color-cream-muted);
   font-size: 1rem;
-  font-weight: 600;
   line-height: 1.8;
   max-width: 22rem;
 }
 
-.footer-hours-row {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 0 var(--spacing-sm);
-  padding: 0.35rem 0;
-  /* Same hairline as .footer-bottom, so the footer has one rule weight. */
-  border-bottom: 1px solid rgba(32, 57, 130, 0.15);
-}
-
-.footer-hours-row:last-child {
-  border-bottom: none;
-}
-
-.footer-hours-days {
-  color: var(--color-cream-muted);
-}
-
-/* The time is the answer to the question the block is asked, so it takes the
-   text colour and the weight; the days are the label. Tabular figures keep
-   the times aligned down the right edge of the column. */
-.footer-hours-time {
+.footer-hours-note {
   color: var(--color-cream);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
 }
 
 .footer-bottom {

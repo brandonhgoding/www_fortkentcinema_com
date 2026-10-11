@@ -50,13 +50,13 @@ hx-push-url takes an explicit value so the address bar ends up at
                hx-get="{% url 'sponsor_catalog' %}{% querystring sort='-year' page=None %}"
                hx-push-url="{% querystring sort='-year' page=None %}">Year</a>
           </th>
-          <th>Rating</th>
-          <th>
+          <th class="sponsor-table__rating">Rating</th>
+          <th class="sponsor-table__wide-only">
             <a href="{% querystring sort='runtime' page=None %}#catalog"
                hx-get="{% url 'sponsor_catalog' %}{% querystring sort='runtime' page=None %}"
                hx-push-url="{% querystring sort='runtime' page=None %}">Runtime</a>
           </th>
-          <th>Format</th>
+          <th class="sponsor-table__wide-only">Format</th>
           <th class="sponsor-table__action"><span class="sr-only">Sponsor</span></th>
         </tr>
       </thead>
@@ -70,9 +70,9 @@ hx-push-url takes an explicit value so the address bar ends up at
               {% endif %}
             </td>
             <td>{{ title.release_year|default_if_none:"—" }}</td>
-            <td>{{ title.mpa_rating|default:"—" }}</td>
-            <td>{{ title.runtime_raw|default:title.runtime_minutes|default:"—" }}</td>
-            <td class="sponsor-table__format">{{ title.format_summary|default:"—" }}</td>
+            <td class="sponsor-table__rating">{{ title.mpa_rating|default:"—" }}</td>
+            <td class="sponsor-table__wide-only">{{ title.runtime_raw|default:title.runtime_minutes|default:"—" }}</td>
+            <td class="sponsor-table__format sponsor-table__wide-only">{{ title.format_summary|default:"—" }}</td>
             {% comment %}
               Opens the inquiry drawer with this film already chosen. A real
               href, not a button: with no JavaScript there is no drawer, so

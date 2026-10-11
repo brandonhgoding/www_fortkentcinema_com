@@ -11,7 +11,7 @@ import datetime
 from django.test import TestCase
 from django.urls import reverse
 
-from web.constants import OPEN_MIC, OPEN_MIC_FAQ, SITE_CONFIG
+from web.constants import OPEN_MIC, OPEN_MIC_FAQ
 from web.services.open_mic import upcoming_nights
 from web.services.showtimes import CINEMA_TZ
 
@@ -61,13 +61,6 @@ class UpcomingNightsTests(TestCase):
 
 
 class ConfigTests(TestCase):
-    def test_the_night_ends_by_weekday_closing(self):
-        """Monday closing is 9 PM; open mic may not outlast the building."""
-        close = datetime.datetime.strptime(
-            SITE_CONFIG["hours"]["weekday"]["close"], "%I:%M %p"
-        ).time()
-        self.assertLessEqual(OPEN_MIC["end_time"], close)
-
     def test_end_label_and_end_time_agree(self):
         self.assertEqual(
             datetime.datetime.strptime(OPEN_MIC["end_label"], "%I:%M %p").time(),

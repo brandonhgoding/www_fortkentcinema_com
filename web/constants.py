@@ -1,5 +1,4 @@
 import datetime
-import re
 from urllib.parse import quote_plus
 
 # Ported verbatim from the React SPA's src/data/siteConfig.json.
@@ -16,10 +15,12 @@ SITE_CONFIG = {
         },
         "phone": "(207) 231-5287",
     },
-    "hours": {
-        "weekday": {"days": "Wednesday - Thursday", "open": "6:00 PM", "close": "9:00 PM"},
-        "weekend": {"days": "Saturday & Sunday", "open": "3:00 PM", "close": "9:00 PM"},
-    },
+    # No fixed weekly hours. A table of them ("Wednesday - Thursday,
+    # 6-9 PM") contradicted the schedule it sat under — Friday Heckle Night,
+    # Tuesday shows, an 11 AM Saturday matinee — and Google read it as
+    # "Closed" on every show night it didn't list. The box office opens
+    # ahead of each show instead, which is always true.
+    "box_office": {"opens_before_show_minutes": 30},
     "social": {"facebook": "https://facebook.com/fortkentcinema"},
     # Items with "children" render as a dropdown; everything else is a plain
     # link. FIVE TOP-LEVEL ITEMS IS THE CEILING, counting each dropdown as
@@ -88,51 +89,6 @@ TICKET_PRICES = {
 # along on the existing `site_config` context variable, which is why it lives
 # here rather than in a second context processor.
 
-_WEEK = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
-]
-
-
-def _expand_days(label):
-    """"Monday - Thursday" -> ["Monday", ..., "Thursday"].
-
-    The hours blocks are written for humans ("Friday - Sunday"); schema.org
-    wants the days named one by one. Ranges wrap, so "Saturday - Monday"
-    would work too. Days and ranges can be joined with "&" or ",", as in
-    "Saturday & Sunday" or "Monday, Wednesday - Friday". A misspelt day
-    raises at import rather than publishing a day Google can't read.
-    """
-    days = []
-    for piece in re.split(r"[&,]", label):
-        parts = [part.strip() for part in piece.split("-")]
-        start, end = _WEEK.index(parts[0]), _WEEK.index(parts[-1])
-        if start <= end:
-            days += _WEEK[start : end + 1]
-        else:
-            days += _WEEK[start:] + _WEEK[: end + 1]
-    return days
-
-
-def _iso_time(label):
-    """"4:00 PM" -> "16:00". schema.org opens/closes are 24-hour ISO."""
-    return datetime.datetime.strptime(label, "%I:%M %p").strftime("%H:%M")
-
-
-OPENING_HOURS_SPECIFICATION = [
-    {
-        "dayOfWeek": _expand_days(block["days"]),
-        "opens": _iso_time(block["open"]),
-        "closes": _iso_time(block["close"]),
-    }
-    for block in SITE_CONFIG["hours"].values()
-]
-
 _ADDRESS = SITE_CONFIG["cinema"]["address"]
 _MAP_QUERY = quote_plus(
     "{street}, {city}, {state} {zip}".format(
@@ -144,7 +100,6 @@ _MAP_QUERY = quote_plus(
 )
 
 SITE_CONFIG["seo"] = {
-    "opening_hours": OPENING_HOURS_SPECIFICATION,
     # hasMap on the MovieTheater. Built from the address rather than pasted,
     # so moving the theater moves the pin.
     "map_url": "https://www.google.com/maps/search/?api=1&query=" + _MAP_QUERY,
@@ -1006,8 +961,7 @@ OPEN_MIC = {
     "start_label": "6:30 PM",
     # The advertised finish. The night can end earlier when the sign-up
     # sheet runs out, which the page says — 9:00 is a ceiling, not a
-    # promise. It is also the weekday closing time in SITE_CONFIG["hours"],
-    # so the night never outlasts the building.
+    # promise.
     "end_label": "9:00 PM",
     # What upcoming_nights() rolls over at: until 9 PM on a Monday, the
     # next open mic is tonight.

@@ -48,6 +48,7 @@
 @import '../../static/css/BlogCard.css';
 @import '../../static/css/TierCard.css';
 @import '../../static/css/Playbill.css';
+@import '../../static/css/TicketInfo.css';
 
 /* 5. Pages — last, so a page can override a component. */
 @import '../../static/css/home.css';

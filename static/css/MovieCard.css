@@ -219,7 +219,9 @@
 
 .movie-showtimes {
   display: flex;
-  gap: 0.5rem;
+  /* No borders between times, so the gap does the separating: wider than a
+     word space so "7:00 PM 9:30 PM" never reads as one phrase. */
+  gap: 0.25rem 1.25rem;
   flex-wrap: wrap;
   margin-top: auto;
   padding-top: var(--spacing-sm);
@@ -241,37 +243,26 @@
    sales ever land, this goes back to a <button> and the states come back
    with it — together, not one at a time.
 
-   What stays is the chip. It is doing real typographic work: it groups the
-   times for a day and separates one from the next. The old chip measured
-   88x33 at 390px, which read as a cramped button; this is a 40px-tall label
-   sized to be scanned at arm's length without crowding its neighbours.
+   The chip went too (2026-10 audit): even without the hover, a tinted box
+   with a border still read as a button on a phone, and people tapped it.
+   The times are now set as plain type — bold, tabular, spaced apart — and
+   partials/ticket_info.html sits above them to say how to actually buy.
 
    Styled here but used by BOTH movie_card.html and movie_schedule_card.html.
    MovieScheduleCard.css deliberately carries no .showtime override, so this
    rule is the whole story for both. */
 .showtime {
-  /* A <span> is inline by default — without this the vertical padding would
-     not affect layout and the chip would collapse to a line of text. */
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2.5rem;
-  padding: 0.35rem 0.85rem;
+  /* Block-level so a wrapped row of times keeps its gap. */
+  display: inline-block;
   font-family: var(--font-body);
-  font-size: 1rem;
-  font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: 1px;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.5px;
   /* Times wrap onto two or three rows on a phone; tabular figures keep the
      digits the same width so the rows read as a column of times. */
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  background: rgba(32, 57, 130, 0.08);
-  /* Muted rule rather than the full accent: a solid blue border plus blue
-     text is the site's link signature, which is what has to stop being
-     said here. The ink is body text colour for the same reason. */
-  border: 1px solid var(--color-accent-dim);
-  border-radius: 3px;
   color: var(--color-text);
 }
 

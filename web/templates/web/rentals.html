@@ -132,16 +132,23 @@ so both renderings read from the one list — same as /membership/ and
       </section>
 
       {% comment %} CTA {% endcomment %}
-      <div class="rentals-cta">
-        <h2 class="rentals-cta-title">READY TO BOOK?</h2>
+      {% comment %}
+        id="inquire" is where RentalInquiryView's ?sent=1#inquire redirect
+        lands, so the thank-you is on screen rather than a page-height away.
+      {% endcomment %}
+      <section class="rentals-cta" id="inquire" aria-labelledby="rentals-cta-title">
+        <h2 class="rentals-cta-title" id="rentals-cta-title">READY TO BOOK?</h2>
         <p class="rentals-cta-text">
-          Contact us to check availability and reserve your event date.
+          Tell us a little about your event and we'll get back to you to check
+          availability and reserve your date.
         </p>
-        <div class="rentals-cta-contact">
-          <a href="tel:+12072315287" data-track="phone_click" data-track-location="rentals">(207) 231-5287</a>
-          <a href="mailto:brandon.h.goding@gmail.com" data-track="rental_email_click">brandon.h.goding@gmail.com</a>
+        <div class="rentals-inquire">
+          {% include "partials/rental_inquiry_form.html" %}
         </div>
-      </div>
+        <p class="rentals-cta-contact">
+          Or call <a href="tel:+12072315287" data-track="phone_click" data-track-location="rentals">(207) 231-5287</a>
+        </p>
+      </section>
     </div>
   </div>
 {% endblock %}

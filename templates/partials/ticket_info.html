@@ -1,0 +1,21 @@
+{% comment %}
+  How much, and where to pay. Under every set of showtimes, because there is
+  no online ticket path: the times are information, and this line is what
+  turns them into a plan. Prices come from TICKET_PRICES (web/constants.py),
+  which the phone line reads too.
+{% endcomment %}
+<p class="ticket-info">
+  {% comment %} Each price is one unbreakable item, so a phone wraps between
+  prices rather than through "4 PM" or the middle of the number. {% endcomment %}
+  <span class="ticket-info__prices">
+    <span>${{ ticket_prices.adult }} adults</span> &middot;
+    <span>${{ ticket_prices.senior }} seniors</span> &middot;
+    <span>${{ ticket_prices.child }} kids</span> &middot;
+    <span>${{ ticket_prices.matinee }} matinees ({{ ticket_prices.matinee_until|time:"g A" }} or earlier)</span> &middot;
+    <a href="{% url 'membership' %}">${{ ticket_prices.member }} members</a>
+  </span>
+  <span class="ticket-info__where">
+    <span>Pay at the box office, {{ site_config.cinema.address.street }}</span> &middot;
+    <a href="tel:+12072315287" data-track="phone_click" data-track-location="ticket_info">{{ site_config.cinema.phone }}</a>
+  </span>
+</p>

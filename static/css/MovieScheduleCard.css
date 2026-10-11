@@ -141,7 +141,8 @@
    than between columns to stay legible as separate times on a phone. */
 .schedule-day__times {
   display: flex;
-  gap: var(--spacing-xs) 0.5rem;
+  /* Same spacing as .movie-showtimes: the gap is the only separator. */
+  gap: var(--spacing-xs) 1.25rem;
   flex-wrap: wrap;
 }
 

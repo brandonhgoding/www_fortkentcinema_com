@@ -108,19 +108,10 @@
       "hasMap": "{{ site_config.seo.map_url|escapejs }}",
       "image": "{{ request.scheme|escapejs }}://{{ request.get_host|escapejs }}{% static 'img/og-image.jpg' %}",
       {% comment %}
-      Opening hours are derived from SITE_CONFIG["hours"] in web/constants.py
-      (SITE_CONFIG["seo"]["opening_hours"]) rather than restated here, so the
-      footer and this block cannot drift apart. opens/closes are 24-hour ISO,
-      which is what schema.org wants; the config keeps the human form.
+      No openingHoursSpecification: the box office opens ahead of each show
+      rather than on fixed weekly hours, and Google renders any day missing
+      from a specification as "Closed" — wrong on every show night it missed.
       {% endcomment %}
-      "openingHoursSpecification": [{% for spec in site_config.seo.opening_hours %}
-        {
-          "@type": "OpeningHoursSpecification",
-          "dayOfWeek": [{% for day in spec.dayOfWeek %}"{{ day|escapejs }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
-          "opens": "{{ spec.opens|escapejs }}",
-          "closes": "{{ spec.closes|escapejs }}"
-        }{% if not forloop.last %},{% endif %}{% endfor %}
-      ],
       "sameAs": ["{{ site_config.social.facebook|escapejs }}"],
       "priceRange": "$$",
       "currenciesAccepted": "USD",

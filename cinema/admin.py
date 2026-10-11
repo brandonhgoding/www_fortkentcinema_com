@@ -20,6 +20,7 @@ from .models import (
     Engagement,
     EngagementFilm,
     Film,
+    RentalInquiry,
     Screen,
     Showtime,
     SponsorshipInquiry,
@@ -194,4 +195,15 @@ class SponsorshipInquiryAdmin(admin.ModelAdmin):
     )
     list_filter = ("status", "tier")
     search_fields = ("business_name", "contact_name", "email")
+    readonly_fields = ("created_at", "ip")
+
+
+@admin.register(RentalInquiry)
+class RentalInquiryAdmin(admin.ModelAdmin):
+    list_display = (
+        "contact_name", "email", "preferred_date", "guests", "status",
+        "created_at",
+    )
+    list_filter = ("status",)
+    search_fields = ("contact_name", "email", "event_type")
     readonly_fields = ("created_at", "ip")

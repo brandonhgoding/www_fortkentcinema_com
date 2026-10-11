@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.generic import RedirectView
 
 from .views import (
     CalendarMonthView,
@@ -9,6 +10,7 @@ from .views import (
     MembershipView,
     MovieDetailView,
     OpenMicView,
+    RentalInquiryView,
     RentalsView,
     SponsorCatalogView,
     SponsorFilmOptionsView,
@@ -25,6 +27,7 @@ urlpatterns = [
     path("", HomeView.as_view(), name="home"),
     path("membership/", MembershipView.as_view(), name="membership"),
     path("rentals/", RentalsView.as_view(), name="rentals"),
+    path("rentals/inquire", RentalInquiryView.as_view(), name="rentals_inquire"),
     # Trailing slash, like the other section pages. "craft-night" rather
     # than "craft-cinema-night": the event keeps its full name, the URL
     # is the short thing people say and type.
@@ -57,9 +60,22 @@ urlpatterns = [
     path("vote/cast", VoteCastView.as_view(), name="vote_cast"),
     path("vote/subscribe", VoteSubscribeView.as_view(), name="vote_subscribe"),
     path("vote/<slug:slug>", VoteArchiveView.as_view(), name="vote_archive"),
+    # The canonical vote and movie URLs have no trailing slash, but people
+    # type and share them with one — every section page has one. APPEND_SLASH
+    # only adds slashes, so without these the slashed forms were hard 404s.
+    # Same treatment as /blog/<slug>/ in blog/urls_site.py.
+    path("vote/", RedirectView.as_view(pattern_name="vote", permanent=True)),
+    path(
+        "vote/<slug:slug>/",
+        RedirectView.as_view(pattern_name="vote_archive", permanent=True),
+    ),
     # No trailing slash, matching /blog/<slug>: detail pages are slugless-suffix,
     # section pages (/membership/, /rentals/) keep theirs.
     path("movies/<slug:slug>", MovieDetailView.as_view(), name="movie_detail"),
+    path(
+        "movies/<slug:slug>/",
+        RedirectView.as_view(pattern_name="movie_detail", permanent=True),
+    ),
     path(
         "calendar/<int:year>/<int:month>/",
         CalendarMonthView.as_view(),

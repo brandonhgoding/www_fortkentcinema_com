@@ -97,6 +97,39 @@ class InquiryAlertTests(TestCase):
         self.assertEqual(build_smart_alerts([], 1, self.today), [])
 
 
+class RentalInquiryAlertTests(TestCase):
+    def setUp(self) -> None:
+        self.today = datetime.date(2026, 7, 10)
+
+    def _message(self, count: int) -> str | None:
+        alerts = build_smart_alerts(
+            [], 1, self.today, new_rental_inquiries=count
+        )
+        return next(
+            (a["message"] for a in alerts if a["id"] == "new-rental-inquiries"),
+            None,
+        )
+
+    def test_no_alert_when_there_are_no_new_inquiries(self):
+        self.assertIsNone(self._message(0))
+
+    def test_alert_is_singular_for_one(self):
+        self.assertEqual(self._message(1), "You have 1 new rental inquiry")
+
+    def test_alert_is_plural_for_many(self):
+        self.assertEqual(self._message(3), "You have 3 new rental inquiries")
+
+    def test_kept_apart_from_sponsorship_inquiries(self):
+        # Two different leads with two different follow-ups: one strip line
+        # each, not a single blended count.
+        alerts = build_smart_alerts(
+            [], 1, self.today, new_inquiries=2, new_rental_inquiries=1
+        )
+        ids = [a["id"] for a in alerts]
+        self.assertIn("new-sponsorship-inquiries", ids)
+        self.assertIn("new-rental-inquiries", ids)
+
+
 class VoicemailAlertTests(TestCase):
     def setUp(self) -> None:
         self.today = datetime.date(2026, 7, 10)

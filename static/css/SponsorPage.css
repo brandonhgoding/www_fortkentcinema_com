@@ -164,7 +164,7 @@
 
 .sponsor-tiers__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
   gap: var(--spacing-lg);
 }
 
@@ -341,7 +341,14 @@
   }
 }
 
+/* position: relative is load-bearing. The action column's header holds an
+ * absolutely positioned .sr-only label; with a static scroller its
+ * containing block was outside the overflow box, so it escaped the scroll
+ * and widened the whole page to the table's 44rem — on a phone the browser
+ * zoomed the layout out to 704px and the inquiry drawer opened half off
+ * screen. Positioning the scroller keeps every descendant inside it. */
 .sponsor-table__scroll {
+  position: relative;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   border: 1px solid var(--color-brass);
@@ -618,10 +625,44 @@
   }
 }
 
+/* The table fits the screen instead of scrolling sideways: at 44rem the
+ * Sponsor buttons — the point of the table — sat off the right edge where
+ * nobody would think to swipe. Runtime and format are the detail a sponsor
+ * can ask about; title, year, rating and the button stay. 52rem is where
+ * all six columns stop fitting beside the page's side padding. */
+@media (max-width: 52rem) {
+  .sponsor-table {
+    min-width: 0;
+    font-size: 0.95rem;
+  }
+
+  .sponsor-table th,
+  .sponsor-table td {
+    padding: 0.6rem 0.4rem;
+  }
+
+  .sponsor-table .sponsor-table__wide-only {
+    display: none;
+  }
+
+  .sponsor-table__sponsor {
+    padding: 0.35rem 0.5rem;
+    letter-spacing: 0.5px;
+  }
+}
+
+/* The smallest phones (320px) can't fit four columns beside the button;
+ * rating goes next, since the inquiry is where a group checks suitability. */
+@media (max-width: 25rem) {
+  .sponsor-table .sponsor-table__rating {
+    display: none;
+  }
+}
+
 /* Inquiry form */
 .sponsor-inquire__form {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
   gap: var(--spacing-md);
   align-items: start;
 }
@@ -737,7 +778,7 @@
 
 .sponsor-faq__list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
   gap: var(--spacing-lg);
   margin: 0;
 }
