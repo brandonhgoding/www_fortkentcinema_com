@@ -42,6 +42,7 @@ from cinema.models import Engagement, Showtime
 from web.constants import HECKLE_NIGHT
 from web.services.cinema_data import _format_runtime, _format_showtime, _local_date
 from web.services.showtimes import CINEMA_TZ
+from web.services.titles import event_page_title
 
 
 def third_friday(year, month):
@@ -171,7 +172,9 @@ def get_heckle_nights(count=None, *, today=None):
             engagement = showtime.engagement
             primary = engagement.primary_film
             film = {
-                "title": engagement.display_title or (primary.title if primary else ""),
+                "title": event_page_title(
+                    engagement.display_title or (primary.title if primary else "")
+                ),
                 "slug": (primary.slug if primary else "") or "",
                 "poster": (primary.poster_url if primary else "") or "",
                 "rating": (primary.rating if primary else "") or "",

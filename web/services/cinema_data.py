@@ -12,6 +12,8 @@ from django.utils import timezone
 
 from cinema.models import Engagement, Showtime
 
+from web.services.titles import listing_title
+
 CINEMA_TZ = ZoneInfo("America/New_York")
 
 
@@ -149,7 +151,9 @@ def get_coming_soon():
         movies.append(
             {
                 "id": str(engagement.id),
-                "title": engagement.display_title or (pf.title if pf else ""),
+                "title": listing_title(
+                    engagement.display_title or (pf.title if pf else "")
+                ),
                 "slug": (pf.slug if pf else "") or "",
                 "start_date": engagement.start_date.isoformat(),
                 "release_date": engagement.start_date.strftime("%B %-d"),
