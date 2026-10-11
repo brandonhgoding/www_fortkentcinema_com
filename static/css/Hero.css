@@ -355,7 +355,9 @@
   text-align: center;
   z-index: 10;
   margin-bottom: var(--spacing-lg);
-  animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both;
+  /* Short delays on purpose: these fade in on their own clock, alongside
+     the marquee power-on rather than after it (see effects.css). */
+  animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
 }
 
 .hero-tagline p {
@@ -371,7 +373,7 @@
   display: flex;
   gap: var(--spacing-md);
   z-index: 10;
-  animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.9s both;
+  animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
 }
 
 /* Member count — a caption under Join Membership, not a badge.
@@ -391,7 +393,7 @@
   text-align: center;
   color: var(--color-text-muted);
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-  animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 1.1s both;
+  animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.45s both;
 }
 
 .hero-members-star {

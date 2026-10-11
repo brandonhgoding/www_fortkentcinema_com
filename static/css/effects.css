@@ -36,26 +36,11 @@
   transition: opacity 0.6s ease;
 }
 
-.hero--pre-show .hero-tagline,
-.hero--pre-show .hero-cta,
-.hero--pre-show .hero-members {
-  animation: none;
-  opacity: 0;
-}
-
-/* Re-run the entrance fade when the marquee goes live (the base keyframe
-   timeline has already elapsed by the end of the power-on sequence). */
-.hero--live .hero-tagline {
-  animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
-}
-
-.hero--live .hero-cta {
-  animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.45s both;
-}
-
-.hero--live .hero-members {
-  animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.7s both;
-}
+/* The tagline, buttons and member count are NOT held back for the power-on.
+   They used to sit at opacity 0 until the marquee went live and then replay
+   their fade, so "View Showtimes" was invisible (but clickable) for ~3.4s
+   on a first visit. They now take their own short entrance from Hero.css
+   while the sign lights up behind them. */
 
 /* Cursor-aware bulbs: JS sets transform/box-shadow inline; this smooths them */
 .hero--live .bulb {
@@ -103,14 +88,6 @@
 /* === Reduced motion: final states, no movement === */
 @media (prefers-reduced-motion: reduce) {
   .fx-reveal {
-    opacity: 1 !important;
-    transform: none !important;
-  }
-
-  .hero--live .hero-tagline,
-  .hero--live .hero-cta,
-  .hero--live .hero-members {
-    animation: none !important;
     opacity: 1 !important;
     transform: none !important;
   }
