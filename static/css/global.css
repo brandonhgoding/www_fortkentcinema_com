@@ -667,6 +667,28 @@ button {
   color: var(--color-on-accent);
 }
 
+/* 404 — the /thanks layout plus a short list of the usual destinations. */
+.error-page__links {
+  list-style: none;
+  margin: var(--spacing-lg) 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--spacing-sm) var(--spacing-lg);
+}
+
+.error-page__links a,
+.error-page .thanks-body a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--color-accent-light);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* ============================================
    EMPTY STATES
 

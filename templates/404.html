@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found | Fort Kent Cinema{% endblock %}
+
+{% comment %}
+Django renders this for every 404 when DEBUG is off. It used to fall back to
+the framework default — unstyled text, no navigation, no viewport meta — so a
+mistyped or stale link was a dead end. It reuses the /thanks layout: one short
+message and the places most people were actually looking for.
+{% endcomment %}
+{% block robots %}noindex, follow{% endblock %}
+
+{% block content %}
+<div class="thanks-page error-page">
+  <div class="thanks-container">
+    <h1 class="thanks-title">REEL NOT FOUND</h1>
+    <p class="thanks-lead">
+      We couldn't find that page. It may have moved, or the film has finished
+      its run.
+    </p>
+    <ul class="error-page__links">
+      <li><a href="/#now-showing">What's showing now</a></li>
+      <li><a href="/#coming-soon">Coming soon</a></li>
+      <li><a href="{% url 'membership' %}">Membership</a></li>
+      <li><a href="{% url 'blog_list' %}">The blog</a></li>
+    </ul>
+    <p class="thanks-body">
+      Looking for something specific? Call us at
+      <a href="tel:+12072315287" data-track="phone_click" data-track-location="404">{{ site_config.cinema.phone }}</a>.
+    </p>
+  </div>
+</div>
+{% endblock %}
