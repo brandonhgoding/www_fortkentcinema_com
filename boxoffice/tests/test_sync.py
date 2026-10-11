@@ -3,7 +3,7 @@ import datetime
 from unittest import mock
 
 from boxoffice.gateway import GatewayError, RemoteItem
-from boxoffice.models import SquareItem
+from boxoffice.models import SaleLine, SquareItem, SquareVariation
 from boxoffice.sync import (
     delete,
     live_item,
@@ -16,6 +16,7 @@ from boxoffice.sync import (
 from boxoffice.tests.fakes import FakeGateway
 from cinema.models import Engagement, EngagementFilm, Film, Screen
 from django.test import TestCase, override_settings
+from django.utils import timezone
 
 LOGGER = "boxoffice.sync"
 FETCH = "boxoffice.sync.fetch_poster"
@@ -42,17 +43,17 @@ class PushTests(TestCase):
         self.gw = FakeGateway()
         self.eng = make_eng()
 
-    def test_first_push_creates_item_and_five_variations(self) -> None:
+    def test_first_push_creates_item_and_three_variations(self) -> None:
         item = push(self.eng, self.gw)
         self.assertEqual(item.square_id, "item-1")
         self.assertEqual(item.name, "Dune")
         self.assertEqual(item.version, 1)
         self.assertEqual(item.last_error, "")
-        self.assertEqual(item.variations.count(), 5)
-        self.assertEqual(item.variations.get(tier="member").price_cents, 400)
+        self.assertEqual(item.variations.count(), 3)
+        self.assertEqual(item.variations.get(tier="child").price_cents, 600)
         self.assertEqual(
             set(item.variations.values_list("square_id", flat=True)),
-            {f"var-{n}" for n in range(1, 6)},
+            {f"var-{n}" for n in range(1, 4)},
         )
         self.assertIsNotNone(item.synced_at)
 
@@ -76,7 +77,7 @@ class PushTests(TestCase):
         # Variation IDs are reused, not re-minted.
         self.assertEqual(
             set(pushed.variations.values_list("square_id", flat=True)),
-            {f"var-{n}" for n in range(1, 6)},
+            {f"var-{n}" for n in range(1, 4)},
         )
 
     def test_version_mismatch_refetches_and_wins(self) -> None:
@@ -99,13 +100,38 @@ class PushTests(TestCase):
         self.assertEqual([c[0] for c in self.gw.calls[-3:]],
                          ["upsert_item", "retrieve_item", "upsert_item"])
         expected = {t: f"rv-{t}"
-                    for t in ("adult", "senior", "child", "matinee", "member")}
+                    for t in ("adult", "senior", "child")}
         self.assertEqual(self.gw.calls[-1][1]["variation_ids_by_tier"], expected)
         item.refresh_from_db()
         self.assertEqual(item.version, 100)
         self.assertEqual(item.last_error, "")
         self.assertEqual(dict(item.variations.values_list("tier", "square_id")),
                          expected)
+
+    def test_item_with_dropped_matinee_and_member_tiers_is_repushed(self) -> None:
+        # Items pushed before matinee and member became register discounts
+        # still carry those two variations; the next push removes them.
+        item = push(self.eng, self.gw)
+        for tier, price, ordinal in (("matinee", 600, 3), ("member", 400, 4)):
+            SquareVariation.objects.create(
+                item=item, square_id=f"old-{tier}", sku=f"fkc-eng-{self.eng.pk}-{tier}",
+                tier=tier, name=tier.title(), price_cents=price, ordinal=ordinal)
+        line = SaleLine.objects.create(
+            order_id="O1", line_uid="L1", business_date=datetime.date(2026, 10, 9),
+            closed_at=timezone.now(), item_name="Dune", variation_name="Matinee",
+            quantity=1, gross_cents=600, engagement=self.eng,
+            variation=item.variations.get(tier="matinee"))
+        self.gw.calls.clear()
+        pushed = push(self.eng, self.gw)
+        self.assertEqual(self.gw.calls[-1][0], "upsert_item")
+        self.assertEqual([v.tier for v in self.gw.calls[-1][1]["spec"].variations],
+                         ["adult", "senior", "child"])
+        self.assertEqual(sorted(pushed.variations.values_list("tier", flat=True)),
+                         ["adult", "child", "senior"])
+        # The old sale keeps everything but its link to the dropped variation.
+        line.refresh_from_db()
+        self.assertIsNone(line.variation)
+        self.assertEqual((line.variation_name, line.engagement), ("Matinee", self.eng))
 
     def test_gateway_failure_records_error_and_keeps_engagement(self) -> None:
         item = push(self.eng, self.gw)

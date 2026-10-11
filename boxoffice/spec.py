@@ -20,8 +20,13 @@ class ItemSpec:
     variations: tuple[VariationSpec, ...]
 
 
+# The variations on every ticket item, in register order. Matinee and member
+# prices are rung as Square discounts, so they stay out of this list.
+SQUARE_TIERS = ("adult", "senior", "child")
+
+
 def priced_tiers() -> list[tuple[str, int]]:
-    return [(k, v) for k, v in TICKET_PRICES.items() if isinstance(v, int)]
+    return [(tier, TICKET_PRICES[tier]) for tier in SQUARE_TIERS]
 
 
 def desired_item(engagement: Engagement) -> ItemSpec:

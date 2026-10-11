@@ -72,6 +72,10 @@ SITE_CONFIG = {
 # A matinee is a show starting at `matinee_until` or earlier. The member price
 # applies to every show, except runs marked `is_free_for_members`.
 #
+# Square ticket items carry only the adult, senior and child prices
+# (boxoffice/spec.py SQUARE_TIERS); matinee and member are register discounts
+# set up by hand in Square, so a change to either has to be made there too.
+#
 # NOTE: CRAFT_NIGHT's and HECKLE_NIGHT's prices and /membership/'s "$4 off
 # evening tickets" restate these numbers; a reprice has to move them together.
 TICKET_PRICES = {

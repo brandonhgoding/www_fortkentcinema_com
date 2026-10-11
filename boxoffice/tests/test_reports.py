@@ -64,7 +64,7 @@ class AggregationTests(TestCase):
         with override_settings(SQUARE_TICKET_CATEGORY_ID=""):
             self.assertEqual(ticket_report(DAY), [])
 
-    def test_tier_totals_cover_all_five(self) -> None:
+    def test_tier_totals_cover_the_three_variations(self) -> None:
         eng = make_eng()
         item = SquareItem.objects.create(engagement=eng, name="Dune")
         adult = SquareVariation.objects.create(
@@ -78,7 +78,7 @@ class AggregationTests(TestCase):
         make_line("Popcorn", 500, quantity=4)
         self.assertEqual(
             tier_totals(DAY),
-            {"adult": 2, "senior": 0, "child": 0, "matinee": 1, "member": 0},
+            {"adult": 2, "senior": 0, "child": 0},
         )
 
 
