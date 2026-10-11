@@ -174,11 +174,17 @@ RENTALS_FAQ = [
 MEMBERSHIP_FAQ = [
     {
         "question": "How long does a membership last?",
-        "answer": "Each tier specifies its duration (most are annual). Your card shows the exact end date.",
+        "answer": (
+            "The length shown on your tier, counted from the day you join. "
+            "Your card shows the exact end date."
+        ),
     },
     {
         "question": "What's included with a family tier?",
-        "answer": "Family tiers cover the cardholder plus immediate family members. Just give your name at the box office.",
+        "answer": (
+            "Everyone in your household, with no headcount limit. Just give "
+            "your name at the box office."
+        ),
     },
     {
         # The badge this answer points at is Engagement.is_free_for_members,

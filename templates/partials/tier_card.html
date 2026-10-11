@@ -11,6 +11,9 @@
     <span class="tier-card__rule" aria-hidden="true"></span>
     <p class="tier-card__price">${{ tier.price }}</p>
     <p class="tier-card__price-period">{{ tier.duration_months }}-month membership</p>
+    {% if tier.is_family_tier %}
+      <p class="tier-card__covers">Covers everyone in your household</p>
+    {% endif %}
   </header>
   {% if tier.benefits.all %}
     <ul class="tier-card__perks">

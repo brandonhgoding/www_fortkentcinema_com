@@ -58,3 +58,13 @@
   gap: var(--spacing-lg);
   align-items: stretch;
 }
+
+.membership-tiers__note {
+  max-width: 42rem;
+  margin: var(--spacing-xl) auto 0;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.7;
+  text-align: center;
+  color: var(--color-cream-muted);
+}
