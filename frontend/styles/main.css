@@ -32,6 +32,7 @@
 
 /* 4. Components. */
 @import '../../static/css/Hero.css';
+@import '../../static/css/HomeSections.css';
 @import '../../static/css/NowShowing.css';
 @import '../../static/css/MovieCard.css';
 @import '../../static/css/MovieScheduleCard.css';

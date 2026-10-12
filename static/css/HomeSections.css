@@ -1,0 +1,185 @@
+/* Homepage sections below the hero: the shared vocabulary.
+ *
+ * One flat ground per section, three heading sizes (--type-title for the
+ * section h2, --type-heading for the Membership headline, --type-lead for
+ * card h3), and one card shape. Spacing halves with each level of nesting:
+ * 96px between sections, 32px header to content, 24px between cards, 16px
+ * inside a card. Only sections carrying .home-section opt in, so other pages
+ * that reuse .section-header keep their own 4rem gap.
+ */
+
+/* Section: padding and a ground hook. 96px desktop, 64px phone. */
+.home-section {
+  padding: 6rem 0;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+@media (max-width: 600px) {
+  .home-section {
+    padding: var(--spacing-2xl) 0;
+  }
+}
+
+/* Grounds. Alternate these so neighbours never share one. */
+.home-section--raised { background: var(--color-surface-raised); }
+.home-section--alt { background: var(--color-surface-alt); }
+.home-section--surface { background: var(--color-surface); }
+.home-section--sunken { background: var(--color-surface-sunken); }
+.home-section--accent {
+  background: var(--color-accent);
+  color: var(--brand-warm-white);
+}
+
+/* 32px from header to content, homepage only. */
+.home-section .section-header {
+  margin-bottom: var(--spacing-lg);
+}
+
+/* Eyebrow: --type-label, Cabin Condensed, uppercase, muted. */
+.home-eyebrow,
+.home-card__eyebrow {
+  margin: 0;
+  font-family: var(--font-condensed);
+  font-size: var(--type-label);
+  text-transform: uppercase;
+  letter-spacing: var(--track-label);
+  color: var(--color-text-muted);
+}
+
+/* Card row: 24px gap, stacks at 900px and below. */
+.home-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  grid-auto-flow: column;
+  gap: var(--spacing-md);
+  align-items: stretch;
+}
+
+@media (max-width: 900px) {
+  .home-cards {
+    grid-auto-flow: row;
+    grid-template-columns: 1fr;
+  }
+}
+
+/* One card shape: eyebrow, h3, a sentence, then the link at the bottom. */
+.home-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-accent-dim);
+  border-radius: var(--radius-lg);
+}
+
+.home-card__title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: var(--type-lead);
+  line-height: 1.25;
+  color: var(--color-text);
+}
+
+.home-card__body {
+  margin: 0;
+  color: var(--color-text);
+}
+
+/* The only action style in Get involved, Our story and Support. In a card
+ * it is pushed to the bottom so a row of cards ends on one line. */
+.home-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  align-self: flex-start;
+  font-weight: 600;
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.home-link:hover {
+  text-decoration-thickness: 2px;
+}
+
+.home-card > .home-link {
+  margin-top: auto;
+}
+
+/* The one gold button on the page, for the Membership band. Dark text on
+ * gold (about 9:1); gold on the blue ground is 5.5:1. */
+.btn-member {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0.75rem var(--spacing-lg);
+  background: var(--brand-gold);
+  color: var(--brand-rich-black);
+  font-family: var(--font-condensed);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  white-space: nowrap;
+}
+
+.btn-member:hover {
+  background: var(--brand-parchment);
+}
+
+.btn-member:focus-visible {
+  outline: 3px solid var(--brand-warm-white);
+  outline-offset: 3px;
+}
+
+/* Membership band: headline and offer on the left, the button on the right,
+ * lined up on the baseline of the price. */
+.home-membership__inner {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+}
+
+.home-membership__text {
+  max-width: 40rem;
+}
+
+.home-membership .home-eyebrow {
+  color: var(--brand-parchment);
+}
+
+.home-membership__title {
+  margin: var(--spacing-xs) 0 var(--spacing-sm);
+  font-family: var(--font-heading);
+  font-size: var(--type-heading);
+  line-height: 1.1;
+  color: var(--brand-warm-white);
+}
+
+.home-membership__line,
+.home-membership__price {
+  margin: 0;
+  color: var(--brand-parchment);
+}
+
+.home-membership__price {
+  margin-top: var(--spacing-xs);
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .home-membership__inner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-member {
+    white-space: normal;
+  }
+}

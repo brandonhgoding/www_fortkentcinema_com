@@ -6,6 +6,7 @@ from django.conf import settings
 from django.core import signing
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxLengthValidator, validate_email
+from django.db.models import Min
 from django.http import Http404, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -108,6 +109,13 @@ class HomeView(TemplateView):
         # typed number, so the home page cannot drift away from the prices on
         # /sponsor/ when a tier is repriced.
         ctx["sponsorship_from_price"] = min(t["price"] for t in SPONSORSHIP_TIERS)
+
+        # Membership band: "From $N a year" is the cheapest tier the public
+        # membership page lists, so a retired (unlisted) cheaper tier cannot
+        # set the price. None with no listed tiers; the band drops the line.
+        ctx["membership_from_price"] = MembershipTier.objects.filter(
+            show_on_membership_page=True
+        ).aggregate(Min("price"))["price__min"]
 
         # Hero member count: people, not terms. Member.objects.active() is
         # DISTINCT on the member, so a renewal overlapping the term it
