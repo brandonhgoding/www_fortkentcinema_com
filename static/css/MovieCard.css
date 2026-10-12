@@ -179,7 +179,7 @@
 
 .movie-title {
   font-family: var(--font-heading);
-  font-size: 1.25rem;
+  font-size: var(--type-lead);
   font-weight: 700;
   color: var(--color-cream);
   margin-bottom: var(--spacing-xs);
@@ -313,10 +313,6 @@
 
   .movie-info {
     padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-lg) var(--spacing-md);
-  }
-
-  .movie-title {
-    font-size: 1.5rem;
   }
 
   .movie-synopsis {

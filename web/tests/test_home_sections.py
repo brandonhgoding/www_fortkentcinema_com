@@ -21,8 +21,10 @@ ornament does not come back.
 import datetime
 import json
 import re
+from pathlib import Path
 from unittest import mock
 
+from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
 
@@ -132,6 +134,38 @@ class SectionCompositionTests(TestCase):
         main = main_content(self.home())
         last = main.rindex("<section")
         self.assertIn('id="support"', main[last : last + 200])
+
+    @mock.patch("web.views.get_coming_soon", return_value=[])
+    @mock.patch("web.views.get_now_showing", return_value=[])
+    def test_every_section_has_one_flat_ground(self, _ns, _cs):
+        """The class-marker inventory below the hero: each <section> opts into
+        the shared .home-section vocabulary with exactly one ground modifier,
+        and no two neighbours share a ground."""
+        main = main_content(self.home())
+        expected = {
+            "now-showing": "raised",
+            "membership": "accent",
+            "coming-soon": "alt",
+            "get-involved": "surface",
+            "our-story": "alt",
+            "support": "sunken",
+        }
+        grounds = []
+        for section_id, ground in expected.items():
+            at = main.index('id="%s"' % section_id)
+            start = main.rindex("<section", 0, at)
+            tag = main[start : main.index(">", at)]
+            classes = re.search(r'class="([^"]*)"', tag).group(1).split()
+            self.assertIn("home-section", classes, section_id)
+            found = [
+                c[len("home-section--") :]
+                for c in classes
+                if c.startswith("home-section--") and c != "home-section--slim"
+            ]
+            self.assertEqual(found, [ground], section_id)
+            grounds.append(ground)
+        for above, below in zip(grounds, grounds[1:]):
+            self.assertNotEqual(above, below)
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_now_showing", return_value=[])
@@ -529,3 +563,71 @@ class GetInvolvedTests(TestCase):
         self.assertIn('target="_blank"', card)
         self.assertIn('data-track="giftcard_click"', card)
         self.assertRegex(card, r'aria-label="[^"]*opens in new window')
+
+
+class HomeTypeAndGroundTests(TestCase):
+    """Three heading sizes below the hero, from tokens only, and no ornament
+    left on Coming Soon. Read from the source sheets, since the bundle is
+    minified."""
+
+    CSS = Path(settings.BASE_DIR) / "static" / "css"
+
+    # Every heading rendered below the hero on the home page, by the sheet
+    # that styles it.
+    HEADINGS = {
+        "global.css": [".section-title"],
+        "HomeSections.css": [".home-membership__title", ".home-card__title"],
+        "MovieCard.css": [".movie-title"],
+        "MovieScheduleCard.css": [".schedule-card__title"],
+        "ComingSoon.css": [".coming-movie-title"],
+        "SponsoredCTA.css": [".sponsored-cta__title"],
+    }
+
+    def font_sizes(self, sheet, selector):
+        css = re.sub(r"/\*.*?\*/", "", (self.CSS / sheet).read_text(), flags=re.S)
+        sizes = []
+        for selectors, body in re.findall(r"([^{}]+)\{([^{}]*)\}", css):
+            if selector in [s.strip() for s in selectors.split(",")]:
+                sizes += re.findall(r"font-size:\s*([^;]+);", body)
+        return sizes
+
+    def test_headings_take_only_the_three_tokens(self):
+        allowed = {"var(--type-title)", "var(--type-heading)", "var(--type-lead)"}
+        for sheet, selectors in self.HEADINGS.items():
+            for selector in selectors:
+                sizes = self.font_sizes(sheet, selector)
+                self.assertTrue(sizes, f"{selector} sets no font-size in {sheet}")
+                for size in sizes:
+                    self.assertIn(size.strip(), allowed, f"{selector} in {sheet}")
+
+    def test_cards_sit_24px_apart(self):
+        """--spacing-md between cards in every card row below the hero, at
+        every breakpoint that sets a gap."""
+        rows = {
+            "HomeSections.css": ".home-cards",
+            "NowShowing.css": ".movies-grid",
+            "ComingSoon.css": ".coming-movies-grid",
+        }
+        rows_schedule = ("NowShowing.css", ".schedule-list")
+        for sheet, selector in list(rows.items()) + [rows_schedule]:
+            css = re.sub(r"/\*.*?\*/", "", (self.CSS / sheet).read_text(), flags=re.S)
+            gaps = [
+                g.strip()
+                for selectors, body in re.findall(r"([^{}]+)\{([^{}]*)\}", css)
+                if selector in [x.strip() for x in selectors.split(",")]
+                for g in re.findall(r"(?<![-\w])gap:\s*([^;]+);", body)
+            ]
+            self.assertTrue(gaps, f"{selector} sets no gap in {sheet}")
+            for gap in gaps:
+                self.assertEqual(gap, "var(--spacing-md)", f"{selector} in {sheet}")
+
+    def test_coming_soon_has_a_flat_ground_and_no_gold_rules(self):
+        css = re.sub(
+            r"/\*.*?\*/", "", (self.CSS / "ComingSoon.css").read_text(), flags=re.S
+        )
+        self.assertNotIn("ornament-gold", css)
+        # The ground comes from .home-section--alt; the section's own rule may
+        # not paint a background or rules over it.
+        for selectors, body in re.findall(r"([^{}]+)\{([^{}]*)\}", css):
+            if ".coming-soon" in [s.strip() for s in selectors.split(",")]:
+                self.assertNotRegex(body, r"\b(background|border)")

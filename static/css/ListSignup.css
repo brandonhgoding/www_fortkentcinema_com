@@ -49,6 +49,7 @@
 }
 
 .list-signup__button {
+  min-height: 44px;
   padding: 0.6rem 1.25rem;
   font: inherit;
   font-weight: 600;

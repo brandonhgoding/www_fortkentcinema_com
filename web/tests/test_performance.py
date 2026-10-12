@@ -103,21 +103,28 @@ class BundleTests(TestCase):
     def test_bundle_contains_rules_from_every_source_sheet(self):
         """A smoke check that the cascade order held and nothing was dropped."""
         for probe in [
-            "--color-gold",      # variables.css
-            "@font-face",        # fonts.css
-            ".nav-logo",         # Nav.css
-            ".footer",           # Footer.css
-            ".hero",             # Hero.css
-            ".movie-card",       # MovieCard.css
-            ".coming-",          # ComingSoon.css
-            ".home-card",         # HomeSections.css
-            ".tier-card",        # TierCard.css
-            ".sponsored-cta",    # SponsoredCTA.css
-            ".movie-page",       # MoviePage.css
+            "--color-gold",  # variables.css
+            "@font-face",  # fonts.css
+            ".nav-logo",  # Nav.css
+            ".footer",  # Footer.css
+            ".hero",  # Hero.css
+            ".movie-card",  # MovieCard.css
+            ".coming-",  # ComingSoon.css
+            ".home-card",  # HomeSections.css
+            ".tier-card",  # TierCard.css
+            ".sponsored-cta",  # SponsoredCTA.css
+            ".movie-page",  # MoviePage.css
             ".blog-pagination",  # BlogListPage.css
-            ".thanks-title",     # global.css (appended)
+            ".thanks-title",  # global.css (appended)
         ]:
             self.assertIn(probe, self.css, f"{probe} missing from bundle")
+
+    def test_bundle_carries_the_home_vocabulary_and_not_the_old_pair(self):
+        """HomeSections.css is in the bundle; the retired CTA grid is not."""
+        for probe in (".home-card", ".home-section--accent", ".btn-member"):
+            self.assertIn(probe, self.css, f"{probe} missing from bundle")
+        self.assertNotIn(".cta-pair", self.css)
+        self.assertNotIn("--color-ornament-gold", self.css)
 
     def test_fonts_are_self_hosted_and_relative(self):
         """The url() refs must stay relative so collectstatic can rewrite them to
@@ -135,7 +142,9 @@ class BundleTests(TestCase):
     def test_fonts_use_display_swap(self):
         """Without swap the text is invisible until the font arrives."""
         faces = self.css.count("@font-face")
-        swaps = self.css.count("font-display:swap") + self.css.count("font-display: swap")
+        swaps = self.css.count("font-display:swap") + self.css.count(
+            "font-display: swap"
+        )
         self.assertEqual(swaps, faces, "every @font-face needs font-display: swap")
 
     def test_no_duplicate_font_files(self):

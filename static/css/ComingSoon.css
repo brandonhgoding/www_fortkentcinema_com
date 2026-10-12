@@ -1,86 +1,13 @@
 /* ============================================================
-   COMING SOON — the "later" half of the home page
+   COMING SOON: the "later" half of the home page
 
-   THE PROBLEM. Now Showing and Coming Soon are the two largest blocks on the
-   page, they are adjacent, and they were set identically: same face, same
-   48px, same tracking, same colour, same divider. A visitor got no signal at
-   all about which one is "what you can see this week" and which is "what is
-   coming later" — the most important distinction a cinema home page makes.
-
-   WHAT WAS SUPPOSED TO DO IT. A `.section-title--red` modifier in global.css,
-   applied in templates/partials/coming_soon.html. It was a complete no-op
-   after the site's colour flip to a light ground: it set
-   `color: var(--color-accent)`, which is the exact value .section-title
-   already resolved to, and a text-shadow in --color-accent-glow-strong, which
-   is `transparent` everywhere outside .hero. Measured on the rendered page,
-   both titles came out rgb(32, 57, 130) — identical. It has been deleted from
-   global.css (see the tombstone comment there); the class remains on the <h2>
-   in the partial, where it is now inert, and the template owner can drop it.
-
-   It could not have been fixed where it lived. global.css is in the BASE layer
-   of the bundle and this file is in COMPONENTS, which loads after it — so this
-   file wins on every property they both touch, regardless of what a modifier
-   over there tried to say. The distinction belongs here.
-
-   HOW IT IS DISTINGUISHED NOW. Three signals at once, so none of them carries
-   the whole meaning alone — and so it still works for a reader who cannot
-   separate two blues:
-
-     1. GROUND. The band already sat on a tint, but --color-surface-alt
-        (#f0f1e6) against the page's #f7f7f4 is a difference you have to be
-        told about. It drops to --color-surface-sunken, which is a band you can
-        see, and the white movie cards inside it gain rather than lose.
-
-     2. EDGE. A 2px Brand Gold rule top and bottom — the marquee edge. Gold is
-        1.93:1 on the light ground and can therefore NEVER be text here, but a
-        solid rule is exactly the role the brand reserves for it, and it is the
-        marquee-bulb colour. Deliberately 2px and gold rather than the 1px
-        --color-accent-warm hairline that the gift-card and open-mic CTAs use,
-        so this band does not read as a third instance of that device.
-
-     3. COLOUR. The title takes Marquee Blue (--color-accent-warm, #1d609e,
-        5.37:1 on the sunken ground, 6.52:1 on the white cards, so AA at any size
-        and this is 48px display type) against Now Showing's
-        deeper Brand Blue. Two blues from one palette: a change of key, not of
-        voice. The dates on the cards follow it, so the "when" and the heading
-        agree with each other.
-
-   No glow token is involved anywhere in this. Every one of them is transparent
-   outside .hero, which is precisely what left the old modifier invisible.
-
-   Both sections keep the SAME step of the type scale. They are peers; shrinking
-   one would say "less important" when the thing to say is "later".
+   The section's ground, padding and header gap come from HomeSections.css
+   (.home-section .home-section--alt on the <section>). It sits two grounds
+   away from Now Showing, with the blue Membership band between them, so the
+   gold top and bottom rules, the sunken ground and the Marquee Blue title
+   that used to tell the two apart are gone. Its title is set exactly like
+   every other section h2 below the hero.
    ============================================================ */
-
-.coming-soon {
-  /* Layer 2 of the token system has no name for gold, and that omission is
-   * deliberate — variables.css keeps it out of --color-accent because that
-   * token is a text colour in ~124 declarations and gold fails contrast as
-   * text on white. This is a local semantic role, scoped to this component:
-   * gold as ORNAMENT ONLY, never type. Naming it here keeps the reference to
-   * the layer-1 primitive to a single line rather than scattering the raw
-   * --brand-gold through the file. */
-  --color-ornament-gold: var(--brand-gold);
-
-  padding: var(--spacing-2xl) var(--spacing-lg);
-  background: var(--color-surface-sunken);
-  border-top: 2px solid var(--color-ornament-gold);
-  border-bottom: 2px solid var(--color-ornament-gold);
-}
-
-/* Signal 3. Scoped to the section rather than to a modifier class, so it holds
- * whatever the markup ends up carrying. */
-.coming-soon .section-title {
-  color: var(--color-accent-warm);
-}
-
-/* The flanking hairlines go gold here — the same ornament shape as Now
- * Showing, in the section's own colour. They are hidden below 600px by
- * global.css, so this only ever renders where there is room for it. */
-.coming-soon .section-title::before,
-.coming-soon .section-title::after {
-  background: linear-gradient(90deg, transparent, var(--color-ornament-gold), transparent);
-}
 
 /* View Toggle */
 .coming-view-toggle {
@@ -94,8 +21,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   background: transparent;
   border: 2px solid var(--color-cream-muted);
   border-radius: 50%;
@@ -131,7 +58,7 @@
 .coming-movies-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--spacing-lg);
+  gap: var(--spacing-md);
 }
 
 .coming-movie-card {
@@ -256,7 +183,7 @@
   justify-content: center;
 }
 
-/* Marquee Blue, following the section title: on a card whose whole purpose is
+/* Marquee Blue: on a card whose whole purpose is
  * "not yet", the date is the payload and it should be in the colour that says
  * so. 6.52:1 on the white card, which clears AA for body text at this size. */
 .coming-movie-date {
@@ -269,7 +196,8 @@
 
 .coming-movie-title {
   font-family: var(--font-heading);
-  font-size: 1.1rem;
+  font-size: var(--type-lead);
+  line-height: 1.25;
   font-weight: 700;
   color: var(--color-cream);
   margin-bottom: var(--spacing-xs);
@@ -507,14 +435,5 @@
   .coming-calendar-nav__label {
     font-size: 1.2rem;
     min-width: 180px;
-  }
-}
-
-/* The horizontal half of this section's padding is dropped on phones — it was
- * stacking with .section-container's for a 4rem gutter each side. The single
- * remaining gutter is declared in global.css. */
-@media (max-width: 600px) {
-  .coming-soon {
-    padding: var(--spacing-xl) 0;
   }
 }

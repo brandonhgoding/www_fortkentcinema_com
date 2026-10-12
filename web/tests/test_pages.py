@@ -217,12 +217,18 @@ class HomeIntegrationTests(TestCase):
     @mock.patch("web.views.get_now_showing", return_value=[])
     def test_full_home_composition_order(self, _ns, _cs):
         html = self.client.get(reverse("home")).content.decode()
-        # Sections appear in the SPA's order
-        order = [html.index(s) for s in (
+        # The hero, then the six sections below it, each rendered once.
+        markers = (
             'class="hero"', 'id="now-showing"', 'id="membership"',
             'id="coming-soon"', 'id="get-involved"', 'id="our-story"',
             'id="support"',
-        )]
+        )
+        for marker in markers:
+            self.assertEqual(html.count(marker), 1, marker)
+            if marker.startswith("id="):
+                start = html.rindex("<", 0, html.index(marker))
+                self.assertTrue(html.startswith("<section", start), marker)
+        order = [html.index(s) for s in markers]
         self.assertEqual(order, sorted(order))
         self.assertIn('class="skip-link"', html)  # base chrome intact
 

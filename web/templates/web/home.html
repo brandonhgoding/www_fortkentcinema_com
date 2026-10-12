@@ -9,31 +9,28 @@
 
 {% block content %}
   {% comment %}
-    A plain list of sections, in the SPA's order, asserted by
-    web/tests/test_pages.py::test_full_home_composition_order.
+    The hero, then six sections in order of weight, asserted by
+    web/tests/test_pages.py::test_full_home_composition_order and
+    web/tests/test_home_sections.py:
 
-    There used to be ornament dividers between these, and a {% templatetag openblock %} section {% templatetag closeblock %}
-    tag (web/templatetags/page_sections.py) whose whole job was deciding
-    where a seam belonged — a section only got one if a live section came
-    before it, so a self-expiring CTA could not leave a stacked or orphan
-    divider behind. The dividers are gone, which left that tag doing nothing
-    a bare {% templatetag openblock %} include {% templatetag closeblock %} does not, so it went with them.
+      now-showing   tier 1   what is playing (the sponsored card is inside it)
+      membership    featured the one big ask, on the blue band
+      coming-soon   tier 2   what is playing later
+      get-involved  tier 3   vote, open mic, gift card: one row of cards
+      our-story     tier 3   history and the latest posts
+      support       tier 3   sponsor and donate, a slim strip, last
 
-    Sections are separated by their own alternating grounds now. The
-    self-expiring cards (sponsored screening, vote) still render nothing when
-    they are not live; with no seams to place, that needs no help.
+    Each section is one flat ground (static/css/HomeSections.css), and no two
+    neighbours share one, which is what separates them; there are no dividers.
+    The self-expiring cards (sponsored screening, vote) render nothing when
+    they are not live, so nothing here needs to know whether they did.
   {% endcomment %}
 
-  {# Task 5: hero + now showing (which carries the sponsored-screening card) #}
   {% include "partials/hero.html" %}
-
   {% include "partials/now_showing.html" %}
   {% include "partials/home_membership.html" %}
-
   {% include "partials/coming_soon.html" %}
-  {# Vote, open mic and gift card, as one row of cards. #}
   {% include "partials/home_get_involved.html" %}
-  {# The history card and the latest posts, then the asks for money, last. #}
   {% include "partials/home_our_story.html" %}
   {% include "partials/home_support.html" %}
 {% endblock %}

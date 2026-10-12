@@ -35,7 +35,8 @@
   border: 2px solid var(--brand-gold);
   border-radius: var(--radius-lg);
   padding: var(--spacing-sm);
-  margin-bottom: var(--spacing-lg);
+  /* 24px, the gap between cards: the film cards below it are its peers. */
+  margin-bottom: var(--spacing-md);
 }
 
 .sponsored-cta:hover .sponsored-cta__title {
@@ -57,9 +58,12 @@
   color: var(--color-text-muted);
 }
 
+/* --type-lead, like every card title below the hero. --type-heading is the
+ * Membership headline's alone; a bigger title here outshouted the films. */
 .sponsored-cta__title {
   font-family: var(--font-heading);
-  font-size: var(--type-heading);
+  font-size: var(--type-lead);
+  font-weight: 700;
   line-height: 1.1;
   color: var(--color-text);
 }
@@ -81,9 +85,12 @@
   min-width: 8rem;
 }
 
+/* Body face and size, weighted: a label for the times under it, not a
+ * heading. In EB Garamond it read as a second title next to the real one. */
 .sponsored-cta__date {
-  font-family: var(--font-heading);
-  font-size: 1.1rem;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
   color: var(--color-text);
 }
 
@@ -134,10 +141,6 @@
 
   .sponsored-cta__day {
     min-width: 7rem;
-  }
-
-  .sponsored-cta__date {
-    font-size: 1rem;
   }
 
   .sponsored-cta__times {
