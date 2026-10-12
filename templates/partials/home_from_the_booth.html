@@ -1,0 +1,47 @@
+{% comment %}
+  From the booth: the three newest posts, each led by its header image, then
+  a way to the rest. The blog is reviews and notes on running the theater,
+  so the card says which (the category) and the subtitle says what about
+  ("A Review of 'Toy Story 5'"); the titles alone often don't.
+
+  The title link stretches over the whole card, so the image is a target too
+  without a second link to the same post. The image is decorative (alt="")
+  because the title beside it says the same thing. A post with no image gets
+  a plain block of the same shape so the row stays level.
+
+  With no published posts the cards simply are not there; "All posts" still
+  renders. Keeps the `blog` class as a marker for tests and stylesheets.
+  The history page is reached from the nav's More menu and the footer.
+{% endcomment %}
+<section id="from-the-booth" class="home-section home-section--alt blog"
+         aria-labelledby="from-the-booth-title">
+  <div class="section-container">
+    <div class="section-header">
+      <h2 class="section-title" id="from-the-booth-title">From the booth</h2>
+      <p class="home-booth__lede">Film reviews and notes on running a small-town cinema.</p>
+    </div>
+    {% if recent_posts %}
+    <div class="home-cards">
+      {% for post in recent_posts %}
+      <article class="home-card blog-post-card">
+        <div class="blog-post-card__media">
+          {% if post.header_image %}
+          <img src="{{ post.header_image.url }}" alt="" loading="lazy" decoding="async"
+               class="blog-post-card__img">
+          {% endif %}
+        </div>
+        <p class="home-card__eyebrow">{{ post.category.name }} &middot; {{ post.post_date|date:"F j, Y" }}</p>
+        <h3 class="home-card__title">
+          <a href="{{ post.get_absolute_url }}" class="blog-post-card__link">{{ post.title }}</a>
+        </h3>
+        <p class="home-card__body">{{ post.subtitle }}</p>
+        <p class="blog-post-card__byline">By {{ post.author.first_name }} {{ post.author.last_name }}</p>
+      </article>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <p class="home-story__all">
+      <a href="{% url 'blog_list' %}" class="btn btn-secondary">All posts</a>
+    </p>
+  </div>
+</section>

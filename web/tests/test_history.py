@@ -338,13 +338,11 @@ class HistoryInternalLinkingTests(TestCase):
         self.assertIsNotNone(footer, "no footer on the page")
         self.assertIn("/history/", hrefs(footer.group(0)))
 
-    def test_homepage_body_promotes_the_history_page(self):
-        response = self.client.get("/")
-        self.assertTemplateUsed(response, "partials/cta_history.html")
-
     def test_homepage_links_to_history_from_more_than_just_the_nav(self):
+        # The home page's history card was dropped on 2026-10-12 (the owner's
+        # call: More and the footer are enough). Nav plus footer is the floor.
         count = hrefs(self.client.get("/").content.decode()).count("/history/")
-        self.assertGreaterEqual(count, 3, "nav dropdown is still the only link")
+        self.assertGreaterEqual(count, 2, "nav dropdown is still the only link")
 
 
 class HistorySocialCardTests(TestCase):

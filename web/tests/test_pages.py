@@ -220,7 +220,7 @@ class HomeIntegrationTests(TestCase):
         # The hero, then the six sections below it, each rendered once.
         markers = (
             'class="hero"', 'id="now-showing"', 'id="membership"',
-            'id="coming-soon"', 'id="get-involved"', 'id="our-story"',
+            'id="coming-soon"', 'id="get-involved"', 'id="from-the-booth"',
             'id="support"',
         )
         for marker in markers:
@@ -258,19 +258,19 @@ class BlogTeaserTests(TestCase):
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_now_showing", return_value=[])
     def test_recent_post_renders_as_a_home_card(self, _ns, _cs):
-        # The Our story post cards are home cards, not the /blog/ list card:
-        # no image, a date eyebrow, the excerpt, and a "Read" link.
+        # The From the booth post cards are home cards, not the /blog/ list
+        # card: category and date eyebrow, the title as the link, the
+        # subtitle, and a byline.
         html = self.client.get(reverse("home")).content.decode()
         self.assertIn("Fort Kent Cinema Turns 90", html)
         self.assertIn('class="home-card blog-post-card"', html)
-        self.assertIn("blog-post-card__excerpt", html)
-        self.assertIn("Nine decades of movies in the St. John Valley.", html)
+        self.assertIn("A look back at the history of the theater", html)
+        self.assertIn("By Jane Doe", html)
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_now_showing", return_value=[])
     def test_teaser_shows_three_newest_posts(self, _ns, _cs):
-        # Our story carries the history card and the three newest posts, one
-        # row of four cards. Newest first, the rest dropped.
+        # From the booth carries the three newest posts, one row of three. Newest first, the rest dropped.
         for i in range(8):
             BlogPost.objects.create(
                 title=f"Filler {i}",

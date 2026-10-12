@@ -48,7 +48,7 @@ class HomepageVoteCTATests(TestCase):
         Poll.objects.create(title="Round One", status=PollStatus.OPEN)
         html = self.client.get(reverse("home")).content.decode()
         self.assertLess(html.index('id="coming-soon"'), html.index('id="get-involved"'))
-        self.assertLess(html.index('id="get-involved"'), html.index('id="our-story"'))
+        self.assertLess(html.index('id="get-involved"'), html.index('id="from-the-booth"'))
         self.assertIn("vote-cta", get_involved(html))
 
     def test_one_cta_however_many_rounds_are_open(self) -> None:

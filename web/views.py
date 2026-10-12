@@ -96,8 +96,8 @@ class HomeView(TemplateView):
         # item — a Donate link pointing nowhere never went live.
         ctx["donation"] = DONATION
 
-        # Our story: the latest 3 posts, deterministically ordered. They sit
-        # beside the history card, so three posts make a row of four cards.
+        # From the booth: the latest 3 posts, deterministically ordered, one
+        # row of three image cards.
         ctx["recent_posts"] = (
             BlogPost.objects.published()
             .select_related("author", "category")

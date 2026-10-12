@@ -40,7 +40,7 @@ SECTION_MARKERS = (
     "membership",
     "coming-soon",
     "get-involved",
-    "our-story",
+    "from-the-booth",
     "support",
 )
 
@@ -111,7 +111,7 @@ class SectionCompositionTests(TestCase):
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_now_showing", return_value=[])
-    def test_section_order_ends_with_our_story_then_support(self, _ns, _cs):
+    def test_section_order_ends_with_from_the_booth_then_support(self, _ns, _cs):
         html = self.home()
         seq = section_sequence(html)
         self.assertEqual(
@@ -122,7 +122,7 @@ class SectionCompositionTests(TestCase):
                 "membership",
                 "coming-soon",
                 "get-involved",
-                "our-story",
+                "from-the-booth",
                 "support",
             ],
         )
@@ -147,7 +147,7 @@ class SectionCompositionTests(TestCase):
             "membership": "accent",
             "coming-soon": "alt",
             "get-involved": "surface",
-            "our-story": "alt",
+            "from-the-booth": "alt",
             "support": "sunken",
         }
         grounds = []
@@ -383,15 +383,16 @@ class SponsorCtaCopyTests(TestCase):
         self.assertNotIn("btn-ticket", body)
 
 
-class OurStoryTests(TestCase):
-    """History card, up to three post cards, and a way to the rest."""
+class FromTheBoothTests(TestCase):
+    """Up to three image-led post cards and a way to the rest. The history
+    card that used to lead this row is gone; History lives under More."""
 
     @classmethod
     def setUpTestData(cls):
-        cls.author = BlogAuthor.objects.create(first_name="Jane", last_name="Doe")
-        cls.category = BlogCategory.objects.create(name="News")
+        cls.author = BlogAuthor.objects.create(first_name="Rick", last_name="Douglas")
+        cls.category = BlogCategory.objects.create(name="Rick's Reviews")
 
-    def make_posts(self, n):
+    def make_posts(self, n, **over):
         return [
             BlogPost.objects.create(
                 title=f"Post {i}",
@@ -400,26 +401,31 @@ class OurStoryTests(TestCase):
                 category=self.category,
                 content=f"Body {i}.",
                 post_date=f"2026-02-{i + 1:02d}",
+                **over,
             )
             for i in range(n)
         ]
 
     def section(self):
         html = self.client.get(reverse("home")).content.decode()
-        self.assertEqual(html.count('id="our-story"'), 1)
-        start = html.index('id="our-story"')
+        self.assertEqual(html.count('id="from-the-booth"'), 1)
+        self.assertNotIn('id="our-story"', html)
+        start = html.index('id="from-the-booth"')
         return html[html.rindex("<section", 0, start) : html.index("</section>", start)]
 
-    def test_history_card_comes_first(self):
+    def test_heading_and_lede(self):
+        section = self.section()
+        self.assertRegex(
+            section, r'<h2 class="section-title"[^>]*>From the booth</h2>'
+        )
+        self.assertIn("Film reviews and notes on running a small-town cinema.", section)
+
+    def test_no_history_card(self):
         self.make_posts(1)
         section = self.section()
-        self.assertIn("history-cta", section)
-        self.assertLess(section.index("history-cta"), section.index("Post 0"))
-        for text in ("Since 1917", "A century on this lot", "Read the history &rarr;"):
-            self.assertIn(text, section)
-        self.assertIn('href="/history/"', section)
-        self.assertIn('data-track="history_click"', section)
-        self.assertNotIn("btn-ticket", section)
+        self.assertNotIn("history-cta", section)
+        self.assertNotIn("/history/", section)
+        self.assertNotIn("A century on this lot", section)
 
     def test_keeps_the_blog_marker_and_alt_ground(self):
         section = self.section()
@@ -429,10 +435,7 @@ class OurStoryTests(TestCase):
     def test_five_posts_show_the_newest_three(self):
         self.make_posts(5)
         section = self.section()
-        self.assertEqual(section.count('class="home-card blog-post-card'), 3)
-        self.assertEqual(section.count("Read &rarr;"), 3)
-        for shown in ("Post 4", "Post 3", "Post 2"):
-            self.assertIn(f'aria-label="Read: {shown}"', section)
+        self.assertEqual(section.count('class="home-card blog-post-card"'), 3)
         for shown in ("Post 4", "Post 3", "Post 2"):
             self.assertIn(shown, section)
         for hidden in ("Post 1", "Post 0"):
@@ -440,14 +443,30 @@ class OurStoryTests(TestCase):
         self.assertLess(section.index("Post 4"), section.index("Post 3"))
 
     def test_post_card_shape(self):
-        post = self.make_posts(1)[0]
+        post = self.make_posts(1, header_image="blog/headers/post-0.webp")[0]
         section = self.section()
-        self.assertIn("February 1, 2026", section)
-        self.assertIn(f'href="{post.get_absolute_url()}"', section)
-        self.assertIn('class="home-card__title">Post 0</h3>', section)
-        self.assertIn('class="home-card__body blog-post-card__excerpt"', section)
-        self.assertNotIn("<img", section)
+        self.assertIn("Rick&#x27;s Reviews &middot; February 1, 2026", section)
+        self.assertRegex(
+            section,
+            r'<a href="%s" class="blog-post-card__link">Post 0</a>'
+            % re.escape(post.get_absolute_url()),
+        )
+        # One link per card: the title, stretched over the card.
+        self.assertEqual(section.count(f'href="{post.get_absolute_url()}"'), 1)
+        self.assertIn('<p class="home-card__body">Subtitle 0</p>', section)
+        self.assertIn("By Rick Douglas", section)
+        # The image is decorative; the title beside it names the post.
+        self.assertRegex(
+            section,
+            r'<img src="%s" alt="" loading="lazy"' % re.escape(post.header_image.url),
+        )
         self.assertNotIn("blog-card", section)
+
+    def test_post_without_an_image_keeps_the_media_block(self):
+        self.make_posts(1)
+        section = self.section()
+        self.assertIn('class="blog-post-card__media"', section)
+        self.assertNotIn("<img", section)
 
     def test_all_posts_link_is_a_secondary_button_after_the_cards(self):
         self.make_posts(1)
@@ -461,14 +480,9 @@ class OurStoryTests(TestCase):
 
     def test_without_posts_there_is_no_empty_grid(self):
         section = self.section()
-        self.assertIn("history-cta", section)
         self.assertIn("All posts", section)
-        self.assertNotIn("blog-grid", section)
-        self.assertNotIn("Read &rarr;", section)
-
-    def test_headline_and_no_trailing_blank_cards(self):
-        section = self.section()
-        self.assertRegex(section, r'<h2 class="section-title"[^>]*>Our story</h2>')
+        self.assertNotIn("home-cards", section)
+        self.assertNotIn("blog-post-card", section)
 
 
 class SupportTests(TestCase):

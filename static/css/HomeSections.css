@@ -68,18 +68,8 @@
   align-items: stretch;
 }
 
-/* Four across (Our story) is too narrow between 901px and 1100px: the
- * history card ran to ten lines. Two by two there instead. */
-@media (max-width: 1100px) {
-  .home-cards--four {
-    grid-auto-flow: row;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 @media (max-width: 900px) {
-  .home-cards,
-  .home-cards--four {
+  .home-cards {
     grid-auto-flow: row;
     grid-template-columns: 1fr;
   }
@@ -114,7 +104,7 @@
   color: var(--color-text);
 }
 
-/* The only action style in Get involved, Our story and Support. In a card
+/* The only action style in Get involved and Support. In a card
  * it is pushed to the bottom so a row of cards ends on one line. */
 .home-link {
   display: inline-flex;
@@ -288,14 +278,83 @@
   }
 }
 
-/* Our story: the history card and up to three posts share the card row.
- * A post's sentence is clamped to two lines so the four cards stay level. */
-.blog-post-card__excerpt {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+/* From the booth: three post cards, each led by its header image, full
+ * bleed to the card's edge. 16:9 crops the wide header art the way /blog/
+ * shows it; a post without one keeps the block, tinted, so the row stays
+ * level. */
+.home-booth__lede {
+  margin: var(--spacing-xs) 0 0;
+  color: var(--color-text-muted);
+}
+
+.blog-post-card {
+  position: relative;
   overflow: hidden;
+}
+
+.blog-post-card__media {
+  margin: calc(-1 * var(--spacing-sm)) calc(-1 * var(--spacing-sm)) 0;
+  aspect-ratio: 16 / 9;
+  background: var(--color-surface-sunken);
+  border-bottom: 1px solid var(--color-accent-dim);
+  overflow: hidden;
+}
+
+.blog-post-card__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.blog-post-card:hover .blog-post-card__img {
+  transform: scale(1.03);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blog-post-card__img {
+    transition: none;
+  }
+
+  .blog-post-card:hover .blog-post-card__img {
+    transform: none;
+  }
+}
+
+/* The title is the card's one link; its ::after covers the whole card so
+ * the image and the white space are a target too. */
+.blog-post-card__link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.blog-post-card__link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.blog-post-card:hover .blog-post-card__link,
+.blog-post-card__link:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.blog-post-card:focus-within {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.blog-post-card__link:focus-visible {
+  outline: none;
+}
+
+/* The byline sits at the bottom so a row of cards ends on one line. */
+.blog-post-card__byline {
+  margin: auto 0 0;
+  font-size: var(--type-label);
+  color: var(--color-text-muted);
 }
 
 /* "All posts": the section's only button, 32px under the cards. */
