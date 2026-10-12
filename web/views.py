@@ -43,6 +43,7 @@ from web.constants import (
     SPONSORSHIP_TIERS,
 )
 from web.forms import RentalInquiryForm, SponsorshipInquiryForm
+from web.list_signup import start_signup
 from web.services.cinema_data import (
     CINEMA_TZ,
     _format_runtime,
@@ -742,9 +743,10 @@ class VoteSubscribeView(View):
     """POST /vote/subscribe — the mailing-list ask on the thanks screen.
 
     The ballot itself promises no email, so joining the list is a separate,
-    explicit yes. The request carries a signed vote id rather than an
-    address: the only address that can be added is the one that just voted,
-    and nobody can subscribe someone else by posting their email.
+    explicit yes, confirmed by email before it takes effect. The request
+    carries a signed vote id rather than an address: the only address that
+    can be added is the one that just voted, and nobody can subscribe
+    someone else by posting their email.
     """
 
     SOURCE = "poll_vote"
@@ -762,10 +764,9 @@ class VoteSubscribeView(View):
         if vote is None or not vote.email:
             return HttpResponseBadRequest("Unknown vote.")
 
-        # Idempotent, and never re-adds an address that opted out.
-        Subscriber.objects.record(
-            vote.email, source=self.SOURCE, ip=vote_engine.client_ip(request)
-        )
+        # Idempotent, and never re-adds an address that opted out. The
+        # address only joins once its owner follows the emailed link.
+        start_signup(request, vote.email, source=self.SOURCE)
         ctx = _vote_context(poll=vote.poll, vote=vote, subscribed=True)
         if request.headers.get("HX-Request"):
             return render(request, "partials/vote_panel.html", ctx)

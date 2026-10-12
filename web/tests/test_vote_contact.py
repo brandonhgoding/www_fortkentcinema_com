@@ -6,12 +6,15 @@ address per round. It is not a mailing-list signup.
 
 import html as html_lib
 
+from django.core import mail
 from django.test import TestCase
 from django.urls import reverse
 
 from audience.models import Subscriber, SubscriberStatus
 from django.core import signing
 from cinema.models import Film, Poll, PollOption, PollStatus, Vote
+
+DONE = "Almost there: check your inbox for a link to confirm."
 
 
 class VoteContactTests(TestCase):
@@ -147,13 +150,18 @@ class ThanksScreenSubscribeTests(TestCase):
         self.assertNotIn("Yes, add me", html)
         self.assertNotIn("mailing list", html)
 
+    def test_ask_is_not_offered_to_a_pending_address(self) -> None:
+        Subscriber.objects.request_signup("fan@example.com", "movie_page")
+        html = self.vote().content.decode()
+        self.assertNotIn("Yes, add me", html)
+
     def test_ask_is_not_offered_to_someone_who_opted_out(self) -> None:
         sub, _ = Subscriber.objects.record("fan@example.com", source="elsewhere")
         sub.unsubscribe()
         html = self.vote().content.decode()
         self.assertNotIn("Yes, add me", html)
 
-    def test_saying_yes_joins_the_list_with_the_voting_address(self) -> None:
+    def test_saying_yes_emails_a_confirmation_to_the_voting_address(self) -> None:
         token = self._token(self.vote("Fan@Example.com").content.decode())
         response = self.client.post(
             reverse("vote_subscribe"),
@@ -165,10 +173,13 @@ class ThanksScreenSubscribeTests(TestCase):
         sub = Subscriber.objects.get()
         self.assertEqual(sub.email, "fan@example.com")
         self.assertEqual(sub.source, "poll_vote")
-        self.assertEqual(sub.status, SubscriberStatus.ACTIVE)
+        self.assertEqual(sub.status, SubscriberStatus.PENDING)
         self.assertEqual(sub.consent_ip, "198.51.100.4")
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ["fan@example.com"])
         html = response.content.decode()
-        self.assertIn("You're on the list", html)
+        self.assertIn(DONE, html)
+        self.assertNotIn("You're on the list", html)
         self.assertNotIn("Yes, add me", html)
         # Still the thanks screen, not a blank ballot.
         self.assertIn("your vote for", html)
@@ -181,6 +192,7 @@ class ThanksScreenSubscribeTests(TestCase):
             )
             self.assertEqual(response.status_code, 200)
         self.assertEqual(Subscriber.objects.count(), 1)
+        self.assertEqual(len(mail.outbox), 1)
 
     def test_a_forged_or_missing_token_is_refused(self) -> None:
         self.vote()
@@ -196,7 +208,7 @@ class ThanksScreenSubscribeTests(TestCase):
         response = self.client.post(reverse("vote_subscribe"), {"token": token})
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "web/vote.html")
-        self.assertIn("You're on the list", response.content.decode())
+        self.assertIn(DONE, response.content.decode())
 
     def test_copy_does_not_promise_a_newsletter(self) -> None:
         html = self.vote().content.decode().lower()
