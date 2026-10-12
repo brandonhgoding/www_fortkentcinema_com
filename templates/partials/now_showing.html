@@ -1,4 +1,4 @@
-<section class="now-showing" id="now-showing"
+<section class="now-showing home-section home-section--raised" id="now-showing"
          x-data='{ dates: {{ ns_dates_json|safe }}, labels: {{ ns_labels_json|safe }}, idx: {{ ns_today_index }}, trailer: null }'
          x-effect="document.body.style.overflow = trailer ? 'hidden' : ''">
   <div class="section-container">
@@ -6,6 +6,10 @@
       <h2 class="section-title">NOW SHOWING</h2>
       <p class="section-subtitle">Currently playing at Fort Kent Cinema</p>
     </div>
+
+    {% comment %}First card of the section, ahead of both branches below, so it
+    shows whether or not anything else is booked. Self-expiring; see the partial.{% endcomment %}
+    {% include "partials/cta_sponsored.html" %}
 
     {% if ns_dates %}
     {% include "partials/ticket_info.html" %}

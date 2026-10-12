@@ -1,4 +1,4 @@
-/* Homepage banner for a sponsored screening.
+/* Card for a sponsored screening, the first thing inside Now Showing.
  *
  * Descended from the retired EventCTA.css (see `git show
  * 6caa0ac:static/css/EventCTA.css`), which held this same slot under the
@@ -25,47 +25,43 @@
 .sponsored-cta {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--spacing-xs);
-  text-align: center;
+  text-align: left;
   text-decoration: none;
-  color: inherit;
+  color: var(--color-text);
   cursor: pointer;
-  background: linear-gradient(135deg, var(--color-bg-charcoal-dark) 0%, var(--color-bg-dark) 100%);
-  border-top: 1px solid var(--color-gold-warm);
-  border-bottom: 1px solid var(--color-gold-warm);
-  padding: var(--spacing-xl) var(--spacing-lg);
-  transition: background var(--transition-base);
+  background: var(--color-surface-raised);
+  border: 2px solid var(--brand-gold);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
 }
 
-.sponsored-cta:hover {
-  background: linear-gradient(
-    135deg,
-    var(--color-bg-charcoal) 0%,
-    var(--color-bg-charcoal-dark) 100%
-  );
+.sponsored-cta:hover .sponsored-cta__title {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.15em;
 }
 
 .sponsored-cta:focus-visible {
-  outline: 2px solid var(--color-gold);
-  outline-offset: -4px;
+  outline: 3px solid var(--brand-gold);
+  outline-offset: 3px;
 }
 
 .sponsored-cta__eyebrow {
-  font-family: var(--font-body);
-  font-size: 0.9rem;
-  letter-spacing: 3px;
+  font-family: var(--font-condensed);
+  font-size: var(--type-label);
+  letter-spacing: var(--track-label);
   text-transform: uppercase;
-  color: var(--color-cream-muted);
+  color: var(--color-text-muted);
 }
 
 .sponsored-cta__title {
-  font-family: var(--font-display);
-  font-size: 2rem;
-  letter-spacing: 6px;
-  color: var(--color-gold);
-  text-shadow: 0 0 10px var(--color-gold-glow);
+  font-family: var(--font-heading);
+  font-size: var(--type-heading);
   line-height: 1.1;
+  color: var(--color-text);
 }
 
 /* The days sit in a row, each a small block of date-over-times. `wrap` is
@@ -73,7 +69,7 @@
 .sponsored-cta__schedule {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   gap: var(--spacing-md) var(--spacing-lg);
   margin-top: var(--spacing-sm);
 }
@@ -88,20 +84,20 @@
 .sponsored-cta__date {
   font-family: var(--font-heading);
   font-size: 1.1rem;
-  color: var(--color-cream);
+  color: var(--color-text);
 }
 
 .sponsored-cta__times {
   font-family: var(--font-body);
   font-size: 1rem;
-  color: var(--color-cream-muted);
+  color: var(--color-text-muted);
 }
 
 .sponsored-cta__pricing {
   font-family: var(--font-body);
   font-size: 1rem;
   font-weight: 600;
-  color: var(--color-cream-muted);
+  color: var(--color-text-muted);
   margin-top: var(--spacing-xs);
 }
 
@@ -111,37 +107,25 @@
   font-family: var(--font-body);
   font-size: 0.95rem;
   letter-spacing: 1px;
-  color: var(--color-cream-muted);
+  color: var(--color-text-muted);
 }
 
 .sponsored-cta__sponsor strong {
   font-weight: 600;
-  color: var(--color-cream);
+  color: var(--color-text);
 }
 
 .sponsored-cta__link {
-  font-family: var(--font-condensed);
-  font-size: 0.95rem;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--color-gold);
-  margin-top: var(--spacing-xs);
-}
-
-.sponsored-cta:hover .sponsored-cta__link {
-  color: var(--color-gold-light);
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 600;
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
 }
 
 @media (max-width: 600px) {
-  .sponsored-cta {
-    padding: var(--spacing-lg) var(--spacing-md);
-  }
-
-  .sponsored-cta__title {
-    font-size: 1.5rem;
-    letter-spacing: 4px;
-  }
-
   /* Two days across rather than one: three stacked day-blocks plus the
      credit is taller than the viewport's top half on a phone. */
   .sponsored-cta__schedule {

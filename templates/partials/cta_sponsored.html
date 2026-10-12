@@ -1,7 +1,9 @@
 {% comment %}
-  Homepage banner for a sponsored screening. `sponsored` comes from
+  Card for a sponsored screening, the first thing inside the Now Showing
+  section (partials/now_showing.html includes it, ahead of both the showtimes
+  and the empty-state branches). `sponsored` comes from
   web.views.sponsored_screening() and is None unless a sponsored run is on,
-  so this banner retires itself on the booking's last day — no follow-up
+  so this card retires itself on the booking's last day — no follow-up
   commit required.
 
   Everything here except the sponsor's name is read from the Engagement, so

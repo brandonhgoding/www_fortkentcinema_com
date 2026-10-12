@@ -11,6 +11,8 @@ date to keep in sync and no follow-up commit to remember.
 """
 
 import datetime
+import re
+import unittest
 from pathlib import Path
 from unittest import mock
 
@@ -79,9 +81,16 @@ class SponsoredScreeningFixture(TestCase):
         return eng
 
     def home(self):
-        with mock.patch("web.views.get_coming_soon", return_value=[]), \
-             mock.patch("web.views.get_now_showing", return_value=[]):
+        with (
+            mock.patch("web.views.get_coming_soon", return_value=[]),
+            mock.patch("web.views.get_now_showing", return_value=[]),
+        ):
             return self.client.get(reverse("home")).content.decode()
+
+    def home_with_schedule(self):
+        """The home page with the shipped showtimes branch (a real catalog
+        film booked today), rather than the stubbed empty state."""
+        return self.client.get(reverse("home")).content.decode()
 
 
 class SponsoredScreeningLookupTests(SponsoredScreeningFixture):
@@ -121,8 +130,10 @@ class SponsoredScreeningLookupTests(SponsoredScreeningFixture):
         self.book()
         days = sponsored_screening()["days"]
         self.assertEqual(len(days), 3)
-        self.assertEqual([d["date"] for d in days],
-                         [self.today + datetime.timedelta(days=i) for i in range(3)])
+        self.assertEqual(
+            [d["date"] for d in days],
+            [self.today + datetime.timedelta(days=i) for i in range(3)],
+        )
         for day in days:
             self.assertEqual(day["times"], ["11:00 AM", "1:00 PM"])
 
@@ -137,8 +148,13 @@ class SponsoredScreeningBannerTests(SponsoredScreeningFixture):
     def test_banner_carries_the_pitch(self):
         self.book()
         html = self.home()
-        for probe in ["The Land Before Time", "AParadis Photography", "$4",
-                      "11:00 AM", "1:00 PM"]:
+        for probe in [
+            "The Land Before Time",
+            "AParadis Photography",
+            "$4",
+            "11:00 AM",
+            "1:00 PM",
+        ]:
             self.assertIn(probe, html, f"{probe} missing from the banner")
 
     def test_banner_carries_the_configured_eyebrow(self):
@@ -180,11 +196,39 @@ class SponsoredScreeningBannerTests(SponsoredScreeningFixture):
     def test_banner_absent_when_nothing_is_booked(self):
         self.assertNotIn("sponsored-cta", self.home())
 
-    def test_banner_sits_above_now_showing(self):
-        """Directly under the hero — the slot the retired event CTA held."""
+    def test_sponsored_card_is_inside_now_showing(self):
+        """The first card of the Now Showing section, ahead of the schedule:
+        after the section opens, before its first showtime markup."""
         self.book()
         html = self.home()
-        self.assertLess(html.index("sponsored-cta"), html.index('id="now-showing"'))
+        self.assertEqual(html.count('class="sponsored-cta"'), 1)
+        start = html.index('id="now-showing"')
+        card = html.index('class="sponsored-cta"')
+        self.assertLess(start, card)
+        # get_now_showing is stubbed empty, so the empty state renders; its
+        # own markup is the first thing the card must precede.
+        self.assertLess(card, html.index("no-showtimes"))
+        self.assertLess(card, html.index('id="membership"'))
+
+    def test_sponsored_card_precedes_the_schedule_when_films_are_showing(self):
+        self.book()
+        html = self.home_with_schedule()
+        card = html.index('class="sponsored-cta"')
+        self.assertLess(html.index('id="now-showing"'), card)
+        self.assertLess(card, html.index("date-nav"))
+
+    @unittest.expectedFailure
+    def test_ticket_button_only_in_now_showing(self):
+        """Task 4 removes the expectedFailure marker: until the Coming soon
+        and Get involved sections drop their ticket buttons, some btn-ticket
+        still sits outside Now Showing."""
+        html = self.home()
+        hero_end = html.index("</section>", html.index('class="hero"'))
+        start = html.index('id="now-showing"')
+        end = html.index('id="membership"')
+        for match in re.finditer(r"btn-ticket", html[hero_end:]):
+            pos = hero_end + match.start()
+            self.assertTrue(start < pos < end, "btn-ticket outside Now Showing")
 
     def test_the_banner_leaves_nothing_behind_when_absent(self):
         """This used to assert that the banner and exactly one ornament
