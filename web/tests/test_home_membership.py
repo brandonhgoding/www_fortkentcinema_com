@@ -9,6 +9,9 @@ from django.urls import reverse
 from audience.models import MembershipTier
 
 
+PRICE_35 = 'From <span class="home-membership__amount">$35</span> a year.'
+
+
 @mock.patch("web.views.get_coming_soon", return_value=[])
 @mock.patch("web.views.get_now_showing", return_value=[])
 class HomeMembershipBandTests(TestCase):
@@ -41,14 +44,14 @@ class HomeMembershipBandTests(TestCase):
         self._tier("senior", 35)
         self._tier("retired", 10, listed=False)
         html = self._html()
-        self.assertIn("From $35 a year.", html)
+        self.assertIn(PRICE_35, html)
         self.assertNotIn("From $10", html)
 
     def test_cheaper_six_month_tier_does_not_set_the_price(self, _ns, _cs) -> None:
         self._tier("half", 20, months=6)
         self._tier("senior", 35)
         html = self._html()
-        self.assertIn("From $35 a year.", html)
+        self.assertIn(PRICE_35, html)
         self.assertNotIn("From $20", html)
 
     def test_only_a_six_month_tier_omits_price_line(self, _ns, _cs) -> None:
@@ -69,7 +72,7 @@ class HomeMembershipBandTests(TestCase):
 
     def test_copy_and_button(self, _ns, _cs) -> None:
         html = self._html()
-        self.assertIn("Movies, perks, and a hand in keeping the marquee lit.", html)
+        self.assertIn("A year of cheaper movie nights, and a hand in keeping the marquee lit.", html)
         self.assertEqual(html.count("btn-member"), 1)
         links = re.findall(r"<a\b[^>]*\bbtn-member\b[^>]*>", html)
         self.assertEqual(len(links), 1)

@@ -1,15 +1,30 @@
 <section class="home-section home-section--accent home-membership" id="membership"
          aria-labelledby="home-membership-title">
-  <div class="section-container home-membership__inner">
-    <div class="home-membership__text">
-      <p class="home-eyebrow">Membership</p>
-      <h2 class="home-membership__title" id="home-membership-title">Become a member</h2>
-      <p class="home-membership__line">Movies, perks, and a hand in keeping the marquee lit.</p>
-      {% if membership_from_price is not None %}
-        <p class="home-membership__price">From ${{ membership_from_price }} a year.</p>
-      {% endif %}
+  <div class="section-container">
+    {% comment %}
+      The perks are the ones every listed tier carries (the amounts differ by
+      tier, so none are named here). If a tier loses one in the admin, drop it
+      from this list too.
+    {% endcomment %}
+    <div class="home-membership__panel">
+      <div class="home-membership__text">
+        <h2 class="home-membership__title" id="home-membership-title">Become a member</h2>
+        <p class="home-membership__line">A year of cheaper movie nights, and a hand in keeping the marquee lit.</p>
+        <ul class="home-membership__perks">
+          <li>Cheaper tickets, every show</li>
+          <li>Cheaper popcorn</li>
+          <li>Free small popcorn in your birthday month</li>
+          <li>Discounts on private rentals</li>
+        </ul>
+      </div>
+      <div class="home-membership__offer">
+        {% if membership_from_price is not None %}
+          <p class="home-membership__price">From <span class="home-membership__amount">${{ membership_from_price }}</span> a year.</p>
+        {% endif %}
+        <a href="{% url 'membership' %}" class="btn-member"
+           data-track="membership_cta_click" data-track-location="home">See membership tiers</a>
+        <p class="home-membership__note">Family tiers cover the whole household.</p>
+      </div>
     </div>
-    <a href="{% url 'membership' %}" class="btn-member"
-       data-track="membership_cta_click" data-track-location="home">Become a member</a>
   </div>
 </section>

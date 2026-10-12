@@ -164,45 +164,122 @@
   outline-offset: 3px;
 }
 
-/* Membership band: headline and offer on the left, the button on the right,
- * lined up on the baseline of the price. */
-.home-membership__inner {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--spacing-lg);
+/* Membership band: one framed panel on the blue, ruled in gold like the
+ * hero's marquee so the ask reads as the cinema's own member card. The pitch
+ * and perks on the left; the price and the button on the right, behind a
+ * gold hairline. */
+.home-membership__panel {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  border: 1px solid var(--brand-gold);
+  outline: 1px solid rgba(210, 187, 51, 0.45);
+  outline-offset: 6px;
+  border-radius: var(--radius-sm);
 }
 
 .home-membership__text {
-  max-width: 40rem;
-}
-
-.home-membership .home-eyebrow {
-  color: var(--brand-parchment);
+  padding: var(--spacing-xl);
 }
 
 .home-membership__title {
-  margin: var(--spacing-xs) 0 var(--spacing-sm);
+  margin: 0 0 var(--spacing-sm);
   font-family: var(--font-heading);
-  font-size: var(--type-heading);
-  line-height: 1.1;
+  font-size: var(--type-title);
+  line-height: 1.05;
   color: var(--brand-warm-white);
 }
 
-.home-membership__line,
-.home-membership__price {
+.home-membership__line {
   margin: 0;
+  max-width: 36rem;
+  text-wrap: pretty;
   color: var(--brand-parchment);
 }
 
+/* Perks: two short columns, each marked with the hero's gold star. */
+.home-membership__perks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-xs) var(--spacing-md);
+  margin: var(--spacing-md) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 1rem;
+  line-height: 1.4;
+  color: var(--brand-warm-white);
+}
+
+.home-membership__perks li {
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.home-membership__perks li::before {
+  content: '\2605';
+  position: absolute;
+  left: 0;
+  top: 0.05em;
+  font-size: 0.85em;
+  color: var(--brand-gold);
+}
+
+/* Offer: price over the button, centred in its column. */
+.home-membership__offer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xl) var(--spacing-lg);
+  border-left: 1px solid rgba(210, 187, 51, 0.45);
+  text-align: center;
+}
+
 .home-membership__price {
-  margin-top: var(--spacing-xs);
-  font-weight: 600;
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: var(--type-lead);
+  color: var(--brand-parchment);
+}
+
+.home-membership__amount {
+  font-size: var(--type-title);
+  line-height: 1;
+  color: var(--brand-gold);
+}
+
+.home-membership__note {
+  margin: 0;
+  font-size: var(--type-label);
+  color: var(--brand-parchment);
+}
+
+@media (max-width: 900px) {
+  .home-membership__panel {
+    grid-template-columns: 1fr;
+  }
+
+  .home-membership__offer {
+    border-left: 0;
+    border-top: 1px solid rgba(210, 187, 51, 0.45);
+  }
 }
 
 @media (max-width: 600px) {
-  .home-membership__inner {
-    flex-direction: column;
+  .home-membership__panel {
+    outline-offset: 4px;
+  }
+
+  .home-membership__text,
+  .home-membership__offer {
+    padding: var(--spacing-md);
+  }
+
+  .home-membership__perks {
+    grid-template-columns: 1fr;
+  }
+
+  .home-membership__offer {
     align-items: stretch;
   }
 
