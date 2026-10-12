@@ -41,6 +41,10 @@
       {% endif %}
       {% endfor %}
     </div>
+
+    {% comment %}Last thing in the branch: it follows the schedule, so a reader
+    who has seen the showtimes and not found one they like has somewhere to go.{% endcomment %}
+    {% include "partials/list_signup.html" with list_signup_location="home_showtimes" %}
     {% else %}
     {% comment %}
       This used to be one flat sentence and a dead end. The home page carries
@@ -54,6 +58,7 @@
         The screen is dark between bookings. New runs go up here as soon as
         they are confirmed, and we post every one to Facebook first.
       </p>
+      {% include "partials/list_signup.html" with list_signup_location="home_empty" list_signup_lead="Get an email the moment new runs are booked." %}
       <ul class="no-showtimes__links">
         <li><a href="#coming-soon">See what is coming soon</a></li>
         {% if site_config.social.facebook %}

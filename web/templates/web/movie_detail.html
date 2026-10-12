@@ -89,6 +89,7 @@ not the TMDB blurb — the local intent is what we can actually win.
           </div>
         {% endfor %}
         {% include "partials/ticket_info.html" %}
+        {% include "partials/list_signup.html" with list_signup_location="movie_page" %}
       </section>
     {% else %}
       {% comment %} Archive state. Real content (our run history), not an empty shell. {% endcomment %}
@@ -110,6 +111,8 @@ not the TMDB blurb — the local intent is what we can actually win.
           {% endif %}
         {% endif %}
         <p class="movie-page-archive-note">It isn't currently on our schedule.</p>
+        {% comment %}The one place an archive reader can ask to hear when it is booked again.{% endcomment %}
+        {% include "partials/list_signup.html" with list_signup_location="movie_page" %}
         {% comment %}
           Archive state only. A film we are selling tickets to should be
           selling tickets, not sending the reader off to read local history —

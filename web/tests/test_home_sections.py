@@ -242,8 +242,9 @@ class EmptyStateTests(TestCase):
     @mock.patch("web.views.get_now_showing", return_value=[])
     def test_now_showing_empty_state_offers_somewhere_to_go(self, _ns, _cs):
         html = self.client.get(reverse("home")).content.decode()
+        # Through the links list: the signup form's honeypot has its own </div>.
         empty = re.search(
-            r'<div class="no-showtimes">.*?</div>', html, re.S
+            r'<div class="no-showtimes">.*?</ul>', html, re.S
         ).group(0)
         self.assertIn("No showtimes available.", empty)
         self.assertIn(SITE_CONFIG["social"]["facebook"], empty)
