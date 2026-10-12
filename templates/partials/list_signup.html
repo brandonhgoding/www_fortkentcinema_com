@@ -1,0 +1,48 @@
+{% comment %}
+  The mailing-list signup. One partial for every placement (home, movie
+  page) so the copy and the form cannot drift. It posts with htmx and
+  swaps itself for the reply; without JS the plain POST renders
+  web/list_signup.html instead. Submitting only sends a confirmation
+  link, so the done copy says "check your inbox", never "you're on the
+  list". The honeypot is for bots: people never see or fill it.
+  Context: list_signup_location, list_signup_done, list_signup_error,
+  list_signup_email, and optionally list_signup_lead to replace the lead.
+{% endcomment %}
+{% if list_signup_done %}
+  <p class="list-signup list-signup--done" role="status">
+    Almost there: check your inbox for a link to confirm.
+  </p>
+{% else %}
+  <form
+    class="list-signup"
+    method="post"
+    action="{% url 'list_signup' %}"
+    hx-post="{% url 'list_signup' %}"
+    hx-target="this"
+    hx-swap="outerHTML"
+  >
+    {% csrf_token %}
+    <input type="hidden" name="location" value="{{ list_signup_location }}" />
+    <div class="list-signup__hp" aria-hidden="true">
+      <label>Website <input name="website" tabindex="-1" autocomplete="off" /></label>
+    </div>
+    <p class="list-signup__lead">
+      {% if list_signup_lead %}{{ list_signup_lead }}{% else %}<strong>This weekend at the Cinema</strong>: get the weekend's showtimes by email every Thursday.{% endif %}
+    </p>
+    <label class="sr-only" for="list-signup-email-{{ list_signup_location }}">Email address</label>
+    <input
+      id="list-signup-email-{{ list_signup_location }}"
+      type="email"
+      name="email"
+      autocomplete="email"
+      required
+      value="{{ list_signup_email }}"
+    />
+    <button type="submit" class="list-signup__button" data-track="list_signup" data-track-location="{{ list_signup_location }}">
+      Sign me up
+    </button>
+    {% if list_signup_error %}
+      <p class="list-signup__error" role="alert">{{ list_signup_error }}</p>
+    {% endif %}
+  </form>
+{% endif %}

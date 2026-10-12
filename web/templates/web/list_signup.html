@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Email signup | Fort Kent Cinema{% endblock %}
+
+{% comment %}
+Only reached by a plain form post (no JavaScript). A reply to a submit has
+no business in search results.
+{% endcomment %}
+{% block robots %}noindex, nofollow{% endblock %}
+
+{% block content %}
+<div class="thanks-page">
+  <div class="thanks-container">
+    {% include "partials/list_signup.html" %}
+    <div class="thanks-actions">
+      <a href="{{ back_url }}" class="thanks-cta">&larr; Back</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,6 +1,7 @@
 from django.urls import path
 from django.views.generic import RedirectView
 
+from .list_signup import ListConfirmView, ListSignupView
 from .views import (
     CalendarMonthView,
     CraftNightView,
@@ -54,6 +55,14 @@ urlpatterns = [
     # Square redirects here after a successful payment. noindex, unlinked,
     # and deliberately absent from the sitemap.
     path("thanks", ThanksView.as_view(), name="thanks"),
+    # Double opt-in: /subscribe emails a link, /subscribe/confirm/<token>
+    # (the link) is what actually joins the list.
+    path("subscribe", ListSignupView.as_view(), name="list_signup"),
+    path(
+        "subscribe/confirm/<str:token>",
+        ListConfirmView.as_view(),
+        name="list_confirm",
+    ),
     # /vote/cast and /vote/subscribe must precede /vote/<slug>, or "cast"
     # would be matched as a poll slug.
     path("vote", VoteView.as_view(), name="vote"),
