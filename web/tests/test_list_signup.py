@@ -181,6 +181,7 @@ class ListConfirmTests(TestCase):
         self.assertContains(r, "fan@example.com")
         self.assertContains(r, 'method="post"')
         self.assertContains(r, "noindex")
+        self.assertContains(r, ">Confirm</button>")
         self.sub.refresh_from_db()
         self.assertEqual(self.sub.status, SubscriberStatus.PENDING)
 

@@ -162,6 +162,13 @@ class Subscriber(models.Model):
         update_fields = kwargs.get("update_fields")
         if update_fields is not None and "status" in update_fields:
             kwargs["update_fields"] = {*update_fields, "unsubscribed_at"}
+        # An ACTIVE row is on the list, so it has a consent record: a row
+        # made in the admin would otherwise have none. confirm() and record()
+        # set their own, which this leaves alone.
+        if self.status == SubscriberStatus.ACTIVE and self.confirmed_at is None:
+            self.confirmed_at = timezone.now()
+            if kwargs.get("update_fields") is not None:
+                kwargs["update_fields"] = {*kwargs["update_fields"], "confirmed_at"}
 
         adding = self._state.adding
         previous = (

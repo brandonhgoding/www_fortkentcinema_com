@@ -37,9 +37,14 @@ class SubscriberExportView(StaffRequiredMixin, View):
         )
 
         writer = safe_csv_writer(response)
-        writer.writerow(["email", "source", "consent_at"])
+        writer.writerow(["email", "source", "consent_at", "confirmed_at"])
         for sub in Subscriber.objects.active().order_by("consent_at"):
             writer.writerow(
-                [sub.email, sub.source, sub.consent_at.isoformat()]
+                [
+                    sub.email,
+                    sub.source,
+                    sub.consent_at.isoformat(),
+                    sub.confirmed_at.isoformat() if sub.confirmed_at else "",
+                ]
             )
         return response

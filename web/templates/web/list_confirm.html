@@ -17,7 +17,7 @@ results. Context: state (ask, confirmed, already, expired), subscriber.
       <p>Join the Thursday showtimes email as <strong>{{ subscriber.email }}</strong>?</p>
       <form method="post">
         {% csrf_token %}
-        <button type="submit" class="thanks-cta">Yes, add me</button>
+        <button type="submit" class="thanks-cta">Confirm</button>
       </form>
     {% elif state == "confirmed" %}
       <p role="status">You're on the list. The first Thursday email is on its way soon.</p>

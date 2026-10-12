@@ -36,7 +36,13 @@ class SubscriberAdmin(admin.ModelAdmin):
     list_display = ("email", "status", "source", "consent_at")
     list_filter = ("status", "source")
     search_fields = ("email",)
-    readonly_fields = ("unsubscribe_token", "consent_at")
+    # confirmed_at is the CAN-SPAM consent record; staff must not edit it.
+    readonly_fields = (
+        "unsubscribe_token",
+        "consent_at",
+        "confirmed_at",
+        "confirmation_sent_at",
+    )
     inlines = [SubscriptionChangeInline]
 
 

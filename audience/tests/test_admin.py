@@ -240,6 +240,57 @@ class EmailCaseAdminTests(TestCase):
         self.assertIn("already exists", str(caught.exception.message_dict["email"]))
 
 
+class SubscriberAdminConsentTests(TestCase):
+    """confirmed_at is the CAN-SPAM consent record: staff must not type it."""
+
+    def setUp(self) -> None:
+        User.objects.create_superuser(
+            username="root", email="root@example.com", password="pw12345"
+        )
+        self.client.login(username="root", password="pw12345")
+
+    def test_admin_created_active_row_has_confirmed_at(self) -> None:
+        resp = self.client.post(
+            reverse("admin:audience_subscriber_add"),
+            {
+                "email": "new@example.com",
+                "status": "ACTIVE",
+                "source": "admin",
+                "consent_ip": "",
+                "unsubscribed_at_0": "",
+                "unsubscribed_at_1": "",
+                "changes-TOTAL_FORMS": "0",
+                "changes-INITIAL_FORMS": "0",
+                "changes-MIN_NUM_FORMS": "0",
+                "changes-MAX_NUM_FORMS": "1000",
+            },
+        )
+        self.assertEqual(resp.status_code, 302)
+        sub = Subscriber.objects.get(email="new@example.com")
+        self.assertIsNotNone(sub.confirmed_at)
+
+    def test_update_fields_save_persists_the_stamp(self) -> None:
+        sub, _ = Subscriber.objects.record("ada@example.com", source="poll_vote")
+        Subscriber.objects.filter(pk=sub.pk).update(confirmed_at=None)
+        sub.refresh_from_db()
+        sub.source = "admin"
+        sub.save(update_fields=["source"])
+        sub.refresh_from_db()
+        self.assertIsNotNone(sub.confirmed_at)
+
+    def test_change_form_shows_both_fields_read_only(self) -> None:
+        sub, _ = Subscriber.objects.record("ada@example.com", source="poll_vote")
+        resp = self.client.get(
+            reverse("admin:audience_subscriber_change", args=[sub.pk])
+        )
+        self.assertEqual(resp.status_code, 200)
+        form = resp.context["adminform"].form
+        self.assertNotIn("confirmed_at", form.fields)
+        self.assertNotIn("confirmation_sent_at", form.fields)
+        self.assertContains(resp, "field-confirmed_at")
+        self.assertContains(resp, "field-confirmation_sent_at")
+
+
 class MembershipTermInlineQueryTests(TestCase):
     """The inline labels each row with MembershipTerm.__str__, which reads
     the tier — one query per term unless the inline selects it."""

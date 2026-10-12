@@ -64,7 +64,22 @@ class SubscriberExportTests(TestCase):
         body = self.client.get(
             reverse("dashboard:subscribers_export")
         ).content.decode()
-        self.assertTrue(body.startswith("email,source,consent_at"))
+        self.assertTrue(body.startswith("email,source,consent_at,confirmed_at"))
+
+    def test_export_carries_the_confirmed_at_timestamp(self) -> None:
+        sub, _ = Subscriber.objects.record("a@example.com", source="poll_vote")
+        Subscriber.objects.filter(pk=sub.pk).update(confirmed_at=None)
+        Subscriber.objects.record("b@example.com", source="poll_vote")
+        confirmed = Subscriber.objects.get(email="b@example.com").confirmed_at
+        lines = (
+            self.client.get(reverse("dashboard:subscribers_export"))
+            .content.decode()
+            .splitlines()
+        )
+        row_a = next(x for x in lines if x.startswith("a@example.com"))
+        row_b = next(x for x in lines if x.startswith("b@example.com"))
+        self.assertTrue(row_a.endswith(","))
+        self.assertTrue(row_b.endswith("," + confirmed.isoformat()))
 
     def test_export_contains_active_addresses(self) -> None:
         Subscriber.objects.record("a@example.com", source="poll_vote")

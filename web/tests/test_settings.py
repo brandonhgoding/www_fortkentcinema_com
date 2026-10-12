@@ -43,3 +43,9 @@ class ProdSecuritySettingsTests(SimpleTestCase):
         from django.conf import settings
 
         self.assertIsInstance(getattr(settings, "CSRF_TRUSTED_ORIGINS", []), list)
+
+
+class EmailTimeoutSettingTests(SimpleTestCase):
+    def test_smtp_calls_have_a_timeout(self):
+        """Public requests send mail synchronously; never block forever."""
+        self.assertEqual(settings.EMAIL_TIMEOUT, 10)
