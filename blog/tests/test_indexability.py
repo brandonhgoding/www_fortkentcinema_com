@@ -13,9 +13,10 @@ import datetime
 import re
 
 from blog.models import BlogAuthor, BlogCategory, BlogPost
+from blog.site_views import PostListView
 from django.test import TestCase
 
-PAGE_SIZE = 12
+PAGE_SIZE = PostListView.paginate_by
 
 
 def make_posts(n, category, author, prefix="Post"):

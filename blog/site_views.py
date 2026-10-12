@@ -7,7 +7,9 @@ RELATED_POST_COUNT = 3
 
 class PostListView(ListView):
     model = BlogPost
-    paginate_by = 12
+    # The newest post on each page runs full width over a three-column grid,
+    # so 1 + 12 keeps every full page's rows complete.
+    paginate_by = 13
     context_object_name = "posts"
     template_name = "blog/post_list.html"
 
@@ -26,6 +28,10 @@ class PostListView(ListView):
             page_obj.number, on_each_side=1, on_ends=1
         )
         ctx["ellipsis"] = paginator.ELLIPSIS
+        # One query for the page, then split: the lead card and the grid.
+        posts = list(page_obj.object_list)
+        ctx["lead_post"] = posts[0] if posts else None
+        ctx["grid_posts"] = posts[1:]
         return ctx
 
 

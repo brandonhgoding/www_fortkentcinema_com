@@ -9,7 +9,7 @@ class BlogListTests(TestCase):
     def setUpTestData(cls):
         author = BlogAuthor.objects.create(first_name="Ada", last_name="Lovelace")
         cat = BlogCategory.objects.create(name="News")
-        for i in range(15):  # > paginate_by (12)
+        for i in range(15):  # > paginate_by (13)
             BlogPost.objects.create(
                 title=f"Post {i}", subtitle=f"sub-{i}", author=author, category=cat,
                 post_date=f"2026-01-{i+1:02d}",
@@ -24,13 +24,41 @@ class BlogListTests(TestCase):
 
     def test_list_meta(self):
         html = self.client.get(reverse("blog_list")).content.decode()
-        self.assertIn("Blog | Fort Kent Cinema", html)   # title/og:title
+        self.assertIn("From the Booth: Blog | Fort Kent Cinema", html)   # title/og:title
         self.assertIn('class="blog-list-grid"', html)
 
-    def test_paginates_twelve(self):
+    def test_heading_matches_the_home_page_section(self):
+        html = self.client.get(reverse("blog_list")).content.decode()
+        self.assertIn('<h1 class="blog-list-title">FROM THE BOOTH</h1>', html)
+        self.assertIn("Film reviews and notes on running a small-town cinema.", html)
+
+    def test_paginates_thirteen_a_lead_and_a_grid_of_twelve(self):
         resp = self.client.get(reverse("blog_list"))
-        self.assertEqual(len(resp.context["posts"]), 12)
+        self.assertEqual(len(resp.context["posts"]), 13)
         self.assertTrue(resp.context["page_obj"].has_next())
+        # Newest first: the lead is the newest post, the grid the next twelve.
+        self.assertEqual(resp.context["lead_post"].title, "Post 14")
+        self.assertEqual(
+            [p.title for p in resp.context["grid_posts"]],
+            [f"Post {i}" for i in range(13, 1, -1)],
+        )
+
+    def test_lead_card_is_full_width_and_above_the_grid(self):
+        html = self.client.get(reverse("blog_list")).content.decode()
+        self.assertEqual(html.count("blog-card--feature"), 1)
+        self.assertLess(html.index("blog-card--feature"), html.index('class="blog-list-grid"'))
+        self.assertEqual(html.count('class="blog-card"'), 12)
+        # The lead's title appears once: it is not repeated in the grid.
+        self.assertEqual(html.count(">Post 14</h3>"), 1)
+
+    def test_a_page_with_one_post_has_no_empty_grid(self):
+        html = self.client.get(reverse("blog_list") + "?page=2").content.decode()
+        self.assertIn("blog-card--feature", html)  # Post 1, the lead
+        self.assertIn('class="blog-list-grid"', html)  # Post 0 below it
+        BlogPost.objects.filter(title="Post 0").delete()
+        html = self.client.get(reverse("blog_list") + "?page=2").content.decode()
+        self.assertIn("blog-card--feature", html)
+        self.assertNotIn('class="blog-list-grid"', html)
 
     def test_renders_a_crawlable_pagination_nav(self):
         """Paging must be plain links. It was an HTMX `hx-trigger="revealed"`
@@ -60,7 +88,7 @@ class BlogListSameDatePaginationTests(TestCase):
     day-granular post_date: without a unique tiebreaker (-id), the DB is
     free to return that tied group in a different relative order for the
     page-1 vs page-2 query, causing cards to be duplicated or skipped at
-    the 12-per-page boundary."""
+    the 13-per-page boundary."""
 
     @classmethod
     def setUpTestData(cls):
@@ -72,7 +100,7 @@ class BlogListSameDatePaginationTests(TestCase):
                 author=author, category=cat, post_date="2026-05-01",
                 content=f"Body paragraph for post {i}.",
             )
-            for i in range(13)  # > paginate_by (12), all sharing one post_date
+            for i in range(14)  # > paginate_by (13), all sharing one post_date
         ]
 
     def test_no_duplicates_or_skips_across_page_boundary(self):
@@ -82,7 +110,7 @@ class BlogListSameDatePaginationTests(TestCase):
         slugs_page1 = [p.slug for p in page1.context["page_obj"].object_list]
         slugs_page2 = [p.slug for p in page2.context["page_obj"].object_list]
 
-        self.assertEqual(len(slugs_page1), 12)
+        self.assertEqual(len(slugs_page1), 13)
         self.assertEqual(len(slugs_page2), 1)
 
         # No slug should appear on both pages.

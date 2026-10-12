@@ -70,6 +70,54 @@
   display: block;
 }
 
+/* The newest post on the page, full width above the grid. From 900px the
+ * image takes two of the grid's three columns and the text the third, so the
+ * card's seam lines up with the column edge below it. */
+.blog-list-feature {
+  margin-bottom: var(--spacing-lg);
+}
+
+@media (min-width: 900px) {
+  .blog-card--feature {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    column-gap: var(--spacing-lg);
+  }
+
+  .blog-card--feature .blog-card-image {
+    aspect-ratio: auto;
+    min-height: 100%;
+  }
+
+  .blog-card--feature .blog-card-img,
+  .blog-card--feature .blog-card-placeholder {
+    position: absolute;
+    inset: 0;
+  }
+
+  .blog-card--feature .blog-card-content {
+    padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-lg) 0;
+    justify-content: center;
+  }
+
+  .blog-card--feature .blog-card-title {
+    font-size: var(--type-heading);
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+
+  .blog-card--feature .blog-card-excerpt {
+    flex: 0 1 auto;
+  }
+
+  /* A 16:9 floor for the image: a short post must not shrink it to a strip. */
+  .blog-card--feature .blog-card-image::before {
+    content: '';
+    display: block;
+    padding-top: 56.25%;
+  }
+}
+
 .blog-pagination {
   display: flex;
   align-items: center;

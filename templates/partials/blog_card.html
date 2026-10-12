@@ -4,12 +4,14 @@
   Expects a `post` context variable: a BlogPost instance.
   Callers are responsible for wrapping this in a link
   (e.g. <a class="blog-card-link" href="...">) as needed.
+  `feature`: the full-width lead card on /blog/. Image beside the text on
+  wide screens, and loaded eagerly because it is the page's largest paint.
 {% endcomment %}
-<article class="blog-card">
+<article class="blog-card{% if feature %} blog-card--feature{% endif %}">
   <div class="blog-card-image">
     {% if post.header_image %}
     <img
-      loading="lazy" decoding="async"
+      {% if feature %}fetchpriority="high"{% else %}loading="lazy"{% endif %} decoding="async"
       src="{{ post.header_image.url }}"
       alt="{{ post.title }}"
       class="blog-card-img"

@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Blog{% if page_obj.number > 1 %} — Page {{ page_obj.number }}{% endif %} | Fort Kent Cinema{% endblock %}
-{% block description %}News, reviews, and updates from Fort Kent Cinema. Stay up to date with the latest movie announcements, events, and community news.{% endblock %}
-{% block og_title %}Blog | Fort Kent Cinema{% endblock %}
-{% block og_description %}News, reviews, and updates from Fort Kent Cinema.{% endblock %}
+{% block title %}From the Booth: Blog{% if page_obj.number > 1 %} — Page {{ page_obj.number }}{% endif %} | Fort Kent Cinema{% endblock %}
+{% block description %}From the booth at Fort Kent Cinema: film reviews and notes on running a small-town cinema in the St. John Valley.{% endblock %}
+{% block og_title %}From the Booth: Blog | Fort Kent Cinema{% endblock %}
+{% block og_description %}Film reviews and notes on running a small-town cinema.{% endblock %}
 
 {% comment %}
 Paginated pages must canonical to themselves. Pointing ?page=2 at /blog/ tells
@@ -20,13 +20,16 @@ ended up orphaned. Page 1 keeps the bare /blog/ canonical so we don't mint a
   <div class="blog-list-container">
     <div class="blog-list-header" data-reveal>
       <a href="/" class="blog-list-back">&larr; Back to Home</a>
-      <h1 class="blog-list-title">BLOG</h1>
-      <p class="blog-list-subtitle">News, reviews, and updates from Fort Kent Cinema</p>
+      <h1 class="blog-list-title">FROM THE BOOTH</h1>
+      <p class="blog-list-subtitle">Film reviews and notes on running a small-town cinema.</p>
     </div>
-    {% if posts %}
+    {% if lead_post %}
+    <a href="{% url 'blog_detail' lead_post.slug %}" class="blog-list-card-link blog-list-feature">{% include "partials/blog_card.html" with post=lead_post feature=True %}</a>
+    {% if grid_posts %}
     <div class="blog-list-grid" data-spotlight>
       {% include "blog/_post_cards.html" %}
     </div>
+    {% endif %}
     <div class="blog-list-count" role="status" id="blog-count">
       Showing {{ page_obj.start_index }}&ndash;{{ page_obj.end_index }} of {{ paginator.count }} posts
     </div>
