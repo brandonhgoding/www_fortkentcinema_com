@@ -30,12 +30,9 @@
   {% include "partials/now_showing.html" %}
   {% include "partials/home_membership.html" %}
 
-  {# Task 6: open-mic CTA + coming soon (grid view; calendar deferred to Plan 4) #}
-  {% include "partials/cta_openmic.html" %}
   {% include "partials/coming_soon.html" %}
-
-  {# Task 7: gift-card CTA + blog teaser #}
-  {% include "partials/cta_giftcard.html" %}
+  {# Vote, open mic and gift card, as one row of cards. #}
+  {% include "partials/home_get_involved.html" %}
   {% comment %}
     Paired, not stacked. These two are the page's most similar blocks, and
     side by side they read as two offers rather than the site asking twice.
@@ -46,8 +43,6 @@
     {% include "partials/cta_history.html" %}
     {% include "partials/cta_sponsor.html" %}
   </div>
-  {# Open vote, just above the blog — self-expiring; see the partial. #}
-  {% include "partials/cta_vote.html" %}
   {% include "partials/blog_teaser.html" %}
   {% comment %}
     Last on the page, deliberately. An ask for money reads very differently

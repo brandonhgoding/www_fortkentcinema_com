@@ -12,6 +12,18 @@ from cinema.models import (
 )
 
 
+def get_involved(html):
+    """The Get involved section, which holds the vote, open-mic and gift cards."""
+    start = html.index('id="get-involved"')
+    return html[start : html.index("</section>", start)]
+
+
+def vote_card(html):
+    section = get_involved(html)
+    start = section.index("vote-cta")
+    return section[start:].split("</article>", 1)[0]
+
+
 class HomepageVoteCTATests(TestCase):
     def test_cta_absent_with_no_open_poll(self) -> None:
         Poll.objects.create(title="Closed Round", status=PollStatus.CLOSED)
@@ -21,27 +33,30 @@ class HomepageVoteCTATests(TestCase):
     def test_cta_is_generic_and_links_to_the_vote_page(self) -> None:
         Poll.objects.create(title="Round One", status=PollStatus.OPEN)
         html = self.client.get(reverse("home")).content.decode()
-        self.assertIn("vote-cta", html)
-        self.assertIn(f'href="{reverse("vote")}"', html)
-        self.assertIn("VOTE ON WHAT PLAYS NEXT", html)
-        self.assertIn("One round is open right now", html)
+        card = vote_card(html)
+        self.assertIn("Voting open", card)
+        self.assertIn("Vote on what plays next", card)
+        self.assertIn("One round is open right now.", card)
+        self.assertIn("Cast your vote &rarr;", card)
+        self.assertIn(f'href="{reverse("vote")}"', card)
+        self.assertIn('data-track="vote_cta_click"', card)
+        self.assertNotIn("btn-ticket", card)
         # It does not advertise one round over another.
-        self.assertNotIn("Round One", html.split('class="vote-cta"')[1])
+        self.assertNotIn("Round One", card)
 
-    def test_cta_sits_just_above_the_blog(self) -> None:
+    def test_cta_sits_in_get_involved_above_our_story(self) -> None:
         Poll.objects.create(title="Round One", status=PollStatus.OPEN)
         html = self.client.get(reverse("home")).content.decode()
-        self.assertLess(html.index('class="cta-pair"'), html.index('class="vote-cta"'))
-        self.assertLess(
-            html.index('class="vote-cta"'), html.index('<section class="blog"')
-        )
+        self.assertLess(html.index('id="coming-soon"'), html.index('id="get-involved"'))
+        self.assertLess(html.index('id="get-involved"'), html.index('class="cta-pair"'))
+        self.assertIn("vote-cta", get_involved(html))
 
     def test_one_cta_however_many_rounds_are_open(self) -> None:
-        Poll.objects.create(title="Round One", status=PollStatus.OPEN)
-        Poll.objects.create(title="Round Two", status=PollStatus.OPEN)
+        for title in ("Round One", "Round Two", "Round Three"):
+            Poll.objects.create(title=title, status=PollStatus.OPEN)
         html = self.client.get(reverse("home")).content.decode()
-        self.assertEqual(html.count('class="vote-cta"'), 1)
-        self.assertIn("2 rounds are open right now", html)
+        self.assertEqual(html.count("vote-cta"), 1)
+        self.assertIn("3 rounds are open right now.", html)
 
     def test_cta_retires_itself_when_the_poll_closes(self) -> None:
         poll = Poll.objects.create(title="Round One", status=PollStatus.OPEN)
@@ -113,7 +128,7 @@ class VoteCSSBundledTests(TestCase):
     def test_stylesheets_are_registered_in_the_bundle_entry(self) -> None:
         with open("frontend/styles/main.css") as fh:
             main_css = fh.read()
-        self.assertIn("VoteCTA.css", main_css)
+        self.assertIn("HomeSections.css", main_css)
         self.assertIn("VotePage.css", main_css)
 
     def test_no_per_page_stylesheet_link_was_added(self) -> None:

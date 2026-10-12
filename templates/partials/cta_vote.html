@@ -1,27 +1,17 @@
 {% comment %}
-  Homepage band for an open vote, one whenever any voting is on. `vote_polls`
+  Vote card in Get involved, shown whenever any voting is on. `vote_polls`
   comes from HomeView and holds only rounds that are OPEN and inside their
-  opens_at/closes_at window, so the band retires itself the moment the last
+  opens_at/closes_at window, so the card retires itself the moment the last
   round closes — no follow-up commit required. Deliberately generic: it
   sends people to /vote, which lists the rounds, rather than advertising one
   round over another.
-
-  Same band as the open-mic and gift-card CTAs (title, a line of detail, a
-  ticket button), sitting just above the blog.
 {% endcomment %}
 {% if vote_polls %}
-<section class="vote-cta" aria-labelledby="vote-cta-title">
-  <div class="vote-cta__content">
-    <div class="vote-cta__copy">
-      <h2 class="vote-cta__title" id="vote-cta-title">VOTE ON WHAT PLAYS NEXT</h2>
-      <p class="vote-cta__details">
-        {% if vote_polls|length == 1 %}One round is open right now{% else %}{{ vote_polls|length }} rounds are open right now{% endif %}
-      </p>
-    </div>
-    <a href="{% url 'vote' %}" class="btn btn-ticket"
-       data-track="vote_cta_click" data-track-location="home">
-      Cast your vote
-    </a>
-  </div>
-</section>
+<article class="home-card vote-cta">
+  <p class="home-card__eyebrow">Voting open</p>
+  <h3 class="home-card__title">Vote on what plays next</h3>
+  <p class="home-card__body">{% if vote_polls|length == 1 %}One round is open right now.{% else %}{{ vote_polls|length }} rounds are open right now.{% endif %}</p>
+  <a href="{% url 'vote' %}" class="home-link"
+     data-track="vote_cta_click" data-track-location="home">Cast your vote &rarr;</a>
+</article>
 {% endif %}

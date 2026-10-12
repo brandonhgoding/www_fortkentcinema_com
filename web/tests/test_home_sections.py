@@ -32,12 +32,9 @@ SECTION_MARKERS = (
     "hero",
     "sponsored-cta",
     "now-showing",
-    "open-mic-cta",
     "coming-soon",
-    "gift-card-cta",
     "history-cta",
     "sponsor-cta",
-    "vote-cta",
     "blog",
 )
 
@@ -128,7 +125,7 @@ class SectionCompositionTests(TestCase):
         With no seams to place, that needs no coordination — but they still
         have to actually disappear."""
         self.assertNotIn("sponsored-cta", section_sequence(self.home()))
-        self.assertNotIn("vote-cta", section_sequence(self.home()))
+        self.assertNotIn("vote-cta", main_content(self.home()))
 
         banner = {
             "url": "/movies/dune/",
@@ -143,9 +140,10 @@ class SectionCompositionTests(TestCase):
                 mock.patch(
                     "web.views.vote_service.open_polls", return_value=[poll]
                 ):
-            seq = section_sequence(self.home())
+            html = self.home()
+        seq = section_sequence(html)
         self.assertIn("sponsored-cta", seq)
-        self.assertIn("vote-cta", seq)
+        self.assertIn("vote-cta", main_content(html))
         self.assertEqual(seq[0], "hero")
 
 
@@ -341,3 +339,56 @@ class SponsorCtaCopyTests(TestCase):
         # There is no marquee on the building. The credit a sponsor buys is
         # the screen itself, and the copy must not promise street signage.
         self.assertNotIn("marquee", body)
+
+
+class GetInvolvedTests(TestCase):
+    """Vote, open mic and gift card share one section and one card shape."""
+
+    def section(self):
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertEqual(html.count('id="get-involved"'), 1)
+        start = html.index('id="get-involved"')
+        return html[start : html.index("</section>", start)]
+
+    def open_poll(self):
+        from cinema.models import Poll, PollStatus
+
+        Poll.objects.create(title="Round One", status=PollStatus.OPEN)
+
+    def test_heading_and_cards_row(self):
+        section = self.section()
+        self.assertRegex(section, r'<h2 class="section-title"[^>]*>Get involved</h2>')
+        self.assertIn('class="home-cards"', section)
+
+    def test_cards_in_order_vote_open_mic_gift_card(self):
+        self.open_poll()
+        section = self.section()
+        positions = [
+            section.index(m) for m in ("vote-cta", "open-mic-cta", "gift-card-cta")
+        ]
+        self.assertEqual(positions, sorted(positions))
+        self.assertEqual(section.count("home-card "), 3)
+
+    def test_without_an_open_round_two_cards_remain(self):
+        section = self.section()
+        self.assertNotIn("vote-cta", section)
+        self.assertLess(section.index("open-mic-cta"), section.index("gift-card-cta"))
+
+    def test_no_ticket_button_in_get_involved(self):
+        self.open_poll()
+        self.assertNotIn("btn-ticket", self.section())
+
+    def test_open_mic_card_copy(self):
+        section = self.section()
+        for text in ("Every Monday", "Open Mic", "How to sign up &rarr;"):
+            self.assertIn(text, section)
+
+    def test_gift_card_copy_and_new_window(self):
+        section = self.section()
+        card = section[section.index("gift-card-cta") :]
+        self.assertIn("Give the gift of cinema", card)
+        self.assertIn("An e-gift card for a night at the movies.", card)
+        self.assertIn("Buy an e-gift card &rarr;", card)
+        self.assertIn('target="_blank"', card)
+        self.assertIn('data-track="giftcard_click"', card)
+        self.assertRegex(card, r'aria-label="[^"]*opens in new window')

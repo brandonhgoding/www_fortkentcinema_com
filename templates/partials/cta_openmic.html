@@ -1,11 +1,11 @@
-<section class="open-mic-cta">
-  <div class="open-mic-cta__content">
-    <h2 class="open-mic-cta__title">OPEN MIC EVERY MONDAY</h2>
-    <p class="open-mic-cta__details">
-      <span class="open-mic-cta__time">6:30 PM</span>
-      <span class="open-mic-cta__separator">&bull;</span>
-      <span class="open-mic-cta__doors">Doors open at 6:00</span>
-    </p>
-    <a href="{% url 'open_mic' %}" class="open-mic-cta__link">How to sign up &rarr;</a>
-  </div>
-</section>
+{% comment %}
+  Open mic card in Get involved. The day and times are the facts on the
+  /open-mic/ page (web.constants.OPEN_MIC); web/tests/test_open_mic.py
+  asserts this copy still agrees with them.
+{% endcomment %}
+<article class="home-card open-mic-cta">
+  <p class="home-card__eyebrow">Every Monday</p>
+  <h3 class="home-card__title">Open Mic</h3>
+  <p class="home-card__body">6:30 PM &middot; doors open at 6:00.</p>
+  <a href="{% url 'open_mic' %}" class="home-link">How to sign up &rarr;</a>
+</article>

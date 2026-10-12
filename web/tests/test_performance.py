@@ -110,7 +110,7 @@ class BundleTests(TestCase):
             ".hero",             # Hero.css
             ".movie-card",       # MovieCard.css
             ".coming-",          # ComingSoon.css
-            ".gift-card-cta",    # GiftCardCTA.css
+            ".home-card",         # HomeSections.css
             ".tier-card",        # TierCard.css
             ".sponsored-cta",    # SponsoredCTA.css
             ".movie-page",       # MoviePage.css

@@ -112,11 +112,17 @@ class OpenMicPageTests(TestCase):
 class HomeBandAgreesTests(TestCase):
     """The home page has advertised this night since the React port."""
 
-    def test_band_matches_the_page_and_links_to_it(self):
+    def test_card_matches_the_page_and_links_to_it(self):
         html = self.client.get(reverse("home")).content.decode()
-        band = html[html.index('class="open-mic-cta"') :]
-        band = band[: band.index("</section>")]
-        self.assertIn(OPEN_MIC["day_label"].upper(), band)
-        self.assertIn(OPEN_MIC["start_label"], band)
-        self.assertIn(OPEN_MIC["doors_label"].replace(" PM", ""), band)
-        self.assertIn(f'href="{reverse("open_mic")}"', band)
+        card = html[html.index("open-mic-cta") :]
+        card = card[: card.index("</article>")]
+        self.assertIn(f"Every {OPEN_MIC['day_label']}", card)
+        self.assertIn(
+            f"{OPEN_MIC['start_label']} &middot; "
+            f"doors open at {OPEN_MIC['doors_label'].replace(' PM', '')}.",
+            card,
+        )
+        self.assertIn("Open Mic", card)
+        self.assertIn("How to sign up &rarr;", card)
+        self.assertIn(f'href="{reverse("open_mic")}"', card)
+        self.assertNotIn("data-track", card)
