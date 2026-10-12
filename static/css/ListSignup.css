@@ -1,63 +1,103 @@
 /* The mailing-list signup (partials/list_signup.html).
  *
- * A quiet inline row: a muted lead, an outlined field, a button. It sits
- * under the .ticket-info price line and the schedule, so it is deliberately
- * lighter than both — small type, no fill behind it, no banner. The button
- * is a plain outlined one for the same reason; the page's real calls to
- * action (buying a ticket) must stay louder.
- *
- * The lead takes the full first row; field and button share the second, and
- * stack at full width on a phone. */
+ * A quiet panel: the email's name in Garamond like a masthead, one line on
+ * what it is, then the field and button joined into a single control, and a
+ * line of small print. It sits under the .ticket-info price line and the
+ * schedule, so it stays lighter than both: a tinted ground with a hairline,
+ * no shadow, and an outlined button rather than a filled one. The page's
+ * real call to action (buying a ticket) must stay louder. */
 .list-signup {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: center;
   gap: var(--spacing-xs);
-  max-width: 40rem;
-  margin: var(--spacing-lg) auto 0;
+  max-width: 34rem;
+  margin: var(--spacing-xl) auto 0;
+  padding: var(--spacing-md) var(--spacing-lg);
   font-family: var(--font-body);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   line-height: 1.5;
+  text-align: center;
   color: var(--color-text-muted);
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-brass);
+  border-radius: var(--radius-md);
+}
+
+.list-signup__title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: var(--type-lead);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--color-text);
 }
 
 .list-signup__lead {
-  flex: 1 0 100%;
   margin: 0;
+  text-wrap: pretty;
 }
 
-.list-signup__lead strong {
-  color: var(--color-text);
-  font-weight: 600;
-}
-
-.list-signup input[type='email'] {
-  flex: 1 1 14rem;
-  min-width: 0;
-  padding: 0.6rem 0.75rem;
-  font: inherit;
-  color: var(--color-text);
-  background: var(--color-surface-raised);
-  border: 1px solid var(--color-brass);
+/* Field and button as one control: one border, one height, the button
+ * sharing the field's right edge. */
+.list-signup__field {
+  display: flex;
+  width: 100%;
+  margin-top: var(--spacing-xs);
+  border: 1px solid var(--color-accent);
   border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
 }
 
-.list-signup input[type='email']:focus-visible,
-.list-signup__button:focus-visible {
+.list-signup__field:has(input:focus-visible) {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
-.list-signup__button {
-  min-height: 44px;
-  padding: 0.6rem 1.25rem;
+.list-signup input[type='email'] {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 46px;
+  padding: 0 0.875rem;
   font: inherit;
-  font-weight: 600;
+  font-size: 1rem;
+  color: var(--color-text);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.list-signup input[type='email']::placeholder {
+  color: var(--color-text-muted);
+  opacity: 0.75;
+}
+
+/* The field's focus ring is drawn on the joined control above; the button
+ * draws its own inside it. */
+.list-signup input[type='email']:focus {
+  outline: none;
+}
+
+.list-signup input[aria-invalid='true'] {
+  box-shadow: inset 3px 0 0 var(--color-danger);
+}
+
+.list-signup__button {
+  flex: 0 0 auto;
+  min-height: 46px;
+  padding: 0 1.25rem;
+  font-family: var(--font-condensed);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--color-accent);
   background: transparent;
-  border: 1px solid var(--color-accent);
-  border-radius: var(--radius-sm);
-  transition: background var(--transition-base), color var(--transition-base);
+  border: 0;
+  border-left: 1px solid var(--color-accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 .list-signup__button:hover {
@@ -65,14 +105,36 @@
   background: var(--color-accent);
 }
 
-.list-signup__error {
-  flex: 1 0 100%;
-  margin: 0;
-  color: var(--color-danger);
+.list-signup__button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -5px;
 }
 
+.list-signup__button:hover:focus-visible {
+  outline-color: var(--color-on-accent);
+}
+
+.list-signup__note,
+.list-signup__error {
+  margin: 0;
+  font-size: var(--type-label);
+}
+
+.list-signup__error {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+/* The reply to a submit takes the same panel, so the swap does not jump. */
 .list-signup--done {
   display: block;
+  color: var(--color-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .list-signup__button {
+    transition: none;
+  }
 }
 
 /* Bots fill this; people never see it. Off-screen rather than display:none,
@@ -88,14 +150,27 @@
 /* On a movie page the column is left-aligned, like .ticket-info there. */
 .movie-page-showtimes .list-signup,
 .movie-page-archive .list-signup {
+  align-items: flex-start;
   margin-left: 0;
   margin-right: 0;
+  text-align: left;
 }
 
 @media (max-width: 599px) {
-  .list-signup input[type='email'],
+  .list-signup {
+    padding: var(--spacing-md) var(--spacing-sm);
+  }
+
+  /* Too narrow to share a row: the field above, the button below it at
+   * full width, still one bordered control. */
+  .list-signup__field {
+    flex-direction: column;
+  }
+
   .list-signup__button {
-    flex: 1 0 100%;
+    border-left: 0;
+    border-top: 1px solid var(--color-accent);
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
   }
 }
 

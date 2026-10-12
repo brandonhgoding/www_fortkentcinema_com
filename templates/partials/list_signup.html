@@ -26,23 +26,32 @@
     <div class="list-signup__hp" aria-hidden="true">
       <label>Website <input name="website" tabindex="-1" autocomplete="off" /></label>
     </div>
-    <p class="list-signup__lead">
-      {% if list_signup_lead %}{{ list_signup_lead }}{% else %}<strong>This weekend at the Cinema</strong>: get the weekend's showtimes by email every Thursday.{% endif %}
-    </p>
+    {% if list_signup_lead %}
+      <p class="list-signup__lead">{{ list_signup_lead }}</p>
+    {% else %}
+      <p class="list-signup__title">This weekend at the Cinema</p>
+      <p class="list-signup__lead">The weekend's showtimes, in your inbox every Thursday.</p>
+    {% endif %}
     <label class="sr-only" for="list-signup-email-{{ list_signup_location }}">Email address</label>
-    <input
-      id="list-signup-email-{{ list_signup_location }}"
-      type="email"
-      name="email"
-      autocomplete="email"
-      required
-      value="{{ list_signup_email }}"
-    />
-    <button type="submit" class="list-signup__button" data-track="list_signup" data-track-location="{{ list_signup_location }}">
-      Sign me up
-    </button>
+    <div class="list-signup__field">
+      <input
+        id="list-signup-email-{{ list_signup_location }}"
+        type="email"
+        name="email"
+        autocomplete="email"
+        placeholder="you@example.com"
+        required
+        value="{{ list_signup_email }}"
+        {% if list_signup_error %}aria-invalid="true" aria-describedby="list-signup-error-{{ list_signup_location }}"{% endif %}
+      />
+      <button type="submit" class="list-signup__button" data-track="list_signup" data-track-location="{{ list_signup_location }}">
+        Subscribe
+      </button>
+    </div>
     {% if list_signup_error %}
-      <p class="list-signup__error" role="alert">{{ list_signup_error }}</p>
+      <p class="list-signup__error" id="list-signup-error-{{ list_signup_location }}" role="alert">{{ list_signup_error }}</p>
+    {% else %}
+      <p class="list-signup__note">One email a week. We'll send a link to confirm first.</p>
     {% endif %}
   </form>
 {% endif %}
