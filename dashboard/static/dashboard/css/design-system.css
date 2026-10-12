@@ -417,7 +417,8 @@ a:hover {
   color: var(--status-ended);
 }
 
-.status-expiring {
+.status-expiring,
+.status-pending {
   background: var(--status-warning-bg);
   color: var(--status-warning);
 }

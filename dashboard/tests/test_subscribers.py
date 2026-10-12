@@ -33,6 +33,20 @@ class SubscriberListTests(TestCase):
         html = self.client.get(reverse("dashboard:home")).content.decode()
         self.assertIn(reverse("dashboard:subscribers"), html)
 
+    def test_pending_shows_its_label_and_is_not_counted_or_exported(self) -> None:
+        Subscriber.objects.record("in@example.com", source="poll_vote")
+        Subscriber.objects.request_signup("wait@example.com", "movie_page")
+        response = self.client.get(reverse("dashboard:subscribers"))
+        html = response.content.decode()
+        self.assertIn("Pending confirmation", html)
+        self.assertIn("status-pending", html)
+        self.assertEqual(response.context["active_count"], 1)
+        body = self.client.get(
+            reverse("dashboard:subscribers_export")
+        ).content.decode()
+        self.assertIn("in@example.com", body)
+        self.assertNotIn("wait@example.com", body)
+
 
 class SubscriberExportTests(TestCase):
     def setUp(self) -> None:
