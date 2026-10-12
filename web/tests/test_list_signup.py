@@ -1,14 +1,15 @@
 import re
+import time
 from datetime import timedelta
 from unittest import mock
 
-from django.core import mail
+from django.core import mail, signing
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
 from audience.models import Subscriber, SubscriberStatus
-from web.list_signup import load_confirm_token, source_for
+from web.list_signup import confirm_token, load_confirm_token, source_for
 
 DONE = "Almost there: check your inbox for a link to confirm."
 ERROR = "That doesn&#x27;t look like an email address."
@@ -165,3 +166,79 @@ class ListSignupTests(TestCase):
 
     def test_get_is_not_allowed(self):
         self.assertEqual(self.client.get(reverse("list_signup")).status_code, 405)
+
+
+class ListConfirmTests(TestCase):
+    JOINED = "You're on the list. The first Thursday email is on its way soon."
+    EXPIRED = "That link has expired"
+
+    def setUp(self):
+        self.sub = Subscriber.objects.request_signup("fan@example.com", "movie_page")
+        self.url = reverse("list_confirm", args=[confirm_token(self.sub)])
+
+    def test_get_asks_and_changes_nothing(self):
+        r = self.client.get(self.url)
+        self.assertContains(r, "fan@example.com")
+        self.assertContains(r, 'method="post"')
+        self.assertContains(r, "noindex")
+        self.sub.refresh_from_db()
+        self.assertEqual(self.sub.status, SubscriberStatus.PENDING)
+
+    def test_post_confirms(self):
+        self.assertContains(self.client.post(self.url), self.JOINED)
+        self.sub.refresh_from_db()
+        self.assertEqual(self.sub.status, SubscriberStatus.ACTIVE)
+
+    def test_double_post_is_harmless(self):
+        self.client.post(self.url)
+        r = self.client.post(self.url)
+        self.assertContains(r, "You're already on the list.")
+        self.assertEqual(
+            self.sub.changes.filter(status=SubscriberStatus.ACTIVE).count(), 1
+        )
+
+    def test_get_after_joining_says_already(self):
+        self.client.post(self.url)
+        self.assertContains(self.client.get(self.url), "You're already on the list.")
+
+    def test_former_opt_out_can_rejoin(self):
+        old = Subscriber.objects.create(
+            email="back@example.com", source="movie_page", status="ACTIVE"
+        )
+        old.unsubscribe()
+        sub = Subscriber.objects.request_signup("back@example.com", "movie_page")
+        url = reverse("list_confirm", args=[confirm_token(sub)])
+        self.assertContains(self.client.post(url), self.JOINED)
+        old.refresh_from_db()
+        self.assertEqual(old.status, SubscriberStatus.ACTIVE)
+        self.assertIsNone(old.unsubscribed_at)
+
+    def test_link_from_before_an_unsubscribe_is_expired(self):
+        with mock.patch("web.list_signup.time.time", return_value=time.time() - 3600):
+            url = reverse("list_confirm", args=[confirm_token(self.sub)])
+        self.client.post(url)
+        self.sub.refresh_from_db()
+        self.sub.unsubscribe()
+        r = self.client.post(url)
+        self.assertContains(r, self.EXPIRED)
+        self.sub.refresh_from_db()
+        self.assertEqual(self.sub.status, SubscriberStatus.UNSUBSCRIBED)
+
+    def test_bad_expired_and_deleted_give_a_friendly_page(self):
+        other = signing.dumps({"pk": self.sub.pk, "at": time.time()}, salt="other")
+        with mock.patch(
+            "web.list_signup.time.time", return_value=time.time() - 8 * 86400
+        ):
+            old = confirm_token(self.sub)
+        gone = Subscriber.objects.request_signup("gone@example.com", "movie_page")
+        deleted = confirm_token(gone)
+        gone.delete()
+        for token in ("junk", other, old, deleted):
+            url = reverse("list_confirm", args=[token])
+            for method in (self.client.get, self.client.post):
+                r = method(url)
+                self.assertContains(r, self.EXPIRED)
+                self.assertContains(r, 'action="/subscribe"')
+                self.assertContains(r, 'name="location" value="site"')
+        self.sub.refresh_from_db()
+        self.assertEqual(self.sub.status, SubscriberStatus.PENDING)

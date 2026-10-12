@@ -13,14 +13,13 @@ from django import forms
 from django.core import signing
 from django.core.mail import EmailMessage
 from django.db.models import Q
-from django.http import Http404
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 
-from audience.models import Subscriber
+from audience.models import Subscriber, SubscriberStatus
 from cinema.voting import client_ip
 from web.constants import SITE_CONFIG
 
@@ -154,7 +153,37 @@ class ListSignupView(View):
 
 
 class ListConfirmView(View):
-    """Placeholder so the emailed link resolves; Task 3 replaces it."""
+    """The page the emailed link opens.
+
+    GET only asks. Mail scanners and link previewers open every link in an
+    email, so joining happens on POST, from a button a person presses.
+    Every outcome is a 200 page: a dead link is not an error to show.
+    """
 
     def get(self, request, token):
-        raise Http404
+        return self._respond(request, token, join=False)
+
+    def post(self, request, token):
+        return self._respond(request, token, join=True)
+
+    def _respond(self, request, token, join):
+        ctx = {"state": "expired"}
+        loaded = load_confirm_token(token)
+        if loaded is not None:
+            subscriber, issued_at = loaded
+            # A link issued before an opt-out must not undo it. Compared
+            # exactly: the token carries a float time for this reason.
+            opted_out_since = (
+                subscriber.unsubscribed_at is not None
+                and subscriber.unsubscribed_at > issued_at
+            )
+            if not opted_out_since:
+                ctx["subscriber"] = subscriber
+                if subscriber.status == SubscriberStatus.ACTIVE:
+                    ctx["state"] = "already"
+                elif join:
+                    subscriber.confirm()
+                    ctx["state"] = "confirmed"
+                else:
+                    ctx["state"] = "ask"
+        return render(request, "web/list_confirm.html", ctx)

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Confirm your email | Fort Kent Cinema{% endblock %}
+
+{% comment %}
+The page the confirmation email links to. Opening it only asks; the button
+posts to the same URL, because mail scanners open links and must not be
+able to join anyone. A reply to a private link has no business in search
+results. Context: state (ask, confirmed, already, expired), subscriber.
+{% endcomment %}
+{% block robots %}noindex, nofollow{% endblock %}
+
+{% block content %}
+<div class="thanks-page">
+  <div class="thanks-container">
+    {% if state == "ask" %}
+      <p>Join the Thursday showtimes email as <strong>{{ subscriber.email }}</strong>?</p>
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="thanks-cta">Yes, add me</button>
+      </form>
+    {% elif state == "confirmed" %}
+      <p role="status">You're on the list. The first Thursday email is on its way soon.</p>
+    {% elif state == "already" %}
+      <p role="status">You're already on the list.</p>
+    {% else %}
+      <p role="status">That link has expired</p>
+      {% include "partials/list_signup.html" with list_signup_location="site" list_signup_lead="Want a fresh one? Enter your email and we'll send a new link." %}
+    {% endif %}
+    {% if state != "expired" %}
+      <div class="thanks-actions">
+        <a href="{% url 'home' %}" class="thanks-cta">&larr; Back to the cinema</a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
