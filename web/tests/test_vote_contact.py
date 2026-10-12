@@ -177,12 +177,27 @@ class ThanksScreenSubscribeTests(TestCase):
         self.assertEqual(sub.consent_ip, "198.51.100.4")
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to, ["fan@example.com"])
+        self.assertEqual(
+            mail.outbox[0].subject, "Confirm your Fort Kent Cinema emails"
+        )
         html = response.content.decode()
         self.assertIn(DONE, html)
         self.assertNotIn("You're on the list", html)
         self.assertNotIn("Yes, add me", html)
         # Still the thanks screen, not a blank ballot.
         self.assertIn("your vote for", html)
+
+    def test_the_confirmation_names_the_round_and_promises_the_result(self) -> None:
+        token = self._token(self.vote().content.decode())
+        self.client.post(
+            reverse("vote_subscribe"), {"token": token}, HTTP_HX_REQUEST="true"
+        )
+        body = mail.outbox[0].body
+        self.assertTrue(body.startswith('Thanks for voting in "Round One".\n'))
+        self.assertIn("hear what won, plus the weekend's showtimes", body)
+        self.assertIn("every Thursday", body)
+        self.assertRegex(body, r"http://testserver/subscribe/confirm/\S+")
+        self.assertIn("Didn't ask for this?", body)
 
     def test_saying_yes_twice_is_not_an_error(self) -> None:
         token = self._token(self.vote().content.decode())

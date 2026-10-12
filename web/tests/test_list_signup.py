@@ -31,6 +31,7 @@ class ListSignupTests(TestCase):
         self.assertEqual(msg.to, ["fan@example.com"])
         self.assertIn("every Thursday", msg.body)
         self.assertIn("Didn't ask for this?", msg.body)
+        self.assertNotIn("Thanks for voting", msg.body)
         link = re.search(r"http://testserver(/subscribe/confirm/\S+)", msg.body).group(
             1
         )

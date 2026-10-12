@@ -766,7 +766,7 @@ class VoteSubscribeView(View):
 
         # Idempotent, and never re-adds an address that opted out. The
         # address only joins once its owner follows the emailed link.
-        start_signup(request, vote.email, source=self.SOURCE)
+        start_signup(request, vote.email, source=self.SOURCE, poll=vote.poll)
         ctx = _vote_context(poll=vote.poll, vote=vote, subscribed=True)
         if request.headers.get("HX-Request"):
             return render(request, "partials/vote_panel.html", ctx)
