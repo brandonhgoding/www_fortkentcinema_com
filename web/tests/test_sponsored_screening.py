@@ -12,7 +12,6 @@ date to keep in sync and no follow-up commit to remember.
 
 import datetime
 import re
-import unittest
 from pathlib import Path
 from unittest import mock
 
@@ -217,11 +216,9 @@ class SponsoredScreeningBannerTests(SponsoredScreeningFixture):
         self.assertLess(html.index('id="now-showing"'), card)
         self.assertLess(card, html.index("date-nav"))
 
-    @unittest.expectedFailure
     def test_ticket_button_only_in_now_showing(self):
-        """Task 4 removes the expectedFailure marker: until the Coming soon
-        and Get involved sections drop their ticket buttons, some btn-ticket
-        still sits outside Now Showing."""
+        """The ticket button belongs to Now Showing alone; every other action
+        below the hero is a text link."""
         html = self.home()
         hero_end = html.index("</section>", html.index('class="hero"'))
         start = html.index('id="now-showing"')

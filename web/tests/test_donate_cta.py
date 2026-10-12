@@ -78,8 +78,8 @@ class DonationLiveTests(TestCase):
     def test_the_section_appears_once_the_url_is_set(self):
         self.assertIn("donate-cta", self.html)
 
-    def test_the_button_says_donate(self):
-        self.assertIn(">\n      Donate\n    </a>", self.html)
+    def test_the_link_says_donate(self):
+        self.assertIn(">Donate &rarr;</a>", self.html)
 
     def test_the_button_points_at_the_configured_link(self):
         self.assertIn(f'href="{LIVE["url"]}"', self.html)
@@ -95,15 +95,18 @@ class DonationLiveTests(TestCase):
     def test_it_is_tracked_like_the_other_home_ctas(self):
         self.assertIn('data-track="donate_click"', self.html)
 
-    def test_it_is_the_last_ask_on_the_page(self):
-        """After the blog teaser, and well clear of the sponsor CTA.
+    def test_it_sits_in_support_beside_the_sponsor_link(self):
+        """Both asks live in the one slim Support strip at the foot of the
+        page, as quiet text links rather than two competing bands."""
+        support = self.html[self.html.index('id="support"') :]
+        self.assertIn("sponsor-cta", support)
+        self.assertGreater(support.index("donate-cta"), support.index("sponsor-cta"))
 
-        The sponsor block is the site's other ask for money; the two
-        adjacent read as the site asking twice.
-        """
-        self.assertGreater(
-            self.html.index("donate-cta"), self.html.index("sponsor-cta")
-        )
+    def test_it_is_a_text_link_not_a_button(self):
+        donate = self.html[self.html.index("donate-cta") :]
+        donate = donate[: donate.index("</a>")]
+        self.assertIn("home-link", donate)
+        self.assertNotIn("btn-ticket", donate)
 
 
 class DisclaimerTests(TestCase):
@@ -121,7 +124,7 @@ class DisclaimerTests(TestCase):
     def test_it_says_the_money_is_not_tax_deductible(self):
         self.assertIn("isn't tax-deductible", DONATION["disclaimer"])
 
-    def test_it_sits_after_the_button_not_before(self):
+    def test_it_sits_after_the_link_not_before(self):
         """The last thing read before the click."""
         self.assertGreater(
             self.html.index("donate-cta__disclaimer"),
@@ -135,9 +138,7 @@ class DisclaimerTests(TestCase):
         the body or the title cannot reintroduce the claim the disclaimer
         exists to rule out.
         """
-        copy = " ".join(
-            v for v in DONATION.values() if isinstance(v, str)
-        ).lower()
+        copy = " ".join(v for v in DONATION.values() if isinstance(v, str)).lower()
         for claim in (
             "non-profit",
             "nonprofit",
@@ -150,8 +151,6 @@ class DisclaimerTests(TestCase):
             self.assertNotIn(claim, copy, claim)
 
     def test_the_only_deductibility_language_is_the_denial(self):
-        copy = " ".join(
-            v for v in DONATION.values() if isinstance(v, str)
-        ).lower()
+        copy = " ".join(v for v in DONATION.values() if isinstance(v, str)).lower()
         self.assertEqual(copy.count("tax-deductible"), 1)
         self.assertIn("isn't tax-deductible", copy)

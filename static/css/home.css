@@ -31,16 +31,16 @@
  *
  * App.jsx only mounted Hero, the CTAs, and the Blog teaser above a 600px
  * matchMedia check, and the Django port reproduced that by hiding .hero,
- * .open-mic-cta, .gift-card-cta and .blog below 600px. The cost, measured at
- * 390px: zero <h1> on the page (the only one is .marquee-title, inside the
+ * the open mic and gift card cards and the blog teaser below 600px. The
+ * cost, measured at 390px: zero <h1> on the page (the only one is .marquee-title, inside the
  * hidden hero), two visible links in <main>, no wordmark, no tagline, no call
  * to action above Now Showing, and a page that opened on a stranded ornament
  * divider. Google indexes mobile-first and phones are the majority of this
  * cinema's traffic, so that was the whole site's first impression.
  *
- * All four sections now have real phone layouts in their own stylesheets
- * (Hero.css, OpenMicCTA.css, GiftCardCTA.css, Blog.css + BlogCard.css) at the
- * same 600px breakpoint the Now Showing split above uses. If a section looks
+ * Every section now has a real phone layout in its own stylesheet
+ * (Hero.css, HomeSections.css) at the same 600px breakpoint the Now Showing
+ * split above uses. If a section looks
  * wrong on a phone, fix it there — hiding it is not a fix.
  *
  * NOTE: the Now Showing desktop/phone split above is a different thing and

@@ -14,7 +14,7 @@
  *    print, but stays quieter than the title.
  *
  * DELIBERATELY NOT HIDDEN ON PHONES. static/css/home.css hides .hero,
- * .open-mic-cta, .gift-card-cta and .blog below 600px — inherited from the
+ * the open mic and gift card cards and the blog teaser below 600px — inherited from the
  * old React app, which only mounted those components above a matchMedia
  * check. This banner is intentionally absent from that rule: a holiday
  * matinee is aimed at families who are overwhelmingly on phones, and hiding

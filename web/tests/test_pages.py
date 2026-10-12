@@ -219,7 +219,9 @@ class HomeIntegrationTests(TestCase):
         html = self.client.get(reverse("home")).content.decode()
         # Sections appear in the SPA's order
         order = [html.index(s) for s in (
-            'class="hero"', 'id="now-showing"', 'id="coming-soon"',
+            'class="hero"', 'id="now-showing"', 'id="membership"',
+            'id="coming-soon"', 'id="get-involved"', 'id="our-story"',
+            'id="support"',
         )]
         self.assertEqual(order, sorted(order))
         self.assertIn('class="skip-link"', html)  # base chrome intact
@@ -249,20 +251,20 @@ class BlogTeaserTests(TestCase):
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_now_showing", return_value=[])
-    def test_recent_post_uses_shared_blog_card_partial(self, _ns, _cs):
-        # Guards the blog_teaser.html refactor onto the shared
-        # partials/blog_card.html include: both the post content and the
-        # blog-card markup it renders must appear together on the home page.
+    def test_recent_post_renders_as_a_home_card(self, _ns, _cs):
+        # The Our story post cards are home cards, not the /blog/ list card:
+        # no image, a date eyebrow, the excerpt, and a "Read" link.
         html = self.client.get(reverse("home")).content.decode()
         self.assertIn("Fort Kent Cinema Turns 90", html)
-        self.assertIn('class="blog-card"', html)
-        self.assertIn('class="blog-card-excerpt"', html)
+        self.assertIn('class="home-card blog-post-card"', html)
+        self.assertIn("blog-post-card__excerpt", html)
+        self.assertIn("Nine decades of movies in the St. John Valley.", html)
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_now_showing", return_value=[])
-    def test_teaser_shows_six_newest_posts(self, _ns, _cs):
-        # Six fills the teaser grid evenly at every breakpoint (3/2/1 across),
-        # so a row is never left half empty. Newest first, oldest dropped.
+    def test_teaser_shows_three_newest_posts(self, _ns, _cs):
+        # Our story carries the history card and the three newest posts, one
+        # row of four cards. Newest first, the rest dropped.
         for i in range(8):
             BlogPost.objects.create(
                 title=f"Filler {i}",
@@ -275,10 +277,10 @@ class BlogTeaserTests(TestCase):
             )
         resp = self.client.get(reverse("home"))
         posts = list(resp.context["recent_posts"])
-        self.assertEqual(len(posts), 6)
+        self.assertEqual(len(posts), 3)
         self.assertEqual(
             [p.title for p in posts],
-            [f"Filler {i}" for i in range(7, 1, -1)],
+            [f"Filler {i}" for i in range(7, 4, -1)],
         )
         # The 2026-01-01 post from setUpTestData is the oldest and falls off.
         self.assertNotIn("Fort Kent Cinema Turns 90", [p.title for p in posts])

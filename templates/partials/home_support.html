@@ -1,0 +1,17 @@
+{% comment %}
+  Support the Cinema: a slim strip at the foot of the page. The two asks for
+  money are quiet text links here, after everything the site has to show;
+  two loud bands side by side read as the site asking twice.
+{% endcomment %}
+<section id="support" class="home-section home-section--sunken home-section--slim"
+         aria-labelledby="support-title">
+  <div class="section-container">
+    <div class="home-support">
+      <h2 class="home-support__label" id="support-title">Support the Cinema</h2>
+      <div class="home-support__links">
+        {% include "partials/cta_sponsor.html" %}
+        {% include "partials/cta_donate.html" %}
+      </div>
+    </div>
+  </div>
+</section>

@@ -91,23 +91,22 @@ class HomeView(TemplateView):
         # voting window, so each banner retires itself when its round closes.
         ctx["vote_polls"] = vote_service.open_polls()
 
-        # Donation CTA. The partial renders nothing while DONATION["url"]
-        # is blank, which is how it shipped ahead of the Square item —
-        # a Donate button pointing nowhere never went live.
+        # Donate link in the Support strip. The partial renders nothing while
+        # DONATION["url"] is blank, which is how it shipped ahead of the Square
+        # item — a Donate link pointing nowhere never went live.
         ctx["donation"] = DONATION
 
-        # Home blog teaser: latest 6 posts, deterministically ordered. Six is
-        # what the teaser grid lays out evenly — three across on a desktop,
-        # two on a tablet, one on a phone — so no row is ever left half full.
+        # Our story: the latest 3 posts, deterministically ordered. They sit
+        # beside the history card, so three posts make a row of four cards.
         ctx["recent_posts"] = (
             BlogPost.objects.published()
             .select_related("author", "category")
-            .order_by("-post_date", "-id")[:6]
+            .order_by("-post_date", "-id")[:3]
         )
 
-        # The sponsor CTA says "From $N". N is the cheapest tier rather than a
-        # typed number, so the home page cannot drift away from the prices on
-        # /sponsor/ when a tier is repriced.
+        # The Support strip's sponsor link says "from $N". N is the cheapest
+        # tier rather than a typed number, so the home page cannot drift away
+        # from the prices on /sponsor/ when a tier is repriced.
         ctx["sponsorship_from_price"] = min(t["price"] for t in SPONSORSHIP_TIERS)
 
         # Membership band: "From $N a year" is the cheapest tier the public

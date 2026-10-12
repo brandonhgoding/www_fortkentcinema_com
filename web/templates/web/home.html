@@ -19,9 +19,9 @@
     divider behind. The dividers are gone, which left that tag doing nothing
     a bare {% templatetag openblock %} include {% templatetag closeblock %} does not, so it went with them.
 
-    Sections are separated by their own alternating grounds now. The two
-    self-expiring CTAs below still render nothing when they are not live;
-    with no seams to place, that needs no help.
+    Sections are separated by their own alternating grounds now. The
+    self-expiring cards (sponsored screening, vote) still render nothing when
+    they are not live; with no seams to place, that needs no help.
   {% endcomment %}
 
   {# Task 5: hero + now showing (which carries the sponsored-screening card) #}
@@ -33,25 +33,7 @@
   {% include "partials/coming_soon.html" %}
   {# Vote, open mic and gift card, as one row of cards. #}
   {% include "partials/home_get_involved.html" %}
-  {% comment %}
-    Paired, not stacked. These two are the page's most similar blocks, and
-    side by side they read as two offers rather than the site asking twice.
-    See static/css/CtaPair.css — the wrapper is the grid; the halves keep
-    their own padding and type. Stacks below 900px.
-  {% endcomment %}
-  <div class="cta-pair">
-    {% include "partials/cta_history.html" %}
-    {% include "partials/cta_sponsor.html" %}
-  </div>
-  {% include "partials/blog_teaser.html" %}
-  {% comment %}
-    Last on the page, deliberately. An ask for money reads very differently
-    after someone has seen what is playing, what is coming, what the place
-    has been since 1917 and what we have been writing about — and it is
-    kept away from the sponsor CTA in the pair above, which is the site's
-    other ask. Two asks side by side read as the site asking twice.
-
-    Renders nothing until DONATION["url"] is set; see the partial.
-  {% endcomment %}
-  {% include "partials/cta_donate.html" %}
+  {# The history card and the latest posts, then the asks for money, last. #}
+  {% include "partials/home_our_story.html" %}
+  {% include "partials/home_support.html" %}
 {% endblock %}

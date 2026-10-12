@@ -162,7 +162,7 @@
 
   /* A tap leaves :hover stuck on the card until the next tap elsewhere, so the
    * lift and the glow read as a rendering bug rather than feedback. The card
-   * is wrapped in an <a>; :focus-visible on .blog-card-link (Blog.css) is the
+   * is wrapped in an <a>; :focus-visible on .blog-list-card-link (BlogListPage.css) is the
    * state that matters here. */
   .blog-card:hover {
     transform: none;

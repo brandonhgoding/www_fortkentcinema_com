@@ -26,16 +26,20 @@ from unittest import mock
 from django.test import TestCase
 from django.urls import reverse
 
-from web.constants import SITE_CONFIG, SPONSORSHIP_TIERS
+from django.utils.html import escape
+
+from blog.models import BlogAuthor, BlogCategory, BlogPost
+from web.constants import DONATION, SITE_CONFIG, SPONSORSHIP_TIERS
 
 SECTION_MARKERS = (
     "hero",
     "sponsored-cta",
     "now-showing",
+    "membership",
     "coming-soon",
-    "history-cta",
-    "sponsor-cta",
-    "blog",
+    "get-involved",
+    "our-story",
+    "support",
 )
 
 
@@ -45,8 +49,10 @@ def main_content(html):
 
 def section_sequence(html):
     """The order the page's top-level sections appear in."""
-    pattern = r'class="(%s)"' % "|".join(SECTION_MARKERS)
-    return [m.group(1) for m in re.finditer(pattern, main_content(html))]
+    pattern = r'(?:class|id)="(%s)"' % "|".join(SECTION_MARKERS)
+    seq = [m.group(1) for m in re.finditer(pattern, main_content(html))]
+    # coming-soon is both a class and an id on the same <section>
+    return [m for i, m in enumerate(seq) if m not in seq[:i]]
 
 
 def movie(**over):
@@ -96,27 +102,36 @@ class SectionCompositionTests(TestCase):
     @mock.patch("web.views.get_now_showing", return_value=[])
     def test_sections_appear_once_each_in_order(self, _ns, _cs):
         seq = section_sequence(self.home())
-        self.assertEqual(seq, sorted(set(seq), key=seq.index),
-                         "a section rendered twice: %s" % seq)
+        self.assertEqual(
+            seq, sorted(set(seq), key=seq.index), "a section rendered twice: %s" % seq
+        )
         self.assertEqual(seq[0], "hero")
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_now_showing", return_value=[])
-    def test_history_and_sponsor_ctas_are_paired(self, _ns, _cs):
-        """These two are the page's most similar blocks and were flagged as
-        structural twins that read as one templated run. They are laid out
-        side by side above 900px, which needs a wrapper element — CSS alone
-        cannot pair two sibling <section>s. If the wrapper is lost they fall
-        back to stacking, silently, so the nesting is asserted."""
+    def test_section_order_ends_with_our_story_then_support(self, _ns, _cs):
+        html = self.home()
+        seq = section_sequence(html)
+        self.assertEqual(
+            seq,
+            [
+                "hero",
+                "now-showing",
+                "membership",
+                "coming-soon",
+                "get-involved",
+                "our-story",
+                "support",
+            ],
+        )
+        self.assertNotIn("cta-pair", html)
+
+    @mock.patch("web.views.get_coming_soon", return_value=[])
+    @mock.patch("web.views.get_now_showing", return_value=[])
+    def test_support_is_the_last_section_before_the_footer(self, _ns, _cs):
         main = main_content(self.home())
-        pair = re.search(
-            r'<div class="cta-pair">(.*?)</div>\s*<section class="blog"',
-            main, re.S)
-        self.assertIsNotNone(pair, "the .cta-pair wrapper is gone")
-        self.assertIn("history-cta", pair.group(1))
-        self.assertIn("sponsor-cta", pair.group(1))
-        self.assertLess(pair.group(1).index("history-cta"),
-                        pair.group(1).index("sponsor-cta"))
+        last = main.rindex("<section")
+        self.assertIn('id="support"', main[last : last + 200])
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_now_showing", return_value=[])
@@ -136,10 +151,10 @@ class SectionCompositionTests(TestCase):
             "days": [{"date": datetime.date(2999, 1, 15), "times": ["6:00 PM"]}],
         }
         poll = {"title": "Pick the Sunday matinee", "options": {"count": 3}}
-        with mock.patch("web.views.sponsored_screening", return_value=banner), \
-                mock.patch(
-                    "web.views.vote_service.open_polls", return_value=[poll]
-                ):
+        with (
+            mock.patch("web.views.sponsored_screening", return_value=banner),
+            mock.patch("web.views.vote_service.open_polls", return_value=[poll]),
+        ):
             html = self.home()
         seq = section_sequence(html)
         self.assertIn("sponsored-cta", seq)
@@ -241,9 +256,7 @@ class EmptyStateTests(TestCase):
     def test_now_showing_empty_state_offers_somewhere_to_go(self, _ns, _cs):
         html = self.client.get(reverse("home")).content.decode()
         # Through the links list: the signup form's honeypot has its own </div>.
-        empty = re.search(
-            r'<div class="no-showtimes">.*?</ul>', html, re.S
-        ).group(0)
+        empty = re.search(r'<div class="no-showtimes">.*?</ul>', html, re.S).group(0)
         self.assertIn("No showtimes available.", empty)
         self.assertIn(SITE_CONFIG["social"]["facebook"], empty)
         self.assertIn("/membership/", empty)
@@ -282,15 +295,16 @@ class EmptyStateTests(TestCase):
 
 
 class SponsorCtaCopyTests(TestCase):
-    """The homepage sponsor CTA has to stay true with nobody maintaining it."""
+    """The homepage sponsor link has to stay true with nobody maintaining it."""
 
     def home(self):
         return self.client.get(reverse("home")).content.decode()
 
     def body(self):
+        """The sponsor link inside Support, as rendered."""
         html = self.home()
-        start = html.index('class="sponsor-cta__body"')
-        return html[start:html.index("</p>", start)]
+        start = html.index('class="sponsor-cta"')
+        return html[start : html.index("</a>", start)]
 
     def test_it_names_no_sponsor_and_no_film(self):
         """It used to open with a worked example — "A.H. Custom Carpentry
@@ -315,7 +329,8 @@ class SponsorCtaCopyTests(TestCase):
     def test_the_price_is_the_cheapest_tier(self):
         cheapest = min(t["price"] for t in SPONSORSHIP_TIERS)
         self.assertEqual(cheapest, 299)  # guards the fixture, not the render
-        self.assertIn("From $%d." % cheapest, self.body())
+        self.assertIn("Sponsor a screening, from $%d &rarr;" % cheapest, self.body())
+        self.assertNotIn("sponsor-cta__body", self.home())
 
     def test_the_price_tracks_the_tiers_rather_than_being_typed(self):
         """Repricing the cheapest tier has to move the home page with it."""
@@ -323,22 +338,142 @@ class SponsorCtaCopyTests(TestCase):
         repriced[0] = {**repriced[0], "price": 349}
         with mock.patch("web.views.SPONSORSHIP_TIERS", repriced):
             body = self.body()
-        self.assertIn("From $349.", body)
+        self.assertIn("from $349 &rarr;", body)
         self.assertNotIn("$299", body)
 
-    def test_every_promise_maps_to_the_presenting_tier(self):
-        """Each clause in the body is an entry in SPONSORSHIP_TIERS[0].
-        If a perk is dropped from the tier, this copy is now overselling."""
-        includes = " ".join(SPONSORSHIP_TIERS[0]["includes"]).lower()
-        for perk in ("big screen before the film", "posts"):
-            self.assertIn(perk, includes)
-        body = self.body().lower()
-        self.assertIn("big screen", body)
-        self.assertIn("before the lights go down", body)
-        self.assertIn("post", body)
-        # There is no marquee on the building. The credit a sponsor buys is
-        # the screen itself, and the copy must not promise street signage.
-        self.assertNotIn("marquee", body)
+    def test_it_is_a_tracked_text_link_to_the_sponsor_page(self):
+        body = self.body()
+        self.assertIn(f'href="{reverse("sponsor")}"', body)
+        self.assertIn('data-track="sponsor_click"', body)
+        self.assertIn('class="home-link"', body)
+        self.assertNotIn("btn-ticket", body)
+
+
+class OurStoryTests(TestCase):
+    """History card, up to three post cards, and a way to the rest."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.author = BlogAuthor.objects.create(first_name="Jane", last_name="Doe")
+        cls.category = BlogCategory.objects.create(name="News")
+
+    def make_posts(self, n):
+        return [
+            BlogPost.objects.create(
+                title=f"Post {i}",
+                subtitle=f"Subtitle {i}",
+                author=self.author,
+                category=self.category,
+                content=f"Body {i}.",
+                post_date=f"2026-02-{i + 1:02d}",
+            )
+            for i in range(n)
+        ]
+
+    def section(self):
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertEqual(html.count('id="our-story"'), 1)
+        start = html.index('id="our-story"')
+        return html[html.rindex("<section", 0, start) : html.index("</section>", start)]
+
+    def test_history_card_comes_first(self):
+        self.make_posts(1)
+        section = self.section()
+        self.assertIn("history-cta", section)
+        self.assertLess(section.index("history-cta"), section.index("Post 0"))
+        for text in ("Since 1917", "A century on this lot", "Read the history &rarr;"):
+            self.assertIn(text, section)
+        self.assertIn('href="/history/"', section)
+        self.assertIn('data-track="history_click"', section)
+        self.assertNotIn("btn-ticket", section)
+
+    def test_keeps_the_blog_marker_and_alt_ground(self):
+        section = self.section()
+        self.assertRegex(section, r'<section[^>]*class="[^"]*\bblog\b')
+        self.assertIn("home-section--alt", section)
+
+    def test_five_posts_show_the_newest_three(self):
+        self.make_posts(5)
+        section = self.section()
+        self.assertEqual(section.count('class="home-card blog-post-card'), 3)
+        self.assertEqual(section.count("Read &rarr;"), 3)
+        for shown in ("Post 4", "Post 3", "Post 2"):
+            self.assertIn(shown, section)
+        for hidden in ("Post 1", "Post 0"):
+            self.assertNotIn(hidden, section)
+        self.assertLess(section.index("Post 4"), section.index("Post 3"))
+
+    def test_post_card_shape(self):
+        post = self.make_posts(1)[0]
+        section = self.section()
+        self.assertIn("February 1, 2026", section)
+        self.assertIn(f'href="{post.get_absolute_url()}"', section)
+        self.assertIn('class="home-card__title">Post 0</h3>', section)
+        self.assertIn('class="home-card__body blog-post-card__excerpt"', section)
+        self.assertNotIn("<img", section)
+        self.assertNotIn("blog-card", section)
+
+    def test_all_posts_link_is_a_secondary_button_after_the_cards(self):
+        self.make_posts(1)
+        section = self.section()
+        self.assertRegex(
+            section,
+            r'<a href="%s" class="btn btn-secondary"[^>]*>\s*All posts'
+            % reverse("blog_list"),
+        )
+        self.assertGreater(section.index("All posts"), section.index("Post 0"))
+
+    def test_without_posts_there_is_no_empty_grid(self):
+        section = self.section()
+        self.assertIn("history-cta", section)
+        self.assertIn("All posts", section)
+        self.assertNotIn("blog-grid", section)
+        self.assertNotIn("Read &rarr;", section)
+
+    def test_headline_and_no_trailing_blank_cards(self):
+        section = self.section()
+        self.assertRegex(section, r'<h2 class="section-title"[^>]*>Our story</h2>')
+
+
+class SupportTests(TestCase):
+    def section(self, url=None):
+        with mock.patch.dict(
+            "web.views.DONATION", {"url": url} if url is not None else {}
+        ):
+            html = self.client.get(reverse("home")).content.decode()
+        self.assertEqual(html.count('id="support"'), 1)
+        start = html.index('id="support"')
+        return html[start : html.index("</section>", start)]
+
+    def test_label_and_ground(self):
+        html = self.client.get(reverse("home")).content.decode()
+        tag = html[html.rindex("<section", 0, html.index('id="support"')) :]
+        tag = tag[: tag.index(">")]
+        self.assertIn("home-section--sunken", tag)
+        self.assertIn("home-section--slim", tag)
+        self.assertIn("Support the Cinema", self.section())
+
+    def test_sponsor_link(self):
+        section = self.section()
+        self.assertIn("sponsor-cta", section)
+        self.assertIn("Sponsor a screening, from $299 &rarr;", section)
+
+    def test_no_donate_without_a_url(self):
+        section = self.section(url="")
+        self.assertNotIn("donate-cta", section)
+        self.assertNotIn(DONATION["disclaimer"][:20], section)
+
+    def test_donate_link_and_disclaimer_render_together(self):
+        section = self.section(url="https://square.link/u/example")
+        self.assertIn("donate-cta", section)
+        self.assertIn(f'{DONATION["button"]} &rarr;', section)
+        self.assertIn('data-track="donate_click"', section)
+        self.assertRegex(section, r'aria-label="[^"]*opens in new window')
+        self.assertIn(escape(DONATION["disclaimer"]), section)
+        self.assertGreater(
+            section.index(escape(DONATION["disclaimer"])),
+            section.index('data-track="donate_click"'),
+        )
 
 
 class GetInvolvedTests(TestCase):
@@ -368,6 +503,8 @@ class GetInvolvedTests(TestCase):
         ]
         self.assertEqual(positions, sorted(positions))
         self.assertEqual(section.count("home-card "), 3)
+        self.assertEqual(section.count("open-mic-cta"), 1)
+        self.assertEqual(section.count("gift-card-cta"), 1)
 
     def test_without_an_open_round_two_cards_remain(self):
         section = self.section()
