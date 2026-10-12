@@ -209,18 +209,20 @@
   color: var(--color-cream-muted);
 }
 
-/* Calendar View */
-.coming-calendar {
-  max-width: 900px;
-  margin: 0 auto;
-}
-
+/* Calendar View
+ *
+ * The grid used to stop at 900px, centred, with posters a fixed 48px: on a
+ * 1920 screen that left ~500px empty either side, and a day with three films
+ * wrapped onto a second line and threw its row out of level. Now the grid
+ * takes the container and a key of the month's films sits beside it from
+ * 1200px; below that the key drops under the grid. Each day holds three equal
+ * poster slots, so a row with three films is as tall as a row with one. */
 .coming-calendar-nav {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--spacing-lg);
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
 }
 
 .coming-calendar-nav__arrow {
@@ -259,9 +261,29 @@
   text-align: center;
 }
 
+/* Grid above the key until there is room for both side by side. */
+.coming-calendar-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--spacing-lg);
+}
+
+/* Beside the grid, the month nav centres over the grid alone, and the key
+ * drops by the nav's height so its heading sits level with the day names. */
+@media (min-width: 1200px) {
+  .coming-calendar-body {
+    grid-template-columns: minmax(0, 1fr) 18rem;
+    align-items: start;
+  }
+
+  .coming-calendar-key {
+    margin-top: calc(48px + var(--spacing-md));
+  }
+}
+
 .coming-calendar-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 2px;
 }
 
@@ -283,7 +305,7 @@
   min-height: 90px;
   background: var(--color-bg-card);
   border-radius: var(--radius-sm);
-  padding: 4px;
+  padding: 6px;
   position: relative;
 }
 
@@ -294,7 +316,15 @@
 
 .coming-calendar-cell--has-movie {
   border: 1px solid var(--color-gold-warm);
-  box-shadow: 0 0 8px var(--color-gold-glow);
+}
+
+/* Days already gone: still there to look back on, but quieter. */
+.coming-calendar-cell--past {
+  opacity: 0.55;
+}
+
+.coming-calendar-cell--today {
+  box-shadow: inset 0 0 0 2px var(--color-accent);
 }
 
 .coming-calendar-cell__day {
@@ -302,26 +332,39 @@
   font-size: 0.85rem;
   color: var(--color-cream-muted);
   display: block;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
+.coming-calendar-cell--today .coming-calendar-cell__day {
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+/* Three equal slots: a fourth film starts a second line rather than
+ * shrinking everything else. */
 .coming-calendar-cell__movies {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 3px;
 }
 
 .coming-calendar-cell__poster {
-  width: 48px;
   aspect-ratio: 2/3;
   border-radius: 3px;
   overflow: hidden;
   background: var(--color-bg-dark);
+  transition: opacity var(--transition-base);
 }
 
-.coming-calendar-cell__poster:focus-visible {
-  outline: 2px solid var(--color-gold);
-  outline-offset: 1px;
+/* Pointing at a film in the key quiets every other film. */
+.coming-calendar-cell__poster--dimmed {
+  opacity: 0.15;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .coming-calendar-cell__poster {
+    transition: none;
+  }
 }
 
 .coming-calendar-cell__img {
@@ -339,6 +382,91 @@
   justify-content: center;
   font-size: 1rem;
   opacity: 0.5;
+}
+
+/* Key: the month's films by first showing, each with its dates. Sits level
+ * with the day headers when it is beside the grid. */
+.coming-calendar-key__title {
+  margin: 0 0 var(--spacing-sm);
+  padding: var(--spacing-xs) 0;
+  border-bottom: 2px solid var(--color-gold-warm);
+  font-family: var(--font-heading);
+  font-size: var(--type-lead);
+  line-height: 1.25;
+  color: var(--color-text);
+}
+
+.coming-calendar-key__list {
+  display: grid;
+  gap: var(--spacing-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Two or three across when the key is under the grid. */
+@media (min-width: 601px) and (max-width: 1199px) {
+  .coming-calendar-key__list {
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    gap: var(--spacing-xs) var(--spacing-md);
+  }
+}
+
+.coming-calendar-key__film {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: var(--spacing-sm);
+  align-items: center;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+}
+
+.coming-calendar-key__film:hover,
+.coming-calendar-key__film:focus-within {
+  background: var(--color-bg-card);
+}
+
+.coming-calendar-key__poster {
+  aspect-ratio: 2/3;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--color-bg-dark);
+}
+
+.coming-calendar-key__poster img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.coming-calendar-key__name {
+  margin: 0;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--color-text);
+}
+
+.coming-calendar-key__name a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.coming-calendar-key__name a:hover,
+.coming-calendar-key__name a:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.coming-calendar-key__dates {
+  margin: 0;
+  font-size: var(--type-label);
+  color: var(--color-text-muted);
+}
+
+.coming-calendar-key__empty {
+  margin: 0;
+  color: var(--color-text-muted);
 }
 
 /* Trailer overlay */
@@ -422,8 +550,11 @@
     padding: 2px;
   }
 
-  .coming-calendar-cell__poster {
-    width: 32px;
+  /* About 46px a day at 390px. Two small slots keep a three-film day to two
+   * lines; the key below names them. */
+  .coming-calendar-cell__movies {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px;
   }
 
   .coming-calendar-nav__arrow {

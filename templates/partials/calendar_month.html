@@ -14,67 +14,104 @@ day poster had a youtube_id. That modal's Alpine state lives on the parent
 <section>, and wiring it reliably across the HTMX fragment boundary is fragile,
 so (per the brief) calendar posters render as non-interactive images with a
 `title` tooltip instead.
+
+The key ("Showing in October") names each film once with its dates and links
+it to the film page; the posters in the grid are too small to identify on
+their own. Pointing at or focusing a film in the key dims every other film's
+posters (`film` is the hovered film's index; Alpine picks up the swapped-in
+fragment on its own). From 1200px the key sits beside the grid, below that
+under it.
 {% endcomment %}
-<div class="coming-calendar">
-  <div class="coming-calendar-nav">
-    <button class="coming-calendar-nav__arrow" aria-label="Previous month"
-            hx-get="{% url 'calendar_month' prev_year prev_month %}"
-            hx-target="closest .coming-calendar" hx-swap="outerHTML">&#8249;</button>
-    <span class="coming-calendar-nav__label">{{ month_label }}</span>
-    <button class="coming-calendar-nav__arrow" aria-label="Next month"
-            hx-get="{% url 'calendar_month' next_year next_month %}"
-            hx-target="closest .coming-calendar" hx-swap="outerHTML">&#8250;</button>
-  </div>
+<div class="coming-calendar" x-data="{ film: null }">
+  <div class="coming-calendar-body">
+    <div class="coming-calendar-main">
+      <div class="coming-calendar-nav">
+        <button class="coming-calendar-nav__arrow" aria-label="Previous month"
+                hx-get="{% url 'calendar_month' prev_year prev_month %}"
+                hx-target="closest .coming-calendar" hx-swap="outerHTML">&#8249;</button>
+        <span class="coming-calendar-nav__label">{{ month_label }}</span>
+        <button class="coming-calendar-nav__arrow" aria-label="Next month"
+                hx-get="{% url 'calendar_month' next_year next_month %}"
+                hx-target="closest .coming-calendar" hx-swap="outerHTML">&#8250;</button>
+      </div>
 
-  <div class="coming-calendar-grid">
-    <div class="coming-calendar-dayheader">
-      <span class="coming-calendar-dayheader--full">Sun</span>
-      <span class="coming-calendar-dayheader--short">S</span>
-    </div>
-    <div class="coming-calendar-dayheader">
-      <span class="coming-calendar-dayheader--full">Mon</span>
-      <span class="coming-calendar-dayheader--short">M</span>
-    </div>
-    <div class="coming-calendar-dayheader">
-      <span class="coming-calendar-dayheader--full">Tue</span>
-      <span class="coming-calendar-dayheader--short">T</span>
-    </div>
-    <div class="coming-calendar-dayheader">
-      <span class="coming-calendar-dayheader--full">Wed</span>
-      <span class="coming-calendar-dayheader--short">W</span>
-    </div>
-    <div class="coming-calendar-dayheader">
-      <span class="coming-calendar-dayheader--full">Thu</span>
-      <span class="coming-calendar-dayheader--short">T</span>
-    </div>
-    <div class="coming-calendar-dayheader">
-      <span class="coming-calendar-dayheader--full">Fri</span>
-      <span class="coming-calendar-dayheader--short">F</span>
-    </div>
-    <div class="coming-calendar-dayheader">
-      <span class="coming-calendar-dayheader--full">Sat</span>
-      <span class="coming-calendar-dayheader--short">S</span>
-    </div>
+      <div class="coming-calendar-grid">
+        <div class="coming-calendar-dayheader">
+          <span class="coming-calendar-dayheader--full">Sun</span>
+          <span class="coming-calendar-dayheader--short">S</span>
+        </div>
+        <div class="coming-calendar-dayheader">
+          <span class="coming-calendar-dayheader--full">Mon</span>
+          <span class="coming-calendar-dayheader--short">M</span>
+        </div>
+        <div class="coming-calendar-dayheader">
+          <span class="coming-calendar-dayheader--full">Tue</span>
+          <span class="coming-calendar-dayheader--short">T</span>
+        </div>
+        <div class="coming-calendar-dayheader">
+          <span class="coming-calendar-dayheader--full">Wed</span>
+          <span class="coming-calendar-dayheader--short">W</span>
+        </div>
+        <div class="coming-calendar-dayheader">
+          <span class="coming-calendar-dayheader--full">Thu</span>
+          <span class="coming-calendar-dayheader--short">T</span>
+        </div>
+        <div class="coming-calendar-dayheader">
+          <span class="coming-calendar-dayheader--full">Fri</span>
+          <span class="coming-calendar-dayheader--short">F</span>
+        </div>
+        <div class="coming-calendar-dayheader">
+          <span class="coming-calendar-dayheader--full">Sat</span>
+          <span class="coming-calendar-dayheader--short">S</span>
+        </div>
 
-    {% for cell in cells %}
-    <div class="coming-calendar-cell{% if cell.day is None %} coming-calendar-cell--empty{% endif %}{% if cell.movies %} coming-calendar-cell--has-movie{% endif %}">
-      {% if cell.day is not None %}
-      <span class="coming-calendar-cell__day">{{ cell.day }}</span>
-      {% if cell.movies %}
-      <div class="coming-calendar-cell__movies">
-        {% for movie in cell.movies %}
-        <div class="coming-calendar-cell__poster" title="{{ movie.title }}">
-          {% if movie.poster %}
-          <img src="{{ movie.poster }}" alt="{{ movie.title }}" loading="lazy" decoding="async" class="coming-calendar-cell__img" />
-          {% else %}
-          <div class="coming-calendar-cell__placeholder">&#127916;</div>
+        {% for cell in cells %}
+        <div class="coming-calendar-cell{% if cell.day is None %} coming-calendar-cell--empty{% endif %}{% if cell.movies %} coming-calendar-cell--has-movie{% endif %}{% if cell.is_past %} coming-calendar-cell--past{% endif %}{% if cell.is_today %} coming-calendar-cell--today{% endif %}">
+          {% if cell.day is not None %}
+          <span class="coming-calendar-cell__day">{{ cell.day }}{% if cell.is_today %}<span class="sr-only"> (today)</span>{% endif %}</span>
+          {% if cell.movies %}
+          <div class="coming-calendar-cell__movies">
+            {% for movie in cell.movies %}
+            <div class="coming-calendar-cell__poster" title="{{ movie.title }}"
+                 :class="{ 'coming-calendar-cell__poster--dimmed': film !== null && film !== {{ movie.film_index }} }">
+              {% if movie.poster %}
+              <img src="{{ movie.poster }}" alt="{{ movie.title }}" loading="lazy" decoding="async" class="coming-calendar-cell__img" />
+              {% else %}
+              <div class="coming-calendar-cell__placeholder">&#127916;</div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
           {% endif %}
         </div>
         {% endfor %}
       </div>
-      {% endif %}
-      {% endif %}
     </div>
-    {% endfor %}
+
+    <aside class="coming-calendar-key" aria-labelledby="coming-calendar-key-title">
+      <h3 class="coming-calendar-key__title" id="coming-calendar-key-title">Showing in {{ month_name }}</h3>
+      {% if films %}
+      <ul class="coming-calendar-key__list">
+        {% for f in films %}
+        <li class="coming-calendar-key__film"
+            @mouseenter="film = {{ f.index }}" @mouseleave="film = null"
+            @focusin="film = {{ f.index }}" @focusout="film = null">
+          <div class="coming-calendar-key__poster">
+            {% if f.poster %}<img src="{{ f.poster }}" alt="" loading="lazy" decoding="async" />{% endif %}
+          </div>
+          <div>
+            <p class="coming-calendar-key__name">
+              {% if f.slug %}<a href="{% url 'movie_detail' f.slug %}">{{ f.title }}</a>{% else %}{{ f.title }}{% endif %}
+            </p>
+            <p class="coming-calendar-key__dates">{{ f.dates }}</p>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="coming-calendar-key__empty">Nothing booked for {{ month_name }} yet. Try the next month.</p>
+      {% endif %}
+    </aside>
   </div>
 </div>

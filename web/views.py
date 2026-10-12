@@ -280,10 +280,50 @@ class CalendarMonthView(TemplateView):
 
         calendar_data = get_calendar_month(year, month)
 
+        # The key beside the grid: each film once, in the order it first
+        # plays, with the first and last day it plays this month. Each
+        # calendar poster carries its film's index into this list so hovering
+        # a film in the key can pick out its days.
+        films = []
+        by_title = {}
+        for d in sorted(calendar_data):
+            for movie in calendar_data[d]:
+                film = by_title.get(movie["title"])
+                if film is None:
+                    film = by_title[movie["title"]] = {
+                        "index": len(films),
+                        "title": movie["title"],
+                        "slug": movie.get("slug", ""),
+                        "poster": movie.get("poster", ""),
+                        "first": d,
+                        "last": d,
+                    }
+                    films.append(film)
+                film["last"] = d
+                movie["film_index"] = film["index"]
+        month_abbr = first.strftime("%b")
+        for film in films:
+            film["dates"] = (
+                f"{month_abbr} {film['first']}"
+                if film["first"] == film["last"]
+                else f"{month_abbr} {film['first']}\u2013{film['last']}"
+            )
+
         # Cells: leading None blanks, then each day annotated with its movies.
+        # Days before today are muted and today is ringed, so the grid reads
+        # as "what's left this month" at a glance.
+        today = timezone.localdate()
         cells = [{"day": None, "movies": None} for _ in range(first_weekday)]
         for d in range(1, days_in_month + 1):
-            cells.append({"day": d, "movies": calendar_data.get(d)})
+            date = first.replace(day=d)
+            cells.append(
+                {
+                    "day": d,
+                    "movies": calendar_data.get(d),
+                    "is_past": date < today,
+                    "is_today": date == today,
+                }
+            )
 
         # Prev/next (year, 0-based month), wrapping December<->January.
         prev_month = (month - 1) % 12
@@ -296,7 +336,9 @@ class CalendarMonthView(TemplateView):
                 "year": year,
                 "month": month,
                 "month_label": first.strftime("%B %Y").upper(),
+                "month_name": first.strftime("%B"),
                 "cells": cells,
+                "films": films,
                 "prev_year": prev_year,
                 "prev_month": prev_month,
                 "next_year": next_year,
