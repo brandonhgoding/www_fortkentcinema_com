@@ -432,6 +432,8 @@ class OurStoryTests(TestCase):
         self.assertEqual(section.count('class="home-card blog-post-card'), 3)
         self.assertEqual(section.count("Read &rarr;"), 3)
         for shown in ("Post 4", "Post 3", "Post 2"):
+            self.assertIn(f'aria-label="Read: {shown}"', section)
+        for shown in ("Post 4", "Post 3", "Post 2"):
             self.assertIn(shown, section)
         for hidden in ("Post 1", "Post 0"):
             self.assertNotIn(hidden, section)

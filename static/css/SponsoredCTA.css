@@ -8,18 +8,14 @@
  *    run is several days of matinees, and stacking six showtimes vertically
  *    pushed Now Showing below the fold on a phone.
  *
- * 2. It carries a sponsor credit. That line is the reason the whole banner
+ * 2. It carries a sponsor credit. That line is the reason the whole card
  *    exists — a business paid for the run, and cinema.Engagement has nowhere
  *    to record it — so it is styled to read as a credit rather than fine
  *    print, but stays quieter than the title.
  *
- * DELIBERATELY NOT HIDDEN ON PHONES. static/css/home.css hides .hero,
- * the open mic and gift card cards and the blog teaser below 600px — inherited from the
- * old React app, which only mounted those components above a matchMedia
- * check. This banner is intentionally absent from that rule: a holiday
- * matinee is aimed at families who are overwhelmingly on phones, and hiding
- * it there would cost most of its reach. The omission is a decision, not an
- * oversight — please don't "fix" it.
+ * Shown on phones as on desktop. Nothing below the hero is hidden on small
+ * screens, and a holiday matinee is aimed at families who are overwhelmingly
+ * on phones, so this card must never gain a small-screen display:none.
  */
 
 .sponsored-cta {

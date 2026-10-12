@@ -1,12 +1,12 @@
-"""The homepage banner for a sponsored screening.
+"""The homepage card for a sponsored screening.
 
-Unlike the retired Silents Synced CTA, this banner does not restate the
+Unlike the retired Silents Synced CTA, this card does not restate the
 booking. The engagement already exists in the catalog, so the dates and
-showtimes are read from those rows — the banner and Now Showing cannot
+showtimes are read from those rows — the card and Now Showing cannot
 disagree about when the film plays. Only the sponsor's name is configured,
 because `cinema.Engagement` has nowhere to record who paid for the run.
 
-The banner therefore expires on the booking's own `end_date`, with no second
+The card therefore expires on the booking's own `end_date`, with no second
 date to keep in sync and no follow-up commit to remember.
 """
 
@@ -26,7 +26,7 @@ from web.views import sponsored_screening
 # The suite configures its own run rather than reading web.constants. Between
 # sponsored screenings the live SPONSORED_SCREENING is None, and a mechanism
 # that only works while a run happens to be booked is a mechanism that stops
-# being tested the moment the banner comes down.
+# being tested the moment the card comes down.
 CONFIG = {
     "film_slug": "the-land-before-time",
     "sponsor": "AParadis Photography",
@@ -103,12 +103,12 @@ class SponsoredScreeningLookupTests(SponsoredScreeningFixture):
 
     def test_returns_none_once_the_run_has_ended(self):
         """The expiry. Keyed on the booking's end_date, so nobody has to
-        remember to take the banner down."""
+        remember to take the card down."""
         self.book(start_offset=-10, days=3)
         self.assertIsNone(sponsored_screening())
 
     def test_last_day_of_the_run_still_counts(self):
-        """An off-by-one here pulls the banner on the morning of the final
+        """An off-by-one here pulls the card on the morning of the final
         matinee, which is exactly when it is doing the most work."""
         self.book(start_offset=-2, days=3)
         self.assertIsNotNone(sponsored_screening())
@@ -119,7 +119,7 @@ class SponsoredScreeningLookupTests(SponsoredScreeningFixture):
 
     def test_returns_none_when_no_film_matches_the_slug(self):
         """Fails safe. `generate_slug` suffixes collisions, so a second Land
-        Before Time in the catalog would move the slug — the banner must go
+        Before Time in the catalog would move the slug — the card must go
         quiet rather than raise on the homepage."""
         self.film.slug = "the-land-before-time-2"
         self.film.save()
@@ -143,8 +143,8 @@ class SponsoredScreeningLookupTests(SponsoredScreeningFixture):
             self.assertEqual(day["times"], ["11:00 AM"])
 
 
-class SponsoredScreeningBannerTests(SponsoredScreeningFixture):
-    def test_banner_carries_the_pitch(self):
+class SponsoredScreeningCardTests(SponsoredScreeningFixture):
+    def test_card_carries_the_pitch(self):
         self.book()
         html = self.home()
         for probe in [
@@ -154,9 +154,9 @@ class SponsoredScreeningBannerTests(SponsoredScreeningFixture):
             "11:00 AM",
             "1:00 PM",
         ]:
-            self.assertIn(probe, html, f"{probe} missing from the banner")
+            self.assertIn(probe, html, f"{probe} missing from the card")
 
-    def test_banner_carries_the_configured_eyebrow(self):
+    def test_card_carries_the_configured_eyebrow(self):
         """The occasion is the hook — a holiday weekend sells a family matinee
         better than the word 'sponsored' does. It is per-screening copy, so it
         lives in the constant rather than in the template."""
@@ -171,15 +171,15 @@ class SponsoredScreeningBannerTests(SponsoredScreeningFixture):
         self.assertIn("Sponsored screening", html)
         self.assertNotIn("Labor Day Weekend", html)
 
-    def test_banner_links_to_the_movie_page(self):
+    def test_card_links_to_the_movie_page(self):
         """The trailer lives there, fed by Film.youtube_id — no reason to
-        build a second facade into a homepage banner."""
+        build a second facade into a homepage card."""
         self.book()
         self.assertIn(self.film.get_absolute_url(), self.home())
 
     def test_showtimes_follow_the_catalog(self):
         """The whole point of reading the rows: move a showtime in the
-        dashboard and the banner moves with it, with no commit."""
+        dashboard and the card moves with it, with no commit."""
         eng = self.book()
         eng.showtimes.filter(starts_at__hour=13).delete()
         day = self.today + datetime.timedelta(days=1)
@@ -188,11 +188,11 @@ class SponsoredScreeningBannerTests(SponsoredScreeningFixture):
         self.assertIn("7:00 PM", html)
         self.assertNotIn("1:00 PM", html)
 
-    def test_banner_absent_once_the_run_has_ended(self):
+    def test_card_absent_once_the_run_has_ended(self):
         self.book(start_offset=-10, days=3)
         self.assertNotIn("sponsored-cta", self.home())
 
-    def test_banner_absent_when_nothing_is_booked(self):
+    def test_card_absent_when_nothing_is_booked(self):
         self.assertNotIn("sponsored-cta", self.home())
 
     def test_sponsored_card_is_inside_now_showing(self):
@@ -216,9 +216,11 @@ class SponsoredScreeningBannerTests(SponsoredScreeningFixture):
         self.assertLess(html.index('id="now-showing"'), card)
         self.assertLess(card, html.index("date-nav"))
 
-    def test_ticket_button_only_in_now_showing(self):
-        """The ticket button belongs to Now Showing alone; every other action
-        below the hero is a text link."""
+    def test_no_ticket_button_below_the_hero_outside_now_showing(self):
+        """Guards against a ticket button reappearing below the hero outside
+        Now Showing; every other action there is a text link. (Today there is
+        no btn-ticket below the hero at all, so the loop has nothing to
+        check; it bites if one is added elsewhere.)"""
         html = self.home()
         hero_end = html.index("</section>", html.index('class="hero"'))
         start = html.index('id="now-showing"')
@@ -227,29 +229,28 @@ class SponsoredScreeningBannerTests(SponsoredScreeningFixture):
             pos = hero_end + match.start()
             self.assertTrue(start < pos < end, "btn-ticket outside Now Showing")
 
-    def test_the_banner_leaves_nothing_behind_when_absent(self):
-        """This used to assert that the banner and exactly one ornament
+    def test_the_card_leaves_nothing_behind_when_absent(self):
+        """This used to assert that the card and exactly one ornament
         divider left together, because the partial carried a trailing
         divider inside its own guard. The dividers are gone sitewide, so
-        what matters now is simply that no fragment of the banner survives
+        what matters now is simply that no fragment of the card survives
         the booking it advertised."""
         self.book()
         self.assertIn("sponsored-cta", self.home())
         Engagement.objects.all().delete()
         without = self.home()
         self.assertNotIn("sponsored-cta", without)
-        # The banner's own link text, not the sponsor's name. That name used
+        # The card's own link text, not the sponsor's name. That name used
         # to be permanent copy in cta_sponsor.html further down the page, so
         # asserting on it proved nothing; the teaser has since been
         # generalised and no longer names anyone, but the link text remains
-        # the more precise probe — it belongs to the banner alone.
+        # the more precise probe — it belongs to the card alone.
         self.assertNotIn("Showtimes &amp; trailer", without)
 
-    def test_banner_is_not_hidden_on_phones(self):
-        """static/css/home.css hides every other homepage CTA below 600px. A
-        Labor Day family matinee is exactly the audience that is on a phone,
-        so this one is deliberately exempt — same call the retired EventCTA
-        made, and for the same reason."""
+    def test_card_is_not_hidden_on_phones(self):
+        """Nothing below the hero is hidden on phones, and a family matinee is
+        exactly the audience that is on one. home.css must not gain a rule
+        that hides this card."""
         home_css = (Path(settings.BASE_DIR) / "static" / "css" / "home.css").read_text()
         self.assertNotIn("sponsored-cta", home_css)
 
@@ -274,6 +275,6 @@ class NoSponsoredScreeningConfiguredTests(SponsoredScreeningFixture):
         self.book()
         self.assertIsNone(sponsored_screening())
 
-    def test_banner_absent_when_nothing_is_configured(self):
+    def test_card_absent_when_nothing_is_configured(self):
         self.book()
         self.assertNotIn("sponsored-cta", self.home())

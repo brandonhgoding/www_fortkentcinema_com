@@ -18,7 +18,8 @@
         <p class="home-card__eyebrow">{{ post.post_date|date:"F j, Y" }}</p>
         <h3 class="home-card__title">{{ post.title }}</h3>
         <p class="home-card__body blog-post-card__excerpt">{{ post|post_excerpt }}</p>
-        <a href="{{ post.get_absolute_url }}" class="home-link">Read &rarr;</a>
+        <a href="{{ post.get_absolute_url }}" class="home-link"
+           aria-label="Read: {{ post.title }}">Read &rarr;</a>
       </article>
       {% endfor %}
     </div>

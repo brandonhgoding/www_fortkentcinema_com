@@ -16,9 +16,15 @@ class HomeMembershipBandTests(TestCase):
         # Migrations seed the real tiers; these tests set their own prices.
         MembershipTier.objects.all().delete()
 
-    def _tier(self, slug: str, price: int, listed: bool = True) -> None:
+    def _tier(
+        self, slug: str, price: int, listed: bool = True, months: int = 12
+    ) -> None:
         MembershipTier.objects.create(
-            slug=slug, name=slug.title(), price=price, show_on_membership_page=listed
+            slug=slug,
+            name=slug.title(),
+            price=price,
+            show_on_membership_page=listed,
+            duration_months=months,
         )
 
     def _html(self) -> str:
@@ -37,6 +43,20 @@ class HomeMembershipBandTests(TestCase):
         html = self._html()
         self.assertIn("From $35 a year.", html)
         self.assertNotIn("From $10", html)
+
+    def test_cheaper_six_month_tier_does_not_set_the_price(self, _ns, _cs) -> None:
+        self._tier("half", 20, months=6)
+        self._tier("senior", 35)
+        html = self._html()
+        self.assertIn("From $35 a year.", html)
+        self.assertNotIn("From $20", html)
+
+    def test_only_a_six_month_tier_omits_price_line(self, _ns, _cs) -> None:
+        self._tier("half", 20, months=6)
+        html = self._html()
+        self.assertNotIn(
+            "From $", html.split('id="membership"')[1].split("</section>")[0]
+        )
 
     def test_no_tiers_omits_price_line(self, _ns, _cs) -> None:
         html = self._html()

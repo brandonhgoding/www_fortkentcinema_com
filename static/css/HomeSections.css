@@ -57,8 +57,13 @@
 /* Card row: 24px gap, stacks at 900px and below. */
 .home-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
   grid-auto-flow: column;
+  /* 28rem is wider than a card in a full row at any width (a row of three
+   * in the 1336px container is 429px), so full rows still fill the width.
+   * It only stops a sparse row (no posts, no open poll) from stretching one
+   * or two cards across the whole section. */
+  grid-auto-columns: minmax(0, 28rem);
+  justify-content: start;
   gap: var(--spacing-md);
   align-items: stretch;
 }

@@ -15,7 +15,7 @@
   Named for the pattern rather than the film — the sponsorship program will
   produce more of these, and only the constant changes.
 
-  Unlike the other homepage CTAs this one is NOT hidden below 600px; see the
+  Like everything below the hero, this card is shown on phones too; see the
   note in static/css/SponsoredCTA.css.
 {% endcomment %}
 {% if sponsored %}
@@ -49,14 +49,4 @@
 
   <span class="sponsored-cta__link">Showtimes &amp; trailer &rarr;</span>
 </a>
-{% comment %}
-  No trailing divider here any more. This partial used to tuck one inside the
-  guard, because home.html emitted dividers unconditionally and a banner that
-  retired itself left two stacked together.
-
-  home.html now wraps every section in {% templatetag openblock %} section {% templatetag closeblock %} (web/templatetags/
-  page_sections.py), which emits a seam only between two sections that actually
-  rendered. The workaround is not just redundant, it is the pattern that tag
-  replaced: a partial should render itself and nothing about its neighbours.
-{% endcomment %}
 {% endif %}

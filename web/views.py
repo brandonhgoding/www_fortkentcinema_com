@@ -111,9 +111,11 @@ class HomeView(TemplateView):
 
         # Membership band: "From $N a year" is the cheapest tier the public
         # membership page lists, so a retired (unlisted) cheaper tier cannot
-        # set the price. None with no listed tiers; the band drops the line.
+        # set the price. Only 12-month tiers count: duration_months is
+        # editable, and a cheaper 6-month tier would make "a year" false.
+        # None with no listed 12-month tier; the band drops the line.
         ctx["membership_from_price"] = MembershipTier.objects.filter(
-            show_on_membership_page=True
+            show_on_membership_page=True, duration_months=12
         ).aggregate(Min("price"))["price__min"]
 
         # Hero member count: people, not terms. Member.objects.active() is

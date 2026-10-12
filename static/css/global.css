@@ -835,7 +835,7 @@ button {
    title only ever had 247px to sit in.
 
    One gutter, declared once, here. The sections zero their own horizontal
-   padding at this breakpoint (NowShowing.css, ComingSoon.css, Blog.css) so
+   padding at this breakpoint (NowShowing.css, ComingSoon.css, HomeSections.css) so
    this is the only one left. 375 - 32 = 343px of content, and the widest
    section title needs 275px.
 ============================================ */
