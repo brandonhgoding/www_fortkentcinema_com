@@ -248,3 +248,12 @@ Django `TestCase`, `mail.outbox` for email.
   the done copy changed; the ask is hidden for a pending address.
 - Templates: the form renders in each of the four placements with the
   right `location`, exactly once per page.
+
+## Amendments
+
+- **2026-10-11 (planning):** the confirm token also carries its issue
+  time, and a token issued before the row's `unsubscribed_at` gets the
+  expired page. Without this, a link from before an unsubscribe would
+  re-add the person within its 7 days. The site's CSS is one bundle, so
+  `ListSignup.css` is imported in `frontend/styles/main.css` rather than
+  included per page.
