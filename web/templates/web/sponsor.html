@@ -11,6 +11,7 @@
   the showtime cards. Regenerate with `manage.py render_promo_cards`.
 {% endcomment %}
 {% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/og-sponsor.jpg' %}{% endblock %}
+{% block og_image_alt %}Put your business on the big screen: sponsor a film at Fort Kent Cinema, from $299{% endblock %}
 {% comment %}
   ?films=all is the no-JavaScript escape hatch for the film picker: the same
   page, plus ~1,140 <option> elements. It is the heavy twin of a page that

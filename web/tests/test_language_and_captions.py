@@ -65,9 +65,15 @@ class LanguageCaptionsTests(TestCase):
         self.assertIn(
             '<span class="schedule-card__rating">French · English subtitles</span>', html
         )
-        self.assertIn('<abbr class="movie-rating" title="Closed Captions">CC</abbr>', html)
+        # The abbr's tooltip is for the mouse; touch and screen readers get
+        # the spelled-out label instead.
         self.assertIn(
-            '<abbr class="schedule-card__rating" title="Closed Captions">CC</abbr>', html
+            '<abbr class="movie-rating" title="Closed Captions" aria-hidden="true">CC</abbr>'
+            '<span class="sr-only">Closed Captions</span>', html
+        )
+        self.assertIn(
+            '<abbr class="schedule-card__rating" title="Closed Captions" aria-hidden="true">CC</abbr>'
+            '<span class="sr-only">Closed Captions</span>', html
         )
 
     def test_home_shows_nothing_extra_for_plain_english(self) -> None:
@@ -81,7 +87,10 @@ class LanguageCaptionsTests(TestCase):
                   captions="OC")
         html = self.client.get(reverse("movie_detail", args=["amelie"])).content.decode()
         self.assertIn('<span class="movie-page-rating">French · English subtitles</span>', html)
-        self.assertIn('<abbr class="movie-page-rating" title="Open Captions">OC</abbr>', html)
+        self.assertIn(
+            '<abbr class="movie-page-rating" title="Open Captions" aria-hidden="true">OC</abbr>'
+            '<span class="sr-only">Open Captions</span>', html
+        )
 
     def test_movie_page_ignores_finished_runs(self) -> None:
         # A past French run says nothing about the version playing now.

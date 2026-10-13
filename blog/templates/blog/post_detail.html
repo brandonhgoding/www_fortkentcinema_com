@@ -7,6 +7,7 @@
 {% block og_description %}{% if post.subtitle %}{{ post.subtitle }}{% else %}{{ post|post_excerpt:160 }}{% endif %}{% endblock %}
 {% block og_type %}article{% endblock %}
 {% block og_image %}{% if og_image_url %}{{ og_image_url }}{% else %}{{ block.super }}{% endif %}{% endblock %}
+{% block og_image_details %}{% if not og_image_url %}{{ block.super }}{% endif %}{% endblock %}
 {% block robots %}{% if preview %}noindex, nofollow{% else %}{{ block.super }}{% endif %}{% endblock %}
 
 {% block extra_head %}

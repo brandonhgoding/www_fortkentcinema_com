@@ -3,7 +3,7 @@
          x-effect="document.body.style.overflow = trailer ? 'hidden' : ''">
   <div class="section-container">
     <div class="section-header">
-      <h2 class="section-title">NOW SHOWING</h2>
+      <h2 class="section-title">Now Showing</h2>
       <p class="section-subtitle">Currently playing at Fort Kent Cinema</p>
     </div>
 
@@ -16,14 +16,17 @@
 
     {% comment %}Desktop: date navigation + spotlight movie grid. Phone: film-first
     schedule list. Both are rendered; home.css toggles visibility by viewport.{% endcomment %}
-    <div class="date-nav">
+    {% comment %}Without JavaScript Alpine never strips x-cloak, and every film
+    card stayed display:none. Cards only; the trailer overlay stays hidden.{% endcomment %}
+    <noscript><style>#now-showing .movie-card[x-cloak] { display: revert !important; }</style></noscript>
+    <div class="date-nav" role="group" aria-label="Choose a day">
       <button class="date-nav__arrow"
               @click="idx = Math.max(0, idx - 1)"
               :disabled="idx === 0"
               aria-label="Previous day">
         <span aria-hidden="true">&#8249;</span>
       </button>
-      <span class="date-nav__current" x-text="labels[idx]">{{ ns_today_label }}</span>
+      <span class="date-nav__current" x-text="labels[idx]" aria-live="polite">{{ ns_today_label }}</span>
       <button class="date-nav__arrow"
               @click="idx = Math.min(dates.length - 1, idx + 1)"
               :disabled="idx === dates.length - 1"
