@@ -623,3 +623,27 @@
     font-size: 1rem;
   }
 }
+
+/* REDUCED MOTION — last in the file so it wins the cascade without
+ * !important. The grain, twinkle and bulb chase loop forever (WCAG 2.2.2);
+ * the entrances settle on their final frame. effects.js reads the same query
+ * and skips the neon power-on and the scroll reveals. */
+@media (prefers-reduced-motion: reduce) {
+  .hero::before,
+  .hero-stars {
+    animation: none;
+  }
+
+  .bulb {
+    animation: none;
+    opacity: 0.8;
+  }
+
+  .marquee-container,
+  .hero-tagline,
+  .hero-cta,
+  .hero-members {
+    animation: none;
+    opacity: 1;
+  }
+}

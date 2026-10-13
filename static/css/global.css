@@ -548,28 +548,9 @@ button {
 /* ============================================
    REDUCED MOTION
 ============================================ */
+/* The hero's own guard lives at the end of Hero.css: this sheet is bundled
+ * before it, so a rule here loses to the animations declared there. */
 @media (prefers-reduced-motion: reduce) {
-  .hero::before {
-    animation: none;
-  }
-
-  .bulb {
-    animation: none !important;
-    opacity: 0.8 !important;
-  }
-
-  .hero-stars {
-    animation: none !important;
-  }
-
-  .marquee-container,
-  .hero-tagline,
-  .hero-cta,
-  .hero-members {
-    animation: none !important;
-    opacity: 1 !important;
-  }
-
   .movie-card:hover,
   .blog-card:hover {
     transform: none;
