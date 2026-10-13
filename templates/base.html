@@ -92,6 +92,12 @@
     {
       "@context": "https://schema.org",
       "@type": "MovieTheater",
+      {% comment %}
+      The node the home page's ScreeningEvents (partials/home_jsonld.html)
+      name as their location. Fixed, not request-derived: an @id is an
+      identity, and it must read the same on every host and scheme.
+      {% endcomment %}
+      "@id": "https://www.fortkentcinema.com/#theater",
       "name": "{{ site_config.cinema.name|escapejs }}",
       "description": "Maine's Northernmost Picture Show - a community cinema in Fort Kent featuring current movies, special events, and Cinema Club membership.",
       "url": "https://www.fortkentcinema.com",
