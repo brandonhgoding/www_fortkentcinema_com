@@ -19,6 +19,7 @@ class EngagementStatus(models.TextChoices):
 class Language(models.TextChoices):
     ENGLISH = "english", "English"
     FRENCH = "french", "French"
+    SPANISH = "spanish", "Spanish"
 
 
 class Translation(models.TextChoices):
