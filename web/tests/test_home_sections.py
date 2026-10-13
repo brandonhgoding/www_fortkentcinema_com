@@ -785,3 +785,29 @@ class ScreeningEventSchemaTests(TestCase):
         ns.return_value = [movie()]
         self.assertEqual(self.client.get(reverse("home")).status_code, 200)
         self.assertIsNone(self.events())
+
+
+class TheaterFormerNameTests(TestCase):
+    """Showtime directories still carry the old name, "The Century Theater",
+    and the building is still called that in town. The site says so on the
+    history page; the MovieTheater block says it too, so a machine can tie
+    the two names to one business instead of guessing they are neighbours."""
+
+    def theater(self):
+        html = self.client.get("/").content.decode()
+        for raw in re.findall(
+            r'<script type="application/ld\+json">\s*(.*?)\s*</script>', html, re.S
+        ):
+            block = json.loads(raw)
+            if block.get("@type") == "MovieTheater":
+                return block
+        self.fail("no MovieTheater block")
+
+    def test_former_name_is_an_alternate_name(self):
+        self.assertEqual(self.theater()["alternateName"], "The Century Theater")
+
+    def test_the_history_page_says_it_in_visible_text(self):
+        """Structured data may only state what a visitor can read."""
+        html = self.client.get(reverse("history")).content.decode()
+        self.assertIn("Century", main_content(html))
+        self.assertIn("Fort Kent Cinema", main_content(html))
