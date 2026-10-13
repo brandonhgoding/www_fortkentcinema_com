@@ -142,7 +142,7 @@ so both renderings read from the one list — same as /heckle-night/.
           {{ open_mic.doors_label }} doors, {{ open_mic.start_label }} start, 13 Hall Street. Questions? Call us.
         </p>
         <div class="openmic-cta-contact">
-          <a href="tel:+12072315287" data-track="phone_click" data-track-location="open_mic">(207) 231-5287</a>
+          <a href="tel:{{ site_config.cinema.phone_e164 }}" data-track="phone_click" data-track-location="open_mic">{{ site_config.cinema.phone }}</a>
         </div>
       </div>
 

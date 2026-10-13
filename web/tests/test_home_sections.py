@@ -31,7 +31,7 @@ from django.urls import reverse
 from django.utils.html import escape
 
 from blog.models import BlogAuthor, BlogCategory, BlogPost
-from web.constants import DONATION, SITE_CONFIG, SPONSORSHIP_TIERS
+from web.constants import DONATION, SITE_CONFIG, SPONSORSHIP_TIERS, TICKET_PRICES
 
 SECTION_MARKERS = (
     "hero",
@@ -296,6 +296,51 @@ class TheaterSchemaTests(TestCase):
 
     def test_image_is_absolute(self):
         self.assertRegex(self.theater()["image"], r"^https?://")
+
+    def test_telephone_is_e164(self):
+        """schema.org and Google's validator expect the international form;
+        the display form stays on the page."""
+        self.assertEqual(self.theater()["telephone"], "+12072315287")
+
+    def test_e164_and_display_phone_are_the_same_number(self):
+        cinema = SITE_CONFIG["cinema"]
+        self.assertEqual(
+            cinema["phone_e164"], "+1" + re.sub(r"\D", "", cinema["phone"])
+        )
+
+    def test_price_range_is_the_real_ticket_range(self):
+        """"$$" is a vague tier; the page states real prices."""
+        with mock.patch.dict(TICKET_PRICES, member=3, adult=9):
+            self.assertEqual(self.theater()["priceRange"], "$3 - $9")
+
+    def test_logo_is_an_absolute_png_that_ships(self):
+        logo = self.theater()["logo"]
+        self.assertRegex(logo, r"^https?://.+\.png$")
+        name = logo.rsplit("/static/", 1)[1]
+        self.assertTrue((Path(settings.BASE_DIR) / "static" / name).exists())
+
+
+class TelLinkTests(TestCase):
+    """Every tel: link dials SITE_CONFIG's number. They were typed by hand on
+    six pages, and the footer built its own by stripping punctuation, which
+    left off the country code."""
+
+    PAGES = ["/", "/rentals/", "/craft-night/", "/heckle-night/", "/open-mic/",
+             "/no-such-page/"]
+
+    @mock.patch("web.views.get_calendar_month", return_value={})
+    @mock.patch("web.views.get_coming_soon", return_value=[])
+    @mock.patch("web.views.get_now_showing", return_value=[])
+    def test_every_tel_link_comes_from_the_config(self, *_):
+        with mock.patch.dict(SITE_CONFIG["cinema"], phone_e164="+19995550100",
+                             phone="(999) 555-0100"):
+            for path in self.PAGES:
+                with self.subTest(path=path):
+                    html = self.client.get(path).content.decode()
+                    links = re.findall(r'href="tel:([^"]*)"', html)
+                    self.assertTrue(links, "no tel: link")
+                    self.assertEqual(set(links), {"+19995550100"})
+                    self.assertNotIn("231-5287", html)
 
 
 class EmptyStateTests(TestCase):

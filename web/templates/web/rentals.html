@@ -146,7 +146,7 @@ so both renderings read from the one list — same as /membership/ and
           {% include "partials/rental_inquiry_form.html" %}
         </div>
         <p class="rentals-cta-contact">
-          Or call <a href="tel:+12072315287" data-track="phone_click" data-track-location="rentals">(207) 231-5287</a>
+          Or call <a href="tel:{{ site_config.cinema.phone_e164 }}" data-track="phone_click" data-track-location="rentals">{{ site_config.cinema.phone }}</a>
         </p>
       </section>
     </div>

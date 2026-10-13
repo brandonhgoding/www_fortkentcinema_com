@@ -14,6 +14,9 @@ SITE_CONFIG = {
             "zip": "04743",
         },
         "phone": "(207) 231-5287",
+        # The same number for machines: tel: links and the MovieTheater
+        # block's telephone. A test holds the two to the same digits.
+        "phone_e164": "+12072315287",
     },
     # No fixed weekly hours. A table of them ("Wednesday - Thursday,
     # 6-9 PM") contradicted the schedule it sat under — Friday Heckle Night,
