@@ -1,0 +1,63 @@
+{% autoescape off %}{% comment %}
+/llms.txt — a plain-language summary for AI assistants (llmstxt.org). Served
+like robots.txt. Every price, time and contact detail is rendered from the
+constants the pages read, so this can't quote a different number; the gift
+card link is the one exception, and a test holds it to the home page's.
+Autoescape is off because this is plain text, not HTML.
+{% endcomment %}# {{ site_config.cinema.name }}
+
+> {{ site_config.cinema.tagline }}: a community movie theater at
+> {{ site_config.cinema.address.street }}, {{ site_config.cinema.address.city }}, Maine, in the St. John Valley.
+> Current movies, special events, and Cinema Club membership.
+
+## Showtimes
+
+- This week's films and showtimes: {{ base }}/#now-showing
+- What's booked next: {{ base }}/#coming-soon
+- Each film on the home page links to its own page, with showtimes, synopsis and trailer.
+
+There is no online ticketing. Pay at the box office, which opens
+{{ site_config.box_office.opens_before_show_minutes }} minutes before every show.
+
+## Ticket prices (USD)
+
+- Adults: ${{ ticket_prices.adult }}
+- Seniors: ${{ ticket_prices.senior }}
+- Kids: ${{ ticket_prices.child }}
+- Matinees (showtimes at {{ ticket_prices.matinee_until|time:"g A" }} or earlier): ${{ ticket_prices.matinee }}
+- Cinema Club members: ${{ ticket_prices.member }}, every show
+
+## Membership (Cinema Club)
+
+A yearly membership: cheaper tickets at every show, up to $2 off every
+popcorn, a free small popcorn in your birthday month, and discounts on
+private rentals. Family tiers cover the whole household.
+Tiers and prices: {{ base }}/membership/
+
+## Events
+
+- Open Mic: every {{ open_mic.day_label }}. Doors {{ open_mic.doors_label }}, first act {{ open_mic.start_label }}. {{ open_mic.price_label }}, {{ open_mic.audience|lower }}.
+  {{ base }}/open-mic/
+- Craft Night: the last Tuesday of the month, {{ craft_night.start_label }}, with {{ craft_night.partner }}.
+  {{ base }}/craft-night/
+- Heckle Night: the third Friday of the month, {{ heckle_night.start_label }}.
+  {{ base }}/heckle-night/
+- Film vote, where the public picks from a short list: {{ base }}/vote
+
+## Rentals, sponsorship, gift cards
+
+- Private rentals of the theater: {{ base }}/rentals/
+- Sponsor a screening, from ${{ sponsor_from }}: {{ base }}/sponsor/
+- E-gift cards: https://app.squareup.com/gift/MLWDCWWHFATH1/order
+
+## Contact
+
+- Address: {{ site_config.cinema.address.street }}, {{ site_config.cinema.address.city }}, {{ site_config.cinema.address.state }} {{ site_config.cinema.address.zip }}
+- Phone: {{ site_config.cinema.phone }}
+- Facebook: {{ site_config.social.facebook }}
+
+## More
+
+- Blog: {{ base }}/blog/
+- History of the theater, back to 1917: {{ base }}/history/
+{% endautoescape %}

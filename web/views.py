@@ -364,6 +364,24 @@ class CalendarMonthView(TemplateView):
         return ctx
 
 
+class LlmsTxtView(TemplateView):
+    """/llms.txt, a plain-text summary for AI assistants. Like robots.txt it
+    is served from the site root; unlike it, it needs the event and sponsor
+    constants, which the context processors don't carry."""
+
+    template_name = "llms.txt"
+    content_type = "text/plain; charset=utf-8"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["base"] = f"{self.request.scheme}://{self.request.get_host()}"
+        ctx["open_mic"] = OPEN_MIC
+        ctx["craft_night"] = CRAFT_NIGHT
+        ctx["heckle_night"] = HECKLE_NIGHT
+        ctx["sponsor_from"] = min(t["price"] for t in SPONSORSHIP_TIERS)
+        return ctx
+
+
 class MembershipView(TemplateView):
     template_name = "web/membership.html"
 
