@@ -226,3 +226,85 @@ class AnalyticsClickE2E(SeleniumTestCase):
         )
         self.assertEqual(events[0][0], "event")
         self.assertEqual(events[0][1], "giftcard_click")
+
+
+class TrailerDialogE2E(SeleniumTestCase):
+    """The trailer overlays on Now Showing and Coming Soon behave as modal
+    dialogs: announced as modal, focus goes to Close on open, stays inside
+    while open, Escape closes, and focus returns to the poster that opened it.
+    Without that a keyboard user is left on a poster behind the overlay, and a
+    screen reader can wander the page underneath."""
+
+    SECTIONS = {
+        "now showing": (".movie-poster--playable", ".now-trailer-overlay",
+                        ".now-trailer-close"),
+        "coming soon": (".coming-movie-poster--playable", ".coming-trailer-overlay",
+                        ".coming-trailer-close"),
+    }
+
+    def setUp(self):
+        import datetime
+
+        from cinema.models import Showtime
+        from django.utils import timezone
+
+        from web.tests.test_cinema_data import (
+            aware, make_engagement, make_film, make_screen,
+        )
+
+        screen = make_screen()
+        today = timezone.localdate()
+        tomorrow = today + datetime.timedelta(days=1)
+        now = make_engagement(
+            screen, [make_film("Dune", poster_url="http://p/d.jpg", youtube_id="yt1")],
+            start=today, end=today + datetime.timedelta(days=3),
+        )
+        Showtime.objects.create(
+            engagement=now,
+            starts_at=aware(tomorrow.year, tomorrow.month, tomorrow.day, 19),
+        )
+        make_engagement(
+            screen, [make_film("Alpha", poster_url="http://p/a.jpg", youtube_id="yta")],
+            start=today + datetime.timedelta(days=10),
+            end=today + datetime.timedelta(days=12),
+        )
+
+    def active_matches(self, selector):
+        return self.driver.execute_script(
+            "return document.activeElement.matches(arguments[0]);", selector
+        )
+
+    @mock.patch("web.views.get_calendar_month", return_value={})
+    def test_trailer_overlays_are_modal_dialogs(self, _cal):
+        from selenium.webdriver.common.by import By
+        from selenium.webdriver.common.keys import Keys
+
+        self.driver.set_window_size(1280, 900)
+        self.driver.get(self.live_server_url + "/")
+
+        for name, (opener_sel, overlay_sel, close_sel) in self.SECTIONS.items():
+            with self.subTest(section=name):
+                opener = self.wait().until(
+                    lambda d: d.find_element(By.CSS_SELECTOR, opener_sel)
+                )
+                overlay = self.driver.find_element(By.CSS_SELECTOR, overlay_sel)
+                self.assertEqual(overlay.get_attribute("aria-modal"), "true")
+
+                self.driver.execute_script(
+                    "arguments[0].scrollIntoView({block: 'center', behavior: 'instant'});"
+                    "arguments[0].focus();",
+                    opener,
+                )
+                opener.send_keys(Keys.ENTER)
+                self.wait(5).until(lambda d: overlay.is_displayed())
+                self.wait(5).until(lambda d: self.active_matches(close_sel))
+
+                # Focus that lands behind the overlay is pulled back to Close.
+                self.driver.execute_script(
+                    "document.querySelector('.nav-logo, a[href]').focus();"
+                )
+                self.wait(5).until(lambda d: self.active_matches(close_sel))
+
+                self.driver.switch_to.active_element.send_keys(Keys.ESCAPE)
+                self.wait(5).until(lambda d: not overlay.is_displayed())
+                self.wait(5).until(lambda d: self.active_matches(opener_sel))

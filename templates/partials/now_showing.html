@@ -81,10 +81,22 @@
     {% endif %}
   </div>
 
-  <div class="now-trailer-overlay" x-cloak x-show="trailer" role="dialog"
-       :aria-label="(trailer ? trailer.title : '') + ' trailer'">
+  {% comment %}
+  A modal: focus moves to Close on open and is pulled back there if it lands
+  behind the overlay; Escape closes; focus returns to the poster that opened
+  it. Escape can't reach the page while the YouTube player itself has focus;
+  Close still works then.
+  {% endcomment %}
+  <div class="now-trailer-overlay" x-cloak x-show="trailer" role="dialog" aria-modal="true"
+       :aria-label="(trailer ? trailer.title : '') + ' trailer'"
+       x-data="{ opener: null }"
+       x-init="$watch('trailer', t => t
+         ? (opener = document.activeElement, $nextTick(() => $refs.close.focus()))
+         : opener && opener.focus())"
+       @keydown.escape.window="trailer = null"
+       @focusin.window="trailer && !$el.contains($event.target) && $refs.close.focus()">
     <div class="now-trailer-content">
-      <button class="now-trailer-close" @click="trailer = null" aria-label="Close trailer">
+      <button class="now-trailer-close" x-ref="close" @click="trailer = null" aria-label="Close trailer">
         <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
           <line x1="4" y1="4" x2="20" y2="20" stroke="white" stroke-width="2.5" stroke-linecap="round" />
           <line x1="20" y1="4" x2="4" y2="20" stroke="white" stroke-width="2.5" stroke-linecap="round" />
