@@ -27,6 +27,9 @@
     <p>Something went wrong on our end. Please try again in a minute.</p>
     <p>
       <a href="/">Back to the showtimes</a> &middot;
+      {% comment %} Typed out, not site_config: Django renders this page
+      without context processors, so it works when the rest is broken. Keep
+      it in step with SITE_CONFIG["cinema"]. {% endcomment %}
       <a href="tel:+12072315287">(207) 231-5287</a>
     </p>
   </main>

@@ -16,7 +16,7 @@
           <br />
           {{ site_config.cinema.address.city }}, {{ site_config.cinema.address.state }} {{ site_config.cinema.address.zip }}
           <br />
-          <a href="tel:{{ site_config.cinema.phone|cut:' '|cut:'('|cut:')'|cut:'-' }}" class="footer-phone"
+          <a href="tel:{{ site_config.cinema.phone_e164 }}" class="footer-phone"
              data-track="phone_click" data-track-location="footer">
             {{ site_config.cinema.phone }}
           </a>

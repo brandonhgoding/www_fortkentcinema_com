@@ -108,7 +108,7 @@
       "alternateName": "The Century Theater",
       "description": "Maine's Northernmost Picture Show - a community cinema in Fort Kent featuring current movies, special events, and Cinema Club membership.",
       "url": "https://www.fortkentcinema.com",
-      "telephone": "{{ site_config.cinema.phone|escapejs }}",
+      "telephone": "{{ site_config.cinema.phone_e164|escapejs }}",
       "address": {
         "@type": "PostalAddress",
         "streetAddress": "{{ site_config.cinema.address.street|escapejs }}",
@@ -121,12 +121,17 @@
       "hasMap": "{{ site_config.seo.map_url|escapejs }}",
       "image": "{{ request.scheme|escapejs }}://{{ request.get_host|escapejs }}{% static 'img/og-image.jpg' %}",
       {% comment %}
+      The black wordmark from the brand folder, as a PNG: Google shows a
+      logo on white, and not every reader of this block takes SVG.
+      {% endcomment %}
+      "logo": "{{ request.scheme|escapejs }}://{{ request.get_host|escapejs }}{% static 'img/fkc-logo-black.png' %}",
+      {% comment %}
       No openingHoursSpecification: the box office opens ahead of each show
       rather than on fixed weekly hours, and Google renders any day missing
       from a specification as "Closed" — wrong on every show night it missed.
       {% endcomment %}
       "sameAs": ["{{ site_config.social.facebook|escapejs }}"],
-      "priceRange": "$$",
+      "priceRange": "${{ ticket_prices.member }} - ${{ ticket_prices.adult }}",
       "currenciesAccepted": "USD",
       "paymentAccepted": "Cash, Credit Card"
     }

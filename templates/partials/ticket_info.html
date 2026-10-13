@@ -16,6 +16,6 @@
   </span>
   <span class="ticket-info__where">
     <span>Pay at the box office, {{ site_config.cinema.address.street }}</span> &middot;
-    <a href="tel:+12072315287" data-track="phone_click" data-track-location="ticket_info">{{ site_config.cinema.phone }}</a>
+    <a href="tel:{{ site_config.cinema.phone_e164 }}" data-track="phone_click" data-track-location="ticket_info">{{ site_config.cinema.phone }}</a>
   </span>
 </p>
