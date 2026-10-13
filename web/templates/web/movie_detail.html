@@ -11,6 +11,7 @@ not the TMDB blurb — the local intent is what we can actually win.
 {% block og_description %}{% if is_now_showing %}Showtimes for {{ film.title }} at Fort Kent Cinema.{% else %}{{ film.title }} at Fort Kent Cinema.{% endif %}{% endblock %}
 {% block og_type %}video.movie{% endblock %}
 {% block og_image %}{% if film.poster_url %}{{ film.poster_url }}{% else %}{{ block.super }}{% endif %}{% endblock %}
+{% block og_image_details %}{% if film.poster_url %}<meta property="og:image:alt" content="Poster for {{ film.title }}" />{% else %}{{ block.super }}{% endif %}{% endblock %}
 
 
 {% block extra_head %}{% include "partials/movie_jsonld.html" %}{% endblock %}
@@ -81,7 +82,7 @@ not the TMDB blurb — the local intent is what we can actually win.
                 <li class="movie-page-time">
                   <span class="movie-page-time-value">{{ st.time }}</span>
                   <span class="movie-page-time-detail">
-                    {{ st.screen }}{% if st.format %} &middot; {{ st.format }}{% endif %}{% if st.captions %} <abbr class="movie-page-rating" title="{{ st.captions_label }}">{{ st.captions }}</abbr>{% endif %}
+                    {{ st.screen }}{% if st.format %} &middot; {{ st.format }}{% endif %}{% if st.captions %} <abbr class="movie-page-rating" title="{{ st.captions_label }}" aria-hidden="true">{{ st.captions }}</abbr><span class="sr-only">{{ st.captions_label }}</span>{% endif %}
                   </span>
                   {% if st.is_free_for_members %}<span class="movie-page-time-free">Free for members</span>{% endif %}
                 </li>

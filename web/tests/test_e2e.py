@@ -187,6 +187,13 @@ class ComingSoonCalendarE2E(SeleniumTestCase):
             self.driver.find_elements(By.CSS_SELECTOR, ".coming-calendar")
         )
 
+        # A screen reader hears which view is on, not just two icon buttons.
+        grid_btn = self.driver.find_element(
+            By.CSS_SELECTOR, ".coming-view-btn[aria-label='Grid view']"
+        )
+        self.assertEqual(calendar_btn.get_attribute("aria-pressed"), "true")
+        self.assertEqual(grid_btn.get_attribute("aria-pressed"), "false")
+
 
 class AnalyticsClickE2E(SeleniumTestCase):
     """The tracked-click path end to end in a real browser: a click on a real

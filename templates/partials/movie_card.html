@@ -67,7 +67,7 @@
     {% for slot in movie.upcoming %}
     <div class="movie-showtimes" x-show="dates[idx] === '{{ slot.key }}'">
       {% for time in slot.times %}
-      <span class="showtime">{{ time.time }}{% if time.captions %} <abbr class="movie-rating" title="{{ time.captions_label }}">{{ time.captions }}</abbr>{% endif %}</span>
+      <span class="showtime">{{ time.time }}{% if time.captions %} <abbr class="movie-rating" title="{{ time.captions_label }}" aria-hidden="true">{{ time.captions }}</abbr><span class="sr-only">{{ time.captions_label }}</span>{% endif %}</span>
       {% endfor %}
     </div>
     {% endfor %}

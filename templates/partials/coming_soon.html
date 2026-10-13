@@ -3,11 +3,12 @@
          x-effect="document.body.style.overflow = trailer ? 'hidden' : ''">
   <div class="section-container">
     <div class="section-header">
-      <h2 class="section-title">COMING SOON</h2>
+      <h2 class="section-title">Coming Soon</h2>
       <p class="section-subtitle">Get excited for these upcoming releases</p>
       <div class="coming-view-toggle">
         <button class="coming-view-btn"
                 :class="{ 'coming-view-btn--active': view === 'grid' }"
+                :aria-pressed="view === 'grid'"
                 @click="view = 'grid'"
                 aria-label="Grid view" title="Grid view">
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
@@ -19,6 +20,7 @@
         </button>
         <button class="coming-view-btn"
                 :class="{ 'coming-view-btn--active': view === 'calendar' }"
+                :aria-pressed="view === 'calendar'"
                 @click="view = 'calendar'"
                 aria-label="Calendar view" title="Calendar view">
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">

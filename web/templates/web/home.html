@@ -2,9 +2,11 @@
 {% load static %}
 
 {% block title %}Fort Kent Cinema | Movies in the St. John Valley{% endblock %}
-{% block description %}Fort Kent Cinema - Your local movie theater in Fort Kent, Maine. Check showtimes, coming soon, and join our membership program.{% endblock %}
+{% comment %}Facts an assistant or a search snippet can quote: what, where,
+and what it costs. Prices from TICKET_PRICES, like the ticket line.{% endcomment %}
+{% block description %}Showtimes, ticket prices and Cinema Club membership at Fort Kent Cinema, {{ site_config.cinema.address.street }}, Fort Kent, Maine. Adults ${{ ticket_prices.adult }}, members ${{ ticket_prices.member }} at every show.{% endblock %}
 {% block og_title %}Fort Kent Cinema | Movies in the St. John Valley{% endblock %}
-{% block og_description %}Your local movie theater in Fort Kent, Maine. Check showtimes, coming soon, and join our membership program.{% endblock %}
+{% block og_description %}Showtimes, ticket prices and Cinema Club membership at Fort Kent Cinema, {{ site_config.cinema.address.street }}, Fort Kent, Maine. Adults ${{ ticket_prices.adult }}, members ${{ ticket_prices.member }} at every show.{% endblock %}
 
 {% block extra_head %}{% include "partials/home_jsonld.html" %}{% endblock %}
 

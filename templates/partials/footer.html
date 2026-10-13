@@ -2,14 +2,14 @@
   <div class="footer-container">
     <div class="footer-grid">
       <div class="footer-brand">
-        <h3 class="footer-logo">
+        <h2 class="footer-logo">
           <img
             src="{% static 'img/fkc-wordmark-dark.svg' %}"
             alt="{{ site_config.cinema.name }}"
             width="210"
             height="44"
           >
-        </h3>
+        </h2>
         <p class="footer-tagline">&quot;{{ site_config.cinema.tagline }}&quot;</p>
         <address class="footer-address">
           {{ site_config.cinema.address.street }}
@@ -48,7 +48,7 @@
         omitted.
       {% endcomment %}
       <div class="footer-column footer-hours">
-        <h3 class="footer-heading">Box Office Hours</h3>
+        <h2 class="footer-heading">Box Office Hours</h2>
         <p class="footer-hours-note">
           Opens {{ site_config.box_office.opens_before_show_minutes }} minutes before every show.
         </p>

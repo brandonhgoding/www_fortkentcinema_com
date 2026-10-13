@@ -328,9 +328,12 @@
 }
 
 /* Art Deco Neon Title — champagne glow */
+/* Capitals here, not in the markup: some screen readers spell an all-caps
+ * word letter by letter, and search snippets quote the source text. */
 .marquee-title {
   font-family: var(--font-display);
   font-size: 5.5rem;
+  text-transform: uppercase;
   letter-spacing: 14px;
   color: var(--neon-gold-inner);
   text-shadow:
@@ -344,6 +347,7 @@
 .marquee-subtitle {
   font-family: var(--font-display);
   font-size: 1.8rem;
+  text-transform: uppercase;
   letter-spacing: 10px;
   color: var(--color-gold);
   margin-top: var(--spacing-sm);
