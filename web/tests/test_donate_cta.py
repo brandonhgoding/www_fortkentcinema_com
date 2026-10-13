@@ -21,9 +21,14 @@ from django.utils.html import escape
 
 from web.constants import DONATION
 
+# The Support strip that carries the donate link is switched off on the home
+# page (SHOW_SUPPORT_STRIP). These classes switch it on: the off switch and
+# the disclaimer have to hold whenever it comes back.
+
 LIVE = {**DONATION, "url": "https://square.link/u/example"}
 
 
+@mock.patch("web.views.SHOW_SUPPORT_STRIP", True)
 class DonationHiddenUntilLinkedTests(TestCase):
     """No link, no section. This is the shipped-early state."""
 
@@ -72,7 +77,10 @@ class DonationLiveTests(TestCase):
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_now_showing", return_value=[])
     def setUp(self, _ns, _cs):
-        with mock.patch.dict("web.views.DONATION", LIVE):
+        with (
+            mock.patch.dict("web.views.DONATION", LIVE),
+            mock.patch("web.views.SHOW_SUPPORT_STRIP", True),
+        ):
             self.html = self.client.get(reverse("home")).content.decode()
 
     def test_the_section_appears_once_the_url_is_set(self):
@@ -115,7 +123,10 @@ class DisclaimerTests(TestCase):
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_now_showing", return_value=[])
     def setUp(self, _ns, _cs):
-        with mock.patch.dict("web.views.DONATION", LIVE):
+        with (
+            mock.patch.dict("web.views.DONATION", LIVE),
+            mock.patch("web.views.SHOW_SUPPORT_STRIP", True),
+        ):
             self.html = self.client.get(reverse("home")).content.decode()
 
     def test_the_disclaimer_is_on_the_page(self):

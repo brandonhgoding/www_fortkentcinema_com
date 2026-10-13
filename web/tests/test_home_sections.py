@@ -111,7 +111,7 @@ class SectionCompositionTests(TestCase):
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_now_showing", return_value=[])
-    def test_section_order_ends_with_from_the_booth_then_support(self, _ns, _cs):
+    def test_section_order_ends_with_from_the_booth(self, _ns, _cs):
         html = self.home()
         seq = section_sequence(html)
         self.assertEqual(
@@ -123,17 +123,32 @@ class SectionCompositionTests(TestCase):
                 "coming-soon",
                 "get-involved",
                 "from-the-booth",
-                "support",
             ],
         )
         self.assertNotIn("cta-pair", html)
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_now_showing", return_value=[])
-    def test_support_is_the_last_section_before_the_footer(self, _ns, _cs):
+    def test_from_the_booth_is_the_last_section_before_the_footer(self, _ns, _cs):
         main = main_content(self.home())
         last = main.rindex("<section")
-        self.assertIn('id="support"', main[last : last + 200])
+        self.assertIn('id="from-the-booth"', main[last : last + 200])
+
+    @mock.patch("web.views.get_coming_soon", return_value=[])
+    @mock.patch("web.views.get_now_showing", return_value=[])
+    def test_support_strip_is_off(self, _ns, _cs):
+        html = self.home()
+        self.assertNotIn('id="support"', html)
+        self.assertNotIn("Support the Cinema", html)
+        self.assertNotIn("sponsor-cta", html)
+        self.assertNotIn("donate-cta", html)
+
+    @mock.patch("web.views.SHOW_SUPPORT_STRIP", True)
+    @mock.patch("web.views.get_coming_soon", return_value=[])
+    @mock.patch("web.views.get_now_showing", return_value=[])
+    def test_support_strip_comes_back_last_when_switched_on(self, _ns, _cs):
+        seq = section_sequence(self.home())
+        self.assertEqual(seq[-2:], ["from-the-booth", "support"])
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_now_showing", return_value=[])
@@ -148,7 +163,6 @@ class SectionCompositionTests(TestCase):
             "coming-soon": "alt",
             "get-involved": "surface",
             "from-the-booth": "alt",
-            "support": "sunken",
         }
         grounds = []
         for section_id, ground in expected.items():
@@ -328,6 +342,7 @@ class EmptyStateTests(TestCase):
         self.assertNotIn("coming-empty", html)
 
 
+@mock.patch("web.views.SHOW_SUPPORT_STRIP", True)
 class SponsorCtaCopyTests(TestCase):
     """The homepage sponsor link has to stay true with nobody maintaining it."""
 
@@ -485,6 +500,7 @@ class FromTheBoothTests(TestCase):
         self.assertNotIn("blog-post-card", section)
 
 
+@mock.patch("web.views.SHOW_SUPPORT_STRIP", True)
 class SupportTests(TestCase):
     def section(self, url=None):
         with mock.patch.dict(
@@ -527,7 +543,10 @@ class SupportTests(TestCase):
 
 
 class GetInvolvedTests(TestCase):
-    """Vote, open mic and gift card share one section and one card shape."""
+    """Vote, open mic and gift card share one section and one card shape.
+
+    The section is titled "Be part of the show"; its id stays get-involved.
+    """
 
     def section(self):
         html = self.client.get(reverse("home")).content.decode()
@@ -542,7 +561,7 @@ class GetInvolvedTests(TestCase):
 
     def test_heading_and_cards_row(self):
         section = self.section()
-        self.assertRegex(section, r'<h2 class="section-title"[^>]*>Get involved</h2>')
+        self.assertRegex(section, r'<h2 class="section-title"[^>]*>Be part of the show</h2>')
         self.assertIn('class="home-cards"', section)
 
     def test_cards_in_order_vote_open_mic_gift_card(self):
@@ -567,13 +586,36 @@ class GetInvolvedTests(TestCase):
 
     def test_open_mic_card_copy(self):
         section = self.section()
-        for text in ("Every Monday", "Open Mic", "How to sign up &rarr;"):
-            self.assertIn(text, section)
+        card = section[section.index("open-mic-cta") :]
+        for text in ("Take center stage", "Every Monday", "Open Mic", "How to sign up &rarr;"):
+            self.assertIn(text, card)
+
+    def test_each_card_leads_with_its_picture(self):
+        """Art first, like the From the booth cards. Decorative (alt="")
+        because the title under it says the same thing."""
+        self.open_poll()
+        section = self.section()
+        for card_class, image in (
+            ("vote-cta", "you-choose-the-film"),
+            ("open-mic-cta", "take-center-stage"),
+            ("gift-card-cta", "pay-it-forward"),
+        ):
+            card = section[section.index(card_class) :]
+            card = card[: card.index("</article>")]
+            self.assertIn(f"img/involved/{image}.jpg", card)
+            self.assertLess(card.index("home-card__media"), card.index("home-card__eyebrow"))
+            self.assertRegex(card, r'<img [^>]*alt=""')
+
+    def test_the_pictures_ship(self):
+        from django.contrib.staticfiles import finders
+
+        for image in ("you-choose-the-film", "take-center-stage", "pay-it-forward"):
+            self.assertIsNotNone(finders.find(f"img/involved/{image}.jpg"), image)
 
     def test_gift_card_copy_and_new_window(self):
         section = self.section()
         card = section[section.index("gift-card-cta") :]
-        self.assertIn("Give the gift of cinema", card)
+        self.assertIn("Pay it forward", card)
         self.assertIn("An e-gift card for a night at the movies.", card)
         self.assertIn("Buy an e-gift card &rarr;", card)
         self.assertIn('target="_blank"', card)

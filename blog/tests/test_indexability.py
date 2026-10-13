@@ -60,7 +60,8 @@ class CrawlableFromBlogIndexTests(TestCase):
         self.assertNotIn("hx-get", html)
 
     def test_every_page_is_reachable_and_200s(self):
-        expected_pages = -(-77 // PAGE_SIZE)  # ceil → 7
+        # Page 1 carries the lead card on top of a full page.
+        expected_pages = 1 + -(-(77 - PAGE_SIZE - 1) // PAGE_SIZE)  # → 7
         for page in range(1, expected_pages + 1):
             resp = self.client.get("/blog/", {"page": page})
             self.assertEqual(resp.status_code, 200, f"page {page}")

@@ -12,6 +12,7 @@ import datetime
 import html as html_lib
 import json
 import re
+from unittest import mock
 
 from cinema.models import SponsorshipInquiry, Studio, StudioTitle
 from django.test import TestCase
@@ -132,7 +133,10 @@ class SponsorInternalLinkTests(TestCase):
         self.assertIsNotNone(footer, "no footer on the page")
         self.assertIn("/sponsor/", hrefs(footer.group(0)))
 
+    @mock.patch("web.views.SHOW_SUPPORT_STRIP", True)
     def test_homepage_body_promotes_the_sponsor_page(self):
+        # Only while the Support strip is on; off, the nav and footer links
+        # below are what's left.
         response = self.client.get("/")
         self.assertTemplateUsed(response, "partials/cta_sponsor.html")
 

@@ -107,7 +107,7 @@ class BlogPaginationE2E(SeleniumTestCase):
         super().setUp()
         author = BlogAuthor.objects.create(first_name="Jane", last_name="Doe")
         category = BlogCategory.objects.create(name="News")
-        for i in range(15):  # > paginate_by (13)
+        for i in range(15):  # > 13, page 1's lead + paginate_by (12)
             BlogPost.objects.create(
                 title=f"Post {i}",
                 subtitle=f"Subtitle {i}",
@@ -125,7 +125,7 @@ class BlogPaginationE2E(SeleniumTestCase):
         cards = self.wait().until(
             lambda d: d.find_elements(By.CSS_SELECTOR, ".blog-card") or False
         )
-        self.assertEqual(len(cards), 13)  # PostListView.paginate_by
+        self.assertEqual(len(cards), 13)  # the lead + PostListView.paginate_by
 
         next_link = self.driver.find_element(
             By.CSS_SELECTOR, ".blog-pagination a[rel='next']"

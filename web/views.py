@@ -42,6 +42,7 @@ from web.constants import (
     SPONSORSHIP_FAQ,
     SPONSORSHIP_SHOWCASE,
     SPONSORSHIP_TIERS,
+    SHOW_SUPPORT_STRIP,
 )
 from web.forms import RentalInquiryForm, SponsorshipInquiryForm
 from web.list_signup import start_signup
@@ -90,6 +91,9 @@ class HomeView(TemplateView):
         # Self-expiring vote CTAs: one per round that is OPEN and inside its
         # voting window, so each banner retires itself when its round closes.
         ctx["vote_polls"] = vote_service.open_polls()
+
+        # Whether the Support strip renders at all (web/constants.py).
+        ctx["show_support"] = SHOW_SUPPORT_STRIP
 
         # Donate link in the Support strip. The partial renders nothing while
         # DONATION["url"] is blank, which is how it shipped ahead of the Square

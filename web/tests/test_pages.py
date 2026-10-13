@@ -269,11 +269,11 @@ class HomeIntegrationTests(TestCase):
     @mock.patch("web.views.get_now_showing", return_value=[])
     def test_full_home_composition_order(self, _ns, _cs):
         html = self.client.get(reverse("home")).content.decode()
-        # The hero, then the six sections below it, each rendered once.
+        # The hero, then the five sections below it, each rendered once.
+        # (Support is switched off: SHOW_SUPPORT_STRIP.)
         markers = (
             'class="hero"', 'id="now-showing"', 'id="membership"',
             'id="coming-soon"', 'id="get-involved"', 'id="from-the-booth"',
-            'id="support"',
         )
         for marker in markers:
             self.assertEqual(html.count(marker), 1, marker)

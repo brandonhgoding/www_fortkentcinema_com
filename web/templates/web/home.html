@@ -9,7 +9,7 @@
 
 {% block content %}
   {% comment %}
-    The hero, then six sections in order of weight, asserted by
+    The hero, then up to six sections in order of weight, asserted by
     web/tests/test_pages.py::test_full_home_composition_order and
     web/tests/test_home_sections.py:
 
@@ -18,7 +18,8 @@
       coming-soon   tier 2   what is playing later
       get-involved  tier 3   vote, open mic, gift card: one row of cards
       from-the-booth tier 3  the latest blog posts, with their images
-      support       tier 3   sponsor and donate, a slim strip, last
+      support       tier 3   sponsor and donate, a slim strip, last; off
+                             while SHOW_SUPPORT_STRIP is False
 
     Each section is one flat ground (static/css/HomeSections.css), and no two
     neighbours share one, which is what separates them; there are no dividers.
@@ -32,5 +33,5 @@
   {% include "partials/coming_soon.html" %}
   {% include "partials/home_get_involved.html" %}
   {% include "partials/home_from_the_booth.html" %}
-  {% include "partials/home_support.html" %}
+  {% if show_support %}{% include "partials/home_support.html" %}{% endif %}
 {% endblock %}

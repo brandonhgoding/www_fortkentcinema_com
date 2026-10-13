@@ -1,3 +1,7 @@
+from math import ceil
+
+from django.core.paginator import Page, Paginator
+from django.utils.functional import cached_property
 from django.views.generic import DetailView, ListView
 
 from .models import BlogPost
@@ -5,11 +9,54 @@ from .models import BlogPost
 RELATED_POST_COUNT = 3
 
 
+class LeadPage(Page):
+    """Page numbering for LeadPaginator: page 1 holds one extra post, so
+    every later page starts one further along than per_page alone says."""
+
+    def start_index(self):
+        if self.paginator.count == 0:
+            return 0
+        if self.number == 1:
+            return 1
+        return self.paginator.per_page * (self.number - 1) + 2
+
+    def end_index(self):
+        if self.number == self.paginator.num_pages:
+            return self.paginator.count
+        return self.paginator.per_page * self.number + 1
+
+
+class LeadPaginator(Paginator):
+    """per_page posts a page, plus one on page 1: the full-width lead card
+    over the grid. Later pages are the grid alone, so a full page's rows stay
+    complete either way. Orphans are not supported."""
+
+    @cached_property
+    def num_pages(self):
+        if self.count == 0 and not self.allow_empty_first_page:
+            return 0
+        rest = max(0, self.count - (self.per_page + 1))
+        return 1 + ceil(rest / self.per_page)
+
+    def page(self, number):
+        number = self.validate_number(number)
+        if number == 1:
+            bottom, top = 0, self.per_page + 1
+        else:
+            bottom = self.per_page * (number - 1) + 1
+            top = bottom + self.per_page
+        return self._get_page(self.object_list[bottom:top], number, self)
+
+    def _get_page(self, *args, **kwargs):
+        return LeadPage(*args, **kwargs)
+
+
 class PostListView(ListView):
     model = BlogPost
-    # The newest post on each page runs full width over a three-column grid,
-    # so 1 + 12 keeps every full page's rows complete.
-    paginate_by = 13
+    # Three columns of four rows; page 1 also carries the lead card above
+    # them (LeadPaginator).
+    paginate_by = 12
+    paginator_class = LeadPaginator
     context_object_name = "posts"
     template_name = "blog/post_list.html"
 
@@ -28,10 +75,13 @@ class PostListView(ListView):
             page_obj.number, on_each_side=1, on_ends=1
         )
         ctx["ellipsis"] = paginator.ELLIPSIS
-        # One query for the page, then split: the lead card and the grid.
+        # One query for the page, then split: on page 1 the newest post is the
+        # lead card, and everything else is the grid.
         posts = list(page_obj.object_list)
-        ctx["lead_post"] = posts[0] if posts else None
-        ctx["grid_posts"] = posts[1:]
+        if page_obj.number == 1 and posts:
+            ctx["lead_post"], ctx["grid_posts"] = posts[0], posts[1:]
+        else:
+            ctx["lead_post"], ctx["grid_posts"] = None, posts
         return ctx
 
 

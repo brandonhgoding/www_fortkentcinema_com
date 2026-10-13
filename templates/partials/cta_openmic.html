@@ -1,11 +1,16 @@
 {% comment %}
-  Open mic card in Get involved. The day and times are the facts on the
+  Open mic card in Be part of the show. The day and times are the facts on the
   /open-mic/ page (web.constants.OPEN_MIC); web/tests/test_open_mic.py
   asserts this copy still agrees with them.
 {% endcomment %}
+{% load static %}
 <article class="home-card open-mic-cta">
-  <p class="home-card__eyebrow">Every Monday</p>
-  <h3 class="home-card__title">Open Mic</h3>
+  <div class="home-card__media">
+    <img src="{% static 'img/involved/take-center-stage.jpg' %}" alt="" width="1200" height="675"
+         loading="lazy" decoding="async" class="home-card__img">
+  </div>
+  <p class="home-card__eyebrow">Open Mic &middot; Every Monday</p>
+  <h3 class="home-card__title">Take center stage</h3>
   <p class="home-card__body">6:30 PM &middot; doors open at 6:00.</p>
   <a href="{% url 'open_mic' %}" class="home-link">How to sign up &rarr;</a>
 </article>

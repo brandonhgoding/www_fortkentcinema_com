@@ -1033,6 +1033,13 @@ OPEN_MIC_FAQ = [
     },
 ]
 
+# The home page's "Support the Cinema" strip (sponsor and donate links,
+# partials/home_support.html). Off as of 2026-10-12, the owner's call; the
+# strip, its styles and its tests are kept so turning it back on is this one
+# line. The sponsor and donate pages themselves are unaffected.
+SHOW_SUPPORT_STRIP = False
+
+
 # The donation CTA on the home page.
 #
 # SELF-EXPIRING IN REVERSE: the partial renders nothing while `url` is

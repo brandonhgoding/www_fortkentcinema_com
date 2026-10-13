@@ -104,7 +104,7 @@
   color: var(--color-text);
 }
 
-/* The only action style in Get involved and Support. In a card
+/* The only action style in Be part of the show and Support. In a card
  * it is pushed to the bottom so a row of cards ends on one line. */
 .home-link {
   display: inline-flex;
@@ -292,7 +292,8 @@
   overflow: hidden;
 }
 
-.blog-post-card__media {
+.blog-post-card__media,
+.home-card__media {
   margin: calc(-1 * var(--spacing-sm)) calc(-1 * var(--spacing-sm)) 0;
   aspect-ratio: 16 / 9;
   background: var(--color-surface-sunken);
@@ -300,7 +301,8 @@
   overflow: hidden;
 }
 
-.blog-post-card__img {
+.blog-post-card__img,
+.home-card__img {
   display: block;
   width: 100%;
   height: 100%;

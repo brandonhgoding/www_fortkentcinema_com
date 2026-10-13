@@ -70,6 +70,14 @@
   display: block;
 }
 
+/* The grid stretches the link to its row; the card has to fill the link or a
+ * short post's card ends early and the row goes ragged. The card is a flex
+ * column whose excerpt grows, so the byline and Read More sit on one line
+ * across the row. Same wrapper in the related posts under an article. */
+.blog-list-card-link > .blog-card {
+  height: 100%;
+}
+
 /* The newest post on the page, full width above the grid. From 900px the
  * image takes two of the grid's three columns and the text the third, so the
  * card's seam lines up with the column edge below it. */

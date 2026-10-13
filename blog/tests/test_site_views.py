@@ -9,7 +9,7 @@ class BlogListTests(TestCase):
     def setUpTestData(cls):
         author = BlogAuthor.objects.create(first_name="Ada", last_name="Lovelace")
         cat = BlogCategory.objects.create(name="News")
-        for i in range(15):  # > paginate_by (13)
+        for i in range(15):  # > 13, page 1's lead + paginate_by (12)
             BlogPost.objects.create(
                 title=f"Post {i}", subtitle=f"sub-{i}", author=author, category=cat,
                 post_date=f"2026-01-{i+1:02d}",
@@ -32,7 +32,7 @@ class BlogListTests(TestCase):
         self.assertIn('<h1 class="blog-list-title">FROM THE BOOTH</h1>', html)
         self.assertIn("Film reviews and notes on running a small-town cinema.", html)
 
-    def test_paginates_thirteen_a_lead_and_a_grid_of_twelve(self):
+    def test_page_one_is_a_lead_and_a_grid_of_twelve(self):
         resp = self.client.get(reverse("blog_list"))
         self.assertEqual(len(resp.context["posts"]), 13)
         self.assertTrue(resp.context["page_obj"].has_next())
@@ -51,14 +51,27 @@ class BlogListTests(TestCase):
         # The lead's title appears once: it is not repeated in the grid.
         self.assertEqual(html.count(">Post 14</h3>"), 1)
 
-    def test_a_page_with_one_post_has_no_empty_grid(self):
-        html = self.client.get(reverse("blog_list") + "?page=2").content.decode()
-        self.assertIn("blog-card--feature", html)  # Post 1, the lead
-        self.assertIn('class="blog-list-grid"', html)  # Post 0 below it
-        BlogPost.objects.filter(title="Post 0").delete()
-        html = self.client.get(reverse("blog_list") + "?page=2").content.decode()
+    def test_later_pages_are_the_grid_alone(self):
+        resp = self.client.get(reverse("blog_list") + "?page=2")
+        html = resp.content.decode()
+        self.assertNotIn("blog-card--feature", html)
+        self.assertEqual(html.count('class="blog-card"'), 2)
+        self.assertIsNone(resp.context["lead_post"])
+        self.assertEqual(
+            [p.title for p in resp.context["grid_posts"]], ["Post 1", "Post 0"]
+        )
+        self.assertIn("Showing 14&ndash;15 of 15 posts", html)
+
+    def test_page_one_counts_its_lead(self):
+        html = self.client.get(reverse("blog_list")).content.decode()
+        self.assertIn("Showing 1&ndash;13 of 15 posts", html)
+
+    def test_only_one_post_is_a_lead_and_no_empty_grid(self):
+        BlogPost.objects.exclude(title="Post 14").delete()
+        html = self.client.get(reverse("blog_list")).content.decode()
         self.assertIn("blog-card--feature", html)
         self.assertNotIn('class="blog-list-grid"', html)
+        self.assertNotIn('class="blog-pagination"', html)
 
     def test_renders_a_crawlable_pagination_nav(self):
         """Paging must be plain links. It was an HTMX `hx-trigger="revealed"`
@@ -88,7 +101,7 @@ class BlogListSameDatePaginationTests(TestCase):
     day-granular post_date: without a unique tiebreaker (-id), the DB is
     free to return that tied group in a different relative order for the
     page-1 vs page-2 query, causing cards to be duplicated or skipped at
-    the 13-per-page boundary."""
+    the page-1 boundary (13 posts with its lead card)."""
 
     @classmethod
     def setUpTestData(cls):
@@ -100,7 +113,7 @@ class BlogListSameDatePaginationTests(TestCase):
                 author=author, category=cat, post_date="2026-05-01",
                 content=f"Body paragraph for post {i}.",
             )
-            for i in range(14)  # > paginate_by (13), all sharing one post_date
+            for i in range(14)  # > 13 (page 1's lead + 12), all sharing one post_date
         ]
 
     def test_no_duplicates_or_skips_across_page_boundary(self):
@@ -169,3 +182,34 @@ class BlogDetailTests(TestCase):
         with self.assertNumQueries(4):
             # The post; related posts in its category, then the backfill; its films.
             self.client.get(url)
+
+
+class LeadPaginatorTests(TestCase):
+    """Page 1 holds per_page + 1 (the lead card); every later page per_page."""
+
+    def pages(self, count, per_page=12):
+        from blog.site_views import LeadPaginator
+
+        p = LeadPaginator(list(range(count)), per_page)
+        return [
+            (len(p.page(n).object_list), p.page(n).start_index(), p.page(n).end_index())
+            for n in p.page_range
+        ]
+
+    def test_boundaries(self):
+        self.assertEqual(self.pages(0), [(0, 0, 0)])
+        self.assertEqual(self.pages(1), [(1, 1, 1)])
+        self.assertEqual(self.pages(13), [(13, 1, 13)])
+        self.assertEqual(self.pages(14), [(13, 1, 13), (1, 14, 14)])
+        self.assertEqual(self.pages(25), [(13, 1, 13), (12, 14, 25)])
+        self.assertEqual(
+            self.pages(26), [(13, 1, 13), (12, 14, 25), (1, 26, 26)]
+        )
+
+    def test_every_item_appears_exactly_once(self):
+        from blog.site_views import LeadPaginator
+
+        for count in (0, 1, 12, 13, 14, 25, 26, 77):
+            p = LeadPaginator(list(range(count)), 12)
+            seen = [x for n in p.page_range for x in p.page(n).object_list]
+            self.assertEqual(seen, list(range(count)), count)

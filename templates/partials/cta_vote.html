@@ -1,15 +1,20 @@
 {% comment %}
-  Vote card in Get involved, shown whenever any voting is on. `vote_polls`
+  Vote card in Be part of the show, shown whenever any voting is on. `vote_polls`
   comes from HomeView and holds only rounds that are OPEN and inside their
   opens_at/closes_at window, so the card retires itself the moment the last
   round closes — no follow-up commit required. Deliberately generic: it
   sends people to /vote, which lists the rounds, rather than advertising one
   round over another.
 {% endcomment %}
+{% load static %}
 {% if vote_polls %}
 <article class="home-card vote-cta">
+  <div class="home-card__media">
+    <img src="{% static 'img/involved/you-choose-the-film.jpg' %}" alt="" width="1200" height="675"
+         loading="lazy" decoding="async" class="home-card__img">
+  </div>
   <p class="home-card__eyebrow">Voting open</p>
-  <h3 class="home-card__title">Vote on what plays next</h3>
+  <h3 class="home-card__title">You choose the film</h3>
   <p class="home-card__body">{% if vote_polls|length == 1 %}One round is open right now.{% else %}{{ vote_polls|length }} rounds are open right now.{% endif %}</p>
   <a href="{% url 'vote' %}" class="home-link"
      data-track="vote_cta_click" data-track-location="home">Cast your vote &rarr;</a>

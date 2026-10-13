@@ -23,8 +23,10 @@ ended up orphaned. Page 1 keeps the bare /blog/ canonical so we don't mint a
       <h1 class="blog-list-title">FROM THE BOOTH</h1>
       <p class="blog-list-subtitle">Film reviews and notes on running a small-town cinema.</p>
     </div>
+    {% if posts %}
     {% if lead_post %}
     <a href="{% url 'blog_detail' lead_post.slug %}" class="blog-list-card-link blog-list-feature">{% include "partials/blog_card.html" with post=lead_post feature=True %}</a>
+    {% endif %}
     {% if grid_posts %}
     <div class="blog-list-grid" data-spotlight>
       {% include "blog/_post_cards.html" %}

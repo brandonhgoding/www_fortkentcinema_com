@@ -13,7 +13,7 @@ from cinema.models import (
 
 
 def get_involved(html):
-    """The Get involved section, which holds the vote, open-mic and gift cards."""
+    """The Be part of the show section, which holds the vote, open-mic and gift cards."""
     start = html.index('id="get-involved"')
     return html[start : html.index("</section>", start)]
 
@@ -35,7 +35,7 @@ class HomepageVoteCTATests(TestCase):
         html = self.client.get(reverse("home")).content.decode()
         card = vote_card(html)
         self.assertIn("Voting open", card)
-        self.assertIn("Vote on what plays next", card)
+        self.assertIn("You choose the film", card)
         self.assertIn("One round is open right now.", card)
         self.assertIn("Cast your vote &rarr;", card)
         self.assertIn(f'href="{reverse("vote")}"', card)
