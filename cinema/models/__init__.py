@@ -1,4 +1,4 @@
-from .engagement import Engagement, EngagementStatus
+from .engagement import Engagement, EngagementStatus, Language
 from .engagement_film import EngagementFilm
 from .film import Film
 from .poll import Poll, PollOption, PollStatus, Vote
@@ -15,6 +15,7 @@ __all__ = [
     "Engagement",
     "EngagementStatus",
     "EngagementFilm",
+    "Language",
     "Showtime",
     "Poll",
     "PollOption",

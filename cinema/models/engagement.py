@@ -16,6 +16,11 @@ class EngagementStatus(models.TextChoices):
     ENDED = "ENDED", "Ended"
 
 
+class Language(models.TextChoices):
+    ENGLISH = "english", "English"
+    FRENCH = "french", "French"
+
+
 class Engagement(models.Model):
     objects: ClassVar[Manager["Engagement"]]
 
@@ -42,6 +47,11 @@ class Engagement(models.Model):
         max_length=2,
         choices=FORMAT_CHOICES,
         default="2d",
+    )
+    # The version of the film being played, which can differ from the
+    # film's original language (a dubbed print, say).
+    language = models.CharField(
+        max_length=20, choices=Language.choices, default=Language.ENGLISH
     )
 
     class Kind(models.TextChoices):

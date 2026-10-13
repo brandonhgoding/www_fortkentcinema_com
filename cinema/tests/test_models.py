@@ -5,6 +5,7 @@ from cinema.models import (
     EngagementFilm,
     EngagementStatus,
     Film,
+    Language,
     Screen,
     Showtime,
 )
@@ -65,6 +66,12 @@ class EngagementTestCase(TestCase):
         self.assertEqual([f.title for f in eng.ordered_films], ["Alpha", "Beta"])
         self.assertEqual(eng.primary_film, self.film_a)
         self.assertEqual(eng.total_runtime_minutes, 190)
+
+    def test_language_defaults_to_english(self) -> None:
+        eng = self._engagement()
+        self.assertEqual(eng.language, Language.ENGLISH)
+        self.assertEqual(eng.language, "english")
+        self.assertEqual(eng.get_language_display(), "English")
 
     def test_event_title_overrides_display_title(self) -> None:
         eng = self._engagement(event_title="Summer Double Feature")

@@ -155,7 +155,7 @@ class EngagementCreateTests(TestCase):
         data = {
             "kind": "REGULAR", "event_title": "", "screen": self.screen.pk,
             "start_date": self.today.isoformat(), "end_date": self.today.isoformat(),
-            "presentation_format": "2d", "status": "DRAFT", "show_in_main_listings": "on",
+            "presentation_format": "2d", "language": "english", "status": "DRAFT", "show_in_main_listings": "on",
             "notes": "", "films": [self.f1.pk],
         }
         data.update(over)
@@ -208,6 +208,18 @@ class EngagementCreateTests(TestCase):
                          self._payload(in_ticket_report="on"))
         self.assertTrue(Engagement.objects.get().in_ticket_report)
 
+    def test_language_saves_lowercase_value(self) -> None:
+        self.client.post(reverse("dashboard:engagement_create"),
+                         self._payload(language="french"))
+        e = Engagement.objects.get()
+        self.assertEqual(e.language, "french")
+        self.assertEqual(e.get_language_display(), "French")
+
+    def test_unknown_language_rejected(self) -> None:
+        self.client.post(reverse("dashboard:engagement_create"),
+                         self._payload(language="French"))
+        self.assertEqual(Engagement.objects.count(), 0)
+
 
 class EngagementEditTests(TestCase):
     def setUp(self) -> None:
@@ -230,7 +242,7 @@ class EngagementEditTests(TestCase):
         data = {
             "kind": "DOUBLE_FEATURE", "event_title": "", "screen": self.screen.pk,
             "start_date": self.today.isoformat(), "end_date": self.today.isoformat(),
-            "presentation_format": "2d", "status": "DRAFT", "show_in_main_listings": "on",
+            "presentation_format": "2d", "language": "english", "status": "DRAFT", "show_in_main_listings": "on",
             "notes": "", "films": [self.f2.pk, self.f1.pk],  # reversed order
         }
         resp = self.client.post(reverse("dashboard:engagement_edit", args=[e.pk]), data)

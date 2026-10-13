@@ -51,6 +51,7 @@
         <div class="infoRow"><span class="hiddenNote">Hidden from public listings</span></div>{% endif %}
         <div class="infoRow"><span class="label">Screen:</span><span>{{ engagement.screen.name }}</span></div>
         <div class="infoRow"><span class="label">Format:</span><span>{{ engagement.presentation_format|upper }}</span></div>
+        <div class="infoRow"><span class="label">Language:</span><span>{{ engagement.get_language_display }}</span></div>
         <div class="infoRow"><span class="label">Start Date:</span><span>{{ engagement.start_date|date:"M j, Y" }}</span></div>
         <div class="infoRow"><span class="label">End Date:</span><span>{{ engagement.end_date|date:"M j, Y" }}</span></div>
         {% if engagement.notes %}<div class="notes"><span class="label">Notes:</span><p>{{ engagement.notes }}</p></div>{% endif %}
