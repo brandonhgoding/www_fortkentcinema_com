@@ -20,6 +20,7 @@ class Language(models.TextChoices):
     ENGLISH = "english", "English"
     FRENCH = "french", "French"
     SPANISH = "spanish", "Spanish"
+    JAPANESE = "japanese", "Japanese"
 
 
 class Translation(models.TextChoices):
