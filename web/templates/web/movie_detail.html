@@ -49,6 +49,7 @@ not the TMDB blurb — the local intent is what we can actually win.
         <div class="movie-page-meta">
           {% if film.rating %}<span class="movie-page-rating">{{ film.rating }}</span>{% endif %}
           {% if runtime_display %}<span class="movie-page-runtime">{{ runtime_display }}</span>{% endif %}
+          {% for label in language_labels %}<span class="movie-page-rating">{{ label }}</span>{% endfor %}
         </div>
 
         {% if film.description %}
@@ -80,7 +81,7 @@ not the TMDB blurb — the local intent is what we can actually win.
                 <li class="movie-page-time">
                   <span class="movie-page-time-value">{{ st.time }}</span>
                   <span class="movie-page-time-detail">
-                    {{ st.screen }}{% if st.format %} &middot; {{ st.format }}{% endif %}{% if st.captions %} &middot; {{ st.captions }}{% endif %}
+                    {{ st.screen }}{% if st.format %} &middot; {{ st.format }}{% endif %}{% if st.captions %} <abbr class="movie-page-rating" title="{{ st.captions_label }}">{{ st.captions }}</abbr>{% endif %}
                   </span>
                   {% if st.is_free_for_members %}<span class="movie-page-time-free">Free for members</span>{% endif %}
                 </li>

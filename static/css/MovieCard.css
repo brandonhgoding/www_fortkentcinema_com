@@ -266,6 +266,14 @@
   color: var(--color-text);
 }
 
+/* CC / OC after a time, wearing the rating chip (.movie-rating here,
+   .schedule-card__rating on the phone card). The chip's border marks it, so
+   the browser's dotted <abbr> underline goes; the title still names it. */
+.showtime abbr {
+  text-decoration: none;
+  vertical-align: middle;
+}
+
 /* Synopsis.
  *
  * Present in the markup at every width, shown only in the landscape card

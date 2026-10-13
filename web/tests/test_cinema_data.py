@@ -70,7 +70,9 @@ class NowShowingTests(TestCase):
         self.assertEqual(m["poster"], "http://p/d.jpg")
         self.assertEqual(m["youtube_id"], "yt1")
         self.assertEqual(sorted(m["showtimes"].keys()), [d.isoformat(), d2.isoformat()])
-        self.assertEqual(m["showtimes"][d.isoformat()], ["1:00 PM", "7:00 PM"])
+        self.assertEqual(
+            [t["time"] for t in m["showtimes"][d.isoformat()]], ["1:00 PM", "7:00 PM"]
+        )
 
     def test_synopsis_falls_back_to_overview(self) -> None:
         # The card prints Film.description, so a film we never wrote a synopsis

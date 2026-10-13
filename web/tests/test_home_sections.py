@@ -67,7 +67,7 @@ def movie(**over):
         "poster": "d.jpg",
         "youtube_id": "abc",
         "is_free_for_members": False,
-        "showtimes": {"2999-01-15": ["6:00 PM", "9:00 PM"]},
+        "showtimes": {"2999-01-15": [{"time": "6:00 PM", "captions": "", "captions_label": ""}, {"time": "9:00 PM", "captions": "", "captions_label": ""}]},
     }
     base.update(over)
     return base

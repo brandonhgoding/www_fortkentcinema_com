@@ -137,6 +137,16 @@ class Engagement(models.Model):
         )
 
     @property
+    def language_label(self) -> str:
+        """'French · English subtitles' for a run not in plain English, else ''."""
+        parts = []
+        if self.language != Language.ENGLISH:
+            parts.append(self.get_language_display())
+        if self.translation != Translation.NONE:
+            parts.append(self.get_translation_display())
+        return " · ".join(parts)
+
+    @property
     def display_title(self) -> str:
         if self.event_title:
             return self.event_title

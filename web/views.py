@@ -552,6 +552,7 @@ class MovieDetailView(DetailView):
         page = get_film_page(film)
         ctx["upcoming"] = page["upcoming"]
         ctx["runs"] = page["runs"]
+        ctx["language_labels"] = page["language_labels"]
         ctx["is_now_showing"] = bool(page["upcoming"])
         ctx["runtime_display"] = _format_runtime(film.runtime_minutes)
         # ISO-8601 duration for schema.org Movie.duration (120 -> PT120M).

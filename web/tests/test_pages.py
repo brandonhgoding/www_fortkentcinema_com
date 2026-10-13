@@ -112,7 +112,7 @@ class HomeViewDataTests(TestCase):
             "id": "1", "title": "Dune", "rating": "PG-13", "runtime": "2h 35min",
             "genre": "", "poster": "d.jpg", "youtube_id": "abc",
             "is_free_for_members": True,
-            "showtimes": {"2999-01-15": ["6:00 PM"], "2999-01-16": ["7:00 PM"]},
+            "showtimes": {"2999-01-15": [{"time": "6:00 PM", "captions": "", "captions_label": ""}], "2999-01-16": [{"time": "7:00 PM", "captions": "", "captions_label": ""}]},
         }]
         html = self.client.get(reverse("home")).content.decode()
         self.assertIn("now-showing", html)          # section id
@@ -134,7 +134,7 @@ class HomeViewDataTests(TestCase):
             "id": "1", "title": "Past Movie", "rating": "PG-13", "runtime": "2h",
             "genre": "", "poster": "p.jpg", "youtube_id": "",
             "is_free_for_members": False,
-            "showtimes": {"2000-01-01": ["6:00 PM"]},
+            "showtimes": {"2000-01-01": [{"time": "6:00 PM", "captions": "", "captions_label": ""}]},
         }]
         html = self.client.get(reverse("home")).content.decode()
         self.assertNotIn("date-nav__current", html)

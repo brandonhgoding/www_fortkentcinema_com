@@ -49,6 +49,7 @@
     <div class="movie-meta">
       <span class="movie-rating">{{ movie.rating }}</span>
       <span class="movie-runtime">{{ movie.runtime }}</span>
+      {% if movie.language_label %}<span class="movie-rating">{{ movie.language_label }}</span>{% endif %}
     </div>
     {% if movie.genre %}<p class="movie-genre">{{ movie.genre }}</p>{% endif %}
     {% comment %} Rendered always, revealed only above 1200px, where the card
@@ -66,7 +67,7 @@
     {% for slot in movie.upcoming %}
     <div class="movie-showtimes" x-show="dates[idx] === '{{ slot.key }}'">
       {% for time in slot.times %}
-      <span class="showtime">{{ time }}</span>
+      <span class="showtime">{{ time.time }}{% if time.captions %} <abbr class="movie-rating" title="{{ time.captions_label }}">{{ time.captions }}</abbr>{% endif %}</span>
       {% endfor %}
     </div>
     {% endfor %}

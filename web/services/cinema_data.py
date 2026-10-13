@@ -59,7 +59,11 @@ def get_now_showing():
         for st in engagement.showtimes.filter(is_cancelled=False):
             local_date = _local_date(st.starts_at).isoformat()
             showtimes_by_date.setdefault(local_date, []).append(
-                _format_showtime(st.starts_at)
+                {
+                    "time": _format_showtime(st.starts_at),
+                    "captions": st.captions or "",
+                    "captions_label": st.get_captions_display() if st.captions else "",
+                }
             )
         if not showtimes_by_date:
             continue
@@ -80,6 +84,7 @@ def get_now_showing():
                 "showtimes": showtimes_by_date,
                 "youtube_id": (pf.youtube_id if pf else "") or "",
                 "is_free_for_members": bool(engagement.is_free_for_members),
+                "language_label": engagement.language_label,
             }
         )
     return movies
@@ -179,7 +184,9 @@ def get_film_page(film):
     and run dates are the only content here that is genuinely ours.
 
     Returns {"upcoming": [{date, display_date, showtimes: [...]}, ...],
-             "runs": [{start_date, end_date, display_range, is_current}, ...]}
+             "runs": [{start_date, end_date, display_range, is_current}, ...],
+             "language_labels": ["French · English subtitles", ...]}
+    `language_labels` covers only runs with showtimes still to come.
     `upcoming` is empty for an archive film — the template must not fake it.
     """
     now = timezone.now()
@@ -192,8 +199,15 @@ def get_film_page(film):
     )
 
     by_date = {}
+    language_labels = []
     for engagement in engagements:
-        for st in engagement.showtimes.filter(is_cancelled=False, starts_at__gte=now):
+        upcoming_showtimes = engagement.showtimes.filter(
+            is_cancelled=False, starts_at__gte=now
+        )
+        label = engagement.language_label
+        if label and label not in language_labels and upcoming_showtimes:
+            language_labels.append(label)
+        for st in upcoming_showtimes:
             local = st.starts_at.astimezone(CINEMA_TZ)
             slot = by_date.setdefault(
                 local.date(),
@@ -209,7 +223,8 @@ def get_film_page(film):
                     # Offset-aware ISO-8601 for schema.org ScreeningEvent.startDate.
                     "iso": local.isoformat(),
                     "screen": st.screen.name,
-                    "captions": st.get_captions_display() if st.captions else "",
+                    "captions": st.captions or "",
+                    "captions_label": st.get_captions_display() if st.captions else "",
                     "format": engagement.get_presentation_format_display(),
                     "is_free_for_members": bool(engagement.is_free_for_members),
                 }
@@ -227,7 +242,7 @@ def get_film_page(film):
         for e in engagements
     ]
 
-    return {"upcoming": upcoming, "runs": runs}
+    return {"upcoming": upcoming, "runs": runs, "language_labels": language_labels}
 
 
 def _format_date_range(start, end):

@@ -195,6 +195,12 @@
   color: var(--color-cream-muted);
 }
 
+/* CC / OC in the screen line, wearing the rating chip at the line's size. */
+.movie-page-time-detail abbr {
+  text-decoration: none;
+  font-size: inherit;
+}
+
 .movie-page-time-free {
   font-size: 0.7rem;
   color: var(--color-gold-light);
