@@ -616,7 +616,7 @@ class GetInvolvedTests(TestCase):
         section = self.section()
         card = section[section.index("gift-card-cta") :]
         self.assertIn("Pay it forward", card)
-        self.assertIn("An e-gift card for a night at the movies.", card)
+        self.assertIn("You choose the amount, and the e-gift card", card)
         self.assertIn("Buy an e-gift card &rarr;", card)
         self.assertIn('target="_blank"', card)
         self.assertIn('data-track="giftcard_click"', card)

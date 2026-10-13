@@ -15,7 +15,8 @@
   </div>
   <p class="home-card__eyebrow">Voting open</p>
   <h3 class="home-card__title">You choose the film</h3>
-  <p class="home-card__body">{% if vote_polls|length == 1 %}One round is open right now.{% else %}{{ vote_polls|length }} rounds are open right now.{% endif %}</p>
+  <p class="home-card__body">Every round is a short list of films, and the winner comes to our screen.
+    {% if vote_polls|length == 1 %}One round is open right now.{% else %}{{ vote_polls|length }} rounds are open right now, and you can vote in every one.{% endif %}</p>
   <a href="{% url 'vote' %}" class="home-link"
      data-track="vote_cta_click" data-track-location="home">Cast your vote &rarr;</a>
 </article>

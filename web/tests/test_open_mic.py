@@ -118,10 +118,12 @@ class HomeBandAgreesTests(TestCase):
         card = card[: card.index("</article>")]
         self.assertIn(f"Every {OPEN_MIC['day_label']}", card)
         self.assertIn(
-            f"{OPEN_MIC['start_label']} &middot; "
-            f"doors open at {OPEN_MIC['doors_label'].replace(' PM', '')}.",
+            f"Doors open at {OPEN_MIC['doors_label']} and the first act goes up at "
+            f"{OPEN_MIC['start_label']}.",
             card,
         )
+        self.assertIn("in the Century auditorium", card)
+        self.assertIn("free and all ages", card)
         self.assertIn("Open Mic", card)
         self.assertIn("How to sign up &rarr;", card)
         self.assertIn(f'href="{reverse("open_mic")}"', card)

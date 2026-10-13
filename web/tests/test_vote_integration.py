@@ -56,7 +56,7 @@ class HomepageVoteCTATests(TestCase):
             Poll.objects.create(title=title, status=PollStatus.OPEN)
         html = self.client.get(reverse("home")).content.decode()
         self.assertEqual(html.count("vote-cta"), 1)
-        self.assertIn("3 rounds are open right now.", html)
+        self.assertIn("3 rounds are open right now, and you can vote in every one.", html)
 
     def test_cta_retires_itself_when_the_poll_closes(self) -> None:
         poll = Poll.objects.create(title="Round One", status=PollStatus.OPEN)
