@@ -8,6 +8,7 @@ from cinema.models import (
     Language,
     Screen,
     Showtime,
+    Translation,
 )
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
@@ -72,6 +73,21 @@ class EngagementTestCase(TestCase):
         self.assertEqual(eng.language, Language.ENGLISH)
         self.assertEqual(eng.language, "english")
         self.assertEqual(eng.get_language_display(), "English")
+
+    def test_translation_defaults_to_none(self) -> None:
+        self.assertEqual(self._engagement().translation, Translation.NONE)
+
+    def test_english_film_cannot_be_translated(self) -> None:
+        eng = self._engagement(translation=Translation.DUBBED)
+        with self.assertRaises(ValidationError) as ctx:
+            eng.full_clean()
+        self.assertIn("translation", ctx.exception.message_dict)
+
+    def test_non_english_film_can_be_translated(self) -> None:
+        eng = self._engagement(
+            language=Language.FRENCH, translation=Translation.DUBBED
+        )
+        eng.full_clean()
 
     def test_event_title_overrides_display_title(self) -> None:
         eng = self._engagement(event_title="Summer Double Feature")

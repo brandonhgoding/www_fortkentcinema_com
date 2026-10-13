@@ -52,11 +52,13 @@ class EngagementAdmin(admin.ModelAdmin):
         "admissions",
         "presentation_format",
         "language",
+        "translation",
     )
     list_filter = (
         "status",
         "presentation_format",
         "language",
+        "translation",
         "is_free_for_members",
         "in_ticket_report",
     )

@@ -1,4 +1,4 @@
-from .engagement import Engagement, EngagementStatus, Language
+from .engagement import Engagement, EngagementStatus, Language, Translation
 from .engagement_film import EngagementFilm
 from .film import Film
 from .poll import Poll, PollOption, PollStatus, Vote
@@ -26,4 +26,5 @@ __all__ = [
     "SponsorshipInquiry",
     "Studio",
     "StudioTitle",
+    "Translation",
 ]

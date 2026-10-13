@@ -59,7 +59,7 @@ class EngagementForm(forms.ModelForm):
     class Meta:
         model = Engagement
         fields = ["kind", "event_title", "screen", "start_date", "end_date",
-                  "presentation_format", "language", "status", "show_in_main_listings",
+                  "presentation_format", "language", "translation", "status", "show_in_main_listings",
                   "is_free_for_members", "in_ticket_report", "notes"]
         widgets = {
             "event_title": forms.TextInput(attrs={"class": "input", "placeholder": "e.g. Creature Double Feature"}),
@@ -68,6 +68,7 @@ class EngagementForm(forms.ModelForm):
             "end_date": forms.DateInput(attrs={"class": "input", "type": "date"}, format="%Y-%m-%d"),
             "presentation_format": forms.Select(attrs={"class": "input"}),
             "language": forms.Select(attrs={"class": "input"}),
+            "translation": forms.Select(attrs={"class": "input"}),
             "notes": forms.Textarea(attrs={"class": "textarea", "rows": 3,
                                            "placeholder": "Optional notes about this engagement..."}),
         }

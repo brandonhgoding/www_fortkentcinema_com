@@ -41,7 +41,7 @@ class EngagementSquareHookTests(StaffTestCase):
             "kind": "REGULAR", "event_title": "", "screen": self.screen.pk,
             "start_date": self.today.isoformat(),
             "end_date": self.today.isoformat(),
-            "presentation_format": "2d", "language": "english", "status": "DRAFT",
+            "presentation_format": "2d", "language": "english", "translation": "none", "status": "DRAFT",
             "show_in_main_listings": "on", "notes": "", "films": [self.film.pk],
         }
         data.update(over)
@@ -239,7 +239,7 @@ class SaveToastTests(StaffTestCase):
             "kind": "REGULAR", "event_title": "", "screen": self.screen.pk,
             "start_date": self.today.isoformat(),
             "end_date": self.today.isoformat(),
-            "presentation_format": "2d", "language": "english", "status": "CONFIRMED",
+            "presentation_format": "2d", "language": "english", "translation": "none", "status": "CONFIRMED",
             "show_in_main_listings": "on", "notes": "", "films": [self.film.pk],
         }
         data.update(over)

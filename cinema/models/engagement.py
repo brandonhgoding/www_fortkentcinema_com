@@ -21,6 +21,12 @@ class Language(models.TextChoices):
     FRENCH = "french", "French"
 
 
+class Translation(models.TextChoices):
+    NONE = "none", "None"
+    SUBTITLED = "subtitled", "English subtitles"
+    DUBBED = "dubbed", "Dubbed in English"
+
+
 class Engagement(models.Model):
     objects: ClassVar[Manager["Engagement"]]
 
@@ -48,10 +54,13 @@ class Engagement(models.Model):
         choices=FORMAT_CHOICES,
         default="2d",
     )
-    # The version of the film being played, which can differ from the
-    # film's original language (a dubbed print, say).
+    # The film's original spoken language. How non-English speakers are
+    # served (subtitles or an English dub) is translation's to say.
     language = models.CharField(
         max_length=20, choices=Language.choices, default=Language.ENGLISH
+    )
+    translation = models.CharField(
+        max_length=20, choices=Translation.choices, default=Translation.NONE
     )
 
     class Kind(models.TextChoices):
@@ -162,6 +171,13 @@ class Engagement(models.Model):
     def clean(self) -> None:
         if self.start_date and self.end_date and self.end_date < self.start_date:
             raise ValidationError("end_date cannot be before start_date.")
+        if (
+            self.language == Language.ENGLISH
+            and self.translation != Translation.NONE
+        ):
+            raise ValidationError(
+                {"translation": "An English-language film needs no translation."}
+            )
 
     @classmethod
     def default_visibility_for(cls, kind: str) -> bool:

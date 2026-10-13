@@ -155,7 +155,7 @@ class EngagementCreateTests(TestCase):
         data = {
             "kind": "REGULAR", "event_title": "", "screen": self.screen.pk,
             "start_date": self.today.isoformat(), "end_date": self.today.isoformat(),
-            "presentation_format": "2d", "language": "english", "status": "DRAFT", "show_in_main_listings": "on",
+            "presentation_format": "2d", "language": "english", "translation": "none", "status": "DRAFT", "show_in_main_listings": "on",
             "notes": "", "films": [self.f1.pk],
         }
         data.update(over)
@@ -215,6 +215,19 @@ class EngagementCreateTests(TestCase):
         self.assertEqual(e.language, "french")
         self.assertEqual(e.get_language_display(), "French")
 
+    def test_translation_saves_for_non_english_film(self) -> None:
+        self.client.post(reverse("dashboard:engagement_create"),
+                         self._payload(language="french", translation="subtitled"))
+        e = Engagement.objects.get()
+        self.assertEqual(e.translation, "subtitled")
+        self.assertEqual(e.get_translation_display(), "English subtitles")
+
+    def test_translation_rejected_for_english_film(self) -> None:
+        resp = self.client.post(reverse("dashboard:engagement_create"),
+                                self._payload(language="english", translation="dubbed"))
+        self.assertEqual(Engagement.objects.count(), 0)
+        self.assertIn("needs no translation", resp.content.decode())
+
     def test_unknown_language_rejected(self) -> None:
         self.client.post(reverse("dashboard:engagement_create"),
                          self._payload(language="French"))
@@ -242,7 +255,7 @@ class EngagementEditTests(TestCase):
         data = {
             "kind": "DOUBLE_FEATURE", "event_title": "", "screen": self.screen.pk,
             "start_date": self.today.isoformat(), "end_date": self.today.isoformat(),
-            "presentation_format": "2d", "language": "english", "status": "DRAFT", "show_in_main_listings": "on",
+            "presentation_format": "2d", "language": "english", "translation": "none", "status": "DRAFT", "show_in_main_listings": "on",
             "notes": "", "films": [self.f2.pk, self.f1.pk],  # reversed order
         }
         resp = self.client.post(reverse("dashboard:engagement_edit", args=[e.pk]), data)
