@@ -20,6 +20,7 @@ from web.sitemaps import (
     PollSitemap,
     StaticViewSitemap,
 )
+from web.views import LlmsTxtView
 
 sitemaps = {
     "static": StaticViewSitemap,
@@ -43,6 +44,7 @@ urlpatterns = [
         TemplateView.as_view(template_name="robots.txt", content_type="text/plain"),
         name="robots",
     ),
+    path("llms.txt", LlmsTxtView.as_view(), name="llms"),
     path("login", LoginView.as_view(template_name="dashboard/login.html"), name="login"),
     path("logout/", LogoutView.as_view(next_page="/login"), name="logout"),
     path("dashboard/", include("dashboard.urls")),
