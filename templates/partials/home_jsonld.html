@@ -1,0 +1,60 @@
+{% comment %}
+schema.org ScreeningEvent per upcoming showtime in Now Showing, so the home
+page says what is playing and when, not only that the cinema exists (the
+MovieTheater block in base.html). Mirrors partials/movie_jsonld.html.
+
+Every film and time here is one the Now Showing section renders; nothing is
+marked up that a visitor cannot see. ns_events comes from HomeView.
+
+The events sit inside an @graph object rather than a bare JSON array: the
+test helpers that walk every ld+json block call .get("@type") on each one,
+and a list has no .get. The location repeats the address rather than only
+pointing at the MovieTheater's @id, because Google's event result wants the
+address inline.
+{% endcomment %}
+{% if ns_events %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+{% for ev in ns_events %}
+    {
+      "@type": "ScreeningEvent",
+      "name": "{{ ev.movie.title|escapejs }} at {{ site_config.cinema.name|escapejs }}",
+      "startDate": "{{ ev.iso }}",
+      "eventStatus": "https://schema.org/EventScheduled",
+      "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+      "location": {
+        "@type": "MovieTheater",
+        "@id": "https://www.fortkentcinema.com/#theater",
+        "name": "{{ site_config.cinema.name|escapejs }}",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "{{ site_config.cinema.address.street|escapejs }}",
+          "addressLocality": "{{ site_config.cinema.address.city|escapejs }}",
+          "addressRegion": "{{ site_config.cinema.address.state|escapejs }}",
+          "postalCode": "{{ site_config.cinema.address.zip|escapejs }}",
+          "addressCountry": "US"
+        }
+      },
+      "workPresented": {
+        "@type": "Movie",
+        "name": "{{ ev.movie.title|escapejs }}"{% if ev.movie.slug %},
+        "url": "{{ request.scheme }}://{{ request.get_host }}{% url 'movie_detail' ev.movie.slug %}"{% endif %}{% if ev.movie.poster %},
+        "image": "{{ ev.movie.poster|escapejs }}"{% endif %}{% if ev.movie.rating %},
+        "contentRating": "{{ ev.movie.rating|escapejs }}"{% endif %}
+      },
+      "offers": {
+        "@type": "AggregateOffer",
+        "lowPrice": "{{ ticket_prices.member }}",
+        "highPrice": "{{ ticket_prices.adult }}",
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock",
+        "url": "{{ request.scheme }}://{{ request.get_host }}/#now-showing"
+      }
+    }{% if not forloop.last %},{% endif %}
+{% endfor %}
+  ]
+}
+</script>
+{% endif %}

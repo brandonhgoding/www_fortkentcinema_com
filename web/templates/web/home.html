@@ -6,6 +6,8 @@
 {% block og_title %}Fort Kent Cinema | Movies in the St. John Valley{% endblock %}
 {% block og_description %}Your local movie theater in Fort Kent, Maine. Check showtimes, coming soon, and join our membership program.{% endblock %}
 
+{% block extra_head %}{% include "partials/home_jsonld.html" %}{% endblock %}
+
 
 {% block content %}
   {% comment %}

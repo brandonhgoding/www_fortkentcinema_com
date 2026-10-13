@@ -152,6 +152,18 @@ class HomeView(TemplateView):
             ]
             movie["dates_json"] = json.dumps(ups)
 
+        # One schema.org ScreeningEvent per upcoming showtime, flattened here
+        # so partials/home_jsonld.html is a single loop with one forloop.last.
+        # A time dict with no "iso" (older fixtures, hand-built callers) is
+        # skipped: an event with no startDate is worse than no event.
+        ctx["ns_events"] = [
+            {"movie": movie, "iso": time["iso"]}
+            for movie in now_showing
+            for slot in movie["upcoming"]
+            for time in slot["times"]
+            if time.get("iso")
+        ]
+
         ns_dates = sorted(date_keys)
         ns_dates_labeled = [
             {"key": d, "label": format_showtime_date(d, today=today)} for d in ns_dates

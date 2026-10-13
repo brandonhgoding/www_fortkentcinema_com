@@ -61,6 +61,9 @@ def get_now_showing():
             showtimes_by_date.setdefault(local_date, []).append(
                 {
                     "time": _format_showtime(st.starts_at),
+                    # Offset-aware ISO-8601 for the home page's schema.org
+                    # ScreeningEvent.startDate (partials/home_jsonld.html).
+                    "iso": st.starts_at.astimezone(CINEMA_TZ).isoformat(),
                     "captions": st.captions or "",
                     "captions_label": st.get_captions_display() if st.captions else "",
                 }

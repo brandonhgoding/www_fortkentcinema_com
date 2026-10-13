@@ -227,3 +227,22 @@ class CalendarMonthTests(TestCase):
         self.eng.save()
         Showtime.objects.create(engagement=self.eng, starts_at=aware(2026, 6, 4, 19, 0))
         self.assertIn(4, get_calendar_month(2026, 5))
+
+
+class NowShowingIsoTests(TestCase):
+    def test_each_showtime_carries_an_offset_aware_iso_start(self) -> None:
+        """schema.org ScreeningEvent.startDate needs the wall-clock time with
+        its UTC offset, not the display string the chips render."""
+        from web.services.cinema_data import CINEMA_TZ
+
+        screen = make_screen()
+        film = make_film("Dune")
+        today = timezone.localdate()
+        eng = make_engagement(screen, [film], start=today, end=today)
+        st = Showtime.objects.create(
+            engagement=eng, starts_at=aware(today.year, today.month, today.day, 19, 30)
+        )
+        (m,) = get_now_showing()
+        (slot,) = m["showtimes"].values()
+        self.assertEqual(slot[0]["iso"], st.starts_at.astimezone(CINEMA_TZ).isoformat())
+        self.assertRegex(slot[0]["iso"], r"[+-]\d\d:\d\d$")

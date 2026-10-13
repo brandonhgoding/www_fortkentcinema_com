@@ -689,3 +689,99 @@ class HomeTypeAndGroundTests(TestCase):
         for selectors, body in re.findall(r"([^{}]+)\{([^{}]*)\}", css):
             if ".coming-soon" in [s.strip() for s in selectors.split(",")]:
                 self.assertNotRegex(body, r"\b(background|border)")
+
+
+class ScreeningEventSchemaTests(TestCase):
+    """The home page says what is playing, not only that the cinema exists.
+
+    One schema.org ScreeningEvent per upcoming showtime the Now Showing
+    section renders, inside an @graph so the existing jsonld() helpers,
+    which call .get("@type") on every block, keep working.
+    """
+
+    def setUp(self):
+        from cinema.models import Engagement, EngagementFilm, Film, Screen, Showtime
+
+        self.screen = Screen.objects.create(name="Screen 1", capacity=100)
+        self.film = Film.objects.create(
+            title="Dune", rating="PG-13", poster_url="http://p/d.jpg"
+        )
+        self.today = datetime.date.today()
+        self.eng = Engagement.objects.create(
+            screen=self.screen,
+            start_date=self.today - datetime.timedelta(days=1),
+            end_date=self.today + datetime.timedelta(days=2),
+            status="CONFIRMED",
+        )
+        EngagementFilm.objects.create(engagement=self.eng, film=self.film, position=1)
+        self.Showtime = Showtime
+
+    def showtime(self, day_offset, hour):
+        from django.utils import timezone
+
+        d = self.today + datetime.timedelta(days=day_offset)
+        return self.Showtime.objects.create(
+            engagement=self.eng,
+            starts_at=timezone.make_aware(datetime.datetime(d.year, d.month, d.day, hour)),
+        )
+
+    def events(self):
+        html = self.client.get(reverse("home")).content.decode()
+        for raw in re.findall(
+            r'<script type="application/ld\+json">\s*(.*?)\s*</script>', html, re.S
+        ):
+            block = json.loads(raw)
+            if "@graph" in block:
+                return [n for n in block["@graph"] if n.get("@type") == "ScreeningEvent"]
+        return None
+
+    def test_one_event_per_upcoming_showtime_with_the_visible_facts(self):
+        from web.constants import TICKET_PRICES
+        from web.services.cinema_data import CINEMA_TZ
+
+        first = self.showtime(1, 16)
+        self.showtime(1, 19)
+        self.showtime(2, 19)
+        events = self.events()
+        self.assertIsNotNone(events, "no @graph block on the home page")
+        self.assertEqual(len(events), 3)
+        ev = events[0]
+        self.assertEqual(ev["name"], "Dune at Fort Kent Cinema")
+        self.assertEqual(ev["startDate"], first.starts_at.astimezone(CINEMA_TZ).isoformat())
+        self.assertEqual(ev["location"]["@id"], "https://www.fortkentcinema.com/#theater")
+        self.assertEqual(ev["location"]["address"]["streetAddress"],
+                         SITE_CONFIG["cinema"]["address"]["street"])
+        self.assertEqual(ev["workPresented"]["name"], "Dune")
+        self.assertEqual(ev["workPresented"]["url"],
+                         f"http://testserver/movies/{self.film.slug}")
+        self.assertEqual(ev["workPresented"]["image"], "http://p/d.jpg")
+        self.assertEqual(ev["workPresented"]["contentRating"], "PG-13")
+        self.assertEqual(ev["offers"]["lowPrice"], str(TICKET_PRICES["member"]))
+        self.assertEqual(ev["offers"]["highPrice"], str(TICKET_PRICES["adult"]))
+        self.assertEqual(ev["offers"]["priceCurrency"], "USD")
+
+    def test_past_showtimes_of_a_running_engagement_are_not_events(self):
+        """Advertising a screening that already happened is wrong, and the
+        chips do not show it either."""
+        self.showtime(-1, 19)
+        self.showtime(1, 19)
+        self.assertEqual(len(self.events()), 1)
+
+    def test_theater_block_carries_the_id_the_events_point_at(self):
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertIn('"@id": "https://www.fortkentcinema.com/#theater"',
+                      html.split("@graph")[0])
+
+    @mock.patch("web.views.get_coming_soon", return_value=[])
+    @mock.patch("web.views.get_now_showing", return_value=[])
+    def test_no_block_when_nothing_is_booked(self, _ns, _cs):
+        self.assertIsNone(self.events())
+
+    @mock.patch("web.views.get_coming_soon", return_value=[])
+    @mock.patch("web.views.get_now_showing")
+    def test_showtimes_without_an_iso_start_are_skipped_not_fatal(self, ns, _cs):
+        """Older fixtures and callers hand the view time dicts with no iso;
+        an event with no startDate is worse than no event."""
+        ns.return_value = [movie()]
+        self.assertEqual(self.client.get(reverse("home")).status_code, 200)
+        self.assertIsNone(self.events())
