@@ -509,14 +509,15 @@ textarea.input,
 
 /* ===== Tags =====
    Square-cornered labels for a fact about a row: screen type, 3D,
-   captions, format, kind, hidden. A status (something that changes) is a
-   .status-badge pill instead. The class names are the ones the templates
+   captions, format, kind, language, hidden. A status (something that
+   changes) is a .status-badge pill instead. The class names are the ones the templates
    already used; they share one shape here. */
 .typeBadge,
 .badge3d,
 .captionsBadge,
 .formatBadge,
 .kindBadge,
+.languageBadge,
 .hiddenBadge {
   display: inline-block;
   padding: 0.125rem var(--space-sm);

@@ -55,6 +55,19 @@ class EngagementListTests(TestCase):
         self.assertIn("Classic", html)   # kind badge
         self.assertIn("Hidden", html)    # hidden badge
 
+    def test_language_badge(self) -> None:
+        eng = make_engagement(self.screen, start=self.today, end=self.today,
+                              films=[self.film])
+        html = self.client.get(reverse("dashboard:engagements")).content.decode()
+        self.assertNotIn('class="languageBadge"', html)  # plain English: no tag
+        eng.language, eng.translation = "french", "subtitled"
+        eng.save()
+        html = self.client.get(reverse("dashboard:engagements")).content.decode()
+        # Once in the desktop table and once in the phone card list.
+        self.assertEqual(
+            html.count('<span class="languageBadge">French · English subtitles</span>'), 2
+        )
+
     def test_detail_stub_resolves(self) -> None:
         self.assertEqual(reverse("dashboard:engagement_detail", args=[1]), "/dashboard/engagements/1")
 

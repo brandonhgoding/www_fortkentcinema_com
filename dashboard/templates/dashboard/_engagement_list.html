@@ -12,6 +12,7 @@
               {% with p=e.primary_film %}{% if p and p.poster_url %}<img src="{{ p.poster_url }}" alt="" class="posterThumb" />{% endif %}{% endwith %}
               <span class="filmTitle">{{ e.display_title }}</span>
               {% if e.kind != 'REGULAR' %}<span class="kindBadge">{{ KIND_LABELS|get_item:e.kind }}</span>{% endif %}
+              {% if e.language_label %}<span class="languageBadge">{{ e.language_label }}</span>{% endif %}
               {% if not e.show_in_main_listings %}<span class="hiddenBadge" title="Hidden from public listings">Hidden</span>{% endif %}
             </div>
           </td>
@@ -41,6 +42,7 @@
         <div class="cardTitleSection">
           <h3 class="cardTitle">{{ e.display_title }}</h3>
           {% if e.kind != 'REGULAR' %}<span class="kindBadge">{{ KIND_LABELS|get_item:e.kind }}</span>{% endif %}
+          {% if e.language_label %}<span class="languageBadge">{{ e.language_label }}</span>{% endif %}
           {% if not e.show_in_main_listings %}<span class="hiddenBadge" title="Hidden from public listings">Hidden</span>{% endif %}
           <div class="cardBadges">
             {% include "dashboard/_status_dropdown.html" with engagement=e %}
