@@ -1,0 +1,17 @@
+{% comment %}
+  Advertise card in Be part of the show. No link yet: the advertising page
+  is still to be built (2026-10-13). When it exists, add a home-link at the
+  bottom like the other cards'.
+{% endcomment %}
+{% load static %}
+<article class="home-card advertise-cta">
+  <div class="home-card__media">
+    <img src="{% static 'img/involved/your-ad-here.jpg' %}" alt="" width="1200" height="675"
+         loading="lazy" decoding="async" class="home-card__img">
+  </div>
+  <p class="home-card__eyebrow">Advertise with us</p>
+  <h3 class="home-card__title">Your business on the big screen</h3>
+  <p class="home-card__body">Put your business in front of a room full of neighbors before the
+    movie starts. Your ad plays on the big screen while the audience settles
+    into their seats.</p>
+</article>
