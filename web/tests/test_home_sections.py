@@ -592,7 +592,8 @@ class SupportTests(TestCase):
 
 
 class GetInvolvedTests(TestCase):
-    """Open mic and Heckle Night share one section and one card shape.
+    """Open mic, Heckle Night and advertising share one section and one
+    card shape.
 
     The section is titled "Be part of the show"; its id stays get-involved.
     The vote and gift-card cards left it on 2026-10-13 (the owner's call):
@@ -615,13 +616,22 @@ class GetInvolvedTests(TestCase):
         self.assertRegex(section, r'<h2 class="section-title"[^>]*>Be part of the show</h2>')
         self.assertIn('class="home-cards"', section)
 
+    def test_advertise_card_is_third_and_has_no_link_yet(self):
+        # Added 2026-10-13; its page comes later, so for now it advertises
+        # without sending anyone anywhere.
+        section = self.section()
+        self.assertLess(section.index("heckle-night-cta"), section.index("advertise-cta"))
+        card = self.card("advertise-cta")
+        self.assertIn("Advertise with us", card)
+        self.assertNotIn("<a ", card)
+
     def test_cards_are_open_mic_then_heckle_night(self):
         from cinema.models import Poll, PollStatus
 
         # An open round no longer puts a vote card here.
         Poll.objects.create(title="Round One", status=PollStatus.OPEN)
         section = self.section()
-        self.assertEqual(section.count("home-card "), 2)
+        self.assertEqual(section.count("home-card "), 3)
         self.assertLess(section.index("open-mic-cta"), section.index("heckle-night-cta"))
         self.assertNotIn("vote-cta", section)
         self.assertNotIn("gift-card-cta", section)
@@ -637,6 +647,7 @@ class GetInvolvedTests(TestCase):
     PICTURES = (
         ("open-mic-cta", "take-center-stage"),
         ("heckle-night-cta", "talk-back-to-the-screen"),
+        ("advertise-cta", "your-ad-here"),
     )
 
     def test_each_card_leads_with_its_picture(self):
