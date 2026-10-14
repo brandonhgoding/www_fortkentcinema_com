@@ -97,7 +97,7 @@ def get_heckle_nights(count=None, *, today=None):
             primary = engagement.primary_film
             film = {
                 "title": event_page_title(
-                    engagement.display_title or (primary.title if primary else "")
+                    engagement.title or (primary.title if primary else "")
                 ),
                 "slug": (primary.slug if primary else "") or "",
                 "poster": (primary.poster_url if primary else "") or "",

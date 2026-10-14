@@ -55,7 +55,7 @@ class Showtime(models.Model):
         ]
 
     def __str__(self) -> str:
-        return f"{self.engagement.display_title} @ {self.starts_at}"
+        return f"{self.engagement.title} @ {self.starts_at}"
 
     def save(self, *args: Any, **kwargs: Any) -> None:
         if self.engagement_id:

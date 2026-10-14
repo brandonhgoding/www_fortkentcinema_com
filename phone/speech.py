@@ -52,7 +52,7 @@ def _describe(showtimes: Iterable[Showtime]) -> str:
     sentences = []
     for group in by_engagement.values():
         engagement = group[0].engagement
-        title = engagement.display_title
+        title = engagement.title
         if engagement.is_free_for_members:
             title += ", free for members,"
         times = _spoken_list([_format_showtime(s.starts_at) for s in group])

@@ -67,14 +67,13 @@ class Engagement(models.Model):
 
     class Kind(models.TextChoices):
         REGULAR = "REGULAR", "Regular"
-        SPECIAL_EVENT = "SPECIAL_EVENT", "Special Event"
         CLASSIC = "CLASSIC", "Classic"
         DOUBLE_FEATURE = "DOUBLE_FEATURE", "Double Feature"
 
     kind = models.CharField(
         max_length=20, choices=Kind.choices, default=Kind.REGULAR
     )
-    event_title = models.CharField(max_length=200, blank=True)
+    display_title = models.CharField(max_length=200, blank=True)
     show_in_main_listings = models.BooleanField(default=True)
     is_free_for_members = models.BooleanField(
         default=False,
@@ -112,7 +111,7 @@ class Engagement(models.Model):
         verbose_name_plural = "Engagements"
 
     def __str__(self) -> str:
-        return f"{self.display_title} ({self.start_date} → {self.end_date})"
+        return f"{self.title} ({self.start_date} → {self.end_date})"
 
     @property
     def is_active(self) -> bool:
@@ -149,9 +148,9 @@ class Engagement(models.Model):
         return " · ".join(parts)
 
     @property
-    def display_title(self) -> str:
-        if self.event_title:
-            return self.event_title
+    def title(self) -> str:
+        if self.display_title:
+            return self.display_title
         return " + ".join(f.title for f in self.ordered_films)
 
     def save(self, *args: Any, **kwargs: Any) -> None:
@@ -190,7 +189,3 @@ class Engagement(models.Model):
             raise ValidationError(
                 {"translation": "An English-language film needs no translation."}
             )
-
-    @classmethod
-    def default_visibility_for(cls, kind: str) -> bool:
-        return kind == cls.Kind.REGULAR

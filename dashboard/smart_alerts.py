@@ -36,7 +36,7 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
             unit = "day" if days_left == 1 else "days"
             alerts.append({
                 "id": f"ending-soon-{e.id}", "type": "info",
-                "message": f"{e.display_title} ends in {days_left} {unit}",
+                "message": f"{e.title} ends in {days_left} {unit}",
             })
 
     draft_count = sum(1 for e in engagements if e.status == "DRAFT")

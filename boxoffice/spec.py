@@ -30,7 +30,7 @@ def priced_tiers() -> list[tuple[str, int]]:
 
 
 def desired_item(engagement: Engagement) -> ItemSpec:
-    name = (engagement.display_title or "").strip()
+    name = (engagement.title or "").strip()
     if not name:
         raise ValueError(
             f"Engagement {engagement.pk} has no title to send to Square")

@@ -8,7 +8,7 @@ from django.test import TestCase
 def make_eng(screen, film, *, end, status="CONFIRMED", start=None, title=None):
     eng = Engagement.objects.create(
         screen=screen, start_date=start or datetime.date(2026, 7, 1), end_date=end,
-        status=status, event_title=title or "",
+        status=status, display_title=title or "",
     )
     EngagementFilm.objects.create(engagement=eng, film=film, position=1)
     return eng

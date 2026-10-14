@@ -10,7 +10,7 @@
           <td>
             <div class="filmCell">
               {% with p=e.primary_film %}{% if p and p.poster_url %}<img src="{{ p.poster_url }}" alt="" class="posterThumb" />{% endif %}{% endwith %}
-              <span class="filmTitle">{{ e.display_title }}</span>
+              <span class="filmTitle">{{ e.title }}</span>
               {% if e.kind != 'REGULAR' %}<span class="kindBadge">{{ KIND_LABELS|get_item:e.kind }}</span>{% endif %}
               {% if e.language_label %}<span class="languageBadge">{{ e.language_label }}</span>{% endif %}
               {% if not e.show_in_main_listings %}<span class="hiddenBadge" title="Hidden from public listings">Hidden</span>{% endif %}
@@ -25,7 +25,7 @@
               <a href="{% url 'dashboard:engagement_detail' e.pk %}" class="btn btn-secondary btn-sm">Details</a>
               <button class="btn btn-secondary btn-sm" hx-get="{% url 'dashboard:engagement_edit' e.pk %}" hx-target="#drawer-content" @click="$store.drawer.show('Edit Engagement')">Edit</button>
               <button class="btn btn-danger btn-sm" hx-post="{% url 'dashboard:engagement_delete' e.pk %}?tab={{ tab }}" hx-swap="none"
-                      data-dashboard-confirm='{"title":"Delete Engagement","message":"Are you sure you want to delete the engagement for \"{{ e.display_title|escapejs }}\"?","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
+                      data-dashboard-confirm='{"title":"Delete Engagement","message":"Are you sure you want to delete the engagement for \"{{ e.title|escapejs }}\"?","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
             </div>
           </td>
         </tr>
@@ -40,7 +40,7 @@
       <div class="cardHeader">
         {% with p=e.primary_film %}{% if p and p.poster_url %}<img src="{{ p.poster_url }}" alt="" class="cardPoster" />{% endif %}{% endwith %}
         <div class="cardTitleSection">
-          <h3 class="cardTitle">{{ e.display_title }}</h3>
+          <h3 class="cardTitle">{{ e.title }}</h3>
           {% if e.kind != 'REGULAR' %}<span class="kindBadge">{{ KIND_LABELS|get_item:e.kind }}</span>{% endif %}
           {% if e.language_label %}<span class="languageBadge">{{ e.language_label }}</span>{% endif %}
           {% if not e.show_in_main_listings %}<span class="hiddenBadge" title="Hidden from public listings">Hidden</span>{% endif %}
@@ -58,7 +58,7 @@
         <a href="{% url 'dashboard:engagement_detail' e.pk %}" class="btn btn-secondary btn-sm">Details</a>
         <button class="btn btn-secondary btn-sm" hx-get="{% url 'dashboard:engagement_edit' e.pk %}" hx-target="#drawer-content" @click="$store.drawer.show('Edit Engagement')">Edit</button>
         <button class="btn btn-danger btn-sm" hx-post="{% url 'dashboard:engagement_delete' e.pk %}?tab={{ tab }}" hx-target="#engagement-list" hx-swap="outerHTML"
-                data-dashboard-confirm='{"title":"Delete Engagement","message":"Are you sure you want to delete the engagement for \"{{ e.display_title|escapejs }}\"?","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
+                data-dashboard-confirm='{"title":"Delete Engagement","message":"Are you sure you want to delete the engagement for \"{{ e.title|escapejs }}\"?","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
       </div>
     </div>
     {% endfor %}

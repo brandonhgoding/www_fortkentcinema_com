@@ -150,7 +150,7 @@ def get_coming_soon():
     for engagement in engagements:
         films = engagement.ordered_films
         ids = sorted(f.id for f in films)
-        key = ",".join(str(i) for i in ids) if ids else engagement.display_title
+        key = ",".join(str(i) for i in ids) if ids else engagement.title
         if key in seen:
             continue
         seen.add(key)
@@ -160,7 +160,7 @@ def get_coming_soon():
             {
                 "id": str(engagement.id),
                 "title": listing_title(
-                    engagement.display_title or (pf.title if pf else "")
+                    engagement.title or (pf.title if pf else "")
                 ),
                 "slug": (pf.slug if pf else "") or "",
                 "start_date": engagement.start_date.isoformat(),
