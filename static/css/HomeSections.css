@@ -25,7 +25,6 @@
 .home-section--raised { background: var(--color-surface-raised); }
 .home-section--alt { background: var(--color-surface-alt); }
 .home-section--surface { background: var(--color-surface); }
-.home-section--sunken { background: var(--color-surface-sunken); }
 .home-section--accent {
   background: var(--color-accent);
   color: var(--brand-warm-white);
@@ -362,17 +361,6 @@
 /* "All posts": the section's only button, 32px under the cards. */
 .home-story__all {
   margin: var(--spacing-lg) 0 0;
-}
-
-/* Slim variant: a one-line strip rather than a full 96px section. */
-.home-section--slim {
-  padding: var(--spacing-xl) 0;
-}
-
-@media (max-width: 600px) {
-  .home-section--slim {
-    padding: var(--spacing-lg) 0;
-  }
 }
 
 /* A film title link is one line of heading type, about 25px tall. An

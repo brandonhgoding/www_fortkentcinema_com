@@ -325,7 +325,7 @@ class RentalInquiryView(RentalsView):
     """POST /rentals/inquire.
 
     Saves the lead and emails nobody (the dashboard list and the smart-alert
-    count are the delivery mechanism), it re-renders the whole page on a
+    count are the delivery mechanism). It re-renders the whole page on a
     validation error because there is no htmx here, and it redirects on
     success so a refresh cannot resubmit.
     """

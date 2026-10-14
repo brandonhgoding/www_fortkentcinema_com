@@ -154,12 +154,13 @@ class SectionCompositionTests(TestCase):
             found = [
                 c[len("home-section--") :]
                 for c in classes
-                if c.startswith("home-section--") and c != "home-section--slim"
+                if c.startswith("home-section--")
             ]
             self.assertEqual(found, [ground], section_id)
             grounds.append(ground)
         for above, below in zip(grounds, grounds[1:]):
             self.assertNotEqual(above, below)
+
 
 class ShowtimeChipTests(TestCase):
     """There is no online ticket path in this project, so a <button> here

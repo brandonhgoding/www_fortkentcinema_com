@@ -268,7 +268,6 @@ class HomeIntegrationTests(TestCase):
     def test_full_home_composition_order(self, _ns, _cs):
         html = self.client.get(reverse("home")).content.decode()
         # The hero, then the five sections below it, each rendered once.
-        # (Support is switched off: SHOW_SUPPORT_STRIP.)
         markers = (
             'class="hero"', 'id="now-showing"', 'id="membership"',
             'id="coming-soon"', 'id="get-involved"', 'id="from-the-booth"',

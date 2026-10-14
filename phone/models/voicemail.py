@@ -14,7 +14,7 @@ class VoicemailStatus(models.TextChoices):
 class Voicemail(models.Model):
     """A message left on the phone line.
 
-    Nothing in this project sends mail (see SponsorshipInquiry), so this row
+    Nothing in this project sends mail (see RentalInquiry), so this row
     IS the notification: the dashboard lists it and the smart-alert strip
     counts the NEW ones.
 

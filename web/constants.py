@@ -50,7 +50,8 @@ SITE_CONFIG = {
     # The footer's link column, on every page. Blog, Film Vote and History
     # moved here from the nav's "More" menu on 2026-10-13; Rentals
     # came out of "More" the same day with no new home decided, so "More"
-    # went with it.
+    # went with it. /rentals/ is linked only from the sitemap and llms.txt
+    # until it gets a home.
     "footer_navigation": [
         # Alphabetical by label (the owner's call). "note" renders as a
         # second line inside the same link, saying what a name like "From

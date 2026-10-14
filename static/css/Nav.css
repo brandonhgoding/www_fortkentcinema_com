@@ -247,7 +247,7 @@
  *
  * The panel hangs 12px below the toggle (top: calc(100% + 12px)) and that gap
  * was dead space. .nav-dropdown:hover covers the button and the panel, but not
- * what is between them, so a pointer travelling from "More" down to Sponsor
+ * what is between them, so a pointer travelling from "More" down to its first item
  * left the subtree mid-journey and the menu closed under the cursor — the
  * menu was unreachable by the one gesture that opens it.
  *

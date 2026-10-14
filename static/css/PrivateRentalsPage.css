@@ -170,8 +170,7 @@
  * someone needs before they phone should not be behind a click, and the same
  * content answers questions rather than declaring rules.
  *
- * Same box treatment as .sponsor-faq__list and .membership-faq__list; keep the
- * three in step. Grid items stretch, so every card in a row shares the
+ * Same box treatment as .membership-faq__list; keep the two in step. Grid items stretch, so every card in a row shares the
  * tallest one's height.
  */
 .rentals-faq__list {
