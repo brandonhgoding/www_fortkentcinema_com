@@ -1,9 +1,10 @@
 import json
 import re
+from unittest import mock
 
 from django.test import TestCase
 from django.urls import reverse
-from web.constants import ADVERTISING_FAQ
+from web.constants import AD_SLIDE_PRICE, AD_VIDEO_PRICE, ADVERTISING_FAQ
 
 
 class AdvertisePageTests(TestCase):
@@ -87,3 +88,28 @@ class AdvertisePageTests(TestCase):
         self.assertIn(
             'data-track="phone_click" data-track-location="advertise"', self.html
         )
+
+
+class AdvertiseMetaPriceTests(TestCase):
+    """The search snippet and the social card quote the rates too, so they
+    render from the constants like the cards do; a typed-in price would go
+    stale the day the rate changes."""
+
+    def meta(self, html: str, attr: str) -> str:
+        return re.search(rf'<meta {attr} content="([^"]*)"', html).group(1)
+
+    def test_meta_descriptions_carry_the_constant_prices(self):
+        html = self.client.get(reverse("advertise")).content.decode()
+        for attr in ('name="description"', 'property="og:description"'):
+            content = self.meta(html, attr)
+            self.assertIn(f"${AD_SLIDE_PRICE} a month", content, attr)
+            self.assertIn(f"${AD_VIDEO_PRICE}", content, attr)
+
+    def test_meta_descriptions_follow_a_rate_change(self):
+        with mock.patch("web.views.AD_SLIDE_PRICE", 81), \
+                mock.patch("web.views.AD_VIDEO_PRICE", 163):
+            html = self.client.get(reverse("advertise")).content.decode()
+        for attr in ('name="description"', 'property="og:description"'):
+            content = self.meta(html, attr)
+            self.assertIn("$81 a month", content, attr)
+            self.assertIn("$163", content, attr)
