@@ -1,12 +1,12 @@
 """Heckle Night: which dates it falls on, and what plays on them.
 
-Structurally the twin of web/services/craft_night.py, and for the same two
+Structurally the twin of the old craft night service, and for the same two
 reasons. The night is "the third Friday of the month", which is a rule, not
 a list — a typed list of dates goes stale in public and goes stale SILENTLY,
 because nothing breaks when the last one passes, the page just quietly stops
-having a next date. And what plays is not ours to type either: the film comes
-out of the same Engagement and Showtime rows Now Showing reads, so the page
-and the schedule cannot disagree.
+having a next date. And what plays will not be ours to type either: once the
+Event model lands, the film will come out of the same rows Now Showing
+reads, so the page and the schedule cannot disagree.
 
 The film lookup is parked until the Event model exists, so every night
 reads "Not booked yet". The dates still compute.

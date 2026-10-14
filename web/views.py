@@ -353,9 +353,9 @@ class RentalInquiryView(RentalsView):
 class HeckleNightView(TemplateView):
     """/heckle-night/ — the monthly bad-movie night the room talks over.
 
-    Two computed things: the dates ("third Friday" is
-    a rule) and the film on each one (read from the schedule, so this page
-    and Now Showing cannot disagree). See web/services/heckle_night.py, and
+    Two computed things: the dates ("third Friday" is a rule) and the film
+    on each one. The film lookup is parked until the Event model lands, so
+    every night currently reads "Not booked yet". See web/services/heckle_night.py, and
     note the one difference — nothing before HECKLE_NIGHT["starts_on"]
     renders, because this night has never run and the rule alone would
     advertise a date nobody planned.
