@@ -149,15 +149,12 @@ class HeckleNightLineupTests(TestCase):
         self.night = datetime.date(2026, 10, 16)
 
     def book(self, title, date, *, hour=19, minute=0, status="CONFIRMED",
-             cancelled=False, listed=True, kind=Engagement.Kind.SPECIAL_EVENT,
+             cancelled=False, listed=True, kind=Engagement.Kind.REGULAR,
              screen=None):
-        """A Heckle Night booking by default — a 7:00 PM SPECIAL_EVENT.
+        """A 7:00 PM booking on the night.
 
-        `kind` and `screen` are parameters rather than constants because
-        the whole point of the lineup query is what it refuses, and
-        Showtime is unique on (screen, starts_at) — two things at 7:00 on
-        one Friday need two screens, which is also how it works in real
-        life.
+        `kind` is still a parameter because the interim lookup must refuse
+        every kind.
         """
         film = Film.objects.create(title=title, runtime_minutes=79, rating="NR")
         engagement = Engagement.objects.create(
@@ -180,12 +177,14 @@ class HeckleNightLineupTests(TestCase):
     def nights(self):
         return get_heckle_nights(3, today=self.today)
 
-    def test_booked_night_carries_its_film(self):
-        self.book("Plan 9 From Outer Space", self.night)
-        first = self.nights()[0]
-        self.assertEqual(first["date"], self.night)
-        self.assertEqual(first["film"]["title"], "Plan 9 From Outer Space")
-        self.assertEqual(first["film"]["time"], "7:00 PM")
+    def test_nothing_is_claimed_until_the_event_model_lands(self):
+        """Interim: the lineup lookup is parked. A perfect booking — confirmed,
+        listed, 7:00 PM on the night, any kind — still reads "Not booked yet"."""
+        for kind in Engagement.Kind.values:
+            with self.subTest(kind=kind):
+                Engagement.objects.all().delete()
+                self.book("Plan 9 From Outer Space", self.night, kind=kind)
+                self.assertIsNone(self.nights()[0]["film"])
 
     def test_unbooked_night_still_appears(self):
         """The normal state. We book weeks ahead; the date is further out."""
@@ -207,12 +206,6 @@ class HeckleNightLineupTests(TestCase):
                 Engagement.objects.all().delete()
                 self.book("Wrong Time", self.night, hour=hour, minute=minute)
                 self.assertIsNone(self.nights()[0]["film"])
-
-    def test_seven_oclock_on_the_nose_is(self):
-        self.book("Robot Monster", self.night, hour=19, minute=0)
-        first = self.nights()[0]
-        self.assertEqual(first["film"]["title"], "Robot Monster")
-        self.assertEqual(first["film"]["time"], HECKLE_NIGHT["start_label"])
 
     def test_cancelled_showtime_is_not_a_lineup(self):
         self.book("Cancelled", self.night, cancelled=True)
@@ -236,19 +229,8 @@ class HeckleNightLineupTests(TestCase):
         self.book("First Run Feature", self.night, kind=Engagement.Kind.REGULAR)
         self.assertIsNone(self.nights()[0]["film"])
 
-    def test_a_special_event_is(self):
-        self.book("Plan 9 From Outer Space", self.night)
-        self.assertEqual(
-            self.nights()[0]["film"]["title"], "Plan 9 From Outer Space"
-        )
-
     def test_no_other_kind_counts_either(self):
-        """CLASSIC and DOUBLE_FEATURE are near misses, and still misses.
-
-        A Heckle Night booking has one kind. A night booked as something
-        else reads "Not booked yet" on the page — visibly wrong, and
-        fixable — rather than quietly adopting the wrong film.
-        """
+        """Every other kind is refused too; see the interim note on heckle_showtimes."""
         for kind in (Engagement.Kind.CLASSIC, Engagement.Kind.DOUBLE_FEATURE):
             with self.subTest(kind=kind):
                 Engagement.objects.all().delete()
@@ -264,19 +246,6 @@ class HeckleNightLineupTests(TestCase):
         self.book("Someone's Birthday Party", self.night, listed=False)
         self.assertIsNone(self.nights()[0]["film"])
 
-    def test_the_regular_feature_does_not_win_over_the_event(self):
-        """Both at 7:00 on the same Friday, which is the realistic case:
-        one screen runs the first-run feature, the other runs this.
-
-        Two screens because Showtime is unique on (screen, starts_at) —
-        the same reason the real building needs two.
-        """
-        other = Screen.objects.create(name="The Annex", capacity=60)
-        self.book("First Run Feature", self.night,
-                  kind=Engagement.Kind.REGULAR, screen=other)
-        self.book("Robot Monster", self.night)
-        self.assertEqual(self.nights()[0]["film"]["title"], "Robot Monster")
-
     def test_query_count_does_not_grow_with_the_number_of_nights(self):
         """Bucketed in Python. Per-date filtering would be N queries.
 
@@ -284,9 +253,9 @@ class HeckleNightLineupTests(TestCase):
         doubling the list does not move it is.
         """
         self.book("Plan 9 From Outer Space", self.night)
-        with self.assertNumQueries(3):
+        with self.assertNumQueries(0):
             get_heckle_nights(3, today=self.today)
-        with self.assertNumQueries(3):
+        with self.assertNumQueries(0):
             get_heckle_nights(6, today=self.today)
 
 

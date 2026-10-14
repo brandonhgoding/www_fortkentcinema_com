@@ -13,7 +13,6 @@ from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
 
 from web.services.cinema_data import get_coming_soon
-from web.services.heckle_night import get_heckle_nights
 from web.services.titles import listing_title, split_event_suffix
 
 
@@ -83,12 +82,6 @@ class EventTitleIntegrationTests(TestCase):
                 datetime.datetime.combine(date, datetime.time(hour))
             ),
         )
-
-    def test_heckle_page_drops_the_suffix(self):
-        night = datetime.date(2026, 10, 16)  # third Friday
-        self.book("Attack of the Giant Leeches (HECKLE NIGHT)", night, 19)
-        nights = get_heckle_nights(1, today=datetime.date(2026, 10, 1))
-        self.assertEqual(nights[0]["film"]["title"], "Attack of the Giant Leeches")
 
     def test_coming_soon_normalises_the_suffix(self):
         start = timezone.localdate() + datetime.timedelta(days=5)

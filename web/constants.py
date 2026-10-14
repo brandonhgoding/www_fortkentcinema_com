@@ -509,10 +509,7 @@ HECKLE_NIGHT = {
     # Known and accepted cost: if a Heckle Night is ever booked for 7:30,
     # this page goes blank for that date and says "Not booked yet" while
     # the listings show the event. That is a crude rule and it is the rule
-    # we want for now — it fails visibly rather than silently, which is
-    # the same trade the SPECIAL_EVENT filter makes. The better version is
-    # a flag on the Engagement that says "this one is a Heckle Night", and
-    # that is a migration nobody needs yet.
+    # we want for now — it fails visibly rather than silently.
     #
     # start_label is what the page PRINTS and start_time is what it
     # MATCHES, so the two are now load-bearing together — a booking made
