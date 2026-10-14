@@ -1,9 +1,10 @@
 {% comment %}
-  Be part of the show (id stays get-involved): up to three cards in a row,
-  vote, open mic, gift card. The vote card renders only while a round is
-  open (see cta_vote.html), so the row is two cards the rest of the time.
-  Each card leads with its art from static/img/involved/, cropped 16:9 like
-  the From the booth cards; replace a file there to swap the picture.
+  Be part of the show (id stays get-involved): open mic and Heckle Night in
+  a row. The vote and gift-card cards came out on 2026-10-13 (the owner's
+  call); the vote is linked from the footer, the gift card from nowhere on
+  the site but llms.txt. Each card leads with its art from
+  static/img/involved/, cropped 16:9 like the From the booth cards; replace
+  a file there to swap the picture.
 {% endcomment %}
 {% load static %}
 <section id="get-involved" class="home-section home-section--surface"
@@ -13,9 +14,8 @@
       <h2 class="section-title" id="get-involved-title">Be part of the show</h2>
     </div>
     <div class="home-cards">
-      {% include "partials/cta_vote.html" %}
       {% include "partials/cta_openmic.html" %}
-      {% include "partials/cta_giftcard.html" %}
+      {% include "partials/cta_heckle.html" %}
     </div>
   </div>
 </section>

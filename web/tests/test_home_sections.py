@@ -184,11 +184,10 @@ class SectionCompositionTests(TestCase):
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_now_showing", return_value=[])
     def test_self_expiring_ctas_appear_only_when_live(self, _ns, _cs):
-        """cta_sponsored and cta_vote render nothing between runs/rounds.
+        """cta_sponsored renders nothing between runs.
         With no seams to place, that needs no coordination — but they still
         have to actually disappear."""
         self.assertNotIn("sponsored-cta", section_sequence(self.home()))
-        self.assertNotIn("vote-cta", main_content(self.home()))
 
         banner = {
             "url": "/movies/dune/",
@@ -198,15 +197,10 @@ class SectionCompositionTests(TestCase):
             "film": {"title": "Dune"},
             "days": [{"date": datetime.date(2999, 1, 15), "times": ["6:00 PM"]}],
         }
-        poll = {"title": "Pick the Sunday matinee", "options": {"count": 3}}
-        with (
-            mock.patch("web.views.sponsored_screening", return_value=banner),
-            mock.patch("web.views.vote_service.open_polls", return_value=[poll]),
-        ):
+        with mock.patch("web.views.sponsored_screening", return_value=banner):
             html = self.home()
         seq = section_sequence(html)
         self.assertIn("sponsored-cta", seq)
-        self.assertIn("vote-cta", main_content(html))
         self.assertEqual(seq[0], "hero")
 
 
@@ -247,14 +241,24 @@ class FooterHoursTests(TestCase):
         self.assertIsNotNone(match, "no footer on the page")
         return match.group(0)
 
-    def test_footer_says_the_box_office_opens_before_every_show(self):
+    def test_footer_says_the_box_office_opens_before_showtime(self):
         footer = self.footer()
-        self.assertIn('class="footer-column footer-hours"', footer)
         minutes = SITE_CONFIG["box_office"]["opens_before_show_minutes"]
-        self.assertIn(f"{minutes} minutes before every show", footer)
+        self.assertIn(
+            f'<p class="footer-box-office">Box office opens {minutes} minutes '
+            "before showtime</p>",
+            footer,
+        )
 
-    def test_footer_points_at_the_showtimes(self):
-        self.assertIn('href="/#now-showing"', self.footer())
+    def test_box_office_line_sits_under_the_address_and_phone(self):
+        # A single line in the brand column since 2026-10-13, not a column
+        # of its own (the owner's call).
+        footer = self.footer()
+        self.assertNotIn("footer-hours", footer)
+        self.assertNotIn("Box Office Hours", footer)
+        self.assertLess(footer.index("</address>"), footer.index("footer-box-office"))
+        brand = footer[footer.index('class="footer-brand"') :]
+        self.assertIn("footer-box-office", brand[: brand.index('class="footer-column')])
 
     def test_no_fixed_weekly_hours_remain(self):
         footer = self.footer()
@@ -263,7 +267,7 @@ class FooterHoursTests(TestCase):
         self.assertNotIn("hours", SITE_CONFIG)
 
     def test_hours_are_sitewide_not_just_the_home_page(self):
-        self.assertIn("footer-hours", self.footer(reverse("membership")))
+        self.assertIn("footer-box-office", self.footer(reverse("membership")))
 
 
 class TheaterSchemaTests(TestCase):
@@ -325,7 +329,7 @@ class TelLinkTests(TestCase):
     six pages, and the footer built its own by stripping punctuation, which
     left off the country code."""
 
-    PAGES = ["/", "/rentals/", "/craft-night/", "/heckle-night/", "/open-mic/",
+    PAGES = ["/", "/rentals/", "/heckle-night/", "/open-mic/",
              "/no-such-page/"]
 
     @mock.patch("web.views.get_calendar_month", return_value={})
@@ -588,9 +592,11 @@ class SupportTests(TestCase):
 
 
 class GetInvolvedTests(TestCase):
-    """Vote, open mic and gift card share one section and one card shape.
+    """Open mic and Heckle Night share one section and one card shape.
 
     The section is titled "Be part of the show"; its id stays get-involved.
+    The vote and gift-card cards left it on 2026-10-13 (the owner's call):
+    the vote has its footer link, and Heckle Night took the free slot.
     """
 
     def section(self):
@@ -599,54 +605,45 @@ class GetInvolvedTests(TestCase):
         start = html.index('id="get-involved"')
         return html[start : html.index("</section>", start)]
 
-    def open_poll(self):
-        from cinema.models import Poll, PollStatus
-
-        Poll.objects.create(title="Round One", status=PollStatus.OPEN)
+    def card(self, card_class):
+        section = self.section()
+        card = section[section.index(card_class) :]
+        return card[: card.index("</article>")]
 
     def test_heading_and_cards_row(self):
         section = self.section()
         self.assertRegex(section, r'<h2 class="section-title"[^>]*>Be part of the show</h2>')
         self.assertIn('class="home-cards"', section)
 
-    def test_cards_in_order_vote_open_mic_gift_card(self):
-        self.open_poll()
-        section = self.section()
-        positions = [
-            section.index(m) for m in ("vote-cta", "open-mic-cta", "gift-card-cta")
-        ]
-        self.assertEqual(positions, sorted(positions))
-        self.assertEqual(section.count("home-card "), 3)
-        self.assertEqual(section.count("open-mic-cta"), 1)
-        self.assertEqual(section.count("gift-card-cta"), 1)
+    def test_cards_are_open_mic_then_heckle_night(self):
+        from cinema.models import Poll, PollStatus
 
-    def test_without_an_open_round_two_cards_remain(self):
+        # An open round no longer puts a vote card here.
+        Poll.objects.create(title="Round One", status=PollStatus.OPEN)
         section = self.section()
+        self.assertEqual(section.count("home-card "), 2)
+        self.assertLess(section.index("open-mic-cta"), section.index("heckle-night-cta"))
         self.assertNotIn("vote-cta", section)
-        self.assertLess(section.index("open-mic-cta"), section.index("gift-card-cta"))
+        self.assertNotIn("gift-card-cta", section)
 
     def test_no_ticket_button_in_get_involved(self):
-        self.open_poll()
         self.assertNotIn("btn-ticket", self.section())
 
     def test_open_mic_card_copy(self):
-        section = self.section()
-        card = section[section.index("open-mic-cta") :]
+        card = self.card("open-mic-cta")
         for text in ("Take center stage", "Every Monday", "Open Mic", "How to sign up &rarr;"):
             self.assertIn(text, card)
+
+    PICTURES = (
+        ("open-mic-cta", "take-center-stage"),
+        ("heckle-night-cta", "talk-back-to-the-screen"),
+    )
 
     def test_each_card_leads_with_its_picture(self):
         """Art first, like the From the booth cards. Decorative (alt="")
         because the title under it says the same thing."""
-        self.open_poll()
-        section = self.section()
-        for card_class, image in (
-            ("vote-cta", "you-choose-the-film"),
-            ("open-mic-cta", "take-center-stage"),
-            ("gift-card-cta", "pay-it-forward"),
-        ):
-            card = section[section.index(card_class) :]
-            card = card[: card.index("</article>")]
+        for card_class, image in self.PICTURES:
+            card = self.card(card_class)
             self.assertIn(f"img/involved/{image}.jpg", card)
             self.assertLess(card.index("home-card__media"), card.index("home-card__eyebrow"))
             self.assertRegex(card, r'<img [^>]*alt=""')
@@ -654,18 +651,21 @@ class GetInvolvedTests(TestCase):
     def test_the_pictures_ship(self):
         from django.contrib.staticfiles import finders
 
-        for image in ("you-choose-the-film", "take-center-stage", "pay-it-forward"):
+        for _, image in self.PICTURES:
             self.assertIsNotNone(finders.find(f"img/involved/{image}.jpg"), image)
 
-    def test_gift_card_copy_and_new_window(self):
-        section = self.section()
-        card = section[section.index("gift-card-cta") :]
-        self.assertIn("Pay it forward", card)
-        self.assertIn("You choose the amount, and the e-gift card", card)
-        self.assertIn("Buy an e-gift card &rarr;", card)
-        self.assertIn('target="_blank"', card)
-        self.assertIn('data-track="giftcard_click"', card)
-        self.assertRegex(card, r'aria-label="[^"]*opens in new window')
+    def test_heckle_night_card_agrees_with_the_page_and_links_to_it(self):
+        from web.constants import HECKLE_NIGHT
+
+        card = self.card("heckle-night-cta")
+        self.assertIn("Heckle Night &middot; Third Friday of the month", card)
+        self.assertIn("Talk back to the screen", card)
+        self.assertIn(f"${HECKLE_NIGHT['general_price']} at the door", card)
+        self.assertIn("free for members", card)
+        self.assertIn(f"Starts at {HECKLE_NIGHT['start_label']}", card)
+        self.assertIn(f'href="{reverse("heckle_night")}"', card)
+        self.assertIn("See what&rsquo;s next &rarr;", card)
+
 
 
 class HomeTypeAndGroundTests(TestCase):

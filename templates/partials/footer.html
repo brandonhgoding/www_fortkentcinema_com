@@ -21,6 +21,13 @@
             {{ site_config.cinema.phone }}
           </a>
         </address>
+        {% comment %}
+          No fixed weekly hours: a table of them contradicted the schedule
+          (Friday Heckle Night, Tuesday shows, 11 AM matinees). The box office
+          opens ahead of each show, so that is the one line that is always
+          true. It was a column of its own until 2026-10-13.
+        {% endcomment %}
+        <p class="footer-box-office">Box office opens {{ site_config.box_office.opens_before_show_minutes }} minutes before showtime</p>
       </div>
 
       {% comment %}
@@ -31,37 +38,25 @@
         <h2 class="footer-heading" id="footer-links-heading">Explore</h2>
         <ul class="footer-links-list">
           {% for item in site_config.footer_navigation %}
-            <li>
-              {% if item.note %}
-                <a href="{{ item.href }}" class="footer-about-link footer-about-link--noted">
-                  <span class="footer-link-label">{{ item.label }}</span>
-                  <span class="footer-link-note">{{ item.note }}</span>
-                </a>
-              {% else %}
-                <a href="{{ item.href }}" class="footer-about-link">{{ item.label }}</a>
-              {% endif %}
-            </li>
+            <li>{% include "partials/footer_link.html" %}</li>
           {% endfor %}
         </ul>
       </nav>
 
       {% comment %}
-        Box Office Hours. The SPA commented this column out; then it listed
-        fixed weekly hours that contradicted the schedule (Friday Heckle
-        Night, Tuesday shows, 11 AM matinees all fell outside them). The box
-        office opens ahead of each show, so that is what this says — and
-        hands the reader to the schedule, which is the real timetable.
-
-        The SPA's other dead columns (Quick Links, About Us links) stay
-        omitted.
+        Events. The heading stays while the list is empty (the owner is
+        deciding what goes here); no <ul> until there is something in it.
       {% endcomment %}
-      <div class="footer-column footer-hours">
-        <h2 class="footer-heading">Box Office Hours</h2>
-        <p class="footer-hours-note">
-          Opens {{ site_config.box_office.opens_before_show_minutes }} minutes before every show.
-        </p>
-        <a href="/#now-showing" class="footer-about-link">See showtimes</a>
-      </div>
+      <nav class="footer-column footer-links" aria-labelledby="footer-events-heading">
+        <h2 class="footer-heading" id="footer-events-heading">Events</h2>
+        {% if site_config.footer_events %}
+          <ul class="footer-links-list">
+            {% for item in site_config.footer_events %}
+              <li>{% include "partials/footer_link.html" %}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </nav>
     </div>
 
     <div class="footer-bottom">

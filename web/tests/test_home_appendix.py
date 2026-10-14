@@ -75,7 +75,7 @@ class HomeMarkupTests(TestCase):
     def test_footer_headings_are_h2(self, *_):
         footer = self.home().split('<footer class="footer">', 1)[1]
         self.assertNotIn("<h3", footer)
-        self.assertIn('<h2 class="footer-heading">', footer)
+        self.assertIn('<h2 class="footer-heading"', footer)
 
 
 class CssCapitalsTests(TestCase):

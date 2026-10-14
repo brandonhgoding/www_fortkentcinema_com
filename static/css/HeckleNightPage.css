@@ -137,9 +137,8 @@
   font-style: italic;
 }
 
-/* The price and place close the hero card. Craft night's card now carries
- * the same line (.craft-next__price) — its two rates fit on one line, and
- * the section further down still explains the membership caveat. */
+/* The price and place close the hero card; the section further down still
+ * explains the membership caveat. */
 .heckle-next__price {
   font-family: var(--font-body);
   font-size: 0.85rem;

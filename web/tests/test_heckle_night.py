@@ -22,7 +22,7 @@ from django.utils import timezone
 from django.utils.html import escape
 
 from cinema.models import Engagement, EngagementFilm, Film, Screen, Showtime
-from web.constants import CRAFT_NIGHT, HECKLE_NIGHT, HECKLE_NIGHT_FAQ
+from web.constants import HECKLE_NIGHT, HECKLE_NIGHT_FAQ, TICKET_PRICES
 from web.services.heckle_night import (
     get_heckle_nights,
     third_friday,
@@ -334,7 +334,7 @@ class HeckleNightPageTests(TestCase):
         """
         self.assertEqual(
             HECKLE_NIGHT["general_price"],
-            CRAFT_NIGHT["general_price"] - CRAFT_NIGHT["member_price"],
+            TICKET_PRICES["adult"] - TICKET_PRICES["member"],
         )
 
     def test_states_who_the_night_is_for(self):

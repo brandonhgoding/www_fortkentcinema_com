@@ -38,8 +38,6 @@ Tiers and prices: {{ base }}/membership/
 
 - Open Mic: every {{ open_mic.day_label }}. Doors {{ open_mic.doors_label }}, first act {{ open_mic.start_label }}. {{ open_mic.price_label }}, {{ open_mic.audience|lower }}.
   {{ base }}/open-mic/
-- Craft Night: the last Tuesday of the month, {{ craft_night.start_label }}, with {{ craft_night.partner }}.
-  {{ base }}/craft-night/
 - Heckle Night: the third Friday of the month, {{ heckle_night.start_label }}.
   {{ base }}/heckle-night/
 - Film vote, where the public picks from a short list: {{ base }}/vote

@@ -207,7 +207,11 @@ class AnalyticsClickE2E(SeleniumTestCase):
     sending hits to production analytics.
     """
 
-    def test_giftcard_click_reaches_gtag(self):
+    def test_facebook_click_reaches_gtag(self):
+        # Was the home page's gift-card link until that card came out
+        # (2026-10-13). The Facebook link in Now Showing's empty state is the
+        # same shape — tracked, target=_blank — and the test database has no
+        # showtimes, so it is always on the page here.
         from selenium.webdriver.common.by import By
 
         self.driver.get(self.live_server_url + "/")
@@ -219,9 +223,9 @@ class AnalyticsClickE2E(SeleniumTestCase):
         )
 
         link = self.wait().until(
-            lambda d: d.find_element(By.CSS_SELECTOR, '[data-track="giftcard_click"]')
+            lambda d: d.find_element(By.CSS_SELECTOR, '[data-track="facebook_click"]')
         )
-        # The link opens Square in a new tab (target=_blank), so this page stays
+        # The link opens Facebook in a new tab (target=_blank), so this page stays
         # put and we can read what was captured.
         self.driver.execute_script(
             "arguments[0].scrollIntoView({block: 'center', behavior: 'instant'});", link
@@ -232,7 +236,7 @@ class AnalyticsClickE2E(SeleniumTestCase):
             lambda d: d.execute_script("return window.__events;") or False
         )
         self.assertEqual(events[0][0], "event")
-        self.assertEqual(events[0][1], "giftcard_click")
+        self.assertEqual(events[0][1], "facebook_click")
 
 
 class TrailerDialogE2E(SeleniumTestCase):

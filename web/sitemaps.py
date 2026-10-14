@@ -25,7 +25,6 @@ STATIC_PAGE_LASTMOD = {
     # are rows, dated by _content_lastmod below.
     "membership": datetime.date(2026, 9, 20),
     "rentals": datetime.date(2026, 7, 13),
-    "craft_night": datetime.date(2026, 9, 21),
     "heckle_night": datetime.date(2026, 9, 22),
     "open_mic": datetime.date(2026, 9, 23),
     "sponsor": datetime.date(2026, 8, 26),
@@ -44,7 +43,6 @@ class StaticViewSitemap(Sitemap):
             "home",
             "membership",
             "rentals",
-            "craft_night",
             "heckle_night",
             "open_mic",
             "sponsor",

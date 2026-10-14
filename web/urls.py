@@ -4,7 +4,6 @@ from django.views.generic import RedirectView
 from .list_signup import ListConfirmView, ListSignupView
 from .views import (
     CalendarMonthView,
-    CraftNightView,
     HeckleNightView,
     HistoryView,
     HomeView,
@@ -29,10 +28,6 @@ urlpatterns = [
     path("membership/", MembershipView.as_view(), name="membership"),
     path("rentals/", RentalsView.as_view(), name="rentals"),
     path("rentals/inquire", RentalInquiryView.as_view(), name="rentals_inquire"),
-    # Trailing slash, like the other section pages. "craft-night" rather
-    # than "craft-cinema-night": the event keeps its full name, the URL
-    # is the short thing people say and type.
-    path("craft-night/", CraftNightView.as_view(), name="craft_night"),
     # Trailing slash like the other section pages. "heckle-night" rather
     # than anything borrowing MST3K's name: the URL says what the night is
     # and belongs to us.

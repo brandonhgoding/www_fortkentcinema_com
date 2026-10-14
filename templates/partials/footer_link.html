@@ -1,0 +1,14 @@
+{% comment %}
+One footer link. With a "note" it stacks the title over a muted subtitle,
+both inside the one <a>; without, it is a plain link.
+
+Expects: item (label, href, optional note).
+{% endcomment %}
+{% if item.note %}
+  <a href="{{ item.href }}" class="footer-about-link footer-about-link--noted">
+    <span class="footer-link-label">{{ item.label }}</span>
+    <span class="footer-link-note">{{ item.note }}</span>
+  </a>
+{% else %}
+  <a href="{{ item.href }}" class="footer-about-link">{{ item.label }}</a>
+{% endif %}
