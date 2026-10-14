@@ -112,19 +112,6 @@
   animation: twinkle 4s ease-in-out infinite alternate;
 }
 
-/* Pine Tree Silhouettes */
-.hero-pines {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 300px;
-  z-index: -1;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%230d0f0e' d='M0,320 L0,200 L30,200 L40,120 L50,180 L60,100 L70,160 L80,80 L90,140 L100,60 L110,130 L120,200 L150,200 L160,140 L170,190 L180,130 L190,170 L200,110 L210,160 L220,200 L280,200 L290,150 L300,190 L310,120 L320,170 L330,90 L340,150 L350,70 L360,140 L370,200 L430,200 L440,160 L450,190 L460,140 L470,180 L480,120 L490,170 L500,200 L560,200 L570,130 L580,180 L590,110 L600,160 L610,80 L620,150 L630,200 L700,200 L710,170 L720,195 L730,150 L740,185 L750,130 L760,175 L770,200 L830,200 L840,140 L850,185 L860,120 L870,170 L880,90 L890,160 L900,70 L910,145 L920,200 L980,200 L990,165 L1000,190 L1010,145 L1020,180 L1030,125 L1040,170 L1050,200 L1110,200 L1120,150 L1130,185 L1140,130 L1150,175 L1160,100 L1170,160 L1180,200 L1240,200 L1250,155 L1260,190 L1270,140 L1280,180 L1290,110 L1300,165 L1310,200 L1370,200 L1380,145 L1390,185 L1400,125 L1410,170 L1420,95 L1430,155 L1440,200 L1440,320 Z'/%3E%3C/svg%3E")
-    no-repeat bottom center;
-  background-size: cover;
-}
-
 /* Main Marquee Sign — Art Deco Double Border */
 .marquee-container {
   position: relative;
@@ -469,11 +456,6 @@
     min-height: 0;
     justify-content: flex-start;
     padding: calc(70px + var(--spacing-sm)) var(--spacing-sm) var(--spacing-lg);
-  }
-
-  /* 300px of pine silhouette under a ~520px hero is most of the island. */
-  .hero-pines {
-    height: 140px;
   }
 
   .marquee-container {
