@@ -18,7 +18,7 @@
     <meta property="og:description" content="{% block og_description %}View current showtimes, upcoming movies, and join our Cinema Club membership. Maine's Northernmost Picture Show in Fort Kent.{% endblock %}" />
     <meta property="og:image" content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/og-image.jpg' %}{% endblock %}" />
     {% comment %}
-    The size is the default card's, and history's and sponsor's, which are
+    The size is the default card's, and history's, which are
     all 1200x630. A page that shares an image of another size (a poster, a
     blog photo) overrides og_image_details so the wrong size never rides along.
     {% endcomment %}

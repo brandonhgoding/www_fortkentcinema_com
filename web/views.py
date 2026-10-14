@@ -12,42 +12,32 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views import View
-from django.views.generic import DetailView, ListView, TemplateView
+from django.views.generic import DetailView, TemplateView
 
 from audience.models import Member, MembershipTier, Subscriber
 from blog.models import BlogPost
 from cinema import voting as vote_engine
 from cinema.models import (
-    Engagement,
-    EngagementStatus,
     Film,
     Poll,
     PollStatus,
-    StudioTitle,
     Vote,
 )
 from web.constants import (
-    DONATION,
     HECKLE_NIGHT,
     HECKLE_NIGHT_FAQ,
     OPEN_MIC,
     OPEN_MIC_FAQ,
     FILM_HISTORY_VIDEO,
-    SPONSORED_SCREENING,
     MEMBERSHIP_FAQ,
     SAVOY_PLAYBILLS,
     RENTALS_FAQ,
-    SPONSORSHIP_FAQ,
-    SPONSORSHIP_SHOWCASE,
-    SPONSORSHIP_TIERS,
-    SHOW_SUPPORT_STRIP,
 )
-from web.forms import RentalInquiryForm, SponsorshipInquiryForm
+from web.forms import RentalInquiryForm
 from web.list_signup import start_signup
 from web.services.cinema_data import (
     CINEMA_TZ,
     _format_runtime,
-    _format_showtime,
     get_now_showing,
     get_coming_soon,
     get_calendar_month,
@@ -81,18 +71,6 @@ class HomeView(TemplateView):
         ctx["initial_year"] = initial_year
         ctx["initial_month"] = initial_month
 
-        # Sponsored-screening banner. None unless a sponsored run is on, so
-        # the banner retires itself on the booking's last day.
-        ctx["sponsored"] = sponsored_screening()
-
-        # Whether the Support strip renders at all (web/constants.py).
-        ctx["show_support"] = SHOW_SUPPORT_STRIP
-
-        # Donate link in the Support strip. The partial renders nothing while
-        # DONATION["url"] is blank, which is how it shipped ahead of the Square
-        # item — a Donate link pointing nowhere never went live.
-        ctx["donation"] = DONATION
-
         # From the booth: the latest 3 posts, deterministically ordered, one
         # row of three image cards.
         ctx["recent_posts"] = (
@@ -100,11 +78,6 @@ class HomeView(TemplateView):
             .select_related("author", "category")
             .order_by("-post_date", "-id")[:3]
         )
-
-        # The Support strip's sponsor link says "from $N". N is the cheapest
-        # tier rather than a typed number, so the home page cannot drift away
-        # from the prices on /sponsor/ when a tier is repriced.
-        ctx["sponsorship_from_price"] = min(t["price"] for t in SPONSORSHIP_TIERS)
 
         # Membership band: "From $N a year" is the cheapest tier the public
         # membership page lists, so a retired (unlisted) cheaper tier cannot
@@ -172,58 +145,6 @@ class HomeView(TemplateView):
         )
 
         return ctx
-
-
-def sponsored_screening():
-    """The sponsored run currently on, or None.
-
-    Read from the catalog rather than restated. SPONSORED_SCREENING names the
-    film and the business that paid for it; everything else — title, dates,
-    showtimes, poster, trailer — comes from the Engagement and its Showtime
-    rows. That is what stops this banner and Now Showing from disagreeing, and
-    what lets the booking's own `end_date` retire the banner with no commit.
-
-    Every miss returns None rather than raising: the homepage must not 500
-    because a slug moved or a run was cancelled.
-    """
-    config = SPONSORED_SCREENING
-    if not config:
-        return None
-
-    film = Film.objects.filter(slug=config["film_slug"]).first()
-    if film is None:
-        return None
-
-    engagement = (
-        Engagement.objects.filter(
-            engagement_films__film=film,
-            status=EngagementStatus.CONFIRMED,
-            end_date__gte=timezone.localdate(),
-        )
-        .order_by("start_date")
-        .first()
-    )
-    if engagement is None:
-        return None
-
-    # Grouped in one pass; `showtimes` is ordered by starts_at, so a day is
-    # closed as soon as the next one begins.
-    days: list[dict] = []
-    for showtime in engagement.showtimes.filter(is_cancelled=False):
-        local_date = showtime.starts_at.astimezone(CINEMA_TZ).date()
-        if not days or days[-1]["date"] != local_date:
-            days.append({"date": local_date, "times": []})
-        days[-1]["times"].append(_format_showtime(showtime.starts_at))
-
-    return {
-        "film": film,
-        "engagement": engagement,
-        "sponsor": config["sponsor"],
-        "eyebrow": config.get("eyebrow", ""),
-        "admission": config.get("admission", ""),
-        "days": days,
-        "url": film.get_absolute_url(),
-    }
 
 
 def _initial_calendar_month(coming_soon):
@@ -359,7 +280,7 @@ class CalendarMonthView(TemplateView):
 
 class LlmsTxtView(TemplateView):
     """/llms.txt, a plain-text summary for AI assistants. Like robots.txt it
-    is served from the site root; unlike it, it needs the event and sponsor
+    is served from the site root; unlike it, it needs the event
     constants, which the context processors don't carry."""
 
     template_name = "llms.txt"
@@ -370,7 +291,6 @@ class LlmsTxtView(TemplateView):
         ctx["base"] = f"{self.request.scheme}://{self.request.get_host()}"
         ctx["open_mic"] = OPEN_MIC
         ctx["heckle_night"] = HECKLE_NIGHT
-        ctx["sponsor_from"] = min(t["price"] for t in SPONSORSHIP_TIERS)
         return ctx
 
 
@@ -392,7 +312,7 @@ class RentalsView(TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         # One list, two renderings: the visible FAQ and the FAQPage markup in
-        # the head. Same arrangement as /membership/ and /sponsor/.
+        # the head. Same arrangement as /membership/.
         ctx["faqs"] = RENTALS_FAQ
         # A bound form arrives via kwargs when RentalInquiryView re-renders
         # after a validation error; otherwise start empty.
@@ -404,9 +324,8 @@ class RentalsView(TemplateView):
 class RentalInquiryView(RentalsView):
     """POST /rentals/inquire.
 
-    The rentals twin of SponsorInquiryView, and for the same reasons: it
-    saves the lead and emails nobody (the dashboard list and the smart-alert
-    count are the delivery mechanism), it re-renders the whole page on a
+    Saves the lead and emails nobody (the dashboard list and the smart-alert
+    count are the delivery mechanism). It re-renders the whole page on a
     validation error because there is no htmx here, and it redirects on
     success so a refresh cannot resubmit.
     """
@@ -819,230 +738,6 @@ class VoteSubscribeView(View):
         if request.headers.get("HX-Request"):
             return render(request, "partials/vote_panel.html", ctx)
         return render(request, "web/vote.html", ctx)
-
-
-# Whitelist of sort keys. The querystring never reaches order_by directly.
-SPONSOR_SORTS = {
-    "title": "title",
-    "-title": "-title",
-    "year": "release_date",
-    "-year": "-release_date",
-    "runtime": "runtime_minutes",
-    "-runtime": "-runtime_minutes",
-}
-
-
-class SponsorCatalogMixin:
-    """The catalog query: filtering, sorting, pagination.
-
-    Shared by the full page and by the htmx fragment so the two cannot
-    drift. If they disagreed, the table you get while typing would differ
-    from the one you get on refresh — and the decade hardening below would
-    have to be right in two places instead of one.
-
-    Server-side rather than a client-side table: the 1,140 available rows
-    are ~266KB of HTML, and the catalog grows with every studio added. This
-    shape survives 5,000 titles without a rewrite.
-    """
-
-    context_object_name = "titles"
-    # 25 rows: a screenful you can scan without the table running past
-    # the filters you just used and off the bottom of the page.
-    paginate_by = 25
-
-    def get_queryset(self):
-        queryset = StudioTitle.objects.available().select_related("studio")
-
-        query = (self.request.GET.get("q") or "").strip()
-        if query:
-            queryset = queryset.filter(title__icontains=query)
-
-        rating = (self.request.GET.get("rating") or "").strip()
-        if rating:
-            queryset = queryset.filter(mpa_rating=rating)
-
-        decade = (self.request.GET.get("decade") or "").strip()
-        if decade.isascii() and decade.isdigit():
-            start = int(decade)
-            # isdigit() only rules out non-numeric junk; a huge or
-            # out-of-range value (e.g. "9999999999999", "99999", "12000",
-            # "0") still reaches Django's date machinery and raises
-            # OverflowError/ValueError. No StudioTitle predates film itself
-            # (1888) or lands past the next century, so 1800..2100 can't
-            # reject a real decade. 2100 + 10 = 2110 is nowhere near
-            # Python's date.MAXYEAR (9999), so the upper filter edge
-            # (start + 10) can't overflow either.
-            if 1800 <= start <= 2100:
-                queryset = queryset.filter(
-                    release_date__year__gte=start,
-                    release_date__year__lt=start + 10,
-                )
-
-        sort = self.request.GET.get("sort") or "title"
-        field = SPONSOR_SORTS.get(sort, "title")
-        # pk breaks ties so pagination stays stable across pages.
-        return queryset.order_by(field, "pk")
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        # The catalog partial renders the active sort into a hidden field the
-        # filter form picks up. Both renderings need it: the fragment because
-        # it is the only thing that refreshes that field, the full page
-        # because it is the first thing to set it.
-        ctx["sort"] = self.request.GET.get("sort", "title")
-        return ctx
-
-
-class SponsorView(SponsorCatalogMixin, ListView):
-    """/sponsor/ — the pitch, the tiers, and what a business can pick from."""
-
-    template_name = "web/sponsor.html"
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        available = StudioTitle.objects.available()
-
-        years = available.exclude(release_date__isnull=True).values_list(
-            "release_date__year", flat=True
-        )
-        ctx.update(
-            {
-                "tiers": SPONSORSHIP_TIERS,
-                "showcase": SPONSORSHIP_SHOWCASE,
-                "total_count": available.count(),
-                "ratings": sorted(
-                    r for r in set(available.values_list("mpa_rating", flat=True)) if r
-                ),
-                "decades": sorted({(year // 10) * 10 for year in years}, reverse=True),
-                "q": self.request.GET.get("q", ""),
-                "selected_rating": self.request.GET.get("rating", ""),
-                "selected_decade": self.request.GET.get("decade", ""),
-                "faqs": SPONSORSHIP_FAQ,
-                # A bound form arrives via kwargs when SponsorInquiryView
-                # re-renders after a validation error; otherwise start empty.
-                "form": kwargs.get("form") or self.blank_form(),
-                "sent": self.request.GET.get("sent") == "1",
-                # Drives the noindex on ?films=all — see the block in
-                # web/sponsor.html. One page, two renderings of the same
-                # select, and only the light one belongs in the index.
-                "films_all": self.wants_all_films,
-            }
-        )
-        return ctx
-
-    @property
-    def wants_all_films(self) -> bool:
-        """Whether to render all ~1,140 film options inline.
-
-        The no-JavaScript escape hatch. With scripting on, the options are
-        fetched from /sponsor/films on demand; with it off there is nothing to
-        fetch with, so a plain link in <noscript> reloads the page with the
-        full list in it.
-        """
-        return self.request.GET.get("films") == "all"
-
-    def blank_form(self) -> SponsorshipInquiryForm:
-        initial = {}
-        # Lets a link name a film without any JavaScript — the same thing the
-        # catalog's Sponsor links do through Alpine when it is available.
-        film = self.request.GET.get("film")
-        if film and film.isdigit():
-            initial["studio_title"] = film
-        return SponsorshipInquiryForm(
-            initial=initial, defer_film_choices=not self.wants_all_films
-        )
-
-
-class SponsorCatalogView(SponsorCatalogMixin, ListView):
-    """HTMX fragment: the sponsor catalog's rows, pagination, and empty state.
-
-    Swapped into #sponsor-results when you type in the filters, sort a
-    column, or page — so none of that reloads the page and throws you back
-    to the top of it.
-
-    Deliberately not a subclass of SponsorView: the tiers, the rating and
-    decade choices, the total count, and the inquiry form are all page
-    chrome this fragment never renders, and this endpoint runs on every
-    pause in typing. It shares only the queryset.
-
-    This is a bare fragment — no <html>, no <head> — so a <meta name="robots">
-    is impossible; the X-Robots-Tag header is the only way to keep it out of
-    the index. The full page at /sponsor/ is the indexable one, and it renders
-    the same rows inline, so nothing is hidden from a crawler by living here.
-    """
-
-    template_name = "partials/sponsor_catalog.html"
-
-    def render_to_response(self, context, **response_kwargs):
-        response = super().render_to_response(context, **response_kwargs)
-        response["X-Robots-Tag"] = "noindex, nofollow"
-        return response
-
-
-class SponsorFilmOptionsView(ListView):
-    """GET /sponsor/films — the inquiry form's film <option> list.
-
-    Exists so /sponsor/ can ship without it. The list is ~1,140 options and
-    was 56KB of every page load, for a control most visitors never open.
-
-    Unpaginated on purpose: this is one <select>, and a reader who opens it
-    expects the whole catalog. Same noindex treatment as the catalog
-    fragment — it is a bare fragment with no <head> to put a meta tag in, and
-    /sponsor/ is the page that should rank.
-    """
-
-    template_name = "partials/sponsor_film_options.html"
-    context_object_name = "titles"
-
-    def get_queryset(self):
-        return StudioTitle.objects.available().order_by("title", "pk")
-
-    def render_to_response(self, context, **response_kwargs):
-        response = super().render_to_response(context, **response_kwargs)
-        response["X-Robots-Tag"] = "noindex, nofollow"
-        return response
-
-
-class SponsorInquiryView(SponsorView):
-    """POST /sponsor/inquire.
-
-    Saves the lead and says thank you. It does not email anyone, because
-    nothing in this project can send mail — the dashboard list and the
-    smart-alert count are the delivery mechanism.
-
-    Subclasses SponsorView so a validation error can re-render the whole
-    page with the bound form. The vote page gets away with returning a bare
-    partial because it is driven by htmx; there is no htmx on this page, so
-    a fragment would arrive as an unstyled document with no navigation.
-
-    Success redirects rather than rendering, so a refresh cannot resubmit.
-    """
-
-    def get(self, request, *args, **kwargs):
-        return redirect("sponsor")
-
-    def post(self, request, *args, **kwargs):
-        # Deferred here too, so the error re-render is as light as the first
-        # paint. `defer_film_choices` only trims what gets rendered — the
-        # queryset validation below still sees every available title.
-        form = SponsorshipInquiryForm(
-            request.POST, defer_film_choices=not self.wants_all_films
-        )
-        sent_url = f"{reverse('sponsor')}?sent=1#inquire"
-
-        if form.is_bot:
-            # Indistinguishable from success, so a bot learns nothing.
-            return redirect(sent_url)
-
-        if form.is_valid():
-            inquiry = form.save(commit=False)
-            inquiry.ip = vote_engine.client_ip(request)
-            inquiry.save()
-            return redirect(sent_url)
-
-        # ListView needs object_list populated before get_context_data.
-        self.object_list = self.get_queryset()
-        return self.render_to_response(self.get_context_data(form=form))
 
 
 class HistoryView(TemplateView):

@@ -1,8 +1,7 @@
 """Repair placeholder Screen.capacity values.
 
 Both screens shipped with capacity=1, which is not a seat count — it makes
-any house-size reasoning nonsense, and the sponsorship program's Full House
-tier is priced against a 100-seat room.
+any house-size reasoning nonsense. Capacity is the screen's seat count.
 
 100 is the working figure until the seats are actually counted.
 

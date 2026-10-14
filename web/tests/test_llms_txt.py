@@ -14,7 +14,6 @@ from django.test import TestCase
 from web.constants import (
     OPEN_MIC,
     SITE_CONFIG,
-    SPONSORSHIP_TIERS,
     TICKET_PRICES,
 )
 
@@ -58,7 +57,6 @@ class LlmsTxtTests(TestCase):
         self.assertIn(cinema["phone"], text)
         self.assertIn(SITE_CONFIG["social"]["facebook"], text)
         self.assertIn(OPEN_MIC["start_label"], text)
-        self.assertIn(f"${min(t['price'] for t in SPONSORSHIP_TIERS)}", text)
 
     def test_gift_card_link_is_still_listed(self, *_):
         # The home page's gift-card card is gone (2026-10-13), so llms.txt is
@@ -69,7 +67,7 @@ class LlmsTxtTests(TestCase):
     def test_every_site_link_is_a_live_page(self, *_):
         text = self.get().content.decode()
         paths = set(re.findall(r"https?://testserver(/[^\s)#]*)", text))
-        self.assertGreater(len(paths), 8, "expected links to the site's pages")
+        self.assertGreater(len(paths), 7, "expected links to the site's pages")
         for path in sorted(paths):
             with self.subTest(path=path):
                 self.assertEqual(self.client.get(path).status_code, 200)

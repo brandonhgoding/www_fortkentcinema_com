@@ -28,20 +28,16 @@ from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
 
-from django.utils.html import escape
-
 from blog.models import BlogAuthor, BlogCategory, BlogPost
-from web.constants import DONATION, SITE_CONFIG, SPONSORSHIP_TIERS, TICKET_PRICES
+from web.constants import SITE_CONFIG, TICKET_PRICES
 
 SECTION_MARKERS = (
     "hero",
-    "sponsored-cta",
     "now-showing",
     "membership",
     "coming-soon",
     "get-involved",
     "from-the-booth",
-    "support",
 )
 
 
@@ -136,22 +132,6 @@ class SectionCompositionTests(TestCase):
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_now_showing", return_value=[])
-    def test_support_strip_is_off(self, _ns, _cs):
-        html = self.home()
-        self.assertNotIn('id="support"', html)
-        self.assertNotIn("Support the Cinema", html)
-        self.assertNotIn("sponsor-cta", html)
-        self.assertNotIn("donate-cta", html)
-
-    @mock.patch("web.views.SHOW_SUPPORT_STRIP", True)
-    @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing", return_value=[])
-    def test_support_strip_comes_back_last_when_switched_on(self, _ns, _cs):
-        seq = section_sequence(self.home())
-        self.assertEqual(seq[-2:], ["from-the-booth", "support"])
-
-    @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing", return_value=[])
     def test_every_section_has_one_flat_ground(self, _ns, _cs):
         """The class-marker inventory below the hero: each <section> opts into
         the shared .home-section vocabulary with exactly one ground modifier,
@@ -174,34 +154,12 @@ class SectionCompositionTests(TestCase):
             found = [
                 c[len("home-section--") :]
                 for c in classes
-                if c.startswith("home-section--") and c != "home-section--slim"
+                if c.startswith("home-section--")
             ]
             self.assertEqual(found, [ground], section_id)
             grounds.append(ground)
         for above, below in zip(grounds, grounds[1:]):
             self.assertNotEqual(above, below)
-
-    @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing", return_value=[])
-    def test_self_expiring_ctas_appear_only_when_live(self, _ns, _cs):
-        """cta_sponsored renders nothing between runs.
-        With no seams to place, that needs no coordination — but they still
-        have to actually disappear."""
-        self.assertNotIn("sponsored-cta", section_sequence(self.home()))
-
-        banner = {
-            "url": "/movies/dune/",
-            "eyebrow": "",
-            "sponsor": "A.H. Custom Carpentry",
-            "admission": "$4",
-            "film": {"title": "Dune"},
-            "days": [{"date": datetime.date(2999, 1, 15), "times": ["6:00 PM"]}],
-        }
-        with mock.patch("web.views.sponsored_screening", return_value=banner):
-            html = self.home()
-        seq = section_sequence(html)
-        self.assertIn("sponsored-cta", seq)
-        self.assertEqual(seq[0], "hero")
 
 
 class ShowtimeChipTests(TestCase):
@@ -391,62 +349,6 @@ class EmptyStateTests(TestCase):
         self.assertNotIn("coming-empty", html)
 
 
-@mock.patch("web.views.SHOW_SUPPORT_STRIP", True)
-class SponsorCtaCopyTests(TestCase):
-    """The homepage sponsor link has to stay true with nobody maintaining it."""
-
-    def home(self):
-        return self.client.get(reverse("home")).content.decode()
-
-    def body(self):
-        """The sponsor link inside Support, as rendered."""
-        html = self.home()
-        start = html.index('class="sponsor-cta"')
-        return html[start : html.index("</a>", start)]
-
-    def test_it_names_no_sponsor_and_no_film(self):
-        """It used to open with a worked example — "A.H. Custom Carpentry
-        covered the cost of bringing The Wild Robot to Fort Kent". That is a
-        real, approved sponsorship and it still leads /sponsor/, which is
-        where a case study belongs.
-
-        Here it was written in the past tense about one finished booking, so
-        it went stale the moment that run ended and only a human remembering
-        to edit the home page could fix it. The copy is now the presenting
-        tier itself, which is true of whoever signs next."""
-        body = self.body()
-        self.assertNotIn("A.H. Custom Carpentry", body)
-        self.assertNotIn("Wild Robot", body)
-
-    def test_the_sponsor_page_keeps_its_named_example(self):
-        """Generalising the teaser must not have touched the case study."""
-        html = self.client.get(reverse("sponsor")).content.decode()
-        self.assertIn("A.H. Custom Carpentry", html)
-        self.assertIn("The Wild Robot", html)
-
-    def test_the_price_is_the_cheapest_tier(self):
-        cheapest = min(t["price"] for t in SPONSORSHIP_TIERS)
-        self.assertEqual(cheapest, 299)  # guards the fixture, not the render
-        self.assertIn("Sponsor a screening, from $%d &rarr;" % cheapest, self.body())
-        self.assertNotIn("sponsor-cta__body", self.home())
-
-    def test_the_price_tracks_the_tiers_rather_than_being_typed(self):
-        """Repricing the cheapest tier has to move the home page with it."""
-        repriced = [dict(t) for t in SPONSORSHIP_TIERS]
-        repriced[0] = {**repriced[0], "price": 349}
-        with mock.patch("web.views.SPONSORSHIP_TIERS", repriced):
-            body = self.body()
-        self.assertIn("from $349 &rarr;", body)
-        self.assertNotIn("$299", body)
-
-    def test_it_is_a_tracked_text_link_to_the_sponsor_page(self):
-        body = self.body()
-        self.assertIn(f'href="{reverse("sponsor")}"', body)
-        self.assertIn('data-track="sponsor_click"', body)
-        self.assertIn('class="home-link"', body)
-        self.assertNotIn("btn-ticket", body)
-
-
 class FromTheBoothTests(TestCase):
     """Up to three image-led post cards and a way to the rest. The history
     card that used to lead this row is gone; History lives under More."""
@@ -547,48 +449,6 @@ class FromTheBoothTests(TestCase):
         self.assertIn("All posts", section)
         self.assertNotIn("home-cards", section)
         self.assertNotIn("blog-post-card", section)
-
-
-@mock.patch("web.views.SHOW_SUPPORT_STRIP", True)
-class SupportTests(TestCase):
-    def section(self, url=None):
-        with mock.patch.dict(
-            "web.views.DONATION", {"url": url} if url is not None else {}
-        ):
-            html = self.client.get(reverse("home")).content.decode()
-        self.assertEqual(html.count('id="support"'), 1)
-        start = html.index('id="support"')
-        return html[start : html.index("</section>", start)]
-
-    def test_label_and_ground(self):
-        html = self.client.get(reverse("home")).content.decode()
-        tag = html[html.rindex("<section", 0, html.index('id="support"')) :]
-        tag = tag[: tag.index(">")]
-        self.assertIn("home-section--sunken", tag)
-        self.assertIn("home-section--slim", tag)
-        self.assertIn("Support the Cinema", self.section())
-
-    def test_sponsor_link(self):
-        section = self.section()
-        self.assertIn("sponsor-cta", section)
-        self.assertIn("Sponsor a screening, from $299 &rarr;", section)
-
-    def test_no_donate_without_a_url(self):
-        section = self.section(url="")
-        self.assertNotIn("donate-cta", section)
-        self.assertNotIn(DONATION["disclaimer"][:20], section)
-
-    def test_donate_link_and_disclaimer_render_together(self):
-        section = self.section(url="https://square.link/u/example")
-        self.assertIn("donate-cta", section)
-        self.assertIn(f'{DONATION["button"]} &rarr;', section)
-        self.assertIn('data-track="donate_click"', section)
-        self.assertRegex(section, r'aria-label="[^"]*opens in new window')
-        self.assertIn(escape(DONATION["disclaimer"]), section)
-        self.assertGreater(
-            section.index(escape(DONATION["disclaimer"])),
-            section.index('data-track="donate_click"'),
-        )
 
 
 class GetInvolvedTests(TestCase):
@@ -694,7 +554,6 @@ class HomeTypeAndGroundTests(TestCase):
         "MovieCard.css": [".movie-title"],
         "MovieScheduleCard.css": [".schedule-card__title"],
         "ComingSoon.css": [".coming-movie-title"],
-        "SponsoredCTA.css": [".sponsored-cta__title"],
     }
 
     def font_sizes(self, sheet, selector):

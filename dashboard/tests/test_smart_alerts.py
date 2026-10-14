@@ -66,35 +66,22 @@ class BuildSmartAlertsTests(TestCase):
         self.assertEqual(alerts, [])
 
 
-class InquiryAlertTests(TestCase):
+class SponsorshipAlertRemovedTests(TestCase):
     def setUp(self) -> None:
         self.today = datetime.date(2026, 7, 10)
 
-    def test_no_alert_when_there_are_no_new_inquiries(self):
-        ids = [
-            a["id"]
-            for a in build_smart_alerts([], 1, self.today, new_inquiries=0)
-        ]
+    def test_rental_alert_alone(self):
+        alerts = build_smart_alerts(
+            [], 1, self.today, new_rental_inquiries=2, new_voicemails=1
+        )
+        ids = [a["id"] for a in alerts]
+        self.assertIn("new-rental-inquiries", ids)
+        self.assertIn("new-voicemails", ids)
         self.assertNotIn("new-sponsorship-inquiries", ids)
 
-    def test_alert_is_singular_for_one(self):
-        alerts = build_smart_alerts([], 1, self.today, new_inquiries=1)
-        message = next(
-            a["message"] for a in alerts if a["id"] == "new-sponsorship-inquiries"
-        )
-        self.assertEqual(message, "You have 1 new sponsorship inquiry")
-
-    def test_alert_is_plural_for_many(self):
-        alerts = build_smart_alerts([], 1, self.today, new_inquiries=3)
-        message = next(
-            a["message"] for a in alerts if a["id"] == "new-sponsorship-inquiries"
-        )
-        self.assertEqual(message, "You have 3 new sponsorship inquiries")
-
-    def test_existing_callers_without_the_argument_still_work(self):
-        # The new parameter has a default, so every existing call site and the
-        # pre-existing tests above keep working unchanged.
-        self.assertEqual(build_smart_alerts([], 1, self.today), [])
+    def test_new_inquiries_argument_is_gone(self):
+        with self.assertRaises(TypeError):
+            build_smart_alerts([], 1, self.today, new_inquiries=1)
 
 
 class RentalInquiryAlertTests(TestCase):
@@ -118,16 +105,6 @@ class RentalInquiryAlertTests(TestCase):
 
     def test_alert_is_plural_for_many(self):
         self.assertEqual(self._message(3), "You have 3 new rental inquiries")
-
-    def test_kept_apart_from_sponsorship_inquiries(self):
-        # Two different leads with two different follow-ups: one strip line
-        # each, not a single blended count.
-        alerts = build_smart_alerts(
-            [], 1, self.today, new_inquiries=2, new_rental_inquiries=1
-        )
-        ids = [a["id"] for a in alerts]
-        self.assertIn("new-sponsorship-inquiries", ids)
-        self.assertIn("new-rental-inquiries", ids)
 
 
 class VoicemailAlertTests(TestCase):

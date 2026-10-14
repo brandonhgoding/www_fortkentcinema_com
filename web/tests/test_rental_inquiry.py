@@ -90,7 +90,7 @@ class RentalInquiryTests(TestCase):
         self.assertContains(response, "Alex Harper")
 
     def test_overlength_message_is_rejected(self):
-        # Same cap as the sponsor form: an anonymous POST into a TextField.
+        # Cap the message: an anonymous POST lands in a TextField.
         response = self.client.post(
             reverse("rentals_inquire"), self.payload(message="x" * 2001)
         )
@@ -151,3 +151,8 @@ class RentalFormRenderTests(TestCase):
 
     def test_phone_stays_as_the_alternative(self):
         self.assertIn('href="tel:+12072315287"', self.html)
+
+    def test_form_uses_rental_classes(self):
+        # The form owns its styles; it must not lean on the sponsor page's.
+        self.assertIn("rental-inquire__form", self.html)
+        self.assertNotIn("sponsor-inquire", self.html)

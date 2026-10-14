@@ -7,10 +7,6 @@
       <p class="section-subtitle">Currently playing at Fort Kent Cinema</p>
     </div>
 
-    {% comment %}First card of the section, ahead of both branches below, so it
-    shows whether or not anything else is booked. Self-expiring; see the partial.{% endcomment %}
-    {% include "partials/cta_sponsored.html" %}
-
     {% if ns_dates %}
     {% include "partials/ticket_info.html" %}
 

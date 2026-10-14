@@ -2,7 +2,6 @@ from django.urls import path
 
 from . import (
     blog_views,
-    inquiry_views,
     member_views,
     membership_sale_views,
     poll_views,
@@ -283,12 +282,6 @@ urlpatterns = [
         "blog/categories/<uuid:pk>/delete",
         blog_views.CategoryDeleteView.as_view(),
         name="blog_category_delete",
-    ),
-    path("inquiries", inquiry_views.InquiryListView.as_view(), name="inquiries"),
-    path(
-        "inquiries/<int:pk>/status",
-        inquiry_views.InquiryStatusView.as_view(),
-        name="inquiry_status",
     ),
     path(
         "rental-inquiries",

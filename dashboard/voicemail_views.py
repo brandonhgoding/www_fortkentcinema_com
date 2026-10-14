@@ -1,6 +1,6 @@
 """Staff surface for phone-line voicemails.
 
-Nothing here sends mail either — see inquiry_views. This list plus the NEW
+Nothing here sends mail. This list plus the NEW
 count on the dashboard home and the sidebar badge is how a message reaches
 a human.
 """

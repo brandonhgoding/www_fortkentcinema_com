@@ -101,10 +101,9 @@
    * shared metal. The hero puts the real brass back. */
   --color-brass: #d2ccb4;       /* hairlines and panel borders */
   --color-brass-light: #6b6240; /* small caption text, 6.2:1 on surface */
-  --color-burgundy: #d9dac9;    /* one table rule on /sponsor/ */
 
   /* The neon stack is the marquee's alone. Every use outside .hero has been
-   * given a real colour (the membership title, the sponsor form errors), so
+   * given a real colour (the membership title, the form errors), so
    * all four can go transparent here and the glow simply does not render. */
   --neon-gold-inner: transparent;
   --neon-gold-mid: transparent;

@@ -25,7 +25,6 @@
 .home-section--raised { background: var(--color-surface-raised); }
 .home-section--alt { background: var(--color-surface-alt); }
 .home-section--surface { background: var(--color-surface); }
-.home-section--sunken { background: var(--color-surface-sunken); }
 .home-section--accent {
   background: var(--color-accent);
   color: var(--brand-warm-white);
@@ -362,66 +361,6 @@
 /* "All posts": the section's only button, 32px under the cards. */
 .home-story__all {
   margin: var(--spacing-lg) 0 0;
-}
-
-/* Slim variant: a one-line strip rather than a full 96px section. */
-.home-section--slim {
-  padding: var(--spacing-xl) 0;
-}
-
-@media (max-width: 600px) {
-  .home-section--slim {
-    padding: var(--spacing-lg) 0;
-  }
-}
-
-/* Support the Cinema: label on the left, the asks as text links beside it. */
-.home-support {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: var(--spacing-xs) var(--spacing-lg);
-}
-
-.home-support__label {
-  margin: 0;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  font-family: var(--font-condensed);
-  font-size: var(--type-label);
-  font-weight: 400;
-  text-transform: uppercase;
-  letter-spacing: var(--track-label);
-  color: var(--color-text-muted);
-}
-
-.home-support__links {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: var(--spacing-xs) var(--spacing-lg);
-}
-
-.home-support__links p {
-  margin: 0;
-}
-
-/* The donate disclaimer sits right under its link, quiet but readable. */
-.donate-cta__disclaimer {
-  margin: 0;
-  max-width: 28rem;
-  font-size: var(--type-label);
-  line-height: 1.4;
-  color: var(--color-text-muted);
-}
-
-@media (max-width: 600px) {
-  .home-support,
-  .home-support__links {
-    flex-direction: column;
-    gap: 0;
-  }
 }
 
 /* A film title link is one line of heading type, about 25px tall. An

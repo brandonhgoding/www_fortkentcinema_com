@@ -55,9 +55,9 @@
   left: calc(100% + 16px);
 }
 
-/* Boxes, not a rule-separated list — the same treatment /sponsor/ uses for
- * the same content, so the two FAQs read as one component across the site.
- * See .sponsor-faq__list in SponsorPage.css; keep the two in step.
+/* Boxes, not a rule-separated list. Same box treatment as the rentals FAQ
+ * (`.rentals-faq__list`), so the two FAQs read as one component across the site.
+ * See .rentals-faq__list in PrivateRentalsPage.css; keep the two in step.
  *
  * Grid items stretch by default, so every card in a row shares the tallest
  * one's height and the boxes line up whatever the answer lengths. */
@@ -75,7 +75,7 @@
   background: var(--color-bg-charcoal);
 }
 
-/* The diamond keeps its place here, unlike on /sponsor/: it is the marker
+/* The diamond keeps its place here, unlike on the rentals FAQ: it is the marker
    this page uses down the whole membership column, and inside a box it reads
    as the card's own bullet rather than as list furniture. */
 .membership-faq__question {

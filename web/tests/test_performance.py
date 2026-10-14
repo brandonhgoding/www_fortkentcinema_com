@@ -112,7 +112,6 @@ class BundleTests(TestCase):
             ".coming-",  # ComingSoon.css
             ".home-card",  # HomeSections.css
             ".tier-card",  # TierCard.css
-            ".sponsored-cta",  # SponsoredCTA.css
             ".movie-page",  # MoviePage.css
             ".blog-pagination",  # BlogListPage.css
             ".thanks-title",  # global.css (appended)

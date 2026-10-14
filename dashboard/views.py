@@ -15,7 +15,6 @@ from cinema.models import (
     RentalInquiry,
     Screen,
     Showtime,
-    SponsorshipInquiry,
 )
 from cinema.services import import_film_from_tmdb
 from cinema.showtimes_overlap import (
@@ -93,9 +92,6 @@ class HomeView(StaffRequiredMixin, TemplateView):
                 engagements,
                 tomorrow_count,
                 today,
-                new_inquiries=SponsorshipInquiry.objects.filter(
-                    status=InquiryStatus.NEW
-                ).count(),
                 new_rental_inquiries=RentalInquiry.objects.filter(
                     status=InquiryStatus.NEW
                 ).count(),
