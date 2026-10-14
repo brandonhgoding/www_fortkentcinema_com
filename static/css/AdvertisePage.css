@@ -1,0 +1,429 @@
+/* /advertise/ — web/templates/web/advertise.html and
+ * templates/partials/ad_inquiry_form.html.
+ *
+ * A sibling of /rentals/: this started as a copy of PrivateRentalsPage.css
+ * with the prefixes renamed (rentals- to advertise-, rental-card to ad-card,
+ * rental-inquire__ to ad-inquire__). Kept separate rather than shared so a
+ * change to one page cannot move the other. The additions are the numbered
+ * steps and the radio group in the form.
+ */
+
+.advertise-page {
+  min-height: 100vh;
+  padding: var(--spacing-lg);
+  padding-top: calc(80px + var(--spacing-xl));
+  background: linear-gradient(180deg, var(--color-bg-charcoal) 0%, var(--color-bg-dark) 100%);
+}
+
+.advertise-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.advertise-header {
+  text-align: center;
+  margin-bottom: var(--spacing-2xl);
+}
+
+.advertise-back {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  letter-spacing: 2px;
+  color: var(--color-gold);
+  text-decoration: none;
+  margin-bottom: var(--spacing-md);
+  transition: all var(--transition-base);
+}
+
+.advertise-back:hover {
+  color: var(--color-gold-warm);
+  text-shadow: 0 0 10px var(--color-gold-glow);
+}
+
+.advertise-title {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  letter-spacing: 6px;
+  color: var(--color-gold);
+  text-shadow: 0 0 30px var(--color-gold-glow);
+  margin-bottom: var(--spacing-sm);
+}
+
+.advertise-subtitle {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  color: var(--color-cream-muted);
+  font-style: italic;
+}
+
+/* Sections */
+.advertise-section {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.advertise-section-title {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  letter-spacing: 4px;
+  color: var(--color-gold);
+  text-shadow: 0 0 15px var(--color-gold-glow);
+  margin-bottom: var(--spacing-sm);
+  text-align: center;
+}
+
+.advertise-section-note {
+  text-align: center;
+  font-size: 0.95rem;
+  color: var(--color-cream-muted);
+  font-style: italic;
+  margin-bottom: var(--spacing-lg);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.advertise-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-lg);
+}
+
+/* Rate cards */
+.ad-card {
+  background: linear-gradient(135deg, var(--color-bg-card) 0%, var(--color-bg-charcoal) 100%);
+  border: 2px solid var(--color-gold-warm);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.ad-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(20, 22, 21, 0.12);
+}
+
+.ad-card--featured {
+  border-color: var(--color-gold);
+  box-shadow: 0 0 20px var(--color-gold-glow);
+}
+
+.ad-card-title {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  letter-spacing: 3px;
+  color: var(--color-gold);
+  margin-bottom: var(--spacing-xs);
+}
+
+.ad-card-price {
+  font-family: var(--font-heading);
+  font-size: 2.25rem;
+  font-weight: 900;
+  color: var(--color-cream);
+  margin-bottom: var(--spacing-xs);
+}
+
+.ad-card-price span {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-cream-muted);
+}
+
+.ad-card-features {
+  list-style: none;
+  flex-grow: 1;
+}
+
+.ad-card-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) 0;
+  color: var(--color-cream);
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.ad-card-features li::before {
+  content: '\2605';
+  color: var(--color-gold);
+  font-size: 0.8rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* "How it works": three short numbered steps. Same type sizes as the FAQ
+ * answers so the two sections read as one voice; the numbers are the list's
+ * own markers, coloured gold, so they stay real list semantics. */
+.advertise-steps {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding-left: 1.5rem;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--color-cream);
+}
+
+.advertise-steps li {
+  padding: var(--spacing-xs) 0;
+}
+
+.advertise-steps li::marker {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  color: var(--color-gold);
+}
+
+/* Advertising terms, as an FAQ.
+ *
+ * Same box treatment as .rentals-faq__list and .membership-faq__list; keep
+ * them in step. Grid items stretch, so every card in a row shares the
+ * tallest one's height.
+ */
+.advertise-faq__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--spacing-lg);
+  margin: 0;
+  padding: 0;
+}
+
+.advertise-faq__item {
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-accent-dim);
+  background: var(--color-bg-charcoal);
+}
+
+.advertise-faq__question {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  color: var(--color-gold);
+  margin-bottom: var(--spacing-sm);
+}
+
+/* <dd> carries a browser default indent that would knock every answer out of
+ * line with the question above it. */
+.advertise-faq__answer {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--color-cream);
+}
+
+/* CTA Footer */
+.advertise-cta {
+  text-align: center;
+  padding: var(--spacing-2xl) var(--spacing-lg);
+  background: linear-gradient(135deg, var(--color-bg-card) 0%, var(--color-bg-charcoal) 100%);
+  border: 2px solid var(--color-gold);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 0 30px var(--color-gold-glow);
+}
+
+.advertise-cta-title {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  letter-spacing: 4px;
+  color: var(--color-gold);
+  text-shadow: 0 0 15px var(--color-gold-glow);
+  margin-bottom: var(--spacing-md);
+}
+
+.advertise-cta-text {
+  font-size: 1.1rem;
+  color: var(--color-cream-muted);
+  margin-bottom: var(--spacing-lg);
+}
+
+/* The inquiry form's own fields and grid (.ad-inquire__*, below). This
+ * box only undoes the CTA's centring, which suits a heading but not a column
+ * of labels, and keeps the form to a readable width inside the full-width
+ * gold frame. */
+.advertise-inquire {
+  max-width: 44rem;
+  margin: 0 auto var(--spacing-lg);
+  text-align: left;
+}
+
+/* Inquiry form */
+.ad-inquire__form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: var(--spacing-md);
+  align-items: start;
+}
+
+.ad-inquire__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.ad-inquire__label {
+  font-family: var(--font-condensed);
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--color-cream-muted);
+}
+
+.ad-inquire__form input,
+.ad-inquire__form select,
+.ad-inquire__form textarea {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--color-bg-dark);
+  border: 1px solid var(--color-brass);
+  border-radius: 3px;
+  color: var(--color-cream);
+  width: 100%;
+}
+
+.ad-inquire__form input:focus,
+.ad-inquire__form select:focus,
+.ad-inquire__form textarea:focus {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 1px;
+}
+
+.ad-inquire__form textarea {
+  resize: vertical;
+}
+
+/* The message field and the submit button span the whole grid. */
+.ad-inquire__form label:has(textarea),
+.ad-inquire__form button {
+  grid-column: 1 / -1;
+}
+
+.ad-inquire__form button {
+  justify-self: start;
+}
+
+/* The ad_type radios. A <fieldset> rather than the <label> the other fields
+ * use, because Django's RadioSelect puts a <label> round each radio and
+ * labels cannot nest. Strip the fieldset's browser frame so it lines up with
+ * its neighbours, and give the radios their natural size — the rule above
+ * sets every input to width: 100%. It spans the grid so the three choices
+ * are not squeezed into one column. */
+.ad-inquire__choices {
+  grid-column: 1 / -1;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.ad-inquire__choices legend {
+  padding: 0;
+  margin-bottom: var(--spacing-xs);
+}
+
+.ad-inquire__choices label {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+  padding: var(--spacing-xs) 0;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--color-cream);
+  cursor: pointer;
+}
+
+.ad-inquire__choices input {
+  width: auto;
+  padding: 0;
+  accent-color: var(--color-gold);
+}
+
+.ad-inquire__error,
+.ad-inquire__field-error {
+  font-family: var(--font-body);
+  color: var(--color-danger);
+  font-size: 0.9rem;
+}
+
+.ad-inquire__error {
+  grid-column: 1 / -1;
+  padding: var(--spacing-sm);
+  border-left: 3px solid var(--color-gold);
+  background: var(--color-bg-dark);
+}
+
+.ad-inquire__sent h3 {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  color: var(--color-gold);
+  margin-bottom: var(--spacing-sm);
+}
+
+.ad-inquire__sent p {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  color: var(--color-cream);
+}
+
+.advertise-cta-contact {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  color: var(--color-cream-muted);
+}
+
+.advertise-cta-contact a {
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  letter-spacing: 2px;
+  color: var(--color-cream);
+  text-decoration: none;
+  transition: all var(--transition-base);
+}
+
+.advertise-cta-contact a:hover {
+  color: var(--color-gold);
+  text-shadow: 0 0 10px var(--color-gold-glow);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .advertise-page {
+    padding: var(--spacing-md);
+    padding-top: calc(70px + var(--spacing-lg));
+  }
+
+  .advertise-title {
+    font-size: 2rem;
+    letter-spacing: 4px;
+  }
+
+  .advertise-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .advertise-cta-title {
+    font-size: 1.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .advertise-title {
+    font-size: 1.75rem;
+    letter-spacing: 3px;
+  }
+
+  .advertise-subtitle {
+    font-size: 1rem;
+  }
+
+  .advertise-section-title {
+    font-size: 1.5rem;
+  }
+}

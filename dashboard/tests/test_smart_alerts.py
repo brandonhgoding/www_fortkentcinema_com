@@ -3,6 +3,7 @@ import datetime
 from cinema.models import Engagement, EngagementFilm, Film, Screen
 from dashboard.smart_alerts import build_smart_alerts
 from django.test import TestCase
+from django.urls import reverse
 
 
 def make_eng(screen, film, *, end, status="CONFIRMED", start=None, title=None):
@@ -152,3 +153,22 @@ class VoicemailAlertTests(TestCase):
         self.assertIn(
             "2 Square membership sales need attention", [a["message"] for a in two])
         self.assertNotIn("square-membership-failed", self._square_ids())
+
+
+class AdInquiryAlertTests(TestCase):
+    def setUp(self) -> None:
+        self.today = datetime.date(2026, 7, 10)
+
+    def _alert(self, count: int) -> dict | None:
+        alerts = build_smart_alerts([], 1, self.today, new_ad_inquiries=count)
+        return next((a for a in alerts if a["id"] == "new-ad-inquiries"), None)
+
+    def test_zero_is_silent(self):
+        self.assertIsNone(self._alert(0))
+
+    def test_singular_and_plural(self):
+        self.assertEqual(self._alert(1)["message"], "You have 1 new ad inquiry")
+        self.assertEqual(self._alert(2)["message"], "You have 2 new ad inquiries")
+
+    def test_links_to_the_list(self):
+        self.assertEqual(self._alert(1)["url"], reverse("dashboard:ad_inquiries"))

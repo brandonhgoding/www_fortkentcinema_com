@@ -1,0 +1,70 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% block title %}Ad Inquiries · LeprinceOS{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/polls.css' %}" />{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Ad Inquiries</h1>
+      <p class="page-subtitle">
+        {{ new_count }} new inquir{{ new_count|pluralize:"y,ies" }} waiting.
+      </p>
+    </div>
+  </div>
+
+  <form method="get" class="filterBar">
+    <select class="input" name="status" onchange="this.form.submit()">
+      <option value="">All statuses</option>
+      {% for value, label in statuses %}
+        <option value="{{ value }}" {% if value == selected_status %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </form>
+
+  {% if inquiries %}
+    <div class="tableWrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Business</th><th>Contact</th><th>Ad type</th>
+          <th>Received</th><th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inquiry in inquiries %}
+          <tr>
+            <td>{{ inquiry.business_name }}</td>
+            <td>
+              {{ inquiry.contact_name }}<br />
+              <a href="mailto:{{ inquiry.email }}">{{ inquiry.email }}</a>
+              {% if inquiry.phone %}<br />{{ inquiry.phone }}{% endif %}
+            </td>
+            <td>{{ inquiry.get_ad_type_display }}</td>
+            <td>{{ inquiry.created_at|date:"M j, Y" }}</td>
+            <td>
+              <form method="post" action="{% url 'dashboard:ad_inquiry_status' inquiry.pk %}">
+                {% csrf_token %}
+                <select class="input inputCompact" name="status" onchange="this.form.submit()">
+                  {% for value, label in statuses %}
+                    <option value="{{ value }}" {% if value == inquiry.status %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </form>
+            </td>
+          </tr>
+          {% if inquiry.message %}
+            <tr><td colspan="5" class="text-muted">{{ inquiry.message }}</td></tr>
+          {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <h3 class="empty-state-title">No Ad Inquiries Yet</h3>
+      <p class="empty-state-description">They'll show up here when someone fills in the form on /advertise/.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

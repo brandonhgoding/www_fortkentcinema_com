@@ -23,6 +23,11 @@ from cinema.models import (
     Vote,
 )
 from web.constants import (
+    AD_ARTWORK_DEADLINE_DAY,
+    AD_SLIDE_PRICE,
+    AD_VIDEO_MAX_SECONDS,
+    AD_VIDEO_PRICE,
+    ADVERTISING_FAQ,
     HECKLE_NIGHT,
     HECKLE_NIGHT_FAQ,
     OPEN_MIC,
@@ -32,7 +37,7 @@ from web.constants import (
     SAVOY_PLAYBILLS,
     RENTALS_FAQ,
 )
-from web.forms import RentalInquiryForm
+from web.forms import AdInquiryForm, RentalInquiryForm
 from web.list_signup import start_signup
 from web.services.cinema_data import (
     CINEMA_TZ,
@@ -333,6 +338,56 @@ class RentalInquiryView(RentalsView):
     def post(self, request, *args, **kwargs):
         form = RentalInquiryForm(request.POST)
         sent_url = f"{reverse('rentals')}?sent=1#inquire"
+
+        if form.is_bot:
+            # Indistinguishable from success, so a bot learns nothing.
+            return redirect(sent_url)
+
+        if form.is_valid():
+            inquiry = form.save(commit=False)
+            inquiry.ip = vote_engine.client_ip(request)
+            inquiry.save()
+            return redirect(sent_url)
+
+        return self.render_to_response(self.get_context_data(form=form))
+
+
+class AdvertiseView(TemplateView):
+    template_name = "web/advertise.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        # One list, two renderings: the visible FAQ and the FAQPage markup in
+        # the head. Same arrangement as /rentals/.
+        ctx["faqs"] = ADVERTISING_FAQ
+        # The rates and terms come from web/constants.py so the cards, the
+        # steps and the FAQ answers cannot disagree.
+        ctx["slide_price"] = AD_SLIDE_PRICE
+        ctx["video_price"] = AD_VIDEO_PRICE
+        ctx["video_max_seconds"] = AD_VIDEO_MAX_SECONDS
+        ctx["artwork_deadline_day"] = AD_ARTWORK_DEADLINE_DAY
+        # A bound form arrives via kwargs when AdInquiryView re-renders after
+        # a validation error; otherwise start empty.
+        ctx["form"] = kwargs.get("form") or AdInquiryForm()
+        ctx["sent"] = self.request.GET.get("sent") == "1"
+        return ctx
+
+
+class AdInquiryView(AdvertiseView):
+    """POST /advertise/inquire.
+
+    Saves the lead and emails nobody (the dashboard list is the delivery
+    mechanism). It re-renders the whole page on a validation error because
+    there is no htmx here, and it redirects on success so a refresh cannot
+    resubmit. Same shape as RentalInquiryView.
+    """
+
+    def get(self, request, *args, **kwargs):
+        return redirect("advertise")
+
+    def post(self, request, *args, **kwargs):
+        form = AdInquiryForm(request.POST)
+        sent_url = f"{reverse('advertise')}?sent=1#inquire"
 
         if form.is_bot:
             # Indistinguishable from success, so a bot learns nothing.

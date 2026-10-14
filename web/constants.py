@@ -55,6 +55,11 @@ SITE_CONFIG = {
         # second line inside the same link, saying what a name like "From
         # the Booth" or "You Choose" doesn't on its own.
         {
+            "label": "Advertise",
+            "note": "Your business on the big screen",
+            "href": "/advertise/",
+        },
+        {
             "label": "Century Theatre in Fort Kent",
             "note": "A brief, semi-accurate history",
             "href": "/history/",
@@ -182,6 +187,63 @@ RENTALS_FAQ = [
             "promoting it publicly makes it a licensed screening: we arrange "
             "the license through our partners and quote the film fee per "
             "film, on top of the base rate."
+        ),
+    },
+]
+
+# The /advertise/ page: pre-show slides and short video spots, sold by the
+# calendar month. Rates in dollars a month; artwork is due on the
+# AD_ARTWORK_DEADLINE_DAY of the month before it runs.
+AD_SLIDE_PRICE = 75
+AD_VIDEO_PRICE = 150
+AD_VIDEO_MAX_SECONDS = 30
+AD_ARTWORK_DEADLINE_DAY = 20
+
+# Rendered twice on /advertise/ — as the visible FAQ and as FAQPage
+# structured data in the head — from this one list, as with RENTALS_FAQ.
+# Billing is a monthly Square invoice, there is no contract, and we may
+# decline any ad (never political ones). If a term changes it changes here
+# and nowhere else.
+ADVERTISING_FAQ = [
+    {
+        "question": "When does my ad start?",
+        "answer": (
+            "Ads run by calendar month. Send us your artwork by the "
+            f"{AD_ARTWORK_DEADLINE_DAY}th and it plays from the 1st of the "
+            "next month."
+        ),
+    },
+    {
+        "question": "How do I pay?",
+        "answer": (
+            "We send a Square invoice each month. Pay online by card, or at "
+            "the box office."
+        ),
+    },
+    {
+        "question": "Can I change my ad?",
+        "answer": (
+            f"Yes. Send new artwork by the {AD_ARTWORK_DEADLINE_DAY}th and it "
+            "swaps in on the 1st."
+        ),
+    },
+    {
+        "question": "What are the specs?",
+        "answer": (
+            "Slides: 1920 × 1080 PNG or JPEG. Video: MP4, 1920 × 1080, up to "
+            f"{AD_VIDEO_MAX_SECONDS} seconds. We'll check it and send you a "
+            "proof."
+        ),
+    },
+    {
+        "question": "Is there a contract?",
+        "answer": "No. It's month to month — stop whenever you like.",
+    },
+    {
+        "question": "Do you run every ad?",
+        "answer": (
+            "We reserve the right to decline any ad, and we don't run "
+            "political ads."
         ),
     },
 ]

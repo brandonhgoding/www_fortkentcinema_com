@@ -34,6 +34,7 @@ class ChromeTests(TestCase):
             labels,
             [
                 "Home",
+                "Ad Inquiries",
                 "Blog",
                 "Engagements",
                 "Members",

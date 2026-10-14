@@ -79,6 +79,7 @@ class NavigationConfigTests(TestCase):
         self.assertEqual(
             labels,
             [
+                "Advertise",
                 "Century Theatre in Fort Kent",
                 "From the Booth",
                 "Private Rentals",
@@ -93,6 +94,13 @@ class NavigationConfigTests(TestCase):
         self.assertEqual(rentals["note"], "Rent the whole theater")
         html = footer_html(self.client.get("/").content.decode())
         self.assertIn('href="/rentals/"', html)
+
+    def test_advertise_link_lives_in_the_footer(self):
+        item = footer_item("/advertise/")
+        self.assertEqual(item["label"], "Advertise")
+        self.assertEqual(item["note"], "Your business on the big screen")
+        html = footer_html(self.client.get("/").content.decode())
+        self.assertIn('href="/advertise/"', html)
 
     def test_footer_no_longer_links_sponsor(self):
         # Removed 2026-10-13 with no new home decided.

@@ -3,6 +3,7 @@
 from django.contrib import admin
 
 from .models import (
+    AdInquiry,
     Engagement,
     EngagementFilm,
     Film,
@@ -84,4 +85,15 @@ class RentalInquiryAdmin(admin.ModelAdmin):
     )
     list_filter = ("status",)
     search_fields = ("contact_name", "email", "event_type")
+    readonly_fields = ("created_at", "ip")
+
+
+@admin.register(AdInquiry)
+class AdInquiryAdmin(admin.ModelAdmin):
+    list_display = (
+        "business_name", "contact_name", "email", "ad_type", "status",
+        "created_at",
+    )
+    list_filter = ("status", "ad_type")
+    search_fields = ("business_name", "contact_name", "email")
     readonly_fields = ("created_at", "ip")
