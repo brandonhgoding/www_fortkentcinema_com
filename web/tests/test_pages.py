@@ -39,16 +39,14 @@ class SiteConfigContextTests(TestCase):
         )
 
     def test_navigation_present(self):
-        # Blog moved under the "More" dropdown, so labels have to be walked
-        # one level deep. See test_nav.py for the structure's own tests.
+        # Blog lives in the footer links, not the nav. See test_nav.py for
+        # the structure's own tests.
         from web.constants import SITE_CONFIG
 
-        labels = []
-        for item in SITE_CONFIG["navigation"]:
-            labels.append(item["label"])
-            labels.extend(child["label"] for child in item.get("children", []))
+        labels = [item["label"] for item in SITE_CONFIG["navigation"]]
         self.assertIn("Now Showing", labels)
-        self.assertIn("Blog", labels)
+        footer = [item["label"] for item in SITE_CONFIG["footer_navigation"]]
+        self.assertIn("From the Booth", footer)
 
 
 class BaseChromeTests(TestCase):

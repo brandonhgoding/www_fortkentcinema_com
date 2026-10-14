@@ -21,21 +21,29 @@
             {{ site_config.cinema.phone }}
           </a>
         </address>
-        {% comment %}
-          /history/ was reachable from one place sitewide — the nav's "More"
-          dropdown — and a page nothing links to is a page Google will not
-          index, so it gets a footer link too.
-        {% endcomment %}
-        <a href="/history/" class="footer-about-link">Our History</a>
-        {% comment %}
-          The same reason as /history/ above, and the same fix: the
-          nav's "More" dropdown was /sponsor/'s only link sitewide, which is
-          one link from one template, all of it below a menu nobody opens.
-          This and the homepage CTA are the other two. Do not remove one
-          without adding another somewhere.
-        {% endcomment %}
-        <a href="{% url 'sponsor' %}" class="footer-about-link">Sponsor a Film</a>
       </div>
+
+      {% comment %}
+        What used to sit under the nav's "More" menu. Real <a href>s on every
+        page — for /history/ this is the only link sitewide.
+      {% endcomment %}
+      <nav class="footer-column footer-links" aria-labelledby="footer-links-heading">
+        <h2 class="footer-heading" id="footer-links-heading">Explore</h2>
+        <ul class="footer-links-list">
+          {% for item in site_config.footer_navigation %}
+            <li>
+              {% if item.note %}
+                <a href="{{ item.href }}" class="footer-about-link footer-about-link--noted">
+                  <span class="footer-link-label">{{ item.label }}</span>
+                  <span class="footer-link-note">{{ item.note }}</span>
+                </a>
+              {% else %}
+                <a href="{{ item.href }}" class="footer-about-link">{{ item.label }}</a>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </nav>
 
       {% comment %}
         Box Office Hours. The SPA commented this column out; then it listed

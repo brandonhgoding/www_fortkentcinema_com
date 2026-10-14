@@ -323,26 +323,26 @@ class HistoryStructuredDataTests(TestCase):
 
 
 class HistoryInternalLinkingTests(TestCase):
-    """Sitewide, exactly one link pointed here: the nav's "More" dropdown.
+    """Sitewide, exactly one link once pointed here: the nav's "More"
+    dropdown. Since 2026-10-13 the footer is its only link, on every page.
 
     That is the failure mode that kept 77 blog posts out of the index. A page
     nothing links to is a page Google will not index.
     """
 
     def test_footer_links_to_history_from_a_page_that_is_not_home(self):
-        # Scoped to the <footer> on purpose. The nav dropdown renders on every
-        # page too, so an unscoped "/history/ appears somewhere" assertion
-        # passes without the footer link existing at all.
+        # Scoped to the <footer> on purpose, so the test names the link it
+        # depends on.
         html = self.client.get("/rentals/").content.decode()
         footer = re.search(r"<footer\b.*?</footer>", html, re.S)
         self.assertIsNotNone(footer, "no footer on the page")
         self.assertIn("/history/", hrefs(footer.group(0)))
 
-    def test_homepage_links_to_history_from_more_than_just_the_nav(self):
-        # The home page's history card was dropped on 2026-10-12 (the owner's
-        # call: More and the footer are enough). Nav plus footer is the floor.
+    def test_homepage_links_to_history(self):
+        # The home page's history card was dropped on 2026-10-12 and the nav
+        # link on 2026-10-13 (both the owner's call). The footer is the floor.
         count = hrefs(self.client.get("/").content.decode()).count("/history/")
-        self.assertGreaterEqual(count, 2, "nav dropdown is still the only link")
+        self.assertGreaterEqual(count, 1, "no link to /history/ on the home page")
 
 
 class HistorySocialCardTests(TestCase):

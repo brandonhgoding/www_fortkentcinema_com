@@ -120,29 +120,16 @@ class SponsorStructuredDataTests(TestCase):
 
 
 class SponsorInternalLinkTests(TestCase):
-    """The nav's "More" dropdown was the only link to /sponsor/ sitewide —
-    the same one-link position /history/ was in before it got a footer link
-    and a homepage CTA. A page nothing links to is a page Google will not
-    rank."""
-
-    def test_footer_links_to_sponsor_from_a_page_that_is_not_home(self):
-        # Scoped to the <footer>. The nav dropdown renders on every page too,
-        # so an unscoped assertion passes without the footer link existing.
-        html = self.client.get(reverse("rentals")).content.decode()
-        footer = re.search(r"<footer\b.*?</footer>", html, re.S)
-        self.assertIsNotNone(footer, "no footer on the page")
-        self.assertIn("/sponsor/", hrefs(footer.group(0)))
+    """The nav's "More" dropdown was once the only link to /sponsor/
+    sitewide. On 2026-10-13 it left both the nav and the footer with no new
+    home decided, so the homepage CTA — shown only while the Support strip
+    is on — is the one link left. A page nothing links to is a page Google
+    will not rank."""
 
     @mock.patch("web.views.SHOW_SUPPORT_STRIP", True)
     def test_homepage_body_promotes_the_sponsor_page(self):
-        # Only while the Support strip is on; off, the nav and footer links
-        # below are what's left.
         response = self.client.get("/")
         self.assertTemplateUsed(response, "partials/cta_sponsor.html")
-
-    def test_homepage_links_to_sponsor_from_more_than_just_the_nav(self):
-        count = hrefs(self.client.get("/").content.decode()).count("/sponsor/")
-        self.assertGreaterEqual(count, 2, "nav dropdown is still the only link")
 
     def test_faq_links_out_to_private_rentals(self):
         """The one FAQ answer that points somewhere else. A reader who wants
