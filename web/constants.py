@@ -220,96 +220,15 @@ MEMBERSHIP_FAQ = [
     },
 ]
 
-# The current sponsored screening, or None between them.
-#
-# Everything a banner needs is already in the catalog — title, dates,
-# showtimes, poster, trailer — and web.views.sponsored_screening() reads it
-# from those rows so the homepage and Now Showing cannot disagree. What is
-# NOT in the catalog is who paid: cinema.Engagement has no sponsor field, and
-# SponsorshipInquiry records a business *asking*, not a booking it underwrote.
-# That gap is why this constant exists at all.
-#
-# `film_slug` is the join. It fails safe: no matching film, or a run that has
-# ended, and the banner simply does not render. Note that Film.generate_slug()
-# suffixes collisions, so booking a second copy of a title moves its slug and
-# quietly retires the banner — check here first if it stops appearing.
-#
-# None between runs. The banner already retires itself on the booking's
-# end_date, so clearing this is tidying rather than a deadline — but leaving a
-# finished run configured means the next slug collision or re-booking of the
-# same film can bring the banner back unannounced.
-#
-# The Land Before Time, sponsored by AParadis Photography over Labor Day
-# weekend 2026, was the first run. Its config is the shape to fill in:
-#
-#     SPONSORED_SCREENING = {
-#         "film_slug": "the-land-before-time",
-#         "sponsor": "AParadis Photography",
-#         # The occasion, when there is one. A holiday weekend sells a family
-#         # matinee better than the word "sponsored" does. Blank falls back to
-#         # "Sponsored screening" in the template.
-#         "eyebrow": "Labor Day Weekend",
-#         # A price on the homepage is a promise we have to honour at the
-#         # door — leave it out rather than guess.
-#         "admission": "$4",
-#     }
-SPONSORED_SCREENING = None
-
-# Sponsorship program. A local business underwrites a screening; the tiers
-# stack, each one adding to the one before it.
-#
-# Pricing is derived, not guessed: Universal charges a flat $200 to book a
-# library title, so tier 1 leaves $99 for staff, projection and the promotion
-# we do for the sponsor. Tier 2 adds free public admission — cheap for us,
-# because at ~6 admissions per showtime a free promoted screening fills a room
-# that would otherwise be near-empty rather than displacing ticket sales.
-# Tier 3 adds popcorn: 100 mediums retail at $625, but at a 30-50% concession
-# attach rate the real cost is ~$250 of forgone sales plus ~$60 of materials.
-# See docs/superpowers/specs/2026-08-23-film-sponsorships-design.md.
-SPONSORSHIP_TIERS = [
-    {
-        "key": "presenting",
-        "name": "Presenting Sponsor",
-        "eyebrow": "Cover the film",
-        "price": 299,
-        "includes": [
-            "We book the title you pick",
-            "Social media posts in the run-up to the show",
-            "Your name on the big screen before the film",
-        ],
-    },
-    {
-        "key": "community",
-        "name": "Community Screening",
-        "eyebrow": "Cover the film and admission",
-        "price": 499,
-        "includes": [
-            "We book the title you pick",
-            "Social media posts in the run-up to the show",
-            "Your name on the big screen before the film",
-            "Admission is free for everyone who comes",
-        ],
-    },
-    {
-        "key": "full_house",
-        "name": "Full House",
-        "eyebrow": "Cover the film, admission and popcorn",
-        "price": 799,
-        "includes": [
-            "We book the title you pick",
-            "Social media posts in the run-up to the show",
-            "Your name on the big screen before the film",
-            "Admission is free for everyone who comes",
-            "Medium buttered popcorn for the first 100 guests",
-        ],
-    },
-]
-
 # tier key -> display name, for surfaces that only have the key (e.g. a
 # SponsorshipInquiry.tier value on the dashboard). SponsorshipInquiry.tier
 # has no `choices` of its own — cinema doesn't import web — so this is the
 # one place the mapping lives.
-SPONSORSHIP_TIER_LABELS = {t["key"]: t["name"] for t in SPONSORSHIP_TIERS}
+SPONSORSHIP_TIER_LABELS = {
+    "presenting": "Presenting Sponsor",
+    "community": "Community Screening",
+    "full_house": "Full House",
+}
 
 
 # Recreated Savoy Theatre playbills, transcribed from the originals held by the
@@ -812,56 +731,3 @@ OPEN_MIC_FAQ = [
         ),
     },
 ]
-
-# The home page's "Support the Cinema" strip (sponsor and donate links,
-# partials/home_support.html). Off as of 2026-10-12, the owner's call; the
-# strip, its styles and its tests are kept so turning it back on is this one
-# line. The sponsor and donate pages themselves are unaffected.
-SHOW_SUPPORT_STRIP = False
-
-
-# The donation CTA on the home page.
-#
-# SELF-EXPIRING IN REVERSE: the partial renders nothing while `url` is
-# blank, so this shipped before the Square item existed and a Donate button
-# pointing nowhere was never live. Paste the link in and the section
-# appears; blank it and the section leaves without a follow-up commit.
-# Same shape as SPONSORED_SCREENING and the vote CTA, which hide when
-# there is nothing on.
-#
-# WHAT THIS COPY MAY NOT SAY, and why the disclaimer is not optional:
-# Fort Kent Cinema is a for-profit business. Money given here is NOT a
-# charitable contribution and is NOT tax-deductible, so nothing on the
-# page or in the Square item may imply otherwise — no "nonprofit", no
-# "tax-deductible", no "501(c)(3)", no receipt language that reads like an
-# acknowledgement letter. The page says so in as many words instead of
-# leaving "donate" to imply it. If the cinema ever does form a nonprofit
-# arm, that is a different entity and a different constant, not an edit to
-# this one.
-DONATION = {
-    # Square's hosted link for the donation item. Blanking this string is
-    # still the off switch — the partial renders nothing without it — so a
-    # paused or replaced Square item takes a one-line edit, not a revert.
-    #
-    # Same merchant as the gift-card link in partials/cta_giftcard.html
-    # (MLWDCWWHFATH1), which is the cheap check that this points at our
-    # own account and not a pasted stranger's.
-    "url": "https://square.link/u/exFzsnMs",
-    "title": "KEEP THE SCREEN LIT",
-    # The ask is general operating support — "keeping the doors open" —
-    # so the copy argues from how long the screen has been here rather
-    # than from a project with a number attached. A specific need would
-    # make a stronger ask, and when there is one it belongs here.
-    "body": (
-        "There has been a screen on this lot since 1917. Keeping one "
-        "running in a town this size takes more than a good week at the "
-        "box office — if this place matters to you, you can put "
-        "something in directly."
-    ),
-    # Load-bearing, not fine print. See the note above.
-    "disclaimer": (
-        "We're a business, not a charity, so this isn't tax-deductible. "
-        "It just helps."
-    ),
-    "button": "Donate",
-}

@@ -28,20 +28,16 @@ from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
 
-from django.utils.html import escape
-
 from blog.models import BlogAuthor, BlogCategory, BlogPost
-from web.constants import DONATION, SITE_CONFIG, TICKET_PRICES
+from web.constants import SITE_CONFIG, TICKET_PRICES
 
 SECTION_MARKERS = (
     "hero",
-    "sponsored-cta",
     "now-showing",
     "membership",
     "coming-soon",
     "get-involved",
     "from-the-booth",
-    "support",
 )
 
 
@@ -136,22 +132,6 @@ class SectionCompositionTests(TestCase):
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_now_showing", return_value=[])
-    def test_support_strip_is_off(self, _ns, _cs):
-        html = self.home()
-        self.assertNotIn('id="support"', html)
-        self.assertNotIn("Support the Cinema", html)
-        self.assertNotIn("sponsor-cta", html)
-        self.assertNotIn("donate-cta", html)
-
-    @mock.patch("web.views.SHOW_SUPPORT_STRIP", True)
-    @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing", return_value=[])
-    def test_support_strip_comes_back_last_when_switched_on(self, _ns, _cs):
-        seq = section_sequence(self.home())
-        self.assertEqual(seq[-2:], ["from-the-booth", "support"])
-
-    @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing", return_value=[])
     def test_every_section_has_one_flat_ground(self, _ns, _cs):
         """The class-marker inventory below the hero: each <section> opts into
         the shared .home-section vocabulary with exactly one ground modifier,
@@ -180,29 +160,6 @@ class SectionCompositionTests(TestCase):
             grounds.append(ground)
         for above, below in zip(grounds, grounds[1:]):
             self.assertNotEqual(above, below)
-
-    @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing", return_value=[])
-    def test_self_expiring_ctas_appear_only_when_live(self, _ns, _cs):
-        """cta_sponsored renders nothing between runs.
-        With no seams to place, that needs no coordination — but they still
-        have to actually disappear."""
-        self.assertNotIn("sponsored-cta", section_sequence(self.home()))
-
-        banner = {
-            "url": "/movies/dune/",
-            "eyebrow": "",
-            "sponsor": "A.H. Custom Carpentry",
-            "admission": "$4",
-            "film": {"title": "Dune"},
-            "days": [{"date": datetime.date(2999, 1, 15), "times": ["6:00 PM"]}],
-        }
-        with mock.patch("web.views.sponsored_screening", return_value=banner):
-            html = self.home()
-        seq = section_sequence(html)
-        self.assertIn("sponsored-cta", seq)
-        self.assertEqual(seq[0], "hero")
-
 
 class ShowtimeChipTests(TestCase):
     """There is no online ticket path in this project, so a <button> here
@@ -493,43 +450,6 @@ class FromTheBoothTests(TestCase):
         self.assertNotIn("blog-post-card", section)
 
 
-@mock.patch("web.views.SHOW_SUPPORT_STRIP", True)
-class SupportTests(TestCase):
-    def section(self, url=None):
-        with mock.patch.dict(
-            "web.views.DONATION", {"url": url} if url is not None else {}
-        ):
-            html = self.client.get(reverse("home")).content.decode()
-        self.assertEqual(html.count('id="support"'), 1)
-        start = html.index('id="support"')
-        return html[start : html.index("</section>", start)]
-
-    def test_label_and_ground(self):
-        html = self.client.get(reverse("home")).content.decode()
-        tag = html[html.rindex("<section", 0, html.index('id="support"')) :]
-        tag = tag[: tag.index(">")]
-        self.assertIn("home-section--sunken", tag)
-        self.assertIn("home-section--slim", tag)
-        self.assertIn("Support the Cinema", self.section())
-
-    def test_no_donate_without_a_url(self):
-        section = self.section(url="")
-        self.assertNotIn("donate-cta", section)
-        self.assertNotIn(DONATION["disclaimer"][:20], section)
-
-    def test_donate_link_and_disclaimer_render_together(self):
-        section = self.section(url="https://square.link/u/example")
-        self.assertIn("donate-cta", section)
-        self.assertIn(f'{DONATION["button"]} &rarr;', section)
-        self.assertIn('data-track="donate_click"', section)
-        self.assertRegex(section, r'aria-label="[^"]*opens in new window')
-        self.assertIn(escape(DONATION["disclaimer"]), section)
-        self.assertGreater(
-            section.index(escape(DONATION["disclaimer"])),
-            section.index('data-track="donate_click"'),
-        )
-
-
 class GetInvolvedTests(TestCase):
     """Open mic, Heckle Night and advertising share one section and one
     card shape.
@@ -633,7 +553,6 @@ class HomeTypeAndGroundTests(TestCase):
         "MovieCard.css": [".movie-title"],
         "MovieScheduleCard.css": [".schedule-card__title"],
         "ComingSoon.css": [".coming-movie-title"],
-        "SponsoredCTA.css": [".sponsored-cta__title"],
     }
 
     def font_sizes(self, sheet, selector):

@@ -18,33 +18,26 @@ from audience.models import Member, MembershipTier, Subscriber
 from blog.models import BlogPost
 from cinema import voting as vote_engine
 from cinema.models import (
-    Engagement,
-    EngagementStatus,
     Film,
     Poll,
     PollStatus,
     Vote,
 )
 from web.constants import (
-    DONATION,
     HECKLE_NIGHT,
     HECKLE_NIGHT_FAQ,
     OPEN_MIC,
     OPEN_MIC_FAQ,
     FILM_HISTORY_VIDEO,
-    SPONSORED_SCREENING,
     MEMBERSHIP_FAQ,
     SAVOY_PLAYBILLS,
     RENTALS_FAQ,
-    SPONSORSHIP_TIERS,
-    SHOW_SUPPORT_STRIP,
 )
 from web.forms import RentalInquiryForm
 from web.list_signup import start_signup
 from web.services.cinema_data import (
     CINEMA_TZ,
     _format_runtime,
-    _format_showtime,
     get_now_showing,
     get_coming_soon,
     get_calendar_month,
@@ -78,18 +71,6 @@ class HomeView(TemplateView):
         ctx["initial_year"] = initial_year
         ctx["initial_month"] = initial_month
 
-        # Sponsored-screening banner. None unless a sponsored run is on, so
-        # the banner retires itself on the booking's last day.
-        ctx["sponsored"] = sponsored_screening()
-
-        # Whether the Support strip renders at all (web/constants.py).
-        ctx["show_support"] = SHOW_SUPPORT_STRIP
-
-        # Donate link in the Support strip. The partial renders nothing while
-        # DONATION["url"] is blank, which is how it shipped ahead of the Square
-        # item — a Donate link pointing nowhere never went live.
-        ctx["donation"] = DONATION
-
         # From the booth: the latest 3 posts, deterministically ordered, one
         # row of three image cards.
         ctx["recent_posts"] = (
@@ -97,11 +78,6 @@ class HomeView(TemplateView):
             .select_related("author", "category")
             .order_by("-post_date", "-id")[:3]
         )
-
-        # The Support strip's sponsor link says "from $N". N is the cheapest
-        # tier rather than a typed number, so the home page cannot drift away
-        # from the prices on /sponsor/ when a tier is repriced.
-        ctx["sponsorship_from_price"] = min(t["price"] for t in SPONSORSHIP_TIERS)
 
         # Membership band: "From $N a year" is the cheapest tier the public
         # membership page lists, so a retired (unlisted) cheaper tier cannot
@@ -169,58 +145,6 @@ class HomeView(TemplateView):
         )
 
         return ctx
-
-
-def sponsored_screening():
-    """The sponsored run currently on, or None.
-
-    Read from the catalog rather than restated. SPONSORED_SCREENING names the
-    film and the business that paid for it; everything else — title, dates,
-    showtimes, poster, trailer — comes from the Engagement and its Showtime
-    rows. That is what stops this banner and Now Showing from disagreeing, and
-    what lets the booking's own `end_date` retire the banner with no commit.
-
-    Every miss returns None rather than raising: the homepage must not 500
-    because a slug moved or a run was cancelled.
-    """
-    config = SPONSORED_SCREENING
-    if not config:
-        return None
-
-    film = Film.objects.filter(slug=config["film_slug"]).first()
-    if film is None:
-        return None
-
-    engagement = (
-        Engagement.objects.filter(
-            engagement_films__film=film,
-            status=EngagementStatus.CONFIRMED,
-            end_date__gte=timezone.localdate(),
-        )
-        .order_by("start_date")
-        .first()
-    )
-    if engagement is None:
-        return None
-
-    # Grouped in one pass; `showtimes` is ordered by starts_at, so a day is
-    # closed as soon as the next one begins.
-    days: list[dict] = []
-    for showtime in engagement.showtimes.filter(is_cancelled=False):
-        local_date = showtime.starts_at.astimezone(CINEMA_TZ).date()
-        if not days or days[-1]["date"] != local_date:
-            days.append({"date": local_date, "times": []})
-        days[-1]["times"].append(_format_showtime(showtime.starts_at))
-
-    return {
-        "film": film,
-        "engagement": engagement,
-        "sponsor": config["sponsor"],
-        "eyebrow": config.get("eyebrow", ""),
-        "admission": config.get("admission", ""),
-        "days": days,
-        "url": film.get_absolute_url(),
-    }
 
 
 def _initial_calendar_month(coming_soon):

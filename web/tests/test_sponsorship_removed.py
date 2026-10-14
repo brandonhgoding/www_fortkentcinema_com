@@ -36,3 +36,27 @@ class SponsorPageRemovedTests(TestCase):
         html = self.client.get(reverse("home")).content.decode().lower()
         self.assertNotIn("sponsor it", html)
         self.assertNotIn("/sponsor/", html)
+
+
+class HomeSponsorshipRemovedTests(TestCase):
+    def test_home_has_no_banner_or_support_strip(self):
+        html = self.client.get(reverse("home")).content.decode()
+        for needle in (
+            "sponsored-cta",
+            'id="support"',
+            "sponsor_click",
+            "donate_click",
+            "sponsored_cta_click",
+        ):
+            self.assertNotIn(needle, html, needle)
+
+    def test_constants_gone(self):
+        from web import constants
+
+        for name in (
+            "SPONSORED_SCREENING",
+            "SHOW_SUPPORT_STRIP",
+            "DONATION",
+            "SPONSORSHIP_TIERS",
+        ):
+            self.assertFalse(hasattr(constants, name), name)
