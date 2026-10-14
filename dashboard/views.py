@@ -251,7 +251,7 @@ class FilmFromTMDBView(StaffRequiredMixin, View):
         return resp
 
 
-KIND_LABELS = {"REGULAR": "Regular", "SPECIAL_EVENT": "Event", "CLASSIC": "Classic",
+KIND_LABELS = {"REGULAR": "Regular", "CLASSIC": "Classic",
                "DOUBLE_FEATURE": "Double Feature"}
 ENGAGEMENT_TABS = ["CURRENT", "UPCOMING", "DRAFT", "ENDED", "CANCELLED"]
 
@@ -551,7 +551,7 @@ class ShowtimeCreateView(StaffRequiredMixin, View):
             Screen.objects.select_for_update().get(pk=engagement.screen_id)
             conflicts = check_overlap_against_existing(
                 engagement.screen, starts_at, engagement.total_runtime_minutes,
-                engagement.display_title)
+                engagement.title)
             if conflicts:
                 return again([format_overlap_error(c) for c in conflicts])
             Showtime.objects.create(engagement=engagement, starts_at=starts_at, captions=captions)
@@ -593,7 +593,7 @@ class ShowtimeEditView(StaffRequiredMixin, View):
             if not is_cancelled:  # cancelling skips the overlap check (matches source)
                 conflicts = check_overlap_against_existing(
                     st.screen, starts_at, engagement.total_runtime_minutes,
-                    engagement.display_title, exclude_showtime_id=st.pk)
+                    engagement.title, exclude_showtime_id=st.pk)
                 if conflicts:
                     return again([format_overlap_error(c) for c in conflicts])
             st.starts_at = starts_at
@@ -656,7 +656,7 @@ class ShowtimeBulkView(StaffRequiredMixin, View):
 
         screen = engagement.screen
         runtime = engagement.total_runtime_minutes
-        title = engagement.display_title
+        title = engagement.title
         proposed_showtimes = []
         current = start_date
         one_day = datetime.timedelta(days=1)

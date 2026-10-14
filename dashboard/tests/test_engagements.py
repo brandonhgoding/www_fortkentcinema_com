@@ -10,10 +10,10 @@ User = get_user_model()
 
 
 def make_engagement(screen, *, start, end, status="CONFIRMED", kind="REGULAR",
-                    films=(), show=True, event_title=""):
+                    films=(), show=True, display_title=""):
     eng = Engagement.objects.create(
         screen=screen, start_date=start, end_date=end, status=status, kind=kind,
-        show_in_main_listings=show, event_title=event_title,
+        show_in_main_listings=show, display_title=display_title,
     )
     for i, f in enumerate(films, start=1):
         EngagementFilm.objects.create(engagement=eng, film=f, position=i)
@@ -50,7 +50,7 @@ class EngagementListTests(TestCase):
 
     def test_kind_and_hidden_badges(self) -> None:
         make_engagement(self.screen, start=self.today, end=self.today, kind="CLASSIC",
-                        films=[self.film], show=False, event_title="Noir Night")
+                        films=[self.film], show=False, display_title="Noir Night")
         html = self.client.get(reverse("dashboard:engagements")).content.decode()
         self.assertIn("Classic", html)   # kind badge
         self.assertIn("Hidden", html)    # hidden badge
@@ -166,7 +166,7 @@ class EngagementCreateTests(TestCase):
 
     def _payload(self, **over):
         data = {
-            "kind": "REGULAR", "event_title": "", "screen": self.screen.pk,
+            "kind": "REGULAR", "display_title": "", "screen": self.screen.pk,
             "start_date": self.today.isoformat(), "end_date": self.today.isoformat(),
             "presentation_format": "2d", "language": "english", "translation": "none", "status": "DRAFT", "show_in_main_listings": "on",
             "notes": "", "films": [self.f1.pk],
@@ -178,6 +178,30 @@ class EngagementCreateTests(TestCase):
         html = self.client.get(reverse("dashboard:engagement_create")).content.decode()
         self.assertIn('id="engagement-form"', html)
         self.assertIn("Create Engagement", html)
+
+    def test_special_event_is_rejected(self) -> None:
+        resp = self.client.post(reverse("dashboard:engagement_create"),
+                                self._payload(kind="SPECIAL_EVENT"))
+        self.assertEqual(Engagement.objects.count(), 0)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("Select a valid choice",
+                      " ".join(resp.context["form"].errors["kind"]))
+
+    def test_display_title_is_offered_for_a_regular_run(self) -> None:
+        html = self.client.get(
+            reverse("dashboard:engagement_create")).content.decode()
+        self.assertNotIn("SPECIAL_EVENT", html)
+        self.assertIn("Display title", html)
+        self.assertNotIn('x-show="kind !== \'REGULAR\'"', html)
+
+    def test_display_title_shows_on_the_detail_page(self) -> None:
+        e = make_engagement(self.screen, start=self.today, end=self.today,
+                            films=[self.f1], display_title="Noir Night")
+        html = self.client.get(
+            reverse("dashboard:engagement_detail", args=[e.pk])
+        ).content.decode()
+        self.assertIn("Display title", html)
+        self.assertIn("Noir Night", html)
 
     def test_create_single_film(self) -> None:
         resp = self.client.post(reverse("dashboard:engagement_create") + "?tab=DRAFT", self._payload())
@@ -266,7 +290,7 @@ class EngagementEditTests(TestCase):
         e = make_engagement(self.screen, start=self.today, end=self.today,
                             kind="DOUBLE_FEATURE", films=[self.f1, self.f2])
         data = {
-            "kind": "DOUBLE_FEATURE", "event_title": "", "screen": self.screen.pk,
+            "kind": "DOUBLE_FEATURE", "display_title": "", "screen": self.screen.pk,
             "start_date": self.today.isoformat(), "end_date": self.today.isoformat(),
             "presentation_format": "2d", "language": "english", "translation": "none", "status": "DRAFT", "show_in_main_listings": "on",
             "notes": "", "films": [self.f2.pk, self.f1.pk],  # reversed order

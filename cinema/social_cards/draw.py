@@ -55,7 +55,7 @@ def fit_text(
 
     If it still does not fit at `min_size` we render at `min_size` anyway and
     allow the overflow — a title that long is a signal to set a shorter
-    event_title, not a reason to render something illegible.
+    display_title, not a reason to render something illegible.
     """
     size = max_size
     while size > min_size:

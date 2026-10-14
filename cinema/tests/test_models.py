@@ -59,11 +59,11 @@ class EngagementTestCase(TestCase):
         defaults.update(kwargs)
         return Engagement.objects.create(**defaults)
 
-    def test_display_title_from_films_in_position_order(self) -> None:
+    def test_title_from_films_in_position_order(self) -> None:
         eng = self._engagement()
         EngagementFilm.objects.create(engagement=eng, film=self.film_b, position=2)
         EngagementFilm.objects.create(engagement=eng, film=self.film_a, position=1)
-        self.assertEqual(eng.display_title, "Alpha + Beta")
+        self.assertEqual(eng.title, "Alpha + Beta")
         self.assertEqual([f.title for f in eng.ordered_films], ["Alpha", "Beta"])
         self.assertEqual(eng.primary_film, self.film_a)
         self.assertEqual(eng.total_runtime_minutes, 190)
@@ -89,9 +89,18 @@ class EngagementTestCase(TestCase):
         )
         eng.full_clean()
 
-    def test_event_title_overrides_display_title(self) -> None:
-        eng = self._engagement(event_title="Summer Double Feature")
-        self.assertEqual(eng.display_title, "Summer Double Feature")
+    def test_display_title_overrides_the_film_titles(self) -> None:
+        eng = self._engagement(display_title="Summer Double Feature")
+        self.assertEqual(eng.title, "Summer Double Feature")
+
+    def test_title_is_empty_with_no_films_and_no_override(self) -> None:
+        self.assertEqual(self._engagement().title, "")
+
+    def test_special_event_is_no_longer_a_kind(self) -> None:
+        self.assertEqual(
+            Engagement.Kind.values, ["REGULAR", "CLASSIC", "DOUBLE_FEATURE"]
+        )
+        self.assertFalse(hasattr(Engagement, "default_visibility_for"))
 
     def test_clean_rejects_end_before_start(self) -> None:
         eng = Engagement(

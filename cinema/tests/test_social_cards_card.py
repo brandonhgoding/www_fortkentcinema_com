@@ -197,10 +197,10 @@ class CardDataTests(TestCase):
         data = CardData.from_engagement(eng, FACEBOOK, today=JULY_1)
         self.assertEqual(data.headline, "ALIEN + ALIENS")
 
-    def test_event_title_overrides_the_film_names(self) -> None:
+    def test_display_title_overrides_the_film_names(self) -> None:
         eng = self._eng(
             [make_film("Alien"), make_film("Aliens")],
-            event_title="Xenomorph Double Feature",
+            display_title="Xenomorph Double Feature",
         )
         data = CardData.from_engagement(eng, FACEBOOK, today=JULY_1)
         self.assertEqual(data.headline, "XENOMORPH DOUBLE FEATURE")

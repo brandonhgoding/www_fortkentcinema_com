@@ -54,7 +54,7 @@ def _record_error(engagement: Engagement, message: str) -> SquareItem:
                    engagement.pk, message)
     item, _ = SquareItem.objects.get_or_create(
         engagement=engagement, deleted_at__isnull=True,
-        defaults={"name": engagement.display_title})
+        defaults={"name": engagement.title})
     item.last_error = message
     item.save(update_fields=["last_error"])
     return item
@@ -355,15 +355,15 @@ def _reconcile_images(gateway: SquareGateway, dry_run: bool,
             image = fetch_poster(url)
             if image is None:
                 report.image_skips.append(
-                    f"{engagement.display_title}: poster could not be fetched "
+                    f"{engagement.title}: poster could not be fetched "
                     f"from {url}")
                 continue
             row.image_id = gateway.upload_item_image(
-                row.square_id, image, engagement.display_title)
+                row.square_id, image, engagement.title)
             row.save(update_fields=["image_id"])
             report.images.append(engagement.pk)
         except Exception as exc:
-            report.image_skips.append(f"{engagement.display_title}: {exc!r}")
+            report.image_skips.append(f"{engagement.title}: {exc!r}")
 
 
 def reconcile(today: datetime.date, gateway: SquareGateway | None = None,

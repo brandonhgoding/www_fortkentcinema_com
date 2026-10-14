@@ -64,7 +64,7 @@ def check_overlap_against_existing(
             conflicts.append(
                 OverlapConflict(
                     existing_showtime_id=existing.pk,
-                    existing_film_title=existing.engagement.display_title,
+                    existing_film_title=existing.engagement.title,
                     existing_starts_at=existing.starts_at,
                     new_starts_at=starts_at,
                     new_film_title=film_title,

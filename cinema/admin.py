@@ -27,7 +27,7 @@ class ShowtimeInline(admin.TabularInline):
 class EngagementAdmin(admin.ModelAdmin):
     inlines = (EngagementFilmInline, ShowtimeInline)
     list_display = (
-        "display_title",
+        "title",
         "screen",
         "start_date",
         "end_date",

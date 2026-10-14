@@ -47,7 +47,7 @@ class ScreenForm(forms.ModelForm):
         }
 
 
-KIND_OPTIONS = [("REGULAR", "Regular"), ("SPECIAL_EVENT", "Special Event"),
+KIND_OPTIONS = [("REGULAR", "Regular"),
                 ("CLASSIC", "Classic"), ("DOUBLE_FEATURE", "Double Feature")]
 STATUS_OPTIONS = [("DRAFT", "Draft"), ("CONFIRMED", "Confirmed"), ("CANCELLED", "Cancelled")]
 
@@ -58,11 +58,12 @@ class EngagementForm(forms.ModelForm):
 
     class Meta:
         model = Engagement
-        fields = ["kind", "event_title", "screen", "start_date", "end_date",
+        fields = ["kind", "display_title", "screen", "start_date", "end_date",
                   "presentation_format", "language", "translation", "status", "show_in_main_listings",
                   "is_free_for_members", "in_ticket_report", "notes"]
         widgets = {
-            "event_title": forms.TextInput(attrs={"class": "input", "placeholder": "e.g. Creature Double Feature"}),
+            "display_title": forms.TextInput(attrs={
+                "class": "input", "placeholder": "e.g. Creature Double Feature"}),
             "screen": forms.Select(attrs={"class": "input"}),
             "start_date": forms.DateInput(attrs={"class": "input", "type": "date"}, format="%Y-%m-%d"),
             "end_date": forms.DateInput(attrs={"class": "input", "type": "date"}, format="%Y-%m-%d"),

@@ -66,7 +66,7 @@ class PushTests(TestCase):
 
     def test_rename_repushes_with_stored_version(self) -> None:
         item = push(self.eng, self.gw)
-        self.eng.event_title = "Dune: Part One"
+        self.eng.display_title = "Dune: Part One"
         self.eng.save()
         pushed = push(self.eng, self.gw)
         self.assertEqual(self.gw.items[item.square_id].name, "Dune: Part One")
@@ -89,9 +89,9 @@ class PushTests(TestCase):
         self.gw.items[item.square_id] = dataclasses.replace(
             self.gw.items[item.square_id], version=99, name="Varity",
             variation_ids_by_sku=remote_ids)
-        # The brief set event_title to "Dune", which equals the stored name and
+        # The brief set display_title to "Dune", which equals the stored name and
         # so would never reach Square; a real rename forces the push.
-        self.eng.event_title = "Dune: Part One"
+        self.eng.display_title = "Dune: Part One"
         self.eng.save()
         with self.assertLogs(LOGGER, "WARNING") as logs:
             push(self.eng, self.gw)
@@ -136,7 +136,7 @@ class PushTests(TestCase):
     def test_gateway_failure_records_error_and_keeps_engagement(self) -> None:
         item = push(self.eng, self.gw)
         self.gw.fail_with = GatewayError("boom")
-        self.eng.event_title = "X"
+        self.eng.display_title = "X"
         self.eng.save()
         with self.assertLogs(LOGGER, "WARNING"):
             push(self.eng, self.gw)
@@ -275,9 +275,9 @@ class SyncAndScheduleTests(TestCase):
             with self.captureOnCommitCallbacks(execute=True):
                 schedule(self.eng)
                 # A rename saved elsewhere before commit; the stale instance
-                # passed to schedule still holds the old (empty) event_title.
+                # passed to schedule still holds the old (empty) display_title.
                 Engagement.objects.filter(pk=self.eng.pk).update(
-                    event_title="Fresh Title")
+                    display_title="Fresh Title")
             self.assertEqual(self.gw.items["item-1"].name, "Fresh Title")
 
             gone = make_eng(end_date=datetime.date(2099, 1, 1))
@@ -310,7 +310,7 @@ class ReconcileTests(TestCase):
     def test_repushes_item_edited_in_admin(self) -> None:
         eng = make_eng()
         push(eng, self.gw)
-        Engagement.objects.filter(pk=eng.pk).update(event_title="Renamed")
+        Engagement.objects.filter(pk=eng.pk).update(display_title="Renamed")
         report = reconcile(self.today, self.gw)
         self.assertEqual(report.pushed, [eng.pk])
         self.assertEqual(self.gw.items[live_item(eng).square_id].name, "Renamed")

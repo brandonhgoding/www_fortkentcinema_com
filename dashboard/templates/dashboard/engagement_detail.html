@@ -1,13 +1,13 @@
 {% extends "dashboard/base_dashboard.html" %}
 {% load static dashboard_extras %}
-{% block title %}{{ engagement.display_title }} · LeprinceOS{% endblock %}
+{% block title %}{{ engagement.title }} · LeprinceOS{% endblock %}
 {% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/engagement_detail.css' %}" /><link rel="stylesheet" href="{% static 'dashboard/css/social_cards.css' %}" />{% endblock %}
 {% block content %}
 <div class="page">
   <div class="page-header">
     <div>
       <a href="{% url 'dashboard:engagements' %}" class="backLink">&larr; Back to Engagements</a>
-      <h1 class="page-title">{{ engagement.display_title }}</h1>
+      <h1 class="page-title">{{ engagement.title }}</h1>
       <p class="page-subtitle">Engagement Details &amp; Showtimes</p>
     </div>
   </div>
@@ -16,9 +16,9 @@
     <div class="card">
       <h2 class="cardTitle">Film Details</h2>
       <div class="cardContent">
-        {% if films.0.poster_url %}<img src="{{ films.0.poster_url }}" alt="{{ engagement.display_title }}" class="poster" />{% endif %}
+        {% if films.0.poster_url %}<img src="{{ films.0.poster_url }}" alt="{{ engagement.title }}" class="poster" />{% endif %}
         <div class="filmInfo">
-          <h3 class="filmTitle">{{ engagement.display_title }}</h3>
+          <h3 class="filmTitle">{{ engagement.title }}</h3>
           <div class="filmList">
             {% for film in films %}
             <div class="filmRow">
@@ -45,8 +45,8 @@
           {% include "dashboard/_square_pill.html" %}</div>
         {% endif %}
         <div class="infoRow"><span class="label">Kind:</span><span>{{ KIND_LABELS|get_item:engagement.kind }}</span></div>
-        {% if engagement.event_title and engagement.event_title != engagement.display_title %}
-        <div class="infoRow"><span class="label">Event:</span><span>{{ engagement.event_title }}</span></div>{% endif %}
+        {% if engagement.display_title %}
+        <div class="infoRow"><span class="label">Display title:</span><span>{{ engagement.display_title }}</span></div>{% endif %}
         {% if not engagement.show_in_main_listings %}
         <div class="infoRow"><span class="hiddenNote">Hidden from public listings</span></div>{% endif %}
         <div class="infoRow"><span class="label">Screen:</span><span>{{ engagement.screen.name }}</span></div>

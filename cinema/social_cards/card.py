@@ -136,7 +136,7 @@ class CardData:
         today: datetime.date | None = None,
     ) -> CardData:
         badge = badge or default_badge(engagement, today)
-        title = engagement.display_title.strip()
+        title = engagement.title.strip()
         return cls(
             badge=badge,
             headline=(title or FALLBACK_HEADLINE).upper(),

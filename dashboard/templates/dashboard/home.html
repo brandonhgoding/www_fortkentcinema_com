@@ -53,7 +53,7 @@
             {% for st in today_showtimes %}
             <tr>
               <td class="timeCell">{{ st.starts_at|date:"g:i A" }}</td>
-              <td class="filmCell">{{ st.engagement.display_title }}</td>
+              <td class="filmCell">{{ st.engagement.title }}</td>
               <td class="screenCell">{{ st.screen.name }}</td>
               <td class="formatCell">{{ st.engagement.presentation_format|upper }}</td>
               <td>{% if st.is_cancelled %}<span class="status-badge status-cancelled">Cancelled</span>{% else %}<span class="status-badge status-active">Active</span>{% endif %}</td>
@@ -70,7 +70,7 @@
           {% if st.is_cancelled %}<span class="status-badge status-cancelled">Cancelled</span>{% else %}<span class="status-badge status-active">Active</span>{% endif %}
         </div>
         <div class="showtimeCardBody">
-          <h3 class="showtimeFilm">{{ st.engagement.display_title }}</h3>
+          <h3 class="showtimeFilm">{{ st.engagement.title }}</h3>
           <div class="showtimeMeta"><span>{{ st.screen.name }}</span><span class="showtimeFormat">{{ st.engagement.presentation_format|upper }}</span></div>
         </div>
       </div>

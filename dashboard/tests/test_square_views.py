@@ -38,7 +38,7 @@ class StaffTestCase(TestCase):
 class EngagementSquareHookTests(StaffTestCase):
     def _payload(self, **over):
         data = {
-            "kind": "REGULAR", "event_title": "", "screen": self.screen.pk,
+            "kind": "REGULAR", "display_title": "", "screen": self.screen.pk,
             "start_date": self.today.isoformat(),
             "end_date": self.today.isoformat(),
             "presentation_format": "2d", "language": "english", "translation": "none", "status": "DRAFT",
@@ -236,7 +236,7 @@ class SaveToastTests(StaffTestCase):
 
     def _payload(self, **over):
         data = {
-            "kind": "REGULAR", "event_title": "", "screen": self.screen.pk,
+            "kind": "REGULAR", "display_title": "", "screen": self.screen.pk,
             "start_date": self.today.isoformat(),
             "end_date": self.today.isoformat(),
             "presentation_format": "2d", "language": "english", "translation": "none", "status": "CONFIRMED",

@@ -500,19 +500,16 @@ HECKLE_NIGHT = {
     "starts_on": datetime.date(2026, 10, 16),
     # The start time, and it is now EXACT rather than a floor.
     #
-    # A Heckle Night is the 7:00 PM special event on the third Friday. A
-    # special event at any other time that Friday is a different night and
-    # the page will not claim it. Craft night keeps its 17:00 floor,
-    # because craft night adopts a regular show and a regular show is
-    # allowed to move; this one does not adopt anything.
+    # The interim lineup lookup claims nothing (see heckle_showtimes). When
+    # the Event model lands, a Heckle Night is the 7:00 PM event on the
+    # third Friday; one at any other time that Friday is a different night
+    # and the page will not claim it.
     #
-    # Known and accepted cost: if a Heckle Night is ever booked for 7:30,
-    # this page goes blank for that date and says "Not booked yet" while
-    # the listings show the event. That is a crude rule and it is the rule
-    # we want for now — it fails visibly rather than silently, which is
-    # the same trade the SPECIAL_EVENT filter makes. The better version is
-    # a flag on the Engagement that says "this one is a Heckle Night", and
-    # that is a migration nobody needs yet.
+    # Known and accepted cost: if a Heckle Night is ever booked for 7:30
+    # once the lookup is live, this page goes blank for that date and says
+    # "Not booked yet" while the listings show the event. That is a crude
+    # rule and it is the rule we want for now — it fails visibly rather
+    # than silently.
     #
     # start_label is what the page PRINTS and start_time is what it
     # MATCHES, so the two are now load-bearing together — a booking made

@@ -59,5 +59,5 @@ class DesiredItemTests(TestCase):
             desired_item(self.eng)
 
     def test_title_of_exactly_200_characters_is_allowed(self) -> None:
-        self.eng.event_title = "Y" * 200
+        self.eng.display_title = "Y" * 200
         self.assertEqual(len(desired_item(self.eng).name), 200)

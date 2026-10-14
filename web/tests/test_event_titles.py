@@ -13,7 +13,6 @@ from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
 
 from web.services.cinema_data import get_coming_soon
-from web.services.heckle_night import get_heckle_nights
 from web.services.titles import listing_title, split_event_suffix
 
 
@@ -70,11 +69,11 @@ class EventTitleIntegrationTests(TestCase):
     def setUp(self):
         self.screen = Screen.objects.create(name="The Savoy", capacity=100)
 
-    def book(self, event_title, date, hour, kind=Engagement.Kind.SPECIAL_EVENT):
+    def book(self, display_title, date, hour, kind=Engagement.Kind.REGULAR):
         film = Film.objects.create(title="Attack of the Giant Leeches")
         engagement = Engagement.objects.create(
             screen=self.screen, start_date=date, end_date=date,
-            status="CONFIRMED", kind=kind, event_title=event_title,
+            status="CONFIRMED", kind=kind, display_title=display_title,
         )
         EngagementFilm.objects.create(engagement=engagement, film=film, position=1)
         Showtime.objects.create(
@@ -83,12 +82,6 @@ class EventTitleIntegrationTests(TestCase):
                 datetime.datetime.combine(date, datetime.time(hour))
             ),
         )
-
-    def test_heckle_page_drops_the_suffix(self):
-        night = datetime.date(2026, 10, 16)  # third Friday
-        self.book("Attack of the Giant Leeches (HECKLE NIGHT)", night, 19)
-        nights = get_heckle_nights(1, today=datetime.date(2026, 10, 1))
-        self.assertEqual(nights[0]["film"]["title"], "Attack of the Giant Leeches")
 
     def test_coming_soon_normalises_the_suffix(self):
         start = timezone.localdate() + datetime.timedelta(days=5)
@@ -101,6 +94,6 @@ class EventTitleIntegrationTests(TestCase):
         start = timezone.localdate() + datetime.timedelta(days=5)
         self.book("Attack of the Giant Leeches (HECKLE NIGHT)", start, 19)
         self.assertEqual(
-            Engagement.objects.get().display_title,
+            Engagement.objects.get().title,
             "Attack of the Giant Leeches (HECKLE NIGHT)",
         )
