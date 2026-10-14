@@ -106,6 +106,7 @@ class RentalInquiryAlertTests(TestCase):
     def test_alert_is_plural_for_many(self):
         self.assertEqual(self._message(3), "You have 3 new rental inquiries")
 
+
 class VoicemailAlertTests(TestCase):
     def setUp(self) -> None:
         self.today = datetime.date(2026, 7, 10)

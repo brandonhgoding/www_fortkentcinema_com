@@ -5,8 +5,8 @@ from django import forms
 class RentalInquiryForm(forms.ModelForm):
     """The /rentals/ "Ready to book?" form.
 
-    Only name and email are required: the rest is what the owner would ask on the phone anyway, and a lead with
-    blanks is still a lead.
+    Only name and email are required: the rest is what the owner would ask on the phone
+    anyway, and a lead with blanks is still a lead.
     """
 
     # Honeypot. A real person leaves this empty; bots fill every field.

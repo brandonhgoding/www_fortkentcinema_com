@@ -55,8 +55,8 @@
   left: calc(100% + 16px);
 }
 
-/* Boxes, not a rule-separated list — the same treatment the rentals FAQ uses
- * for the same content, so the two FAQs read as one component across the site.
+/* Boxes, not a rule-separated list. Same box treatment as the rentals FAQ
+ * (`.rentals-faq__list`), so the two FAQs read as one component across the site.
  * See .rentals-faq__list in PrivateRentalsPage.css; keep the two in step.
  *
  * Grid items stretch by default, so every card in a row shares the tallest
