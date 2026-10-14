@@ -58,11 +58,12 @@ class LlmsTxtTests(TestCase):
         self.assertIn(SITE_CONFIG["social"]["facebook"], text)
         self.assertIn(OPEN_MIC["start_label"], text)
 
-    def test_gift_card_link_is_still_listed(self, *_):
-        # The home page's gift-card card is gone (2026-10-13), so llms.txt is
-        # the one place left that names the Square gift-card page.
+    def test_gift_cards_are_not_listed(self, *_):
+        # The owner took gift cards off the site on 2026-10-14; llms.txt was
+        # the last place that named them.
         text = self.get().content.decode()
-        self.assertRegex(text, r"https://app\.squareup\.com/gift/\S+")
+        self.assertNotIn("squareup.com/gift", text)
+        self.assertNotIn("gift card", text.lower())
 
     def test_every_site_link_is_a_live_page(self, *_):
         text = self.get().content.decode()

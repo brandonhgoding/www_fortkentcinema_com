@@ -1,8 +1,7 @@
 {% autoescape off %}{% comment %}
 /llms.txt — a plain-language summary for AI assistants (llmstxt.org). Served
 like robots.txt. Every price, time and contact detail is rendered from the
-constants the pages read, so this can't quote a different number; the gift
-card link is the one exception, and a test holds it to the home page's.
+constants the pages read, so this can't quote a different number.
 Autoescape is off because this is plain text, not HTML.
 {% endcomment %}# {{ site_config.cinema.name }}
 
@@ -42,10 +41,9 @@ Tiers and prices: {{ base }}/membership/
   {{ base }}/heckle-night/
 - Film vote, where the public picks from a short list: {{ base }}/vote
 
-## Rentals, gift cards
+## Rentals
 
 - Private rentals of the theater: {{ base }}/rentals/
-- E-gift cards: https://app.squareup.com/gift/MLWDCWWHFATH1/order
 
 ## Contact
 

@@ -48,10 +48,8 @@ SITE_CONFIG = {
     # this has links again (same shape as footer_navigation).
     "footer_events": [],
     # The footer's link column, on every page. Blog, Film Vote and History
-    # moved here from the nav's "More" menu on 2026-10-13; Rentals
-    # came out of "More" the same day with no new home decided, so "More"
-    # went with it. /rentals/ is linked only from the sitemap and llms.txt
-    # until it gets a home.
+    # moved here from the nav's "More" menu on 2026-10-13, and "More" went
+    # with them. Rentals joined on 2026-10-14 (the owner's call).
     "footer_navigation": [
         # Alphabetical by label (the owner's call). "note" renders as a
         # second line inside the same link, saying what a name like "From
@@ -65,6 +63,11 @@ SITE_CONFIG = {
             "label": "From the Booth",
             "note": "The Fort Kent Cinema Blog",
             "href": "/blog/",
+        },
+        {
+            "label": "Private Rentals",
+            "note": "Rent the whole theater",
+            "href": "/rentals/",
         },
         # Bare, unlike the section pages around it — urls.py defines
         # path("vote", ...) without a slash. APPEND_SLASH only adds

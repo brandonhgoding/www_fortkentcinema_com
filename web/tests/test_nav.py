@@ -77,8 +77,22 @@ class NavigationConfigTests(TestCase):
         labels = [i["label"] for i in SITE_CONFIG["footer_navigation"]]
         # Alphabetical, the owner's call on 2026-10-13.
         self.assertEqual(
-            labels, ["Century Theatre in Fort Kent", "From the Booth", "You Choose"]
+            labels,
+            [
+                "Century Theatre in Fort Kent",
+                "From the Booth",
+                "Private Rentals",
+                "You Choose",
+            ],
         )
+
+    def test_rentals_link_lives_in_the_footer(self):
+        # The owner's call on 2026-10-14: /rentals/ had no internal link
+        # after /sponsor/ was removed, so it joins the Explore column.
+        rentals = footer_item("/rentals/")
+        self.assertEqual(rentals["note"], "Rent the whole theater")
+        html = footer_html(self.client.get("/").content.decode())
+        self.assertIn('href="/rentals/"', html)
 
     def test_footer_no_longer_links_sponsor(self):
         # Removed 2026-10-13 with no new home decided.
