@@ -1,11 +1,6 @@
 from django.db import models
 
-
-class InquiryStatus(models.TextChoices):
-    NEW = "NEW", "New"
-    CONTACTED = "CONTACTED", "Contacted"
-    WON = "WON", "Won"
-    LOST = "LOST", "Lost"
+from .rental_inquiry import InquiryStatus
 
 
 class SponsorshipInquiry(models.Model):
