@@ -7,6 +7,7 @@ from boxoffice.models import MembershipSale, SquareItem
 from boxoffice.reports import pull_status, sales_panel
 from boxoffice.sync import delete, live_item, schedule, sync
 from cinema.models import (
+    AdInquiry,
     Engagement,
     EngagementFilm,
     EngagementStatus,
@@ -93,6 +94,9 @@ class HomeView(StaffRequiredMixin, TemplateView):
                 tomorrow_count,
                 today,
                 new_rental_inquiries=RentalInquiry.objects.filter(
+                    status=InquiryStatus.NEW
+                ).count(),
+                new_ad_inquiries=AdInquiry.objects.filter(
                     status=InquiryStatus.NEW
                 ).count(),
                 new_voicemails=Voicemail.objects.filter(

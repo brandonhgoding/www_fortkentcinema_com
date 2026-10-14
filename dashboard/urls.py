@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import (
+    ad_inquiry_views,
     blog_views,
     member_views,
     membership_sale_views,
@@ -292,6 +293,16 @@ urlpatterns = [
         "rental-inquiries/<int:pk>/status",
         rental_inquiry_views.RentalInquiryStatusView.as_view(),
         name="rental_inquiry_status",
+    ),
+    path(
+        "ad-inquiries",
+        ad_inquiry_views.AdInquiryListView.as_view(),
+        name="ad_inquiries",
+    ),
+    path(
+        "ad-inquiries/<int:pk>/status",
+        ad_inquiry_views.AdInquiryStatusView.as_view(),
+        name="ad_inquiry_status",
     ),
     path("voicemails", voicemail_views.VoicemailListView.as_view(), name="voicemails"),
     path(

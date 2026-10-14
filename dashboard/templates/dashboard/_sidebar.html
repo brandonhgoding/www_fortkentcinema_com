@@ -7,6 +7,8 @@
   <nav class="sidebarNav" data-cy="sidebar-nav">
     <a href="{% url 'dashboard:home' %}" class="sidebarLink {% nav_active request 'dashboard:home' %}" @click="sidebarOpen = false">
       <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 10.5L10 4l7 6.5V17a1 1 0 01-1 1h-4v-5H8v5H4a1 1 0 01-1-1v-6.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Home</a>
+    <a href="{% url 'dashboard:ad_inquiries' %}" class="sidebarLink {% nav_active request 'dashboard:ad_inquiries' %}" @click="sidebarOpen = false">
+      <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 8v4h3l6 4V4L6 8H3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M14.5 7.5a3.5 3.5 0 010 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Ad Inquiries</a>
     <a href="{% url 'dashboard:blog' %}" class="sidebarLink {% nav_active request 'dashboard:blog' %}" @click="sidebarOpen = false">
       <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 16.5l.8-3.2L13.6 4.5a1.4 1.4 0 012 0l.4.4a1.4 1.4 0 010 2l-8.8 8.8-3.2.8z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M12.2 5.9l2.4 2.4" stroke="currentColor" stroke-width="1.5"/></svg>Blog</a>
     <a href="{% url 'dashboard:engagements' %}" class="sidebarLink {% nav_active request 'dashboard:engagements' %}" @click="sidebarOpen = false">
