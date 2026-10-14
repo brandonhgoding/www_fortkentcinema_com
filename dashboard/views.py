@@ -251,7 +251,7 @@ class FilmFromTMDBView(StaffRequiredMixin, View):
         return resp
 
 
-KIND_LABELS = {"REGULAR": "Regular", "SPECIAL_EVENT": "Event", "CLASSIC": "Classic",
+KIND_LABELS = {"REGULAR": "Regular", "CLASSIC": "Classic",
                "DOUBLE_FEATURE": "Double Feature"}
 ENGAGEMENT_TABS = ["CURRENT", "UPCOMING", "DRAFT", "ENDED", "CANCELLED"]
 

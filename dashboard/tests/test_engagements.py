@@ -179,6 +179,30 @@ class EngagementCreateTests(TestCase):
         self.assertIn('id="engagement-form"', html)
         self.assertIn("Create Engagement", html)
 
+    def test_special_event_is_rejected(self) -> None:
+        resp = self.client.post(reverse("dashboard:engagement_create"),
+                                self._payload(kind="SPECIAL_EVENT"))
+        self.assertEqual(Engagement.objects.count(), 0)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("Select a valid choice",
+                      " ".join(resp.context["form"].errors["kind"]))
+
+    def test_display_title_is_offered_for_a_regular_run(self) -> None:
+        html = self.client.get(
+            reverse("dashboard:engagement_create")).content.decode()
+        self.assertNotIn("SPECIAL_EVENT", html)
+        self.assertIn("Display title", html)
+        self.assertNotIn('x-show="kind !== \'REGULAR\'"', html)
+
+    def test_display_title_shows_on_the_detail_page(self) -> None:
+        e = make_engagement(self.screen, start=self.today, end=self.today,
+                            films=[self.f1], display_title="Noir Night")
+        html = self.client.get(
+            reverse("dashboard:engagement_detail", args=[e.pk])
+        ).content.decode()
+        self.assertIn("Display title", html)
+        self.assertIn("Noir Night", html)
+
     def test_create_single_film(self) -> None:
         resp = self.client.post(reverse("dashboard:engagement_create") + "?tab=DRAFT", self._payload())
         self.assertEqual(resp.status_code, 200)

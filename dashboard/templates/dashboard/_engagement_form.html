@@ -40,9 +40,7 @@
       <template x-for="f in films" :key="'in-' + f.id"><input type="hidden" name="films" :value="f.id" /></template>
     </div>
 
-    <div x-show="kind !== 'REGULAR'">
-      {% field form.display_title label="Event title" %}
-    </div>
+    {% field form.display_title label="Display title" %}
   </div>
 
   <div class="formSection">

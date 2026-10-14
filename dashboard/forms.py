@@ -47,7 +47,7 @@ class ScreenForm(forms.ModelForm):
         }
 
 
-KIND_OPTIONS = [("REGULAR", "Regular"), ("SPECIAL_EVENT", "Special Event"),
+KIND_OPTIONS = [("REGULAR", "Regular"),
                 ("CLASSIC", "Classic"), ("DOUBLE_FEATURE", "Double Feature")]
 STATUS_OPTIONS = [("DRAFT", "Draft"), ("CONFIRMED", "Confirmed"), ("CANCELLED", "Cancelled")]
 
