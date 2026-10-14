@@ -36,9 +36,7 @@
       {% endif %}
     </div>
     <div class="schedule-card__meta">
-      <h3 class="schedule-card__title">
-        {% if movie.slug %}<a href="{% url 'movie_detail' movie.slug %}" class="movie-title-link">{{ movie.title }}</a>{% else %}{{ movie.title }}{% endif %}
-      </h3>
+      <h3 class="schedule-card__title">{{ movie.title }}</h3>
       <div class="schedule-card__submeta">
         {% if movie.rating %}<span class="schedule-card__rating">{{ movie.rating }}</span>{% endif %}
         {% if movie.runtime %}<span class="schedule-card__runtime">{{ movie.runtime }}</span>{% endif %}

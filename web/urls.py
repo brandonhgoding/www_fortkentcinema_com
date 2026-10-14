@@ -8,7 +8,6 @@ from .views import (
     HistoryView,
     HomeView,
     MembershipView,
-    MovieDetailView,
     OpenMicView,
     RentalInquiryView,
     RentalsView,
@@ -55,13 +54,6 @@ urlpatterns = [
     path(
         "vote/<slug:slug>/",
         RedirectView.as_view(pattern_name="vote_archive", permanent=True),
-    ),
-    # No trailing slash, matching /blog/<slug>: detail pages are slugless-suffix,
-    # section pages (/membership/, /rentals/) keep theirs.
-    path("movies/<slug:slug>", MovieDetailView.as_view(), name="movie_detail"),
-    path(
-        "movies/<slug:slug>/",
-        RedirectView.as_view(pattern_name="movie_detail", permanent=True),
     ),
     path(
         "calendar/<int:year>/<int:month>/",

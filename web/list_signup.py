@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 # Where on the site the form was submitted from. Free text from the client,
 # so anything unlisted is stored as "site" rather than trusted.
-SOURCES = frozenset({"home_showtimes", "home_empty", "movie_page"})
+SOURCES = frozenset({"home_showtimes", "home_empty"})
 
 _CONFIRM_SALT = "list-confirm"
 _CONFIRM_MAX_AGE = 7 * 24 * 60 * 60

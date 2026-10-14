@@ -33,8 +33,7 @@ legacy_urlpatterns = [
         RedirectView.as_view(url="/#coming-soon", permanent=True),
         name="legacy_coming_soon",
     ),
-    # The old per-movie pages. Re-point these at /movies/<slug> once real
-    # per-movie pages exist — until then the homepage is the closest thing.
+    # The 2022-era per-movie pages.
     re_path(
         r"^archive/(?P<slug>[-\w]+)/?$",
         RedirectView.as_view(url="/", permanent=True),
@@ -44,6 +43,15 @@ legacy_urlpatterns = [
         r"^archive/?$",
         RedirectView.as_view(url="/", permanent=True),
         name="legacy_archive_index",
+    ),
+    # The Django-era per-movie pages, retired 2026-10-14. On-site they
+    # duplicated the home cards; off-site their archive state was thin
+    # content. The home page carries every showtime they did, and the slugs
+    # sat in the sitemap for months, so they redirect rather than 404.
+    re_path(
+        r"^movies/(?P<slug>[-\w]+)/?$",
+        RedirectView.as_view(url="/", permanent=True),
+        name="legacy_movie_detail",
     ),
     # Classic Movie Night was discontinued 2026-08-14 and /classics/ removed.
     # The page carried its own ranking history, so it redirects rather than 404s.

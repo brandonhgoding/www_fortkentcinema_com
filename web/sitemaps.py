@@ -2,7 +2,7 @@ import datetime
 
 from audience.models import MembershipBenefit, MembershipTier
 from blog.models import BlogPost
-from cinema.models import Engagement, Film, Poll, PollStatus
+from cinema.models import Engagement, Poll, PollStatus
 from django.contrib.sitemaps import Sitemap
 from django.db.models import Max
 from django.urls import reverse
@@ -106,16 +106,6 @@ class BlogPostSitemap(Sitemap):
 
     def lastmod(self, obj):
         return obj.post_date
-
-
-class FilmSitemap(Sitemap):
-    changefreq = "weekly"
-    priority = 0.8
-
-    def items(self):
-        # Only films we've actually booked. A never-booked film has no showtimes
-        # and no run history — nothing but the TMDB blurb — so it has no page.
-        return Film.objects.with_page().exclude(slug__isnull=True)
 
 
 class PollSitemap(Sitemap):

@@ -109,9 +109,6 @@ class PostDetailView(DetailView):
         ctx["related_all_same_category"] = all(
             p.category_id == post.category_id for p in related
         )
-        # Only films with a page to link to. A review can be linked to a film
-        # we never booked, and /movies/<slug> 404s for those.
-        ctx["reviewed_films"] = post.films.with_page()
         return ctx
 
     def _related_posts(self, post):

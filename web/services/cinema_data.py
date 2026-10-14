@@ -74,14 +74,12 @@ def get_now_showing():
             {
                 "id": str(engagement.id),
                 "title": pf.title if pf else "",
-                "slug": (pf.slug if pf else "") or "",
                 "rating": (pf.rating if pf else "") or "",
                 "runtime": _format_runtime(pf.runtime_minutes if pf else None),
                 "genre": "",
                 # Wide viewports show this on the card itself (see
                 # MovieCard.css). `description` is the film's own synopsis
-                # with the TMDB overview as fallback, the same text the
-                # /movies/<slug> page leads with.
+                # with the TMDB overview as fallback.
                 "synopsis": (pf.description if pf else "") or "",
                 "poster": (pf.poster_url if pf else "") or "",
                 "showtimes": showtimes_by_date,
@@ -125,7 +123,6 @@ def get_calendar_month(year, month):
             {
                 "id": str(st.id),
                 "title": title,
-                "slug": (pf.slug if pf else "") or "",
                 "poster": (pf.poster_url if pf else "") or "",
                 "youtube_id": (pf.youtube_id if pf else "") or "",
             }
@@ -162,13 +159,12 @@ def get_coming_soon():
                 "title": listing_title(
                     engagement.title or (pf.title if pf else "")
                 ),
-                "slug": (pf.slug if pf else "") or "",
                 "start_date": engagement.start_date.isoformat(),
                 "release_date": engagement.start_date.strftime("%B %-d"),
                 "genre": "",
                 "poster": (pf.poster_url if pf else "") or "",
                 "films": [
-                    {"id": f.id, "title": f.title, "slug": f.slug, "poster": f.poster_url}
+                    {"id": f.id, "title": f.title, "poster": f.poster_url}
                     for f in films
                 ],
                 "description": (pf.synopsis if pf else "") or "",
@@ -177,83 +173,3 @@ def get_coming_soon():
             }
         )
     return movies
-
-
-def get_film_page(film):
-    """Everything the /movies/<slug> page needs, from this cinema's own data.
-
-    The film's *local* engagement history is the point: the synopsis/overview is
-    the TMDB blurb that every other cinema site also publishes, so the showtimes
-    and run dates are the only content here that is genuinely ours.
-
-    Returns {"upcoming": [{date, display_date, showtimes: [...]}, ...],
-             "runs": [{start_date, end_date, display_range, is_current}, ...],
-             "language_labels": ["French · English subtitles", ...]}
-    `language_labels` covers only runs with showtimes still to come.
-    `upcoming` is empty for an archive film — the template must not fake it.
-    """
-    now = timezone.now()
-    today = timezone.localdate()
-
-    engagements = (
-        film.engagements.filter(status="CONFIRMED")
-        .prefetch_related("showtimes")
-        .order_by("-start_date")
-    )
-
-    by_date = {}
-    language_labels = []
-    for engagement in engagements:
-        upcoming_showtimes = engagement.showtimes.filter(
-            is_cancelled=False, starts_at__gte=now
-        )
-        label = engagement.language_label
-        if label and label not in language_labels and upcoming_showtimes:
-            language_labels.append(label)
-        for st in upcoming_showtimes:
-            local = st.starts_at.astimezone(CINEMA_TZ)
-            slot = by_date.setdefault(
-                local.date(),
-                {
-                    "date": local.date().isoformat(),
-                    "display_date": local.strftime("%A, %B %-d"),
-                    "showtimes": [],
-                },
-            )
-            slot["showtimes"].append(
-                {
-                    "time": _format_showtime(st.starts_at),
-                    # Offset-aware ISO-8601 for schema.org ScreeningEvent.startDate.
-                    "iso": local.isoformat(),
-                    "screen": st.screen.name,
-                    "captions": st.captions or "",
-                    "captions_label": st.get_captions_display() if st.captions else "",
-                    "format": engagement.get_presentation_format_display(),
-                    "is_free_for_members": bool(engagement.is_free_for_members),
-                }
-            )
-
-    upcoming = [by_date[d] for d in sorted(by_date)]
-
-    runs = [
-        {
-            "start_date": e.start_date.isoformat(),
-            "end_date": e.end_date.isoformat(),
-            "display_range": _format_date_range(e.start_date, e.end_date),
-            "is_current": e.start_date <= today <= e.end_date,
-        }
-        for e in engagements
-    ]
-
-    return {"upcoming": upcoming, "runs": runs, "language_labels": language_labels}
-
-
-def _format_date_range(start, end):
-    """'October 3–9, 2025', collapsing the month when it doesn't change."""
-    if start == end:
-        return start.strftime("%B %-d, %Y")
-    if start.year == end.year and start.month == end.month:
-        return f"{start.strftime('%B %-d')}–{end.strftime('%-d, %Y')}"
-    if start.year == end.year:
-        return f"{start.strftime('%B %-d')}–{end.strftime('%B %-d, %Y')}"
-    return f"{start.strftime('%B %-d, %Y')}–{end.strftime('%B %-d, %Y')}"

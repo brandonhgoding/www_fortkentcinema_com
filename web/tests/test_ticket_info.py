@@ -15,7 +15,6 @@ from django.urls import reverse
 from web.constants import SITE_CONFIG, TICKET_PRICES
 
 from .test_home_sections import movie
-from .test_movie_pages import MoviePageFixture
 
 
 def ticket_info(html):
@@ -64,19 +63,3 @@ class TicketInfoContentTests(TestCase):
         ns.return_value = [movie()]
         line = ticket_info(self.client.get(reverse("home")).content.decode())
         self.assertIn("$11", line)
-
-
-class MoviePageTicketInfoTests(MoviePageFixture):
-    def test_now_showing_film_page_carries_the_prices(self):
-        html = self.client.get(
-            reverse("movie_detail", args=[self.showing.slug])
-        ).content.decode()
-        line = ticket_info(html)
-        self.assertIsNotNone(line, "no ticket line on the movie page")
-        self.assertIn(f"${TICKET_PRICES['adult']}", line)
-
-    def test_archived_film_page_has_no_prices(self):
-        html = self.client.get(
-            reverse("movie_detail", args=[self.archived.slug])
-        ).content.decode()
-        self.assertIsNone(ticket_info(html))

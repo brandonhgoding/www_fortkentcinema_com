@@ -333,20 +333,3 @@
     grid-template-columns: 1fr;
   }
 }
-
-.blog-detail-film-link {
-  margin-top: var(--spacing-lg);
-  padding-top: var(--spacing-md);
-  border-top: 1px solid rgba(32, 57, 130, 0.2);
-}
-
-.blog-detail-film-link a {
-  color: var(--color-gold);
-  text-decoration: none;
-  font-family: var(--font-display);
-  letter-spacing: 1px;
-}
-
-.blog-detail-film-link a:hover {
-  text-decoration: underline;
-}

@@ -128,10 +128,6 @@
   margin-top: var(--spacing-sm);
 }
 
-.heckle-next__film a {
-  color: var(--color-accent);
-}
-
 .heckle-next__film--tba {
   color: var(--color-text-muted);
   font-style: italic;
@@ -354,10 +350,6 @@
   font-family: var(--font-body);
   font-size: 1rem;
   color: var(--color-text);
-}
-
-.heckle-date__what a {
-  color: var(--color-accent);
 }
 
 .heckle-date__tba {

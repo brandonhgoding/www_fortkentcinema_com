@@ -86,12 +86,6 @@ post was last modified the day it was published.
       <div class="blog-detail-body">
         {{ post|post_body }}
       </div>
-      {% comment %} Reverse of Film.review — links the review back to the film it's about. {% endcomment %}
-      {% for film in reviewed_films %}
-        <p class="blog-detail-film-link">
-          <a href="{% url 'movie_detail' film.slug %}">Showtimes &amp; details for {{ film.title }} &rarr;</a>
-        </p>
-      {% endfor %}
     </article>
     {% if related_posts %}
     <section class="blog-related" aria-labelledby="blog-related-title">

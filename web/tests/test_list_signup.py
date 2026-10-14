@@ -16,7 +16,9 @@ ERROR = "That doesn&#x27;t look like an email address."
 
 
 def post(client, htmx=True, **data):
-    data = {"email": "fan@example.com", "location": "movie_page", "website": "", **data}
+    data = {
+        "email": "fan@example.com", "location": "home_showtimes", "website": "", **data
+    }
     extra = {"HTTP_HX_REQUEST": "true"} if htmx else {}
     return client.post(reverse("list_signup"), data, **extra)
 
