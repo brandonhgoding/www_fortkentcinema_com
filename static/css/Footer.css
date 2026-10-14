@@ -92,25 +92,12 @@
   outline-offset: 2px;
 }
 
-/* Two links that rendered as one sentence.
+/* Footer links: the Explore column and "See showtimes".
 
-   These were inline-block, the same muted grey as the address directly above
-   them, with no underline, no separator and no margin between them, so
-   "Our History" and "Sponsor a Film" ran together as the single grey string
-   "Our History Sponsor a Film" — neither one reading as a link at all.
-
-   That matters more than it looks: footer.html records that both are
-   deliberate internal-linking fixes. /history/ and /sponsor/ were each
-   reachable from exactly one place sitewide (the nav's "More" dropdown), and
-   a page nothing links to is a page Google will not index. A link nobody can
-   see is worth about as much to a human.
-
-   The markup cannot change and no separator element can be added, so the
-   separation is done with the box: each link is its own flex line, sized to
-   its text (width:fit-content, so the hit area does not silently span the
-   whole column) and 44px tall, which both separates the two from each other
-   and gives the phone a real tap target. The accent colour and the underline
-   are what distinguish them from the address copy. */
+   Each is its own flex line sized to its text (width:fit-content, so the hit
+   area does not span the whole column) and 44px tall — a real tap target on
+   a phone. The accent colour and the underline set them apart from the
+   muted body copy around them, which they otherwise resemble. */
 .footer-about-link {
   display: flex;
   align-items: center;
@@ -125,12 +112,6 @@
   transition: color var(--transition-fast);
 }
 
-/* The first link needs to clear the address block; the second only needs to
-   clear the first, which its own 44px box already does. */
-.footer-address + .footer-about-link {
-  margin-top: var(--spacing-md);
-}
-
 .footer-about-link:hover {
   color: var(--color-gold-warm);
 }
@@ -139,6 +120,42 @@
 .footer-about-link:focus-visible {
   outline: 3px solid var(--color-gold);
   outline-offset: 2px;
+}
+
+/* The "Explore" column — Blog, Film Vote, History, which left the nav's
+   "More" menu. Each <a> is already its own 44px flex line (above), so the
+   list only needs its bullets and indent taken away. */
+.footer-links-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* A link with a subtitle under it ("From the Booth" / "The Fort Kent Cinema
+   Blog"). Stacked, and the underline moves from the <a> to the title alone:
+   an underline set on the <a> propagates to every line inside it, and a
+   muted subtitle with a gold rule under it reads as a second link. The
+   whole block stays one tap target. */
+.footer-about-link--noted {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  text-decoration: none;
+  padding: var(--spacing-xs) 0;
+  line-height: 1.3;
+}
+
+.footer-about-link--noted .footer-link-label {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.footer-link-note {
+  color: var(--color-cream-muted);
+  font-size: 0.85rem;
+  font-weight: 400;
+  font-style: italic;
 }
 
 .footer-heading {

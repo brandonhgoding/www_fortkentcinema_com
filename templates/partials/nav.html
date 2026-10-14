@@ -60,6 +60,13 @@
           </li>
         {% endif %}
       {% endfor %}
+      {% comment %}
+        Membership is the one destination styled as a button, and last so it
+        sits at the right end of the bar.
+      {% endcomment %}
+      <li class="nav-cta-item">
+        <a href="{{ site_config.nav_cta.href }}" class="btn btn-primary nav-cta" @click="open = false">{{ site_config.nav_cta.label }}</a>
+      </li>
     </ul>
   </div>
 </nav>

@@ -25,8 +25,8 @@ SITE_CONFIG = {
     # ahead of each show instead, which is always true.
     "box_office": {"opens_before_show_minutes": 30},
     "social": {"facebook": "https://facebook.com/fortkentcinema"},
-    # Items with "children" render as a dropdown; everything else is a plain
-    # link. FIVE TOP-LEVEL ITEMS IS THE CEILING, counting each dropdown as
+    # Items with "children" render as a dropdown (none at present);
+    # everything else is a plain link. FIVE TOP-LEVEL ITEMS IS THE CEILING, counting each dropdown as
     # one — the nav collapses to a hamburger at 768px, and a sixth is what
     # strained the 768-900px range. A dropdown costs the same width as a
     # link plus a caret, so trading a link for a menu is width-neutral;
@@ -34,39 +34,42 @@ SITE_CONFIG = {
     "navigation": [
         {"label": "Now Showing", "href": "#now-showing"},
         {"label": "Coming Soon", "href": "#coming-soon"},
-        # Trailing slashes are required — these routes are defined with them, and
-        # a bare /blog costs a 301 on every click and every crawl.
-        {"label": "Membership", "href": "/membership/"},
+    ],
+    # Membership, as a button at the right end of the nav rather than a link
+    # in the row (the owner's call, 2026-10-13). The Events menu came out the
+    # same day with no new home decided. Until it has one, /open-mic/ is
+    # linked only from the home page's Get Involved card, and /craft-night/
+    # and /heckle-night/ from nowhere but llms.txt.
+    # Trailing slash required — the route is defined with it, and a bare
+    # /membership costs a 301 on every click and every crawl.
+    "nav_cta": {"label": "Become a Member", "href": "/membership/"},
+    # The footer's link column, on every page. Blog, Film Vote and History
+    # moved here from the nav's "More" menu on 2026-10-13; Rentals and
+    # Sponsor came out of "More" the same day with no new home decided, so
+    # "More" went with them. Sponsor's footer link went too: /sponsor/ is
+    # linked only from the homepage CTA while SHOW_SUPPORT_STRIP is on, and
+    # /rentals/ only from /sponsor/'s FAQ (plus llms.txt for both).
+    "footer_navigation": [
+        # Alphabetical by label (the owner's call). "note" renders as a
+        # second line inside the same link, saying what a name like "From
+        # the Booth" or "You Choose" doesn't on its own.
         {
-            # Events took the slot Rentals held. A rental is something you
-            # buy from us; an event is something you turn up to, and the
-            # things people turn up to had no home in the nav at all —
-            # Craft Night was buried under "More" with the sponsor form and
-            # the blog. Rentals moved down rather than out.
-            "label": "Events",
-            # No "href": this opens a menu, it is not a destination.
-            "children": [
-                # Open Mic first: it is weekly, so it is the soonest
-                # thing on the menu on any given day. Then the monthly
-                # nights in the order the owner set on 2026-09-23.
-                {"label": "Open Mic", "href": "/open-mic/"},
-                {"label": "Craft Night", "href": "/craft-night/"},
-                {"label": "Heckle Night", "href": "/heckle-night/"},
-            ],
+            "label": "Century Theatre in Fort Kent",
+            "note": "A brief, semi-accurate history",
+            "href": "/history/",
         },
         {
-            "label": "More",
-            # No "href": this opens a menu, it is not a destination.
-            "children": [
-                {"label": "Blog", "href": "/blog/"},
-                # Bare, unlike the section pages around it — urls.py defines
-                # path("vote", ...) without a slash. APPEND_SLASH only adds
-                # slashes, so /vote/ is a hard 404, not a recoverable 301.
-                {"label": "Film Vote", "href": "/vote"},
-                {"label": "History", "href": "/history/"},
-                {"label": "Rentals", "href": "/rentals/"},
-                {"label": "Sponsor", "href": "/sponsor/"},
-            ],
+            "label": "From the Booth",
+            "note": "The Fort Kent Cinema Blog",
+            "href": "/blog/",
+        },
+        # Bare, unlike the section pages around it — urls.py defines
+        # path("vote", ...) without a slash. APPEND_SLASH only adds
+        # slashes, so /vote/ is a hard 404, not a recoverable 301.
+        {
+            "label": "You Choose",
+            "note": "Vote to help us pick the films",
+            "href": "/vote",
         },
     ],
 }

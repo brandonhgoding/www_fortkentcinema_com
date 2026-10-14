@@ -12,6 +12,20 @@ def nav_html(html):
     return html[start : html.index("</nav>", start)]
 
 
+def footer_html(html):
+    """Just the <footer> element."""
+    start = html.index("<footer")
+    return html[start : html.index("</footer>", start)]
+
+
+def footer_destinations():
+    return [item["href"] for item in SITE_CONFIG["footer_navigation"]]
+
+
+def footer_item(href):
+    return next(i for i in SITE_CONFIG["footer_navigation"] if i["href"] == href)
+
+
 def nav_destinations():
     """Every href in the nav, flattened across the dropdown."""
     hrefs = []
@@ -27,67 +41,74 @@ class NavigationConfigTests(TestCase):
     def test_five_top_level_items_is_the_ceiling(self):
         # The nav collapses to a hamburger at 768px, and a sixth top-level
         # item is what strained the 768-900px range. A dropdown occupies one
-        # slot, the same as a link, so this counts menus and links together
-        # — that is what makes trading Rentals for Events width-neutral.
-        self.assertEqual(len(SITE_CONFIG["navigation"]), 5)
+        # slot, the same as a link, so this counts menus and links together.
+        self.assertLessEqual(len(SITE_CONFIG["navigation"]), 5)
 
     def test_top_level_order(self):
         labels = [i["label"] for i in SITE_CONFIG["navigation"]]
+        self.assertEqual(labels, ["Now Showing", "Coming Soon"])
+
+    def test_membership_is_the_nav_button_not_a_link(self):
+        # The owner's call on 2026-10-13: Membership leaves the link row and
+        # becomes a "Become a Member" button on the right.
         self.assertEqual(
-            labels,
-            ["Now Showing", "Coming Soon", "Membership", "Events", "More"],
+            SITE_CONFIG["nav_cta"],
+            {"label": "Become a Member", "href": "/membership/"},
         )
+        self.assertNotIn("/membership/", nav_destinations())
 
-    def test_events_holds_the_things_you_turn_up_to(self):
-        events = next(
-            i for i in SITE_CONFIG["navigation"] if i["label"] == "Events"
-        )
-        labels = [c["label"] for c in events["children"]]
-        # Weekly Open Mic first, then the monthly nights in the order the
-        # owner set on 2026-09-23.
-        self.assertEqual(labels, ["Open Mic", "Craft Night", "Heckle Night"])
+    def test_events_menu_is_gone(self):
+        # Taken out of the nav on 2026-10-13 with no new home decided yet.
+        labels = [i["label"] for i in SITE_CONFIG["navigation"]]
+        self.assertNotIn("Events", labels)
+        for href in ("/open-mic/", "/craft-night/", "/heckle-night/"):
+            self.assertNotIn(href, nav_destinations())
 
-    def test_rentals_moved_under_more_rather_than_out(self):
-        # Rentals lost its primary slot to Events; it must still be reachable,
-        # because it is a page that sells something. The menu is
-        # alphabetical, the order the owner set on 2026-09-25.
-        more = next(i for i in SITE_CONFIG["navigation"] if i["label"] == "More")
-        labels = [c["label"] for c in more["children"]]
+    def test_more_menu_is_gone(self):
+        # The owner emptied "More" on 2026-10-13: Blog, Film Vote and
+        # History went to the footer, Rentals and Sponsor came out of the
+        # nav altogether.
+        labels = [i["label"] for i in SITE_CONFIG["navigation"]]
+        self.assertNotIn("More", labels)
+        for href in ("/blog/", "/vote", "/history/", "/rentals/", "/sponsor/"):
+            self.assertNotIn(href, nav_destinations())
+
+    def test_footer_holds_what_left_more(self):
+        labels = [i["label"] for i in SITE_CONFIG["footer_navigation"]]
+        # Alphabetical, the owner's call on 2026-10-13.
         self.assertEqual(
-            labels,
-            ["Blog", "Film Vote", "History", "Rentals", "Sponsor"],
+            labels, ["Century Theatre in Fort Kent", "From the Booth", "You Choose"]
         )
-        self.assertIn("/rentals/", nav_destinations())
 
-    def test_no_destination_was_lost_in_the_reshuffle(self):
-        # The reshuffle moves items between levels. Every page that was
-        # reachable from the nav must still be, whatever level it sits at.
-        for href in (
-            "/membership/",
-            "/rentals/",
-            "/craft-night/",
-            "/heckle-night/",
-            "/open-mic/",
-            "/sponsor/",
-            "/history/",
-            "/blog/",
-            "/vote",
-        ):
-            self.assertIn(href, nav_destinations())
+    def test_footer_no_longer_links_sponsor(self):
+        # Removed 2026-10-13 with no new home decided.
+        for path in ("/", "/rentals/"):
+            html = footer_html(self.client.get(path).content.decode())
+            self.assertNotIn('href="/sponsor/"', html, path)
 
-    def test_dropdown_parents_have_no_href_of_their_own(self):
-        # A menu opens; it must not also be a navigable destination. Both
-        # "Events" and "More" are menus.
-        parents = [i for i in SITE_CONFIG["navigation"] if i.get("children")]
-        self.assertEqual(len(parents), 2)
-        for parent in parents:
-            self.assertNotIn("href", parent, parent["label"])
+    def test_blog_link_names_the_blog_by_its_title(self):
+        # "From the Booth" alone doesn't say it's a blog, so the footer gives
+        # it a subtitle on its own line, inside the same link.
+        blog = footer_item("/blog/")
+        self.assertEqual(blog["href"], "/blog/")
+        self.assertEqual(blog["note"], "The Fort Kent Cinema Blog")
+
+    def test_history_link_is_titled_for_the_theatre(self):
+        history = footer_item("/history/")
+        self.assertEqual(history["href"], "/history/")
+        self.assertEqual(history["note"], "A brief, semi-accurate history")
+
+    def test_vote_link_says_what_the_vote_is_for(self):
+        vote = footer_item("/vote")
+        self.assertEqual(vote["href"], "/vote")
+        self.assertEqual(vote["label"], "You Choose")
+        self.assertEqual(vote["note"], "Vote to help us pick the films")
 
     def test_vote_href_omits_the_trailing_slash(self):
         # urls.py defines path("vote", ...) bare, unlike every other section
         # page. APPEND_SLASH cannot rescue this one: /vote/ 404s outright.
-        self.assertIn("/vote", nav_destinations())
-        self.assertNotIn("/vote/", nav_destinations())
+        self.assertIn("/vote", footer_destinations())
+        self.assertNotIn("/vote/", footer_destinations())
 
 
 class NavigationRenderTests(TestCase):
@@ -98,21 +119,26 @@ class NavigationRenderTests(TestCase):
         for href in nav_destinations():
             self.assertIn(f'href="{href}"', html)
 
-    def test_each_dropdown_toggle_is_a_button_carrying_its_aria_state(self):
-        html = nav_html(self.client.get(reverse("home")).content.decode())
-        self.assertEqual(html.count("nav-dropdown-toggle"), 2)
-        self.assertEqual(html.count('aria-haspopup="true"'), 2)
-        self.assertIn(":aria-expanded", html)
+    def test_footer_links_render_as_crawlable_anchors_on_every_page(self):
+        for path in ("/", "/rentals/"):
+            html = footer_html(self.client.get(path).content.decode())
+            for href in footer_destinations():
+                self.assertIn(f'href="{href}"', html, path)
+            link = html[html.index('href="/blog/"') :]
+            link = link[: link.index("</a>")]
+            self.assertIn("From the Booth", link, path)
+            self.assertIn('<span class="footer-link-note">The Fort Kent Cinema Blog</span>', link, path)
 
-    def test_each_dropdown_gets_its_own_alpine_scope(self):
-        """Two menus on one nav must not share `sub`, or opening either
-        opens both."""
-        html = nav_html(self.client.get(reverse("home")).content.decode())
-        self.assertEqual(html.count('x-data="{ sub: false }"'), 2)
+    def test_become_a_member_is_a_button_styled_link_last_in_the_row(self):
+        for path in ("/", "/rentals/"):
+            html = nav_html(self.client.get(path).content.decode())
+            self.assertIn('href="/membership/"', html, path)
+            self.assertIn("Become a Member", html, path)
+            self.assertIn("btn btn-primary nav-cta", html, path)
+            # Last in the row, so it sits at the right edge.
+            last_li = html.rindex("<li")
+            self.assertIn('href="/membership/"', html[last_li:], path)
 
-    def test_dropdown_menu_opens_by_class_not_inline_display(self):
-        # Alpine's x-show writes inline display:none, which the <=768px
-        # media query cannot override to flatten the menu on mobile.
+    def test_no_dropdowns_left(self):
         html = nav_html(self.client.get(reverse("home")).content.decode())
-        self.assertIn("nav-dropdown-menu--open", html)
-        self.assertNotIn("x-show", html)
+        self.assertNotIn("nav-dropdown-toggle", html)
