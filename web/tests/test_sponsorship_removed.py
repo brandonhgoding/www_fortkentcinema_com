@@ -66,9 +66,10 @@ class DashboardSponsorshipRemovedTests(TestCase):
     def test_dashboard_inquiries_gone(self):
         from django.contrib.auth import get_user_model
 
-        for name in ("dashboard:inquiries", "dashboard:inquiry_status"):
-            with self.assertRaises(NoReverseMatch):
-                reverse(name, args=[1]) if "status" in name else reverse(name)
+        with self.assertRaises(NoReverseMatch):
+            reverse("dashboard:inquiries")
+        with self.assertRaises(NoReverseMatch):
+            reverse("dashboard:inquiry_status", args=[1])
         staff = get_user_model().objects.create_user(
             username="staff", password="pw", is_staff=True
         )

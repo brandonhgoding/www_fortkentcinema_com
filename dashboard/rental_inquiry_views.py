@@ -1,9 +1,6 @@
 """Staff surface for rental inquiries.
 
-The rentals twin of inquiry_views, kept as its own page rather than a second
-table on that one: the two leads have different columns and different
-follow-ups, and one status filter driving two tables would be a filter on
-neither. Nothing here sends mail — this list plus the NEW count on the
+Nothing here sends mail — this list plus the NEW count on the
 dashboard home is how a booking request reaches a human.
 """
 

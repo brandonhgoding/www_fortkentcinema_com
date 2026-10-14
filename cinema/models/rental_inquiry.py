@@ -11,8 +11,8 @@ class InquiryStatus(models.TextChoices):
 class RentalInquiry(models.Model):
     """Someone asking to book the theater for a private event.
 
-    Same arrangement as SponsorshipInquiry: nothing in this project sends
-    mail, so this row IS the notification. The dashboard lists it and the
+    Nothing in this project sends mail, so this row IS the
+    notification. The dashboard lists it and the
     smart-alert strip counts the NEW ones. It replaced the owner's personal
     email address on /rentals/, which was the only written way to ask.
     """
