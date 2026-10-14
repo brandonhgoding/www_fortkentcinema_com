@@ -66,7 +66,7 @@ class NavigationConfigTests(TestCase):
 
     def test_more_menu_is_gone(self):
         # The owner emptied "More" on 2026-10-13: Blog, Film Vote and
-        # History went to the footer, Rentals and Sponsor came out of the
+        # History went to the footer, Rentals came out of the
         # nav altogether.
         labels = [i["label"] for i in SITE_CONFIG["navigation"]]
         self.assertNotIn("More", labels)

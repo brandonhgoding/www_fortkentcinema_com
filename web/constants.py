@@ -48,11 +48,9 @@ SITE_CONFIG = {
     # this has links again (same shape as footer_navigation).
     "footer_events": [],
     # The footer's link column, on every page. Blog, Film Vote and History
-    # moved here from the nav's "More" menu on 2026-10-13; Rentals and
-    # Sponsor came out of "More" the same day with no new home decided, so
-    # "More" went with them. Sponsor's footer link went too: /sponsor/ is
-    # linked only from the homepage CTA while SHOW_SUPPORT_STRIP is on, and
-    # /rentals/ only from /sponsor/'s FAQ (plus llms.txt for both).
+    # moved here from the nav's "More" menu on 2026-10-13; Rentals
+    # came out of "More" the same day with no new home decided, so "More"
+    # went with it.
     "footer_navigation": [
         # Alphabetical by label (the owner's call). "note" renders as a
         # second line inside the same link, saying what a name like "From
@@ -129,7 +127,7 @@ SITE_CONFIG["seo"] = {
 # are both "how do I hold a date", and damages and decorations are both "what
 # can we do to the room".
 #
-# Same contract as SPONSORSHIP_FAQ: nothing here is a new policy. If a term
+# Nothing here is a new policy. If a term
 # changes it changes here, and the page and its FAQPage markup follow, because
 # both render this list.
 RENTALS_FAQ = [
@@ -268,34 +266,6 @@ SPONSORED_SCREENING = None
 # Tier 3 adds popcorn: 100 mediums retail at $625, but at a 30-50% concession
 # attach rate the real cost is ~$250 of forgone sales plus ~$60 of materials.
 # See docs/superpowers/specs/2026-08-23-film-sponsorships-design.md.
-SPONSORSHIP_POPCORN_CAP = 100
-
-# The two worked examples on /sponsor/. A named local business sells far
-# harder than "Your Business Here", and both of these approved being named.
-#
-# They live here rather than in the template because "upcoming" has a shelf
-# life: the day The Wild Robot plays, it becomes the past example and the
-# upcoming slot needs the next booking or nothing at all. That should be a
-# data edit, not a template edit — the same reason SPONSORED_SCREENING is a
-# constant. Either slot may be None and its card simply does not render.
-#
-# Do not add a date to `upcoming` unless it is confirmed. This block used to
-# be headed "Happening this month", which was true when it was written and
-# silently stopped being true afterwards.
-SPONSORSHIP_SHOWCASE = {
-    "past": {
-        "sponsor": "AParadis Photography",
-        "film": "The Land Before Time",
-        # The first sponsored run. Admission was $4 at the door; see the
-        # retired SPONSORED_SCREENING config above for the full shape.
-        "occasion": "Labor Day weekend",
-    },
-    "upcoming": {
-        "sponsor": "A.H. Custom Carpentry",
-        "film": "The Wild Robot",
-    },
-}
-
 SPONSORSHIP_TIERS = [
     {
         "key": "presenting",
@@ -340,71 +310,6 @@ SPONSORSHIP_TIERS = [
 # has no `choices` of its own — cinema doesn't import web — so this is the
 # one place the mapping lives.
 SPONSORSHIP_TIER_LABELS = {t["key"]: t["name"] for t in SPONSORSHIP_TIERS}
-
-# Rendered twice on /sponsor/: as a <dl> a reader can see, and as FAQPage
-# structured data in the head. Google penalises FAQ markup whose answers are
-# not visible on the page, so the two renderings read from this one list.
-#
-# Every answer here is a restatement of something the page already commits to
-# elsewhere — the tier note about prices depending on the title, the catalog
-# header's "ask anyway", the confirmation message's couple of days. Nothing in
-# here is a new promise; if a policy changes, the tier or the copy it came
-# from changes with it.
-SPONSORSHIP_FAQ = [
-    {
-        "question": "What does sponsoring a film cost?",
-        "answer": (
-            "There are three levels, starting at $299 to cover the film, "
-            "$499 to cover the film and everyone's admission, and $799 to "
-            "add popcorn. Those are starting prices — some titles cost us "
-            "more to book than others, so the final number depends on the "
-            "film you pick."
-        ),
-    },
-    {
-        "question": "Can I choose the movie?",
-        "answer": (
-            "Yes. The catalog on this page lists everything we can book "
-            "right now, and you can search and sort it. If the film you "
-            "want isn't on the list, ask anyway — we'll find out whether we "
-            "can get it."
-        ),
-    },
-    {
-        "question": "Can I pick the date?",
-        "answer": (
-            "Tell us the week you have in mind and we'll work out a date "
-            "that fits the schedule. The date and the film get settled in "
-            "the same conversation, so you don't need both decided before "
-            "you write."
-        ),
-    },
-    {
-        "question": "What does my business actually get?",
-        "answer": (
-            "Your name on the big screen before the film, and in every "
-            "social media post we make in the run-up to the show."
-        ),
-    },
-    {
-        "question": "Is a sponsored screening open to the public?",
-        "answer": (
-            "Yes. A Presenting Sponsor screening is a normal ticketed show "
-            "with your name on it. At the Community Screening and Full "
-            "House levels admission is free for everyone who comes. If you "
-            "want the theater to yourself instead, that's a private rental "
-            "rather than a sponsorship."
-        ),
-    },
-    {
-        "question": "What happens after I get in touch?",
-        "answer": (
-            "We'll be back to you within a couple of days to talk through "
-            "dates and which film makes sense. Nothing is committed by "
-            "sending the form — it just starts the conversation."
-        ),
-    },
-]
 
 
 # Recreated Savoy Theatre playbills, transcribed from the originals held by the
@@ -745,7 +650,7 @@ HECKLE_NIGHT = {
 
 # Rendered twice on /heckle-night/ — as the visible FAQ and as FAQPage
 # structured data in the head — from this one list. Same contract as
-# SPONSORSHIP_FAQ and RENTALS_FAQ above: Google penalises
+# RENTALS_FAQ above: Google penalises
 # FAQ markup whose answers are not on the page.
 HECKLE_NIGHT_FAQ = [
     {

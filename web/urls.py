@@ -12,10 +12,6 @@ from .views import (
     OpenMicView,
     RentalInquiryView,
     RentalsView,
-    SponsorCatalogView,
-    SponsorFilmOptionsView,
-    SponsorInquiryView,
-    SponsorView,
     ThanksView,
     VoteArchiveView,
     VoteCastView,
@@ -33,20 +29,7 @@ urlpatterns = [
     # and belongs to us.
     path("heckle-night/", HeckleNightView.as_view(), name="heckle_night"),
     path("open-mic/", OpenMicView.as_view(), name="open_mic"),
-    path("sponsor/", SponsorView.as_view(), name="sponsor"),
     path("history/", HistoryView.as_view(), name="history"),
-    path("sponsor/inquire", SponsorInquiryView.as_view(), name="sponsor_inquire"),
-    # HTMX fragment behind the no-reload catalog. noindex/nofollow via
-    # header, and absent from the sitemap: /sponsor/ is the real page.
-    path("sponsor/catalog", SponsorCatalogView.as_view(), name="sponsor_catalog"),
-    # The inquiry form's film <option> list, fetched on demand so /sponsor/
-    # doesn't ship 56KB of it to everyone. noindex via header, absent from
-    # the sitemap — same treatment as the catalog fragment above.
-    path(
-        "sponsor/films",
-        SponsorFilmOptionsView.as_view(),
-        name="sponsor_films",
-    ),
     # Square redirects here after a successful payment. noindex, unlinked,
     # and deliberately absent from the sitemap.
     path("thanks", ThanksView.as_view(), name="thanks"),

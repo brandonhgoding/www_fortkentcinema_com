@@ -31,7 +31,7 @@ from django.urls import reverse
 from django.utils.html import escape
 
 from blog.models import BlogAuthor, BlogCategory, BlogPost
-from web.constants import DONATION, SITE_CONFIG, SPONSORSHIP_TIERS, TICKET_PRICES
+from web.constants import DONATION, SITE_CONFIG, TICKET_PRICES
 
 SECTION_MARKERS = (
     "hero",
@@ -391,62 +391,6 @@ class EmptyStateTests(TestCase):
         self.assertNotIn("coming-empty", html)
 
 
-@mock.patch("web.views.SHOW_SUPPORT_STRIP", True)
-class SponsorCtaCopyTests(TestCase):
-    """The homepage sponsor link has to stay true with nobody maintaining it."""
-
-    def home(self):
-        return self.client.get(reverse("home")).content.decode()
-
-    def body(self):
-        """The sponsor link inside Support, as rendered."""
-        html = self.home()
-        start = html.index('class="sponsor-cta"')
-        return html[start : html.index("</a>", start)]
-
-    def test_it_names_no_sponsor_and_no_film(self):
-        """It used to open with a worked example — "A.H. Custom Carpentry
-        covered the cost of bringing The Wild Robot to Fort Kent". That is a
-        real, approved sponsorship and it still leads /sponsor/, which is
-        where a case study belongs.
-
-        Here it was written in the past tense about one finished booking, so
-        it went stale the moment that run ended and only a human remembering
-        to edit the home page could fix it. The copy is now the presenting
-        tier itself, which is true of whoever signs next."""
-        body = self.body()
-        self.assertNotIn("A.H. Custom Carpentry", body)
-        self.assertNotIn("Wild Robot", body)
-
-    def test_the_sponsor_page_keeps_its_named_example(self):
-        """Generalising the teaser must not have touched the case study."""
-        html = self.client.get(reverse("sponsor")).content.decode()
-        self.assertIn("A.H. Custom Carpentry", html)
-        self.assertIn("The Wild Robot", html)
-
-    def test_the_price_is_the_cheapest_tier(self):
-        cheapest = min(t["price"] for t in SPONSORSHIP_TIERS)
-        self.assertEqual(cheapest, 299)  # guards the fixture, not the render
-        self.assertIn("Sponsor a screening, from $%d &rarr;" % cheapest, self.body())
-        self.assertNotIn("sponsor-cta__body", self.home())
-
-    def test_the_price_tracks_the_tiers_rather_than_being_typed(self):
-        """Repricing the cheapest tier has to move the home page with it."""
-        repriced = [dict(t) for t in SPONSORSHIP_TIERS]
-        repriced[0] = {**repriced[0], "price": 349}
-        with mock.patch("web.views.SPONSORSHIP_TIERS", repriced):
-            body = self.body()
-        self.assertIn("from $349 &rarr;", body)
-        self.assertNotIn("$299", body)
-
-    def test_it_is_a_tracked_text_link_to_the_sponsor_page(self):
-        body = self.body()
-        self.assertIn(f'href="{reverse("sponsor")}"', body)
-        self.assertIn('data-track="sponsor_click"', body)
-        self.assertIn('class="home-link"', body)
-        self.assertNotIn("btn-ticket", body)
-
-
 class FromTheBoothTests(TestCase):
     """Up to three image-led post cards and a way to the rest. The history
     card that used to lead this row is gone; History lives under More."""
@@ -567,11 +511,6 @@ class SupportTests(TestCase):
         self.assertIn("home-section--sunken", tag)
         self.assertIn("home-section--slim", tag)
         self.assertIn("Support the Cinema", self.section())
-
-    def test_sponsor_link(self):
-        section = self.section()
-        self.assertIn("sponsor-cta", section)
-        self.assertIn("Sponsor a screening, from $299 &rarr;", section)
 
     def test_no_donate_without_a_url(self):
         section = self.section(url="")

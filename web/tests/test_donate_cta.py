@@ -103,13 +103,6 @@ class DonationLiveTests(TestCase):
     def test_it_is_tracked_like_the_other_home_ctas(self):
         self.assertIn('data-track="donate_click"', self.html)
 
-    def test_it_sits_in_support_beside_the_sponsor_link(self):
-        """Both asks live in the one slim Support strip at the foot of the
-        page, as quiet text links rather than two competing bands."""
-        support = self.html[self.html.index('id="support"') :]
-        self.assertIn("sponsor-cta", support)
-        self.assertGreater(support.index("donate-cta"), support.index("sponsor-cta"))
-
     def test_it_is_a_text_link_not_a_button(self):
         donate = self.html[self.html.index("donate-cta") :]
         donate = donate[: donate.index("</a>")]

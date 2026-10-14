@@ -42,10 +42,9 @@ Tiers and prices: {{ base }}/membership/
   {{ base }}/heckle-night/
 - Film vote, where the public picks from a short list: {{ base }}/vote
 
-## Rentals, sponsorship, gift cards
+## Rentals, gift cards
 
 - Private rentals of the theater: {{ base }}/rentals/
-- Sponsor a screening, from ${{ sponsor_from }}: {{ base }}/sponsor/
 - E-gift cards: https://app.squareup.com/gift/MLWDCWWHFATH1/order
 
 ## Contact

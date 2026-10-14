@@ -103,8 +103,8 @@ class SharedImageOnOtherPagesTests(MoviePageFixture):
             html,
         )
 
-    def test_history_and_sponsor_describe_their_own_image(self):
-        for path, words in (("/history/", "Savoy"), ("/sponsor/", "big screen")):
+    def test_history_describes_its_own_image(self):
+        for path, words in (("/history/", "Savoy"),):
             with self.subTest(path=path):
                 html = self.client.get(path).content.decode()
                 alt = re.search(r'<meta property="og:image:alt" content="([^"]*)"', html)
