@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Advertise on the Big Screen | Fort Kent Cinema{% endblock %}
+{% block description %}Put your business in front of a room full of neighbors before every show at Fort Kent Cinema. Pre-show slides from $75 a month, video spots from $150.{% endblock %}
+{% block og_title %}Advertise on the Big Screen | Fort Kent Cinema{% endblock %}
+{% block og_description %}Put your business in front of a room full of neighbors before every show at Fort Kent Cinema. Pre-show slides from $75 a month, video spots from $150.{% endblock %}
+{% comment %}
+  The card art is 1200 x 675, not the default card's 1200 x 630, so the size
+  and alt are overridden together with the image (see base.html).
+{% endcomment %}
+{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/involved/your-ad-here.jpg' %}{% endblock %}
+{% block og_image_details %}
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="675" />
+    <meta property="og:image:alt" content="A 'Your ad here' slide on the Fort Kent Cinema screen" />
+{% endblock %}
+
+{% block extra_head %}
+{% comment %}
+ADVERTISING_FAQ (web/constants.py) renders as the visible FAQ further down
+this page as well. Google penalises FAQ markup whose answers are not on the
+page, so both renderings read from the one list — same as /rentals/.
+{% endcomment %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {% for faq in faqs %}{
+      "@type": "Question",
+      "name": "{{ faq.question|escapejs }}",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "{{ faq.answer|escapejs }}"
+      }
+    }{% if not forloop.last %},{% endif %}{% endfor %}
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+  <div class="advertise-page">
+    <div class="advertise-container">
+      <div class="advertise-header">
+        <a href="/" class="advertise-back">&larr; Back to Home</a>
+        <h1 class="advertise-title">YOUR BUSINESS ON THE BIG SCREEN</h1>
+        <p class="advertise-subtitle">
+          A room full of neighbors, every show, from the moment the doors open.
+        </p>
+      </div>
+
+      {% comment %}
+        The rates. Prices, the video length and the deadline all come from
+        web/constants.py, which the FAQ answers and the form's radio labels
+        read too. No audience counts or reach figures: we promise when the
+        ad plays, not how many people see it.
+      {% endcomment %}
+      <section class="advertise-section">
+        <h2 class="advertise-section-title">THE RATES</h2>
+        <p class="advertise-section-note">
+          Both run in the loop before every show, from the time the doors open,
+          30 minutes before showtime.
+        </p>
+        <div class="advertise-grid">
+          <div class="ad-card">
+            <h3 class="ad-card-title">PRE-SHOW SLIDE</h3>
+            <div class="ad-card-price">
+              ${{ slide_price }} <span>per month</span>
+            </div>
+            <ul class="ad-card-features">
+              <li>Plays before every show</li>
+              <li>1920 × 1080 PNG or JPEG, supplied by you</li>
+              <li>Swap it any month</li>
+              <li>No contract</li>
+            </ul>
+          </div>
+          <div class="ad-card ad-card--featured">
+            <h3 class="ad-card-title">VIDEO SPOT</h3>
+            <div class="ad-card-price">
+              ${{ video_price }} <span>per month</span>
+            </div>
+            <ul class="ad-card-features">
+              <li>Plays before every show</li>
+              <li>Up to {{ video_max_seconds }} seconds</li>
+              <li>MP4, 1920 × 1080, supplied by you</li>
+              <li>Swap it any month</li>
+              <li>No contract</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {% comment %}
+        Ads run by calendar month, so the one date an advertiser has to hit
+        is the artwork deadline; it is spelled out here rather than left to
+        the FAQ.
+      {% endcomment %}
+      <section class="advertise-section" aria-labelledby="advertise-steps-title">
+        <h2 class="advertise-section-title" id="advertise-steps-title">HOW IT WORKS</h2>
+        <ol class="advertise-steps">
+          <li>Send us the form below.</li>
+          <li>We confirm your spot and invoice you through Square each month.</li>
+          <li>Get us your artwork by the {{ artwork_deadline_day }}th and you're on screen the 1st.</li>
+        </ol>
+      </section>
+
+      {% comment %}
+        The terms, as questions: billing, contract, specs and what we will
+        not run. Every answer is in ADVERTISING_FAQ (web/constants.py), which
+        also feeds the FAQPage markup in the head.
+      {% endcomment %}
+      <section class="advertise-section advertise-faq" id="faq"
+               aria-labelledby="advertise-faq-title">
+        <h2 class="advertise-section-title" id="advertise-faq-title">QUESTIONS WE GET</h2>
+        <dl class="advertise-faq__list">
+          {% for faq in faqs %}
+            <div class="advertise-faq__item">
+              <dt class="advertise-faq__question">{{ faq.question }}</dt>
+              <dd class="advertise-faq__answer">{{ faq.answer }}</dd>
+            </div>
+          {% endfor %}
+        </dl>
+      </section>
+
+      {% comment %}
+        id="inquire" is where AdInquiryView's ?sent=1#inquire redirect lands,
+        so the thank-you is on screen rather than a page-height away.
+      {% endcomment %}
+      <section class="advertise-cta" id="inquire" aria-labelledby="advertise-cta-title">
+        <h2 class="advertise-cta-title" id="advertise-cta-title">READY TO GET STARTED?</h2>
+        <p class="advertise-cta-text">
+          Tell us a little about your business and we'll get back to you to
+          confirm your spot.
+        </p>
+        <div class="advertise-inquire">
+          {% include "partials/ad_inquiry_form.html" %}
+        </div>
+        <p class="advertise-cta-contact">
+          Or call <a href="tel:{{ site_config.cinema.phone_e164 }}" data-track="phone_click" data-track-location="advertise">{{ site_config.cinema.phone }}</a>
+        </p>
+      </section>
+    </div>
+  </div>
+{% endblock %}

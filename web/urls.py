@@ -3,6 +3,8 @@ from django.views.generic import RedirectView
 
 from .list_signup import ListConfirmView, ListSignupView
 from .views import (
+    AdInquiryView,
+    AdvertiseView,
     CalendarMonthView,
     HeckleNightView,
     HistoryView,
@@ -23,6 +25,8 @@ urlpatterns = [
     path("membership/", MembershipView.as_view(), name="membership"),
     path("rentals/", RentalsView.as_view(), name="rentals"),
     path("rentals/inquire", RentalInquiryView.as_view(), name="rentals_inquire"),
+    path("advertise/", AdvertiseView.as_view(), name="advertise"),
+    path("advertise/inquire", AdInquiryView.as_view(), name="advertise_inquire"),
     # Trailing slash like the other section pages. "heckle-night" rather
     # than anything borrowing MST3K's name: the URL says what the night is
     # and belongs to us.

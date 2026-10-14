@@ -1,0 +1,56 @@
+{% comment %}
+  The /advertise/ "get started" form. Its styles (.ad-inquire__*) and the
+  layout of the box around it (.advertise-inquire) live in AdvertisePage.css.
+  A copy of rental_inquiry_form.html with one difference: ad_type.
+{% endcomment %}
+{% if sent %}
+  <div class="ad-inquire__sent">
+    <h3>Thanks — we've got it.</h3>
+    <p>
+      We'll be in touch within a few days to confirm your spot and talk
+      through the artwork. If it's urgent, call {{ site_config.cinema.phone }}.
+    </p>
+  </div>
+{% else %}
+  <form class="ad-inquire__form" method="post" action="{% url 'advertise_inquire' %}">
+    {% csrf_token %}
+    {% if form.errors %}
+      <p class="ad-inquire__error">
+        Something's missing below — have a look and try again.
+      </p>
+    {% endif %}
+    {{ form.website }}
+
+    {% for field in form.visible_fields %}
+      {% comment %}
+        ad_type is a RadioSelect: Django renders it as a group of
+        <label><input type="radio"> …</label> rows. Wrapping that group in the
+        <label> the other fields use would nest labels, which is invalid HTML
+        and confuses screen readers, so the group gets a <fieldset> and its
+        name goes in the <legend>.
+      {% endcomment %}
+      {% if field.name == "ad_type" %}
+        <fieldset class="ad-inquire__choices">
+          <legend class="ad-inquire__label">{{ field.label }}</legend>
+          {{ field }}
+          {% if field.errors %}
+            <span class="ad-inquire__field-error">{{ field.errors|join:" " }}</span>
+          {% endif %}
+        </fieldset>
+      {% else %}
+        <label class="ad-inquire__field">
+          <span class="ad-inquire__label">{{ field.label }}</span>
+          {{ field }}
+          {% if field.errors %}
+            <span class="ad-inquire__field-error">{{ field.errors|join:" " }}</span>
+          {% endif %}
+        </label>
+      {% endif %}
+    {% endfor %}
+    {% comment %}
+      Tracked on click, like every other data-track element: it records the
+      intent to send, not a confirmed lead — the dashboard count is that.
+    {% endcomment %}
+    <button type="submit" class="btn btn-primary" data-track="ad_inquiry_submit">Send it over</button>
+  </form>
+{% endif %}
