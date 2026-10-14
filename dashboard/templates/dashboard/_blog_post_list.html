@@ -33,7 +33,7 @@
               <button class="btn btn-danger btn-sm"
                       hx-post="{% url 'dashboard:blog_post_delete' post.pk %}"
                       hx-target="#post-list" hx-swap="outerHTML" hx-include=".blogFilters"
-                      data-dashboard-confirm='{"title":"Delete Post","message":"Delete \"{{ post.title|escapejs }}\"?{% if post.film_count %} It is the review linked from {{ post.film_count }} film page{{ post.film_count|pluralize }}, which will lose the link.{% endif %} This cannot be undone.","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
+                      data-dashboard-confirm='{"title":"Delete Post","message":"Delete \"{{ post.title|escapejs }}\"? This cannot be undone.","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
             </div>
           </td>
         </tr>

@@ -23,19 +23,6 @@ class Film(models.Model):
     imdb_id = models.CharField(max_length=50, blank=True, unique=True, null=True)
     youtube_id = models.CharField(max_length=50, blank=True, unique=True, null=True)
 
-    # Our own review of this film, when we've written one. Optional — most films
-    # never get one. The /movies/<slug> page that showed it was retired
-    # 2026-10-14; the link is kept (and link_film_reviews still fills it) so a
-    # future surface for it has the data.
-    review = models.ForeignKey(
-        "blog.BlogPost",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="films",
-        help_text="Our blog review of this film, if we wrote one.",
-    )
-
     created_at = models.DateTimeField(auto_now_add=True, null=True)
 
     class Meta:

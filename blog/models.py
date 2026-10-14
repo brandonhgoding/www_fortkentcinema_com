@@ -92,8 +92,8 @@ class BlogPostQuerySet(models.QuerySet):
 
     def published(self):
         """What the public site may show. Every public read goes through this —
-        the default manager still returns drafts, because the dashboard and
-        Film.review need to see them."""
+        the default manager still returns drafts, because the dashboard needs
+        to see them."""
         return self.filter(status=BlogPost.Status.PUBLISHED)
 
     def update(self, **kwargs):

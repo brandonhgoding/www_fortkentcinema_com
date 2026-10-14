@@ -8,7 +8,7 @@ from audience.models import (
     MembershipTier,
 )
 from blog.models import BlogAuthor, BlogCategory, BlogPost
-from cinema.models import Engagement, Film, Poll, Screen
+from cinema.models import Engagement, Poll, Screen
 from django import forms
 from django.db.models import Q
 from django.utils import timezone
@@ -296,12 +296,6 @@ class BlogPostForm(forms.ModelForm):
     Publish / Unpublish), and the view sets it on the instance.
     """
 
-    # Reverse of Film.review: which films this post is the review of. Almost
-    # always zero or one, but a re-release can share a review with the
-    # original, so it is a list.
-    films = forms.ModelMultipleChoiceField(
-        queryset=Film.objects.all(), required=False
-    )
     # A CharField, not the model's SlugField, so "Opening Night!" is
     # slugified by clean_slug rather than rejected.
     slug = forms.CharField(
@@ -343,9 +337,7 @@ class BlogPostForm(forms.ModelForm):
         self.fields["category"].empty_label = "Select a category"
         self.fields["post_date"].input_formats = ["%Y-%m-%d"]
         # Not `instance.pk`: the UUID default fills that in before the first save.
-        if not self.instance._state.adding:
-            self.initial.setdefault("films", list(self.instance.films.all()))
-        else:
+        if self.instance._state.adding:
             self.initial.setdefault("post_date", timezone.localdate())
 
     def clean_slug(self) -> str:
@@ -364,15 +356,7 @@ class BlogPostForm(forms.ModelForm):
     def save(self, commit: bool = True) -> BlogPost:
         if self.cleaned_data.get("use_markdown"):
             self.instance.body_format = BlogPost.BodyFormat.MARKDOWN
-        post = super().save(commit=commit)
-        if commit:
-            self._save_films(post)
-        return post
-
-    def _save_films(self, post: BlogPost) -> None:
-        chosen = set(f.pk for f in self.cleaned_data.get("films") or [])
-        post.films.exclude(pk__in=chosen).update(review=None)
-        Film.objects.filter(pk__in=chosen).update(review=post)
+        return super().save(commit=commit)
 
 
 def _normalized_name(text: str) -> str:
