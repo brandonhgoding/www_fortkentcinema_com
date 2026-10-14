@@ -1,15 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 
-from cinema.models import (
-    Engagement,
-    EngagementFilm,
-    Film,
-    Poll,
-    PollOption,
-    PollStatus,
-    Screen,
-)
+from cinema.models import Poll, PollStatus
 
 
 class HomepageHasNoVoteCardTests(TestCase):
@@ -22,46 +14,6 @@ class HomepageHasNoVoteCardTests(TestCase):
         self.assertNotIn("vote-cta", html)
         footer = html[html.index("<footer") :]
         self.assertIn(f'href="{reverse("vote")}"', footer)
-
-
-class MoviePageBallotLinkTests(TestCase):
-    def setUp(self) -> None:
-        self.screen = Screen.objects.create(
-            name="Screen 1",
-            capacity=100,
-            screen_type="standard",
-            aspect_ratio="flat",
-            sound_system="standard",
-            supports_3d=False,
-        )
-        self.film = Film.objects.create(title="Casablanca")
-        engagement = Engagement.objects.create(
-            screen=self.screen, start_date="2026-09-01", end_date="2026-09-07"
-        )
-        # `films` goes through EngagementFilm, which requires an explicit
-        # position — .add() cannot supply one.
-        EngagementFilm.objects.create(engagement=engagement, film=self.film, position=0)
-
-    def test_no_link_when_film_is_not_on_a_ballot(self) -> None:
-        html = self.client.get(self.film.get_absolute_url()).content.decode()
-        self.assertNotIn("movie-ballot-link", html)
-
-    def test_link_shown_when_film_is_on_the_open_ballot(self) -> None:
-        poll = Poll.objects.create(title="Round One", status=PollStatus.OPEN)
-        PollOption.objects.create(poll=poll, film=self.film)
-
-        html = self.client.get(self.film.get_absolute_url()).content.decode()
-
-        self.assertIn("movie-ballot-link", html)
-        self.assertIn(f'href="{poll.get_absolute_url()}"', html)
-
-    def test_no_link_for_a_closed_ballot(self) -> None:
-        poll = Poll.objects.create(title="Round One", status=PollStatus.CLOSED)
-        PollOption.objects.create(poll=poll, film=self.film)
-
-        html = self.client.get(self.film.get_absolute_url()).content.decode()
-
-        self.assertNotIn("movie-ballot-link", html)
 
 
 class VoteSitemapTests(TestCase):

@@ -39,13 +39,7 @@
     {% endif %}
   </div>
   <div class="movie-info">
-    {% comment %} Title links to the movie page. The poster can't — it already
-    carries the Alpine trailer handler. {% endcomment %}
-    <h3 class="movie-title">
-      {% if movie.slug %}
-        <a href="{% url 'movie_detail' movie.slug %}" class="movie-title-link">{{ movie.title }}</a>
-      {% else %}{{ movie.title }}{% endif %}
-    </h3>
+    <h3 class="movie-title">{{ movie.title }}</h3>
     <div class="movie-meta">
       <span class="movie-rating">{{ movie.rating }}</span>
       <span class="movie-runtime">{{ movie.runtime }}</span>

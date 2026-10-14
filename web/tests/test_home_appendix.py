@@ -15,7 +15,6 @@ from django.urls import reverse
 
 from web.constants import SITE_CONFIG, TICKET_PRICES
 from web.tests.test_home_sections import movie
-from web.tests.test_movie_pages import MoviePageFixture
 
 
 @mock.patch("web.views.get_coming_soon", return_value=[movie(id="2", title="Alpha")])
@@ -92,17 +91,7 @@ class CssCapitalsTests(TestCase):
             )
 
 
-class SharedImageOnOtherPagesTests(MoviePageFixture):
-    def test_a_poster_is_not_given_the_default_image_size(self):
-        """A film page shares its poster; its size isn't 1200x630, so the
-        default image's width and height must not ride along."""
-        html = self.client.get(f"/movies/{self.showing.slug}").content.decode()
-        self.assertNotIn("og:image:width", html)
-        self.assertIn(
-            f'<meta property="og:image:alt" content="Poster for {self.showing.title}" />',
-            html,
-        )
-
+class SharedImageOnOtherPagesTests(TestCase):
     def test_history_describes_its_own_image(self):
         for path, words in (("/history/", "Savoy"),):
             with self.subTest(path=path):

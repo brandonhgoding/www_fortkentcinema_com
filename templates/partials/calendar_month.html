@@ -101,9 +101,7 @@ under it.
             {% if f.poster %}<img src="{{ f.poster }}" alt="" loading="lazy" decoding="async" />{% endif %}
           </div>
           <div>
-            <p class="coming-calendar-key__name">
-              {% if f.slug %}<a href="{% url 'movie_detail' f.slug %}">{{ f.title }}</a>{% else %}{{ f.title }}{% endif %}
-            </p>
+            <p class="coming-calendar-key__name">{{ f.title }}</p>
             <p class="coming-calendar-key__dates">{{ f.dates }}</p>
           </div>
         </li>

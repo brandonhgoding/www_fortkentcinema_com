@@ -362,16 +362,3 @@
 .home-story__all {
   margin: var(--spacing-lg) 0 0;
 }
-
-/* A film title link is one line of heading type, about 25px tall. An
- * invisible band above and below takes its tap target to 44px without moving
- * anything; the hover rule in global.css stays on the text. */
-.home-section .movie-title-link {
-  position: relative;
-}
-
-.home-section .movie-title-link::after {
-  content: '';
-  position: absolute;
-  inset: -11px 0;
-}

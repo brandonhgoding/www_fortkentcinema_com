@@ -179,8 +179,8 @@ class BlogDetailTests(TestCase):
         rather than fetched one by one while the template renders."""
         url = reverse("blog_detail", args=[self.post.slug])
         self.client.get(url)  # warm the site-config cache
-        with self.assertNumQueries(4):
-            # The post; related posts in its category, then the backfill; its films.
+        with self.assertNumQueries(3):
+            # The post; related posts in its category, then the backfill.
             self.client.get(url)
 
 

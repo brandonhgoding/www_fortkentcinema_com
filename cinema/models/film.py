@@ -2,19 +2,7 @@
 from typing import Any
 
 from django.db import models
-from django.urls import reverse
 from django.utils.text import slugify
-
-
-class FilmQuerySet(models.QuerySet):
-    def with_page(self):
-        """Films that have a /movies/<slug> page: those we have booked.
-
-        MovieDetailView serves exactly these, and the sitemap and a review's
-        "Showtimes & details" link use the same rule, so a link can't point at
-        a page that 404s.
-        """
-        return self.filter(engagements__isnull=False).distinct()
 
 
 class Film(models.Model):
@@ -36,8 +24,9 @@ class Film(models.Model):
     youtube_id = models.CharField(max_length=50, blank=True, unique=True, null=True)
 
     # Our own review of this film, when we've written one. Optional — most films
-    # never get one. Gives the movie page prose that is actually ours rather than
-    # the TMDB blurb every other cinema site also publishes.
+    # never get one. The /movies/<slug> page that showed it was retired
+    # 2026-10-14; the link is kept (and link_film_reviews still fills it) so a
+    # future surface for it has the data.
     review = models.ForeignKey(
         "blog.BlogPost",
         null=True,
@@ -49,16 +38,11 @@ class Film(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True, null=True)
 
-    objects = FilmQuerySet.as_manager()
-
     class Meta:
         ordering = ["title"]
 
     def __str__(self) -> str:
         return self.title
-
-    def get_absolute_url(self) -> str:
-        return reverse("movie_detail", kwargs={"slug": self.slug})
 
     @property
     def description(self) -> str:

@@ -551,13 +551,3 @@
   color: inherit;
   opacity: 0.85;
 }
-
-/* Movie-page ballot link */
-.movie-ballot-link {
-  display: inline-block;
-  margin: 0.75rem 0;
-  font-size: 0.85rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-accent);
-}

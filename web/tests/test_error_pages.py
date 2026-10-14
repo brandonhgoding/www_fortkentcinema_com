@@ -70,12 +70,3 @@ class TrailingSlashTests(TestCase):
             status_code=301,
             fetch_redirect_response=False,
         )
-
-    def test_movie_with_a_slash_redirects(self):
-        response = self.client.get("/movies/verity/")
-        self.assertRedirects(
-            response,
-            reverse("movie_detail", args=["verity"]),
-            status_code=301,
-            fetch_redirect_response=False,
-        )

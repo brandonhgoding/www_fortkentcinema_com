@@ -112,7 +112,6 @@ class BundleTests(TestCase):
             ".coming-",  # ComingSoon.css
             ".home-card",  # HomeSections.css
             ".tier-card",  # TierCard.css
-            ".movie-page",  # MoviePage.css
             ".blog-pagination",  # BlogListPage.css
             ".thanks-title",  # global.css (appended)
         ]:
@@ -221,14 +220,6 @@ class ImageLoadingTests(TestCase):
         html = self.client.get(reverse("home")).content.decode()
         posters = re.findall(r"<img[^>]+movie-poster-img[^>]*>", html)
         self.assertIn('loading="lazy"', posters[1])
-
-    def test_movie_page_poster_is_not_lazy(self):
-        """It is that page's LCP element."""
-        film = self.films[0]
-        html = self.client.get(f"/movies/{film.slug}").content.decode()
-        poster = re.search(r"<img[^>]+movie-page-poster-img[^>]*>", html).group(0)
-        self.assertIn('fetchpriority="high"', poster)
-        self.assertNotIn('loading="lazy"', poster)
 
 
 class CacheHeaderTests(TestCase):

@@ -39,8 +39,7 @@ address inline.
       },
       "workPresented": {
         "@type": "Movie",
-        "name": "{{ ev.movie.title|escapejs }}"{% if ev.movie.slug %},
-        "url": "{{ request.scheme }}://{{ request.get_host }}{% url 'movie_detail' ev.movie.slug %}"{% endif %}{% if ev.movie.poster %},
+        "name": "{{ ev.movie.title|escapejs }}"{% if ev.movie.poster %},
         "image": "{{ ev.movie.poster|escapejs }}"{% endif %}{% if ev.movie.rating %},
         "contentRating": "{{ ev.movie.rating|escapejs }}"{% endif %}
       },

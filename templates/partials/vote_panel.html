@@ -53,11 +53,7 @@
         <p class="vote-panel__winner-dates">
           Playing {{ poll.engagement.start_date|date:"F j" }}&ndash;{{ poll.engagement.end_date|date:"F j" }}
         </p>
-        {% if poll.winner.film.slug %}
-          <a class="vote-panel__winner-link" href="{{ poll.winner.film.get_absolute_url }}">
-            Showtimes and details &rarr;
-          </a>
-        {% endif %}
+        <a class="vote-panel__winner-link" href="/#now-showing">Showtimes &rarr;</a>
       {% else %}
         <p class="vote-panel__winner-dates">Dates coming soon.</p>
       {% endif %}

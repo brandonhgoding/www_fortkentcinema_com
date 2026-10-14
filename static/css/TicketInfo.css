@@ -37,8 +37,3 @@
 .ticket-info a:hover {
   color: var(--color-accent);
 }
-
-.movie-page-showtimes .ticket-info {
-  margin: var(--spacing-lg) 0 0;
-  text-align: left;
-}

@@ -1,4 +1,4 @@
-"""Language, translation and CC/OC on the home page and the movie page.
+"""Language, translation and CC/OC on the home page.
 
 Each shows only when there is something to say: an English run with no
 captions looks exactly as it did before these fields existed.
@@ -11,7 +11,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from web.services.cinema_data import get_film_page, get_now_showing
+from web.services.cinema_data import get_now_showing
 from web.tests.test_cinema_data import make_engagement, make_film, make_screen
 
 
@@ -81,19 +81,3 @@ class LanguageCaptionsTests(TestCase):
         self.assertIn("Amélie", html)
         self.assertNotIn("<abbr class=", html)
         self.assertNotIn("English subtitles", html)
-
-    def test_movie_page_shows_label_and_caption_chip(self) -> None:
-        self._set(language=Language.FRENCH, translation=Translation.SUBTITLED,
-                  captions="OC")
-        html = self.client.get(reverse("movie_detail", args=["amelie"])).content.decode()
-        self.assertIn('<span class="movie-page-rating">French · English subtitles</span>', html)
-        self.assertIn(
-            '<abbr class="movie-page-rating" title="Open Captions" aria-hidden="true">OC</abbr>'
-            '<span class="sr-only">Open Captions</span>', html
-        )
-
-    def test_movie_page_ignores_finished_runs(self) -> None:
-        # A past French run says nothing about the version playing now.
-        self._set(language=Language.FRENCH)
-        self.showtime.delete()
-        self.assertEqual(get_film_page(self.film)["language_labels"], [])

@@ -91,10 +91,20 @@ class LegacyPageRedirectTests(TestCase):
         self.assertRedirects(resp, "/", status_code=301, target_status_code=200)
 
     def test_legacy_archive_movie_redirects_home(self):
-        """The old per-movie pages. Re-point these at /movies/<slug> once real
-        per-movie pages exist."""
+        """The 2022-era per-movie pages."""
         resp = self.client.get("/archive/karate-kid-legends")
         self.assertRedirects(resp, "/", status_code=301, target_status_code=200)
+
+    def test_movie_page_redirects_home(self):
+        """/movies/<slug> was retired 2026-10-14. The home page carries every
+        showtime the film page did, so that is where the links go; the slugs
+        were in the sitemap for months and must not 404."""
+        for path in ("/movies/the-odyssey", "/movies/the-odyssey/"):
+            with self.subTest(path=path):
+                resp = self.client.get(path)
+                self.assertRedirects(
+                    resp, "/", status_code=301, target_status_code=200
+                )
 
     def test_legacy_archive_index_redirects_home(self):
         resp = self.client.get("/archive/")

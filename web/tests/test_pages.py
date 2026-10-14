@@ -207,13 +207,13 @@ class CalendarTests(TestCase):
 
     @mock.patch("web.views.get_calendar_month")
     def test_key_lists_each_film_once_with_its_dates(self, m):
-        def movie(title, slug=""):
-            return {"id": title, "title": title, "slug": slug, "poster": f"{title}.jpg"}
+        def movie(title):
+            return {"id": title, "title": title, "poster": f"{title}.jpg"}
 
         m.return_value = {
-            2: [movie("Verity", "verity")],
-            9: [movie("Pan's Labyrinth"), movie("Verity", "verity")],
-            15: [movie("Verity", "verity")],
+            2: [movie("Verity")],
+            9: [movie("Pan's Labyrinth"), movie("Verity")],
+            15: [movie("Verity")],
         }
         resp = self.client.get(reverse("calendar_month", args=[self.year, 9]))
         films = resp.context["films"]
@@ -223,10 +223,7 @@ class CalendarTests(TestCase):
         )
         html = resp.content.decode()
         self.assertIn("Showing in October", html)
-        # Linked to the film page when there is one, plain text when not.
-        self.assertIn(f'href="{reverse("movie_detail", args=["verity"])}">Verity</a>', html)
         self.assertIn("Pan&#x27;s Labyrinth", html)
-        self.assertNotIn("Pan&#x27;s Labyrinth</a>", html)
         # Each poster in the grid points at its film in the key.
         self.assertEqual(html.count("film !== 0 }"), 3)
         self.assertEqual(html.count("film !== 1 }"), 1)

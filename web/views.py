@@ -12,13 +12,12 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views import View
-from django.views.generic import DetailView, TemplateView
+from django.views.generic import TemplateView
 
 from audience.models import Member, MembershipTier, Subscriber
 from blog.models import BlogPost
 from cinema import voting as vote_engine
 from cinema.models import (
-    Film,
     Poll,
     PollStatus,
     Vote,
@@ -37,11 +36,9 @@ from web.forms import RentalInquiryForm
 from web.list_signup import start_signup
 from web.services.cinema_data import (
     CINEMA_TZ,
-    _format_runtime,
     get_now_showing,
     get_coming_soon,
     get_calendar_month,
-    get_film_page,
 )
 from web.services.heckle_night import get_heckle_nights
 from web.services.open_mic import upcoming_nights as upcoming_open_mics
@@ -432,55 +429,6 @@ class ThanksView(TemplateView):
         ctx = super().get_context_data(**kwargs)
         slug = self.request.GET.get("tier", "")
         ctx["tier"] = MembershipTier.objects.filter(slug=slug).first()
-        return ctx
-
-
-class MovieDetailView(DetailView):
-    """/movies/<slug>.
-
-    Only films we have actually booked get a page. A film that has never been
-    attached to an engagement has no showtimes and no run history — nothing but
-    the TMDB blurb that every other cinema site also publishes — so it would be
-    a duplicate-content page. Those films are catalog entries, not pages.
-
-    A film that HAS been booked keeps its page forever: when a run ends the page
-    becomes an archive rather than a 404. See web/redirects.py for what the last
-    round of disappearing URLs cost us.
-    """
-
-    model = Film
-    slug_field = "slug"
-    slug_url_kwarg = "slug"
-    context_object_name = "film"
-    template_name = "web/movie_detail.html"
-
-    def get_queryset(self):
-        return Film.objects.with_page().select_related("review", "review__author")
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        film = ctx["film"]
-        page = get_film_page(film)
-        ctx["upcoming"] = page["upcoming"]
-        ctx["runs"] = page["runs"]
-        ctx["language_labels"] = page["language_labels"]
-        ctx["is_now_showing"] = bool(page["upcoming"])
-        ctx["runtime_display"] = _format_runtime(film.runtime_minutes)
-        # ISO-8601 duration for schema.org Movie.duration (120 -> PT120M).
-        ctx["runtime_iso"] = (
-            f"PT{film.runtime_minutes}M" if film.runtime_minutes else ""
-        )
-        ctx["now_showing"] = get_now_showing()
-        # Internal linking: push crawlers (and people) between the movie
-        # pages and the round's page while this film is up for a vote.
-        ctx["on_ballot"] = next(
-            (
-                poll
-                for poll in vote_service.open_polls()
-                if poll.options.filter(film=film).exists()
-            ),
-            None,
-        )
         return ctx
 
 

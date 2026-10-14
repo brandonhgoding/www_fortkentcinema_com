@@ -147,15 +147,6 @@
   overflow: hidden;
 }
 
-/* On a movie page the column is left-aligned, like .ticket-info there. */
-.movie-page-showtimes .list-signup,
-.movie-page-archive .list-signup {
-  align-items: flex-start;
-  margin-left: 0;
-  margin-right: 0;
-  text-align: left;
-}
-
 @media (max-width: 599px) {
   .list-signup {
     padding: var(--spacing-md) var(--spacing-sm);

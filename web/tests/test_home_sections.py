@@ -667,8 +667,7 @@ class ScreeningEventSchemaTests(TestCase):
         self.assertEqual(ev["location"]["address"]["streetAddress"],
                          SITE_CONFIG["cinema"]["address"]["street"])
         self.assertEqual(ev["workPresented"]["name"], "Dune")
-        self.assertEqual(ev["workPresented"]["url"],
-                         f"http://testserver/movies/{self.film.slug}")
+        self.assertNotIn("url", ev["workPresented"])  # no film pages since 2026-10-14
         self.assertEqual(ev["workPresented"]["image"], "http://p/d.jpg")
         self.assertEqual(ev["workPresented"]["contentRating"], "PG-13")
         self.assertEqual(ev["offers"]["lowPrice"], str(TICKET_PRICES["member"]))

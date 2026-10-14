@@ -7,7 +7,6 @@ from django.test import TestCase
 from django.urls import reverse
 
 from .test_home_sections import movie
-from .test_movie_pages import MoviePageFixture
 
 
 def signup_locations(html):
@@ -35,21 +34,4 @@ class HomePlacementTests(TestCase):
         self.assertIn("Get an email the moment new runs are booked.", html)
         self.assertLess(
             html.index('class="list-signup"'), html.index('class="no-showtimes__links"')
-        )
-
-
-class MoviePagePlacementTests(MoviePageFixture):
-    def test_showing_film_after_the_prices(self):
-        html = self.client.get(f"/movies/{self.showing.slug}").content.decode()
-        self.assertEqual(signup_locations(html), ["movie_page"])
-        self.assertLess(
-            html.index('class="ticket-info"'), html.index('class="list-signup"')
-        )
-
-    def test_archived_film_after_the_schedule_note(self):
-        html = self.client.get(f"/movies/{self.archived.slug}").content.decode()
-        self.assertEqual(signup_locations(html), ["movie_page"])
-        self.assertLess(
-            html.index("It isn't currently on our schedule."),
-            html.index('class="list-signup"'),
         )

@@ -56,11 +56,7 @@ page, so both renderings read from the one list — same as /rentals/ and
             </p>
             {% if next_night.film %}
               <p class="heckle-next__film">
-                {% if next_night.film.slug %}
-                  <a href="{% url 'movie_detail' slug=next_night.film.slug %}">{{ next_night.film.title }}</a>
-                {% else %}
-                  {{ next_night.film.title }}
-                {% endif %}
+                {{ next_night.film.title }}
                 {% if next_night.film.runtime %}<span class="heckle-chip">{{ next_night.film.runtime }}</span>{% endif %}
               </p>
             {% else %}
@@ -196,11 +192,7 @@ page, so both renderings read from the one list — same as /rentals/ and
               </div>
               <div class="heckle-date__what">
                 {% if night.film %}
-                  {% if night.film.slug %}
-                    <a href="{% url 'movie_detail' slug=night.film.slug %}">{{ night.film.title }}</a>
-                  {% else %}
-                    {{ night.film.title }}
-                  {% endif %}
+                  {{ night.film.title }}
                 {% else %}
                   <span class="heckle-date__tba">Not booked yet</span>
                 {% endif %}
