@@ -60,11 +60,11 @@ class LlmsTxtTests(TestCase):
         self.assertIn(OPEN_MIC["start_label"], text)
         self.assertIn(f"${min(t['price'] for t in SPONSORSHIP_TIERS)}", text)
 
-    def test_gift_card_link_matches_the_home_page(self, *_):
+    def test_gift_card_link_is_still_listed(self, *_):
+        # The home page's gift-card card is gone (2026-10-13), so llms.txt is
+        # the one place left that names the Square gift-card page.
         text = self.get().content.decode()
-        home = self.client.get("/").content.decode()
-        gift = re.search(r"https://app\.squareup\.com/gift/\S+", text).group(0)
-        self.assertIn(gift, home)
+        self.assertRegex(text, r"https://app\.squareup\.com/gift/\S+")
 
     def test_every_site_link_is_a_live_page(self, *_):
         text = self.get().content.decode()

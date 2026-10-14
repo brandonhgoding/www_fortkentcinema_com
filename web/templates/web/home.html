@@ -20,15 +20,15 @@ and what it costs. Prices from TICKET_PRICES, like the ticket line.{% endcomment
       now-showing   tier 1   what is playing (the sponsored card is inside it)
       membership    featured the one big ask, on the blue band
       coming-soon   tier 2   what is playing later
-      get-involved  tier 3   vote, open mic, gift card: one row of cards
+      get-involved  tier 3   open mic, Heckle Night: one row of cards
       from-the-booth tier 3  the latest blog posts, with their images
       support       tier 3   sponsor and donate, a slim strip, last; off
                              while SHOW_SUPPORT_STRIP is False
 
     Each section is one flat ground (static/css/HomeSections.css), and no two
     neighbours share one, which is what separates them; there are no dividers.
-    The self-expiring cards (sponsored screening, vote) render nothing when
-    they are not live, so nothing here needs to know whether they did.
+    The self-expiring card (sponsored screening) renders nothing when it
+    is not live, so nothing here needs to know whether it did.
   {% endcomment %}
 
   {% include "partials/hero.html" %}

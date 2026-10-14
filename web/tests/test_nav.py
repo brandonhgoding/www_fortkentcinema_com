@@ -61,7 +61,7 @@ class NavigationConfigTests(TestCase):
         # Taken out of the nav on 2026-10-13 with no new home decided yet.
         labels = [i["label"] for i in SITE_CONFIG["navigation"]]
         self.assertNotIn("Events", labels)
-        for href in ("/open-mic/", "/craft-night/", "/heckle-night/"):
+        for href in ("/open-mic/", "/heckle-night/"):
             self.assertNotIn(href, nav_destinations())
 
     def test_more_menu_is_gone(self):
@@ -92,6 +92,16 @@ class NavigationConfigTests(TestCase):
         blog = footer_item("/blog/")
         self.assertEqual(blog["href"], "/blog/")
         self.assertEqual(blog["note"], "The Fort Kent Cinema Blog")
+
+    def test_footer_events_column_is_kept_empty_for_now(self):
+        # Heckle Night left it on 2026-10-13 and Craft Night was deleted the
+        # same day. The owner kept the heading to fill later; until then it
+        # has no links and no empty <ul>.
+        self.assertEqual(SITE_CONFIG["footer_events"], [])
+        html = footer_html(self.client.get("/").content.decode())
+        events = html[html.index(">Events</h2>") :]
+        events = events[: events.index("</nav>")]
+        self.assertNotIn("<ul", events)
 
     def test_history_link_is_titled_for_the_theatre(self):
         history = footer_item("/history/")

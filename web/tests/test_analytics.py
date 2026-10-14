@@ -58,9 +58,11 @@ class ClickEventMarkupTests(TestCase):
             self.assertNotIn("data-track-value", hit)
             self.assertNotIn("data-track-price", hit)
 
-    def test_giftcard_tagged(self):
+    def test_no_giftcard_link_on_the_home_page(self):
+        # The gift-card card left the home page on 2026-10-13 (the owner's
+        # call). If a gift-card link comes back, tag it giftcard_click.
         html = self.client.get("/").content.decode()
-        self.assertEqual(len(tracked(html, "giftcard_click")), 1)
+        self.assertEqual(len(tracked(html, "giftcard_click")), 0)
 
     def test_footer_phone_tagged_with_location(self):
         html = self.client.get("/").content.decode()

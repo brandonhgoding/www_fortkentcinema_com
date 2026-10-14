@@ -12,58 +12,16 @@ from cinema.models import (
 )
 
 
-def get_involved(html):
-    """The Be part of the show section, which holds the vote, open-mic and gift cards."""
-    start = html.index('id="get-involved"')
-    return html[start : html.index("</section>", start)]
+class HomepageHasNoVoteCardTests(TestCase):
+    """The home page's vote card came out of Be part of the show on
+    2026-10-13; the footer's "You Choose" link is the way in."""
 
-
-def vote_card(html):
-    section = get_involved(html)
-    start = section.index("vote-cta")
-    return section[start:].split("</article>", 1)[0]
-
-
-class HomepageVoteCTATests(TestCase):
-    def test_cta_absent_with_no_open_poll(self) -> None:
-        Poll.objects.create(title="Closed Round", status=PollStatus.CLOSED)
+    def test_open_round_adds_no_card(self) -> None:
+        Poll.objects.create(title="Round One", status=PollStatus.OPEN)
         html = self.client.get(reverse("home")).content.decode()
         self.assertNotIn("vote-cta", html)
-
-    def test_cta_is_generic_and_links_to_the_vote_page(self) -> None:
-        Poll.objects.create(title="Round One", status=PollStatus.OPEN)
-        html = self.client.get(reverse("home")).content.decode()
-        card = vote_card(html)
-        self.assertIn("Voting open", card)
-        self.assertIn("You choose the film", card)
-        self.assertIn("One round is open right now.", card)
-        self.assertIn("Cast your vote &rarr;", card)
-        self.assertIn(f'href="{reverse("vote")}"', card)
-        self.assertIn('data-track="vote_cta_click"', card)
-        self.assertNotIn("btn-ticket", card)
-        # It does not advertise one round over another.
-        self.assertNotIn("Round One", card)
-
-    def test_cta_sits_in_get_involved_above_our_story(self) -> None:
-        Poll.objects.create(title="Round One", status=PollStatus.OPEN)
-        html = self.client.get(reverse("home")).content.decode()
-        self.assertLess(html.index('id="coming-soon"'), html.index('id="get-involved"'))
-        self.assertLess(html.index('id="get-involved"'), html.index('id="from-the-booth"'))
-        self.assertIn("vote-cta", get_involved(html))
-
-    def test_one_cta_however_many_rounds_are_open(self) -> None:
-        for title in ("Round One", "Round Two", "Round Three"):
-            Poll.objects.create(title=title, status=PollStatus.OPEN)
-        html = self.client.get(reverse("home")).content.decode()
-        self.assertEqual(html.count("vote-cta"), 1)
-        self.assertIn("3 rounds are open right now, and you can vote in every one.", html)
-
-    def test_cta_retires_itself_when_the_poll_closes(self) -> None:
-        poll = Poll.objects.create(title="Round One", status=PollStatus.OPEN)
-        self.assertIn("vote-cta", self.client.get(reverse("home")).content.decode())
-        poll.status = PollStatus.CLOSED
-        poll.save()
-        self.assertNotIn("vote-cta", self.client.get(reverse("home")).content.decode())
+        footer = html[html.index("<footer") :]
+        self.assertIn(f'href="{reverse("vote")}"', footer)
 
 
 class MoviePageBallotLinkTests(TestCase):

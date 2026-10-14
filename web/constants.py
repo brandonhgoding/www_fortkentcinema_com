@@ -37,12 +37,16 @@ SITE_CONFIG = {
     ],
     # Membership, as a button at the right end of the nav rather than a link
     # in the row (the owner's call, 2026-10-13). The Events menu came out the
-    # same day with no new home decided. Until it has one, /open-mic/ is
-    # linked only from the home page's Get Involved card, and /craft-night/
-    # and /heckle-night/ from nowhere but llms.txt.
+    # same day; Heckle Night and Open Mic are on the home page's "Be part of
+    # the show" row, and Craft Night was deleted (it is in git history).
     # Trailing slash required — the route is defined with it, and a bare
     # /membership costs a 301 on every click and every crawl.
     "nav_cta": {"label": "Become a Member", "href": "/membership/"},
+    # The footer's Events column. Empty since 2026-10-13: Heckle Night moved
+    # to the home page's "Be part of the show" row and Craft Night was
+    # deleted. The owner kept the heading; the footer renders it alone until
+    # this has links again (same shape as footer_navigation).
+    "footer_events": [],
     # The footer's link column, on every page. Blog, Film Vote and History
     # moved here from the nav's "More" menu on 2026-10-13; Rentals and
     # Sponsor came out of "More" the same day with no new home decided, so
@@ -82,7 +86,7 @@ SITE_CONFIG = {
 # (boxoffice/spec.py SQUARE_TIERS); matinee and member are register discounts
 # set up by hand in Square, so a change to either has to be made there too.
 #
-# NOTE: CRAFT_NIGHT's and HECKLE_NIGHT's prices and /membership/'s "$4 off
+# NOTE: HECKLE_NIGHT's price and /membership/'s "$4 off
 # evening tickets" restate these numbers; a reprice has to move them together.
 TICKET_PRICES = {
     "adult": 8,
@@ -653,140 +657,6 @@ FILM_HISTORY_VIDEO = {
 }
 
 
-# Craft Cinema Night — the last Tuesday of the month, with Rivertown
-# Community Arts Center.
-#
-# Lights dimmed rather than out, bring your own project, and Rivertown's
-# members pay our member rate. Rivertown has signed off on the partnership
-# and on being named here.
-#
-# The DATES are not in this dict, and deliberately so: they are computed
-# from the calendar in web/services/craft_night.py, because "last Tuesday of
-# the month" is a rule and a typed list of dates silently stops being true.
-# Same reason SPONSORSHIP_SHOWCASE carries no dates.
-CRAFT_NIGHT = {
-    "partner": "Rivertown Community Arts Center",
-    # What people actually call them, for the second and third mention.
-    "partner_short": "Rivertown",
-    "partner_url": "https://www.rivertowncac.org/",
-    # Rivertown's logo, as a path under static/. The file they sent us: a
-    # 400x400 circular badge on a transparent ground, so the template sizes
-    # it square.
-    #
-    # Deliberately NOT hotlinked from rivertowncac.org: a partner's mark is
-    # theirs to grant, separately from agreeing to the partnership, so we
-    # serve the copy they gave us. Blank it and the template renders the
-    # name alone, which is still a correct page.
-    "partner_logo": "img/rivertown-logo.png",
-    # Alt text for it. A logo is a name, so the alt text is the name — not
-    # "Rivertown logo", which reads the decoration aloud and not the fact.
-    "partner_logo_alt": "Rivertown Community Arts Center",
-    # The standing start time. Shown only where no real showtime is known —
-    # once a Tuesday is booked, the page renders that Showtime's own start,
-    # so a moved show moves the page instead of contradicting it.
-    "start_label": "6:30 PM",
-    # Floor for "the evening slot" when matching a Tuesday's showtimes.
-    # A floor rather than an exact 18:30 match: a show that shifts to 7:00
-    # is still the evening show, and the page should follow it.
-    "evening_from": datetime.time(17, 0),
-    # Member and general evening admission. Both are stated because this
-    # page has to answer "what does it cost if I'm not a member" — the
-    # whole pitch is that everyone is welcome, and a page that prices only
-    # the member rate reads like a members-only night.
-    #
-    # NOTE: these two numbers are the same promise /membership/ makes as
-    # "$4 off evening tickets". If evening admission is ever repriced, that
-    # benefit line and these constants have to move together or the site
-    # contradicts itself in public.
-    "member_price": 4,
-    "general_price": 8,
-    # How many nights the page lists. Six is two quarters — far enough out
-    # to look like a standing fixture rather than a one-off, and short
-    # enough that the list is still a list rather than a calendar.
-    "months_ahead": 6,
-}
-
-# Rendered twice on /craft-night/ — as the visible FAQ and as FAQPage
-# structured data in the head — from this one list. Same contract as
-# SPONSORSHIP_FAQ and RENTALS_FAQ above: Google penalises FAQ markup whose
-# answers are not on the page.
-#
-# Nothing here is a new policy. The craft restrictions are the rental
-# decoration rule (no glitter, nothing that damages the seats) applied to a
-# room full of projects, and the $4 is the existing member rate rather than
-# a discount invented for this night.
-CRAFT_NIGHT_FAQ = [
-    {
-        "question": "Do I have to be a member to come?",
-        "answer": (
-            "No. Craft Cinema Night is a regular evening show and anyone can "
-            "buy a ticket at the door. Being a member — ours or Rivertown's "
-            "— is what gets you the $4 rate, not what gets you in."
-        ),
-    },
-    {
-        "question": "How do I get the $4 rate?",
-        "answer": (
-            "Tell us at the box office that you're a Rivertown member, or "
-            "give us your name if you're one of ours. It's the same $4 off "
-            "an evening ticket our members get any night of the week — this "
-            "is just the night it reaches Rivertown's members too."
-        ),
-    },
-    {
-        "question": "Do I have to bring a craft?",
-        "answer": (
-            "Not at all. Come and watch the movie. The only things different "
-            "about this night are the lighting and the company."
-        ),
-    },
-    {
-        "question": "What movie plays?",
-        "answer": (
-            "Whatever is in the 6:30 slot that Tuesday — it's a regular "
-            "showing, run a little differently. The dates on this page fill "
-            "in with the title as soon as the booking is set, which is "
-            "usually two or three weeks ahead."
-        ),
-    },
-    {
-        "question": "How dark does it get?",
-        "answer": (
-            "Dimmed, not dark. Low enough that the screen still looks like a "
-            "screen, bright enough to find your place in a row of stitches. "
-            "If your project needs more light than that, a small clip light "
-            "is fine — please keep it pointed at your lap."
-        ),
-    },
-    {
-        "question": "What can I bring, and what should I leave home?",
-        "answer": (
-            "Anything quiet that fits in your own seat: knitting, crochet, "
-            "cross stitch, embroidery, hand quilting, beadwork, a "
-            "sketchbook, a coloring book, a journal. Leave the paint, glue "
-            "and glitter at home, along with anything that needs a table, an "
-            "outlet or a blade near the upholstery. If you're not sure, call "
-            "us before you pack it."
-        ),
-    },
-    {
-        "question": "Can I bring my kids?",
-        "answer": (
-            "Yes — it's a public show and the film's rating is the film's "
-            "rating, the same as any other night. It tends to run quiet, so "
-            "it suits a child who has a project of their own to work on."
-        ),
-    },
-    {
-        "question": "Do I need a ticket in advance?",
-        "answer": (
-            "No. Come to the door. If a particular night looks like it's "
-            "going to fill, we'll say so on Facebook first."
-        ),
-    },
-]
-
-
 # Heckle Night — /heckle-night/
 #
 # A bad public domain movie, monthly, that the room is invited to talk over.
@@ -794,8 +664,7 @@ CRAFT_NIGHT_FAQ = [
 # name is not theirs and neither are the episodes, so nothing here borrows
 # either. "Heckle Night" is ours and describes the night literally.
 #
-# The film comes from the schedule, the same way Craft Night's does — see
-# web/services/heckle_night.py. What is NOT computable, and therefore lives
+# The film comes from the schedule — see web/services/heckle_night.py. What is NOT computable, and therefore lives
 # here, is the rule, the price and who the night is for.
 HECKLE_NIGHT = {
     # The rule, and the first night it applies to.
@@ -843,8 +712,8 @@ HECKLE_NIGHT = {
     # one for members, which is the right shape for a night whose whole
     # problem is getting a crowd into the room.
     #
-    # NOTE: $8 general evening admission is published on /craft-night/ and
-    # implied by /membership/'s benefit line. This $4 reads as "the member
+    # NOTE: $8 general evening admission (TICKET_PRICES) is implied by
+    # /membership/'s benefit line. This $4 reads as "the member
     # rate, for everyone" only while that stays true, so a reprice of
     # evening admission has to look at this number too.
     "general_price": 4,
@@ -876,7 +745,7 @@ HECKLE_NIGHT = {
 
 # Rendered twice on /heckle-night/ — as the visible FAQ and as FAQPage
 # structured data in the head — from this one list. Same contract as
-# CRAFT_NIGHT_FAQ, SPONSORSHIP_FAQ and RENTALS_FAQ above: Google penalises
+# SPONSORSHIP_FAQ and RENTALS_FAQ above: Google penalises
 # FAQ markup whose answers are not on the page.
 HECKLE_NIGHT_FAQ = [
     {
