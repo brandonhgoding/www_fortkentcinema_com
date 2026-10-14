@@ -1,9 +1,8 @@
 {% extends "dashboard/base_dashboard.html" %}
 {% load static %}
 {% block title %}{% if post %}{{ post.title }}{% else %}New Post{% endif %} · LeprinceOS{% endblock %}
-{% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/film_search_combo.css' %}" /><link rel="stylesheet" href="{% static 'dashboard/css/blog.css' %}" />{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/blog.css' %}" />{% endblock %}
 {% block content %}
-{{ initial_films|json_script:"blog-initial-films" }}
 <div class="page" x-data="blogEditor" data-is-new="{% if post %}false{% else %}true{% endif %}">
   <div class="page-header">
     <div>
@@ -33,8 +32,7 @@
   </div>
 
   <form id="post-form" method="post" enctype="multipart/form-data" class="blogEditor"
-        @input="markDirty($event)" @change="markDirty($event)" @submit="submitting = true"
-        @keydown.enter="if ($event.target.name === 'q') $event.preventDefault()">
+        @input="dirty = true" @change="dirty = true" @submit="submitting = true">
     {% csrf_token %}
     {% if form.non_field_errors %}<div class="field-error">{{ form.non_field_errors|striptags }}</div>{% endif %}
 
@@ -158,23 +156,6 @@
         </div>
       </div>
 
-      <div class="sideCard">
-        <div class="formGroup">
-          <label>Reviews film</label>
-          <template x-for="f in films" :key="f.id">
-            <div class="filmChip">
-              <template x-if="f.poster"><img :src="f.poster" alt="" class="filmChipPoster" /></template>
-              <span class="filmChipTitle" x-text="f.title"></span>
-              <button type="button" class="filmChipRemove" @click="removeFilm(f.id)" :aria-label="'Unlink ' + f.title">&times;</button>
-              <input type="hidden" name="films" :value="f.id" />
-            </div>
-          </template>
-          {% include "dashboard/_film_search_combo.html" with combo_id="blog-film" %}
-          <p class="fieldHint">The film's page links to this post as "Read our review" once it is published.</p>
-          {% if form.films.errors %}<div class="field-error">{{ form.films.errors|striptags }}</div>{% endif %}
-        </div>
-      </div>
-
       {% if post %}
       <div class="sideCard sideCard--danger">
         {% if post.is_published %}
@@ -185,7 +166,7 @@
         <button type="button" class="btn btn-danger btn-sm"
                 hx-post="{% url 'dashboard:blog_post_delete' post.pk %}" hx-params="none"
                 @htmx:before-request="submitting = true"
-                data-dashboard-confirm='{"title":"Delete Post","message":"Delete \"{{ post.title|escapejs }}\"?{% if post.films.exists %} It is the review linked from a film page, which will lose the link.{% endif %} This cannot be undone.","confirmLabel":"Delete","variant":"danger"}'>Delete post</button>
+                data-dashboard-confirm='{"title":"Delete Post","message":"Delete \"{{ post.title|escapejs }}\"? This cannot be undone.","confirmLabel":"Delete","variant":"danger"}'>Delete post</button>
       </div>
       {% endif %}
     </aside>

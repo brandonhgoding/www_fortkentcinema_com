@@ -231,24 +231,15 @@ class CreatePostTests(BlogFixture):
         self.assertEqual(post.slug, "post-2")
         self.assertEqual(self.client.get(reverse("dashboard:blog")).status_code, 200)
 
-    def test_links_films_to_the_review(self) -> None:
-        other = Film.objects.create(title="Dune: Part One (re-release)")
-        self.client.post(
-            reverse("dashboard:blog_post_create"),
-            {**self.payload(), "films": [self.film.pk, other.pk]},
-        )
-        post = BlogPost.objects.get()
-        self.assertEqual(set(post.films.all()), {self.film, other})
+    def test_editor_has_no_film_picker(self) -> None:
+        """The film-to-review link went with the film pages on 2026-10-14."""
+        html = self.client.get(reverse("dashboard:blog_post_create")).content.decode()
+        self.assertNotIn('name="films"', html)
+        self.assertNotIn("Reviews film", html)
+        self.assertNotIn("film_search_combo.css", html)
 
 
 class EditPostTests(BlogFixture):
-    def test_edit_form_prefills_films(self) -> None:
-        post = self.make_post()
-        self.film.review = post
-        self.film.save(update_fields=["review"])
-        resp = self.client.get(reverse("dashboard:blog_post_edit", args=[post.pk]))
-        self.assertEqual(resp.context["initial_films"][0]["title"], "Dune")
-
     def test_save_changes_keeps_a_published_post_live(self) -> None:
         post = self.make_post()
         self.client.post(
@@ -276,17 +267,6 @@ class EditPostTests(BlogFixture):
         )
         post.refresh_from_db()
         self.assertFalse(post.is_published)
-
-    def test_unlinking_a_film_clears_its_review(self) -> None:
-        post = self.make_post()
-        self.film.review = post
-        self.film.save(update_fields=["review"])
-        self.client.post(
-            reverse("dashboard:blog_post_edit", args=[post.pk]),
-            self.payload(slug=post.slug),
-        )
-        self.film.refresh_from_db()
-        self.assertIsNone(self.film.review)
 
     def test_save_shows_a_toast_after_redirect(self) -> None:
         post = self.make_post(status=BlogPost.Status.DRAFT)

@@ -65,13 +65,10 @@ class ShowtimeAdmin(admin.ModelAdmin):
 
 @admin.register(Film)
 class FilmAdmin(admin.ModelAdmin):
-    list_display = ("title", "rating", "runtime_minutes", "review", "created_at")
+    list_display = ("title", "rating", "runtime_minutes", "created_at")
     search_fields = ("title", "tmdb_id", "imdb_id", "slug")
     list_filter = ("rating",)
     prepopulated_fields = {"slug": ("title",)}
-    # Reviews are linked from the post editor in the dashboard, which is also
-    # the only place blog posts can be searched now.
-    readonly_fields = ("review",)
 
 
 @admin.register(Screen)

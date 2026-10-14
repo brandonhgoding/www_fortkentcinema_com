@@ -2,8 +2,8 @@
 
 This used to live in /admin/, as three bare model registrations with a
 plain-text body field. The dashboard adds what the admin never had: drafts,
-a Markdown editor with a live preview, a draft preview rendered by the real
-public template, and linking a review to its film from the post itself.
+a Markdown editor with a live preview, and a draft preview rendered by the
+real public template.
 
 Posts are written here on the authors' behalf, so BlogAuthor stays a byline
 rather than a login.
@@ -14,7 +14,6 @@ import json
 from blog.models import BlogAuthor, BlogCategory, BlogPost
 from blog.rendering import render_body
 from blog.site_views import PostDetailView
-from cinema.models import Film
 from django.contrib import messages
 from django.db.models import Count, ProtectedError, Q
 from django.http import HttpResponse
@@ -59,9 +58,7 @@ def post_list_context(params) -> dict:
     status = params.get("status") or ""
     category = params.get("category") or ""
 
-    posts = BlogPost.objects.select_related("author", "category").annotate(
-        film_count=Count("films")
-    )
+    posts = BlogPost.objects.select_related("author", "category")
     if q:
         posts = posts.filter(Q(title__icontains=q) | Q(subtitle__icontains=q))
     if status in BlogPost.Status.values:
@@ -100,17 +97,6 @@ class BlogListView(StaffRequiredMixin, View):
         return render(request, "dashboard/blog.html", ctx)
 
 
-def _initial_films(form: BlogPostForm) -> list[dict]:
-    """The film chips the editor opens with: the saved links on a fresh edit,
-    or whatever was picked before a failed submit."""
-    value = form["films"].value() or []
-    ids = [getattr(v, "pk", v) for v in value]
-    return [
-        {"id": f.id, "title": f.title, "poster": f.poster_url or ""}
-        for f in Film.objects.filter(pk__in=ids).order_by("title")
-    ]
-
-
 def _body_format(form: BlogPostForm) -> str:
     """The format the editor previews in: the post's own, unless staff ticked
     Switch to Markdown on a plain post."""
@@ -126,7 +112,6 @@ def _render_editor(request, form: BlogPostForm, post: BlogPost | None):
         {
             "form": form,
             "post": post,
-            "initial_films": _initial_films(form),
             "preview_html": render_body(form["content"].value(), _body_format(form)),
         },
     )
@@ -191,11 +176,7 @@ class BlogPostEditView(StaffRequiredMixin, View):
 
 
 class BlogPostDeleteView(StaffRequiredMixin, View):
-    """Delete from the list (swap the table) or from the editor (go to the list).
-
-    Film.review is SET_NULL, so a deleted review just unlinks from its film.
-    The confirm dialog names the films first.
-    """
+    """Delete from the list (swap the table) or from the editor (go to the list)."""
 
     def post(self, request, pk):
         post = get_object_or_404(BlogPost, pk=pk)

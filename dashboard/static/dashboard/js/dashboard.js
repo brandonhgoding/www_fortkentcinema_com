@@ -225,7 +225,7 @@ document.addEventListener('alpine:init', () => {
 });
 
 // Poll ballot (poll_detail.html): add the picked film to the ballot.
-// Listens on body like engagementForm and blogEditor, since film-selected
+// Listens on body like engagementForm, since film-selected
 // arrives both from the local combo ($dispatch, bubbles) and from a TMDB
 // import (HX-Trigger). Kept out of hx-* attributes on the picker's wrapper:
 // htmx inherits hx-vals, so a wrapper expression ran on the search request.
@@ -255,12 +255,9 @@ document.addEventListener('alpine:init', () => {
     submitting: false,
     slugTouched: false,
     subtitleLength: 0,
-    films: [],
     imagePreview: null,
     clearImage: false,
     init() {
-      const el = document.getElementById('blog-initial-films');
-      this.films = el ? JSON.parse(el.textContent) : [];
       this.subtitleLength = this.$refs.subtitle.value.length;
       // The URL follows the subtitle only on a new post whose URL nobody has
       // typed yet. Once a post is saved, its URL may already be shared.
@@ -268,18 +265,6 @@ document.addEventListener('alpine:init', () => {
       window.addEventListener('beforeunload', (e) => {
         if (this.dirty && !this.submitting) e.preventDefault();
       });
-      // From the local combo option ($dispatch, bubbles) and from a TMDB
-      // import (HX-Trigger), the same pair engagementForm listens for.
-      document.body.addEventListener('film-selected', (e) => {
-        const f = e.detail || {};
-        if (!f.id || this.films.some((x) => x.id === f.id)) return;
-        this.films.push({ id: f.id, title: f.title, poster: f.poster || '' });
-        this.dirty = true;
-      });
-    },
-    markDirty(e) {
-      // Typing in the film search box is not an edit to the post.
-      if (e.target.name !== 'q') this.dirty = true;
     },
     onSubtitle() {
       const value = this.$refs.subtitle.value;
@@ -296,10 +281,6 @@ document.addEventListener('alpine:init', () => {
         .replace(/[-\s]+/g, '-')
         .slice(0, 100)
         .replace(/^[-_]+|[-_]+$/g, '');
-    },
-    removeFilm(id) {
-      this.films = this.films.filter((f) => f.id !== id);
-      this.dirty = true;
     },
     pickImage(e) {
       const file = e.target.files[0];
