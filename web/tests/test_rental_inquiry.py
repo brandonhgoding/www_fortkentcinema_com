@@ -90,7 +90,7 @@ class RentalInquiryTests(TestCase):
         self.assertContains(response, "Alex Harper")
 
     def test_overlength_message_is_rejected(self):
-        # Same cap as the sponsor form: an anonymous POST into a TextField.
+        # Cap the message: an anonymous POST lands in a TextField.
         response = self.client.post(
             reverse("rentals_inquire"), self.payload(message="x" * 2001)
         )

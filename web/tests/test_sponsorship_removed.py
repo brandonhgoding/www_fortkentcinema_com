@@ -2,6 +2,10 @@
 
 from unittest import mock
 
+from django.apps import apps
+from django.contrib import admin
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import TestCase
 from django.urls import NoReverseMatch, reverse
 
@@ -81,17 +85,21 @@ class DashboardSponsorshipRemovedTests(TestCase):
 
 class AdminCommandsRemovedTests(TestCase):
     def test_commands_gone(self):
-        from django.core.management import call_command
-        from django.core.management.base import CommandError
-
         for name in ("import_studio_catalog", "render_promo_cards"):
             with self.assertRaises(CommandError, msg=name):
                 call_command(name)
 
     def test_admin_unregistered(self):
-        from django.contrib import admin
+        gone = {"studio", "studiotitle", "sponsorshipinquiry"}
+        registered = {m._meta.model_name for m in admin.site._registry}
+        self.assertFalse(registered & gone)
 
-        from cinema.models import SponsorshipInquiry, Studio, StudioTitle
 
-        for model in (Studio, StudioTitle, SponsorshipInquiry):
-            self.assertFalse(admin.site.is_registered(model), model.__name__)
+class ModelsRemovedTests(TestCase):
+    def test_models_gone(self):
+        from cinema.models import Film
+
+        for name in ("Studio", "StudioTitle", "SponsorshipInquiry"):
+            with self.assertRaises(LookupError, msg=name):
+                apps.get_model("cinema", name)
+        self.assertNotIn("studio_titles", [f.name for f in Film._meta.get_fields()])
