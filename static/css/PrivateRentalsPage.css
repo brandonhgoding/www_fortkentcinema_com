@@ -230,14 +230,97 @@
   margin-bottom: var(--spacing-lg);
 }
 
-/* The booking form borrows the sponsor form's fields and grid
- * (.sponsor-inquire__* in SponsorPage.css). This box only undoes the CTA's
- * centring, which suits a heading but not a column of labels, and keeps the
- * form to a readable width inside the full-width gold frame. */
+/* The booking form's own fields and grid (.rental-inquire__*, below). This
+ * box only undoes the CTA's centring, which suits a heading but not a column
+ * of labels, and keeps the form to a readable width inside the full-width
+ * gold frame. */
 .rentals-inquire {
   max-width: 44rem;
   margin: 0 auto var(--spacing-lg);
   text-align: left;
+}
+
+/* Inquiry form */
+.rental-inquire__form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: var(--spacing-md);
+  align-items: start;
+}
+
+.rental-inquire__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.rental-inquire__label {
+  font-family: var(--font-condensed);
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--color-cream-muted);
+}
+
+.rental-inquire__form input,
+.rental-inquire__form select,
+.rental-inquire__form textarea {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--color-bg-dark);
+  border: 1px solid var(--color-brass);
+  border-radius: 3px;
+  color: var(--color-cream);
+  width: 100%;
+}
+
+.rental-inquire__form input:focus,
+.rental-inquire__form select:focus,
+.rental-inquire__form textarea:focus {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 1px;
+}
+
+.rental-inquire__form textarea {
+  resize: vertical;
+}
+
+/* The message field and the submit button span the whole grid. */
+.rental-inquire__form label:has(textarea),
+.rental-inquire__form button {
+  grid-column: 1 / -1;
+}
+
+.rental-inquire__form button {
+  justify-self: start;
+}
+
+.rental-inquire__error,
+.rental-inquire__field-error {
+  font-family: var(--font-body);
+  color: var(--color-danger);
+  font-size: 0.9rem;
+}
+
+.rental-inquire__error {
+  grid-column: 1 / -1;
+  padding: var(--spacing-sm);
+  border-left: 3px solid var(--color-gold);
+  background: var(--color-bg-dark);
+}
+
+.rental-inquire__sent h3 {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  color: var(--color-gold);
+  margin-bottom: var(--spacing-sm);
+}
+
+.rental-inquire__sent p {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  color: var(--color-cream);
 }
 
 .rentals-cta-contact {

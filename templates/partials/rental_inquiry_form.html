@@ -1,11 +1,10 @@
 {% comment %}
-  The /rentals/ booking form. Same markup and classes as
-  sponsor_inquiry_form.html so the two forms look and behave alike; the
-  rentals-specific layout lives under .rentals-inquire in
-  PrivateRentalsPage.css. No Alpine here — there is no film to carry over.
+  The /rentals/ booking form. Its styles (.rental-inquire__*) and the layout
+  of the box around it (.rentals-inquire) live in PrivateRentalsPage.css.
+  No Alpine here — there is no film to carry over.
 {% endcomment %}
 {% if sent %}
-  <div class="sponsor-inquire__sent">
+  <div class="rental-inquire__sent">
     <h3>Thanks — we've got it.</h3>
     <p>
       We'll be in touch within a couple of days to check the date and talk
@@ -13,21 +12,21 @@
     </p>
   </div>
 {% else %}
-  <form class="sponsor-inquire__form" method="post" action="{% url 'rentals_inquire' %}">
+  <form class="rental-inquire__form" method="post" action="{% url 'rentals_inquire' %}">
     {% csrf_token %}
     {% if form.errors %}
-      <p class="sponsor-inquire__error">
+      <p class="rental-inquire__error">
         Something's missing below — have a look and try again.
       </p>
     {% endif %}
     {{ form.website }}
 
     {% for field in form.visible_fields %}
-      <label class="sponsor-inquire__field">
-        <span class="sponsor-inquire__label">{{ field.label }}</span>
+      <label class="rental-inquire__field">
+        <span class="rental-inquire__label">{{ field.label }}</span>
         {{ field }}
         {% if field.errors %}
-          <span class="sponsor-inquire__field-error">{{ field.errors|join:" " }}</span>
+          <span class="rental-inquire__field-error">{{ field.errors|join:" " }}</span>
         {% endif %}
       </label>
     {% endfor %}
