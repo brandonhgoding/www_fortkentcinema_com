@@ -77,3 +77,21 @@ class DashboardSponsorshipRemovedTests(TestCase):
         html = self.client.get(reverse("dashboard:home")).content.decode()
         self.assertNotIn("/dashboard/inquiries", html)
         self.assertIn("Rental Inquiries", html)
+
+
+class AdminCommandsRemovedTests(TestCase):
+    def test_commands_gone(self):
+        from django.core.management import call_command
+        from django.core.management.base import CommandError
+
+        for name in ("import_studio_catalog", "render_promo_cards"):
+            with self.assertRaises(CommandError, msg=name):
+                call_command(name)
+
+    def test_admin_unregistered(self):
+        from django.contrib import admin
+
+        from cinema.models import SponsorshipInquiry, Studio, StudioTitle
+
+        for model in (Studio, StudioTitle, SponsorshipInquiry):
+            self.assertFalse(admin.site.is_registered(model), model.__name__)
