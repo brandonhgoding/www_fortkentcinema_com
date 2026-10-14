@@ -50,6 +50,7 @@ class AdInquiryTests(TestCase):
         )
         self.assertEqual(AdInquiry.objects.count(), 0)
         self.assertContains(response, "valid email")
+        self.assertContains(response, 'id="id_email_error"')
 
     def test_overlength_message_is_rejected(self):
         response = self.client.post(

@@ -57,11 +57,11 @@ page, so both renderings read from the one list — same as /rentals/.
         read too. No audience counts or reach figures: we promise when the
         ad plays, not how many people see it.
       {% endcomment %}
-      <section class="advertise-section">
-        <h2 class="advertise-section-title">THE RATES</h2>
+      <section class="advertise-section" aria-labelledby="advertise-rates-title">
+        <h2 class="advertise-section-title" id="advertise-rates-title">THE RATES</h2>
         <p class="advertise-section-note">
           Both run in the loop before every show, from the time the doors open,
-          30 minutes before showtime.
+          {{ site_config.box_office.opens_before_show_minutes }} minutes before showtime.
         </p>
         <div class="advertise-grid">
           <div class="ad-card">

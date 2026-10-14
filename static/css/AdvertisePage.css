@@ -183,7 +183,7 @@
 
 /* Advertising terms, as an FAQ.
  *
- * Same box treatment as .advertise-faq__list and .membership-faq__list; keep
+ * Same box treatment as .rentals-faq__list and .membership-faq__list; keep
  * them in step. Grid items stretch, so every card in a row shares the
  * tallest one's height.
  */

@@ -4,7 +4,12 @@ from unittest import mock
 
 from django.test import TestCase
 from django.urls import reverse
-from web.constants import AD_SLIDE_PRICE, AD_VIDEO_PRICE, ADVERTISING_FAQ
+from web.constants import (
+    AD_SLIDE_PRICE,
+    AD_VIDEO_PRICE,
+    ADVERTISING_FAQ,
+    SITE_CONFIG,
+)
 
 
 class AdvertisePageTests(TestCase):
@@ -88,6 +93,17 @@ class AdvertisePageTests(TestCase):
         self.assertIn(
             'data-track="phone_click" data-track-location="advertise"', self.html
         )
+
+
+class AdvertiseDoorsTimeTests(TestCase):
+    """The rate card reads the doors time from SITE_CONFIG, like the footer."""
+
+    def test_doors_time_follows_site_config(self):
+        with mock.patch.dict(
+            SITE_CONFIG["box_office"], {"opens_before_show_minutes": 45}
+        ):
+            html = self.client.get(reverse("advertise")).content.decode()
+        self.assertIn("45 minutes before showtime", html)
 
 
 class AdvertiseMetaPriceTests(TestCase):

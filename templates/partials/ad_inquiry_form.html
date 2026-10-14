@@ -34,7 +34,7 @@
           <legend class="ad-inquire__label">{{ field.label }}</legend>
           {{ field }}
           {% if field.errors %}
-            <span class="ad-inquire__field-error">{{ field.errors|join:" " }}</span>
+            <span class="ad-inquire__field-error" id="{{ field.auto_id }}_error">{{ field.errors|join:" " }}</span>
           {% endif %}
         </fieldset>
       {% else %}
@@ -42,7 +42,7 @@
           <span class="ad-inquire__label">{{ field.label }}</span>
           {{ field }}
           {% if field.errors %}
-            <span class="ad-inquire__field-error">{{ field.errors|join:" " }}</span>
+            <span class="ad-inquire__field-error" id="{{ field.auto_id }}_error">{{ field.errors|join:" " }}</span>
           {% endif %}
         </label>
       {% endif %}
