@@ -113,10 +113,14 @@ Behaviour tests, new or rewritten:
   the joined film titles otherwise. `"SPECIAL_EVENT"` is not among
   `Engagement.Kind.values`. `Engagement` has no attribute
   `default_visibility_for`.
-- **Migration.** Using the migration executor, at `0024` create an
-  engagement with `kind="SPECIAL_EVENT"` and `event_title="X"`, migrate
-  forward to `0026`, and assert the row is `kind="REGULAR"` with
-  `display_title="X"`.
+- **Migration.** A plain `TestCase` creates an engagement with
+  `kind="SPECIAL_EVENT"` against the final schema (choices are not
+  enforced by the database), calls `0025`'s `special_event_to_regular`
+  function directly, and asserts the row is `kind="REGULAR"` with its
+  title intact and a Classic row untouched. The migration executor is
+  avoided on purpose: a `TransactionTestCase` flushes every table on
+  teardown, which wipes the seeded audience catalogue other tests rely on.
+  `RenameField` is Django's and is not re-tested.
 - **Heckle Night.** The lineup tests that booked a Special Event and
   expected a film (`test_booked_night_carries_its_film`,
   `test_a_special_event_is`, `test_seven_oclock_on_the_nose_is`,
