@@ -36,7 +36,6 @@ class ChromeTests(TestCase):
                 "Home",
                 "Blog",
                 "Engagements",
-                "Inquiries",
                 "Members",
                 "Memberships",
                 "Polls",

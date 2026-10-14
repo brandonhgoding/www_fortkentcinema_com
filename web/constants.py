@@ -220,16 +220,6 @@ MEMBERSHIP_FAQ = [
     },
 ]
 
-# tier key -> display name, for surfaces that only have the key (e.g. a
-# SponsorshipInquiry.tier value on the dashboard). SponsorshipInquiry.tier
-# has no `choices` of its own — cinema doesn't import web — so this is the
-# one place the mapping lives.
-SPONSORSHIP_TIER_LABELS = {
-    "presenting": "Presenting Sponsor",
-    "community": "Community Screening",
-    "full_house": "Full House",
-}
-
 
 # Recreated Savoy Theatre playbills, transcribed from the originals held by the
 # Fort Kent Historical Society and reproduced in Lisa Ornstein's "Going to the

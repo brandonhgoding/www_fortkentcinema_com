@@ -60,3 +60,19 @@ class HomeSponsorshipRemovedTests(TestCase):
             "SPONSORSHIP_TIERS",
         ):
             self.assertFalse(hasattr(constants, name), name)
+
+
+class DashboardSponsorshipRemovedTests(TestCase):
+    def test_dashboard_inquiries_gone(self):
+        from django.contrib.auth import get_user_model
+
+        for name in ("dashboard:inquiries", "dashboard:inquiry_status"):
+            with self.assertRaises(NoReverseMatch):
+                reverse(name, args=[1]) if "status" in name else reverse(name)
+        staff = get_user_model().objects.create_user(
+            username="staff", password="pw", is_staff=True
+        )
+        self.client.force_login(staff)
+        html = self.client.get(reverse("dashboard:home")).content.decode()
+        self.assertNotIn("/dashboard/inquiries", html)
+        self.assertIn("Rental Inquiries", html)
