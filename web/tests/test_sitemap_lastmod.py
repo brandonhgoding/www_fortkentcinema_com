@@ -52,9 +52,10 @@ class StaticSitemapLastmodTests(TestCase):
 
     def test_the_sitemap_actually_emits_them(self):
         urls = self._urls()
-        rentals = [u for u in urls if u.endswith("/rentals/")]
-        self.assertEqual(len(rentals), 1, "rentals missing from the sitemap")
-        self.assertTrue(urls[rentals[0]], "rentals has an empty lastmod")
+        for path in ("/rentals/", "/advertise/"):
+            found = [u for u in urls if u.endswith(path)]
+            self.assertEqual(len(found), 1, f"{path} missing from the sitemap")
+            self.assertTrue(urls[found[0]], f"{path} has an empty lastmod")
 
     def test_a_data_driven_page_beats_its_template_date(self):
         """/blog/ moves when a post lands, with nobody touching the template.

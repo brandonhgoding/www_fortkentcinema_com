@@ -476,14 +476,19 @@ class GetInvolvedTests(TestCase):
         self.assertRegex(section, r'<h2 class="section-title"[^>]*>Be part of the show</h2>')
         self.assertIn('class="home-cards"', section)
 
-    def test_advertise_card_is_third_and_has_no_link_yet(self):
-        # Added 2026-10-13; its page comes later, so for now it advertises
-        # without sending anyone anywhere.
+    def test_advertise_card_links_to_the_page(self):
+        # Added 2026-10-13 without a link; /advertise/ landed 2026-10-14.
         section = self.section()
-        self.assertLess(section.index("heckle-night-cta"), section.index("advertise-cta"))
+        self.assertLess(
+            section.index("heckle-night-cta"), section.index("advertise-cta")
+        )
         card = self.card("advertise-cta")
         self.assertIn("Advertise with us", card)
-        self.assertNotIn("<a ", card)
+        self.assertIn(
+            f'<a href="{reverse("advertise")}" class="home-link">'
+            "See rates &rarr;</a>",
+            card,
+        )
 
     def test_cards_are_open_mic_then_heckle_night(self):
         from cinema.models import Poll, PollStatus

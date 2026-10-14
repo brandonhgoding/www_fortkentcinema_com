@@ -55,6 +55,11 @@ SITE_CONFIG = {
         # second line inside the same link, saying what a name like "From
         # the Booth" or "You Choose" doesn't on its own.
         {
+            "label": "Advertise",
+            "note": "Your business on the big screen",
+            "href": "/advertise/",
+        },
+        {
             "label": "Century Theatre in Fort Kent",
             "note": "A brief, semi-accurate history",
             "href": "/history/",

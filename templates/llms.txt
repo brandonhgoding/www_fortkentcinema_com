@@ -41,9 +41,10 @@ Tiers and prices: {{ base }}/membership/
   {{ base }}/heckle-night/
 - Film vote, where the public picks from a short list: {{ base }}/vote
 
-## Rentals
+## Rentals, advertising
 
 - Private rentals of the theater: {{ base }}/rentals/
+- Advertising on the big screen before every show: {{ base }}/advertise/
 
 ## Contact
 

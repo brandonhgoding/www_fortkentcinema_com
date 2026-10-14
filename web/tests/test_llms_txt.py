@@ -65,6 +65,11 @@ class LlmsTxtTests(TestCase):
         self.assertNotIn("squareup.com/gift", text)
         self.assertNotIn("gift card", text.lower())
 
+    def test_advertising_is_listed(self, *_):
+        text = self.get().content.decode()
+        self.assertIn("## Rentals, advertising", text)
+        self.assertIn("http://testserver/advertise/", text)
+
     def test_every_site_link_is_a_live_page(self, *_):
         text = self.get().content.decode()
         paths = set(re.findall(r"https?://testserver(/[^\s)#]*)", text))
