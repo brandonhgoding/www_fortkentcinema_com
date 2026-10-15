@@ -63,6 +63,9 @@
   display: inline-flex;
   align-items: center;
   min-height: 44px;
+  /* Three links plus the button: without this, "Buy Ad Space" and "Rent the
+     Cinema" break onto two lines between 769px and about 840px. */
+  white-space: nowrap;
 }
 
 .nav-link:hover {
@@ -305,14 +308,28 @@
   display: none;
 }
 
-/* Mobile responsiveness */
-@media (max-width: 900px) {
+/* Tablet-landscape squeeze. Three links plus the button, all nowrap, need
+   about 940px at full size; at 769px (the hamburger's upper edge) the bar is
+   ~90px short even at the old 0.85rem/1rem-gap tier. Tighter tracking, the
+   narrow gap and the wordmark at its 2.5rem legibility floor together buy
+   that back; measured at 769px with ~15px to spare. */
+@media (max-width: 960px) {
+  .nav-logo img {
+    height: 2.5rem;
+  }
+
   .nav-links {
-    gap: var(--spacing-sm);
+    gap: var(--spacing-xs);
   }
 
   .nav-link {
     font-size: 0.85rem;
+    letter-spacing: 1px;
+  }
+
+  .nav-cta {
+    padding: 0.5rem 1rem;
+    letter-spacing: 1px;
   }
 }
 

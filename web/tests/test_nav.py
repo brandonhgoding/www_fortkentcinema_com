@@ -1,3 +1,7 @@
+import re
+from pathlib import Path
+
+from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
 
@@ -45,8 +49,18 @@ class NavigationConfigTests(TestCase):
         self.assertLessEqual(len(SITE_CONFIG["navigation"]), 5)
 
     def test_top_level_order(self):
-        labels = [i["label"] for i in SITE_CONFIG["navigation"]]
-        self.assertEqual(labels, ["Now Showing", "Coming Soon"])
+        # The owner's call on 2026-10-14: the nav names the pages they want
+        # Google to offer as sitelinks, in this order. Coming Soon stays a
+        # home-page section; it is an anchor, and Google won't sitelink a
+        # fragment of the page it is already showing.
+        self.assertEqual(
+            SITE_CONFIG["navigation"],
+            [
+                {"label": "Now Showing", "href": "#now-showing"},
+                {"label": "Buy Ad Space", "href": "/advertise/"},
+                {"label": "Rent the Cinema", "href": "/rentals/"},
+            ],
+        )
 
     def test_membership_is_the_nav_button_not_a_link(self):
         # The owner's call on 2026-10-13: Membership leaves the link row and
@@ -66,23 +80,25 @@ class NavigationConfigTests(TestCase):
 
     def test_more_menu_is_gone(self):
         # The owner emptied "More" on 2026-10-13: Blog, Film Vote and
-        # History went to the footer, Rentals came out of the
-        # nav altogether.
+        # History went to the footer. (Rentals left with them and came back
+        # as a top-level link on 2026-10-14.)
         labels = [i["label"] for i in SITE_CONFIG["navigation"]]
         self.assertNotIn("More", labels)
-        for href in ("/blog/", "/vote", "/history/", "/rentals/", "/sponsor/"):
+        for href in ("/blog/", "/vote", "/history/", "/sponsor/"):
             self.assertNotIn(href, nav_destinations())
 
     def test_footer_holds_what_left_more(self):
         labels = [i["label"] for i in SITE_CONFIG["footer_navigation"]]
-        # Alphabetical, the owner's call on 2026-10-13.
+        # Alphabetical, the owner's call on 2026-10-13. The rentals and
+        # advertising labels match the nav and the page titles, so Google
+        # sees one name per page wherever it is linked.
         self.assertEqual(
             labels,
             [
-                "Advertise",
+                "Buy Ad Space",
                 "Century Theatre in Fort Kent",
                 "From the Booth",
-                "Private Rentals",
+                "Rent the Cinema",
                 "You Choose",
             ],
         )
@@ -91,13 +107,14 @@ class NavigationConfigTests(TestCase):
         # The owner's call on 2026-10-14: /rentals/ had no internal link
         # after /sponsor/ was removed, so it joins the Explore column.
         rentals = footer_item("/rentals/")
+        self.assertEqual(rentals["label"], "Rent the Cinema")
         self.assertEqual(rentals["note"], "Rent the whole theater")
         html = footer_html(self.client.get("/").content.decode())
         self.assertIn('href="/rentals/"', html)
 
     def test_advertise_link_lives_in_the_footer(self):
         item = footer_item("/advertise/")
-        self.assertEqual(item["label"], "Advertise")
+        self.assertEqual(item["label"], "Buy Ad Space")
         self.assertEqual(item["note"], "Your business on the big screen")
         html = footer_html(self.client.get("/").content.decode())
         self.assertIn('href="/advertise/"', html)
@@ -170,6 +187,32 @@ class NavigationRenderTests(TestCase):
             # Last in the row, so it sits at the right edge.
             last_li = html.rindex("<li")
             self.assertIn('href="/membership/"', html[last_li:], path)
+
+    def test_rentals_and_advertise_are_linked_from_the_nav_on_every_page(self):
+        # Sitelink candidates: Google weights a main-nav link over a footer
+        # one, and the anchor text is what it leans on for the label.
+        for path in ("/", "/rentals/", "/advertise/", "/blog/"):
+            html = nav_html(self.client.get(path).content.decode())
+            self.assertIn('href="/advertise/"', html, path)
+            self.assertIn('href="/rentals/"', html, path)
+            self.assertIn(">Buy Ad Space</a>", html, path)
+            self.assertIn(">Rent the Cinema</a>", html, path)
+
+    def test_coming_soon_left_the_nav(self):
+        html = nav_html(self.client.get("/").content.decode())
+        self.assertNotIn("#coming-soon", html)
+        self.assertNotIn("Coming Soon", html)
+
+    def test_nav_labels_never_wrap(self):
+        # Three links plus the button is enough that between 769 and about
+        # 840px "Buy Ad Space" and "Rent the Cinema" broke onto two lines
+        # (the bar is a flex row with no nowrap on the links, only on the
+        # button). Pin the rule on the source sheet; bundle.css is built
+        # from it.
+        css = (Path(settings.BASE_DIR) / "static" / "css" / "Nav.css").read_text()
+        rule = re.search(r"\n\.nav-link \{(.*?)\}", css, re.S)
+        self.assertIsNotNone(rule, ".nav-link rule missing from Nav.css")
+        self.assertIn("white-space: nowrap", rule.group(1))
 
     def test_no_dropdowns_left(self):
         html = nav_html(self.client.get(reverse("home")).content.decode())

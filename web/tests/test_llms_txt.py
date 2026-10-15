@@ -68,6 +68,10 @@ class LlmsTxtTests(TestCase):
     def test_advertising_is_listed(self, *_):
         text = self.get().content.decode()
         self.assertIn("## Rentals, advertising", text)
+        # Named as the nav and page titles name them.
+        self.assertIn("- Rent the Cinema", text)
+        self.assertIn("http://testserver/rentals/", text)
+        self.assertIn("- Buy Ad Space", text)
         self.assertIn("http://testserver/advertise/", text)
 
     def test_every_site_link_is_a_live_page(self, *_):

@@ -20,11 +20,14 @@ class AdvertisePageTests(TestCase):
     def test_renders(self):
         self.assertEqual(self.response.status_code, 200)
         self.assertTemplateUsed(self.response, "web/advertise.html")
-        self.assertIn(
-            "<title>Advertise on the Big Screen | Fort Kent Cinema</title>",
-            self.html,
-        )
-        self.assertIn("YOUR BUSINESS ON THE BIG SCREEN", self.html)
+        # Title, og:title and H1 all say "Buy Ad Space", the nav and footer
+        # label, so the sitelink Google builds for this page reads the same.
+        self.assertIn("<title>Buy Ad Space | Fort Kent Cinema</title>", self.html)
+        self.assertIn('content="Buy Ad Space | Fort Kent Cinema"', self.html)
+        self.assertIn('<h1 class="advertise-title">BUY AD SPACE</h1>', self.html)
+        self.assertNotIn("Advertise on the Big Screen", self.html)
+        # The old headline survives as the subtitle.
+        self.assertIn("Your business on the big screen", self.html)
 
     def test_the_two_rates(self):
         for text in ("PRE-SHOW SLIDE", "VIDEO SPOT", "$75", "$150", "30 seconds",
