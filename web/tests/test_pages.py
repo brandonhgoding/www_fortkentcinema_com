@@ -363,13 +363,18 @@ class RentalsPageTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertTemplateUsed(resp, "web/rentals.html")
         html = resp.content.decode()
-        self.assertIn("RENT THE THEATER", html)
+        self.assertIn('<h1 class="rentals-title">RENT THE CINEMA</h1>', html)
+        self.assertNotIn("RENT THE THEATER", html)
         self.assertIn("$225", html)  # base rate
         self.assertIn("rentals-page", html)
 
     def test_rentals_meta(self):
+        # Title and og:title match the nav label, so Google's sitelink for
+        # this page reads "Rent the Cinema".
         html = self.client.get(reverse("rentals")).content.decode()
-        self.assertIn("Private Rentals", html)
+        self.assertIn("<title>Rent the Cinema | Fort Kent Cinema</title>", html)
+        self.assertIn('content="Rent the Cinema | Fort Kent Cinema"', html)
+        self.assertNotIn("Private Rentals", html)
 
     def test_rentals_content_sections(self):
         html = self.client.get(reverse("rentals")).content.decode()

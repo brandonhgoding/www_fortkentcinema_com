@@ -30,10 +30,22 @@ SITE_CONFIG = {
     # one — the nav collapses to a hamburger at 768px, and a sixth is what
     # strained the 768-900px range. A dropdown costs the same width as a
     # link plus a caret, so trading a link for a menu is width-neutral;
-    # adding one is not.
+    # adding one is not. Label length counts too: the three links below plus
+    # the button only fit the 769-960px range with Nav.css's squeeze tier,
+    # with ~15px to spare at 769px. Measure before adding a word to any of
+    # them.
+    #
+    # These are the pages the owner wants Google to offer as sitelinks
+    # under the listing (2026-10-14). Google builds sitelinks from pages
+    # linked site-wide and labels them from the anchor text and the page
+    # title, so each label here is also the page's <title> and <h1>, and
+    # its footer label. Coming Soon came out: it is an anchor on the home
+    # page, and Google won't sitelink a fragment of the page it already
+    # shows. Now Showing stays as the one-click route to tonight's films.
     "navigation": [
         {"label": "Now Showing", "href": "#now-showing"},
-        {"label": "Coming Soon", "href": "#coming-soon"},
+        {"label": "Buy Ad Space", "href": "/advertise/"},
+        {"label": "Rent the Cinema", "href": "/rentals/"},
     ],
     # Membership, as a button at the right end of the nav rather than a link
     # in the row (the owner's call, 2026-10-13). The Events menu came out the
@@ -53,9 +65,10 @@ SITE_CONFIG = {
     "footer_navigation": [
         # Alphabetical by label (the owner's call). "note" renders as a
         # second line inside the same link, saying what a name like "From
-        # the Booth" or "You Choose" doesn't on its own.
+        # the Booth" or "You Choose" doesn't on its own. Rentals and
+        # advertising carry the same label as the nav and their page title.
         {
-            "label": "Advertise",
+            "label": "Buy Ad Space",
             "note": "Your business on the big screen",
             "href": "/advertise/",
         },
@@ -70,7 +83,7 @@ SITE_CONFIG = {
             "href": "/blog/",
         },
         {
-            "label": "Private Rentals",
+            "label": "Rent the Cinema",
             "note": "Rent the whole theater",
             "href": "/rentals/",
         },

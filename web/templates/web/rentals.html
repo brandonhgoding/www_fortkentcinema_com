@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Private Rentals | Fort Kent Cinema{% endblock %}
+{% block title %}Rent the Cinema | Fort Kent Cinema{% endblock %}
 {% block description %}Rent the whole theater at Fort Kent Cinema. One simple rate — bring your own movie for a private screening, or we'll arrange a licensed film for public, group, and fundraiser events.{% endblock %}
-{% block og_title %}Private Rentals | Fort Kent Cinema{% endblock %}
+{% block og_title %}Rent the Cinema | Fort Kent Cinema{% endblock %}
 {% block og_description %}Rent the whole theater at Fort Kent Cinema. One simple rate for private screenings and licensed events.{% endblock %}
 
 {% block extra_head %}
@@ -35,7 +35,11 @@ so both renderings read from the one list — same as /membership/.
     <div class="rentals-container">
       <div class="rentals-header">
         <a href="/" class="rentals-back">&larr; Back to Home</a>
-        <h1 class="rentals-title">RENT THE THEATER</h1>
+        {% comment %}
+          The H1 is the nav label, verbatim: Google takes a sitelink's name
+          from the title, heading and anchor text, and they should agree.
+        {% endcomment %}
+        <h1 class="rentals-title">RENT THE CINEMA</h1>
         <p class="rentals-subtitle">
           The whole place to yourself — one simple rate
         </p>

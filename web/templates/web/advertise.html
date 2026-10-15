@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Advertise on the Big Screen | Fort Kent Cinema{% endblock %}
+{% block title %}Buy Ad Space | Fort Kent Cinema{% endblock %}
 {% block description %}Put your business in front of a room full of neighbors before every show at Fort Kent Cinema. Pre-show slides from ${{ slide_price }} a month, video spots from ${{ video_price }}.{% endblock %}
-{% block og_title %}Advertise on the Big Screen | Fort Kent Cinema{% endblock %}
+{% block og_title %}Buy Ad Space | Fort Kent Cinema{% endblock %}
 {% block og_description %}Put your business in front of a room full of neighbors before every show at Fort Kent Cinema. Pre-show slides from ${{ slide_price }} a month, video spots from ${{ video_price }}.{% endblock %}
 {% comment %}
   The card art is 1200 x 675, not the default card's 1200 x 630, so the size
@@ -45,9 +45,13 @@ page, so both renderings read from the one list — same as /rentals/.
     <div class="advertise-container">
       <div class="advertise-header">
         <a href="/" class="advertise-back">&larr; Back to Home</a>
-        <h1 class="advertise-title">YOUR BUSINESS ON THE BIG SCREEN</h1>
+        {% comment %}
+          The H1 is the nav label, verbatim: Google takes a sitelink's name
+          from the title, heading and anchor text, and they should agree.
+        {% endcomment %}
+        <h1 class="advertise-title">BUY AD SPACE</h1>
         <p class="advertise-subtitle">
-          A room full of neighbors, every show, from the moment the doors open.
+          Your business on the big screen: a room full of neighbors, every show, from the moment the doors open.
         </p>
       </div>
 

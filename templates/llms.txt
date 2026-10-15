@@ -43,8 +43,8 @@ Tiers and prices: {{ base }}/membership/
 
 ## Rentals, advertising
 
-- Private rentals of the theater: {{ base }}/rentals/
-- Advertising on the big screen before every show: {{ base }}/advertise/
+- Rent the Cinema, private rentals of the whole theater: {{ base }}/rentals/
+- Buy Ad Space, advertising on the big screen before every show: {{ base }}/advertise/
 
 ## Contact
 
