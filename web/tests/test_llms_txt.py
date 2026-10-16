@@ -81,3 +81,24 @@ class LlmsTxtTests(TestCase):
         for path in sorted(paths):
             with self.subTest(path=path):
                 self.assertEqual(self.client.get(path).status_code, 200)
+
+    def test_does_not_promise_per_film_pages(self, *_):
+        # /movies/<slug> was retired on 2026-10-14 (it 301s to the home page),
+        # so an assistant reading "links to its own page" would send people to
+        # a redirect. The home card is now where a film's details live.
+        text = self.get().content.decode()
+        self.assertNotIn("its own page", text)
+        self.assertIn("There are no separate film pages.", text)
+        self.assertIn("Each film card on the home page carries its showtimes", text)
+
+    def test_states_the_screens_and_their_seats(self, *_):
+        # Directories disagree on the screen count (Cinema Treasures says
+        # one, Screendollars two); the owner confirmed two on 2026-10-15,
+        # 100 seats each. Rendered from the config so the schema block and
+        # this file can't drift apart.
+        text = self.get().content.decode()
+        screens = SITE_CONFIG["cinema"]["screens"]
+        self.assertEqual(len(screens), 2)
+        self.assertIn(f"{len(screens)} screens", text)
+        for screen in screens:
+            self.assertIn(f"{screen['name']} ({screen['seats']} seats)", text)

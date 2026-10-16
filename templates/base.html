@@ -129,6 +129,8 @@
       },
       "geo": {"@type": "GeoCoordinates", "latitude": 47.2586, "longitude": -68.5894},
       "hasMap": "{{ site_config.seo.map_url|escapejs }}",
+      "screenCount": {{ site_config.cinema.screens|length }},
+      "maximumAttendeeCapacity": {{ site_config.seo.seat_count }},
       "image": "{{ request.scheme|escapejs }}://{{ request.get_host|escapejs }}{% static 'img/og-image.jpg' %}",
       {% comment %}
       The black wordmark from the brand folder, as a PNG: Google shows a
