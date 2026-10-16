@@ -8,12 +8,13 @@ Autoescape is off because this is plain text, not HTML.
 > {{ site_config.cinema.tagline }}: a community movie theater at
 > {{ site_config.cinema.address.street }}, {{ site_config.cinema.address.city }}, Maine, in the St. John Valley.
 > Current movies, special events, and Cinema Club membership.
+> {{ site_config.cinema.screens|length }} screens: {% for screen in site_config.cinema.screens %}{{ screen.name }} ({{ screen.seats }} seats){% if not forloop.last %} and {% endif %}{% endfor %}.
 
 ## Showtimes
 
 - This week's films and showtimes: {{ base }}/#now-showing
 - What's booked next: {{ base }}/#coming-soon
-- Each film on the home page links to its own page, with showtimes, synopsis and trailer.
+- Each film card on the home page carries its showtimes, rating, runtime, synopsis and trailer. There are no separate film pages.
 
 There is no online ticketing. Pay at the box office, which opens
 {{ site_config.box_office.opens_before_show_minutes }} minutes before every show.

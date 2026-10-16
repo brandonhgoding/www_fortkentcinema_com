@@ -17,6 +17,13 @@ SITE_CONFIG = {
         # The same number for machines: tel: links and the MovieTheater
         # block's telephone. A test holds the two to the same digits.
         "phone_e164": "+12072315287",
+        # Two auditoriums, named on /history/. Directories disagree on the
+        # count (Cinema Treasures says one), so the schema block and
+        # llms.txt state it. Owner confirmed both in use, 2026-10-15.
+        "screens": [
+            {"name": "the Century", "seats": 100},
+            {"name": "the Savoy", "seats": 100},
+        ],
     },
     # No fixed weekly hours. A table of them ("Wednesday - Thursday,
     # 6-9 PM") contradicted the schedule it sat under — Friday Heckle Night,
@@ -137,6 +144,8 @@ SITE_CONFIG["seo"] = {
     # hasMap on the MovieTheater. Built from the address rather than pasted,
     # so moving the theater moves the pin.
     "map_url": "https://www.google.com/maps/search/?api=1&query=" + _MAP_QUERY,
+    # maximumAttendeeCapacity on the MovieTheater: every seat in the house.
+    "seat_count": sum(s["seats"] for s in SITE_CONFIG["cinema"]["screens"]),
 }
 
 # The rental policies, as questions.

@@ -275,6 +275,19 @@ class TheaterSchemaTests(TestCase):
         with mock.patch.dict(TICKET_PRICES, member=3, adult=9):
             self.assertEqual(self.theater()["priceRange"], "$3 - $9")
 
+    def test_screen_count_and_capacity_come_from_the_config(self):
+        """Two screens, 100 seats each (owner, 2026-10-15). Listed so the
+        directories that say one screen have something to be corrected
+        against."""
+        screens = SITE_CONFIG["cinema"]["screens"]
+        block = self.theater()
+        self.assertEqual(block["screenCount"], len(screens))
+        self.assertEqual(block["screenCount"], 2)
+        self.assertEqual(
+            block["maximumAttendeeCapacity"], sum(s["seats"] for s in screens)
+        )
+        self.assertEqual(block["maximumAttendeeCapacity"], 200)
+
     def test_logo_is_an_absolute_png_that_ships(self):
         logo = self.theater()["logo"]
         self.assertRegex(logo, r"^https?://.+\.png$")
