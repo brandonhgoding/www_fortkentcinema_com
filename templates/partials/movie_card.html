@@ -1,3 +1,4 @@
+{% load posters %}
 <article class="movie-card" x-cloak x-show='{{ movie.dates_json|safe }}.includes(dates[idx])'>
   {% if movie.youtube_id %}
   <div class="movie-poster movie-poster--playable"
@@ -15,8 +16,12 @@
     <div class="movie-free-banner">Free for Members</div>
     {% endif %}
     {% if movie.poster %}
+    {% comment %} Sized for the slot: see web/templatetags/posters.py. Non-TMDB
+    posters get no srcset rather than the same file listed three times. {% endcomment %}
     <img
-      src="{{ movie.poster }}"
+      src="{{ movie.poster|tmdb_size:'w342' }}"
+      {% with srcset=movie.poster|poster_srcset %}{% if srcset %}srcset="{{ srcset }}" sizes="(min-width: 1024px) 15rem, 340px"{% endif %}{% endwith %}
+      width="342" height="513"
       alt="{{ movie.title }} poster"
       class="movie-poster-img"
       {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy" decoding="async"{% endif %}

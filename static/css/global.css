@@ -426,32 +426,13 @@ button {
 /* ============================================
    ANIMATIONS
 ============================================ */
-@keyframes bulb-chase {
+@keyframes bulb-glow {
   0%,
   100% {
-    opacity: 0.35;
-    background: radial-gradient(
-      circle at 30% 30%,
-      #8a7a24 0%,
-      var(--color-brass) 50%,
-      #141615 100%
-    );
-    box-shadow:
-      0 0 3px var(--color-gold-warm),
-      0 0 6px var(--neon-gold-far);
+    opacity: 0;
   }
   50% {
     opacity: 1;
-    background: radial-gradient(
-      circle at 30% 30%,
-      #fff8e0 0%,
-      #e8d080 40%,
-      var(--color-gold-warm) 100%
-    );
-    box-shadow:
-      0 0 6px #e8d080,
-      0 0 14px var(--neon-gold-mid),
-      0 0 24px var(--neon-gold-far);
   }
 }
 

@@ -20,11 +20,22 @@
 /* === Hero neon power-on === */
 .hero--pre-show .bulb {
   opacity: 0.08;
-  animation-play-state: paused;
   transition: opacity 0.15s ease;
 }
 
+/* No chase during the power-on: the lit layer is off until the bulb's own
+ * turn (bulb--lit), then on. `none` rather than paused, because a paused
+ * animation sitting on its first keyframe would still pin the opacity at 0. */
+.hero--pre-show .bulb::after {
+  animation: none;
+  opacity: 0;
+}
+
 .hero--pre-show .bulb.bulb--lit {
+  opacity: 1;
+}
+
+.hero--pre-show .bulb.bulb--lit::after {
   opacity: 1;
 }
 

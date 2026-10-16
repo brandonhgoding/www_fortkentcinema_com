@@ -2,12 +2,14 @@ import { initScrollReveal } from './init/scrollReveal.js';
 import { initNeonPowerOn } from './init/neonPowerOn.js';
 import { initCursorBulbs } from './init/cursorBulbs.js';
 import { initCardSpotlight } from './init/cardSpotlight.js';
+import { initHeroIdle } from './init/heroIdle.js';
 
 function boot() {
   initScrollReveal(document);
   initNeonPowerOn(document);
   initCursorBulbs(document);
   initCardSpotlight(document);
+  initHeroIdle(document);
 }
 
 if (document.readyState !== 'loading') {
