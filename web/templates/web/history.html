@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block title %}Going to the Movies in Fort Kent | Fort Kent Cinema{% endblock %}
-{% block description %}There has been a screen on the same Fort Kent lot since 1917. The Savoy, the Community Theatre, the drive-in and the Century — a century of moviegoing in Fort Kent, Maine, and how it led to the cinema on Hall Street today.{% endblock %}
+{% block description %}A screen on the same Fort Kent lot since 1917: the Savoy, the Community Theatre, the drive-in, the Century, and how they led to the cinema on Hall Street.{% endblock %}
 {% block og_title %}Going to the Movies in Fort Kent{% endblock %}
 {% block og_description %}A barn on the Stevens homestead, a projector bolted in around 1917, and a picture house on the same lot ever since.{% endblock %}
 {% block og_type %}article{% endblock %}
@@ -38,7 +38,7 @@
     Spelled out rather than reusing {% templatetag openblock %} block description {% templatetag closeblock %} — `block.super` only
     resolves inside a block of the same name, so it would render empty here.
   {% endcomment %}
-  "description": "There has been a screen on the same Fort Kent lot since 1917. The Savoy, the Community Theatre, the drive-in and the Century \u2014 a century of moviegoing in Fort Kent, Maine, and how it led to the cinema on Hall Street today.",
+  "description": "A screen on the same Fort Kent lot since 1917: the Savoy, the Community Theatre, the drive-in, the Century, and how they led to the cinema on Hall Street.",
   "url": "{{ request.scheme }}://{{ request.get_host }}{{ request.path }}",
   "mainEntityOfPage": {
     "@type": "WebPage",
