@@ -169,137 +169,159 @@
   right: -10px;
 }
 
+/* Two states, dim and lit, crossfaded. The bulb itself is the dim lamp;
+ * ::after is the lit one and only its opacity animates. The old bulb-chase
+ * animated box-shadow and a gradient on all 44 bulbs, which repainted every
+ * bulb every frame and was most of the hero's main-thread cost on a phone
+ * (2026-10-15 audit). Opacity on its own layer is composited, not painted.
+ * The chase delays below set --chase-delay, which the pseudo-element
+ * inherits; animation-delay itself does not inherit. */
 .bulb {
+  position: relative;
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #fff8e0 0%, #e8d080 50%, var(--color-brass) 100%);
+  background: radial-gradient(circle at 30% 30%, #8a7a24 0%, var(--color-brass) 50%, #141615 100%);
+  box-shadow:
+    0 0 3px var(--color-gold-warm),
+    0 0 6px var(--neon-gold-far);
+}
+
+.bulb::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #fff8e0 0%, #e8d080 40%, var(--color-gold-warm) 100%);
   box-shadow:
     0 0 6px #e8d080,
-    0 0 12px var(--color-gold-glow);
-  animation: bulb-chase 1.8s ease-in-out infinite;
+    0 0 14px var(--neon-gold-mid),
+    0 0 24px var(--neon-gold-far);
+  opacity: 0;
+  animation: bulb-glow 1.8s ease-in-out infinite;
+  animation-delay: var(--chase-delay, 0s);
 }
 
 /* Sequential chase pattern */
 .bulb:nth-child(1) {
-  animation-delay: 0s;
+  --chase-delay: 0s;
 }
 .bulb:nth-child(2) {
-  animation-delay: 0.1s;
+  --chase-delay: 0.1s;
 }
 .bulb:nth-child(3) {
-  animation-delay: 0.2s;
+  --chase-delay: 0.2s;
 }
 .bulb:nth-child(4) {
-  animation-delay: 0.3s;
+  --chase-delay: 0.3s;
 }
 .bulb:nth-child(5) {
-  animation-delay: 0.4s;
+  --chase-delay: 0.4s;
 }
 .bulb:nth-child(6) {
-  animation-delay: 0.5s;
+  --chase-delay: 0.5s;
 }
 .bulb:nth-child(7) {
-  animation-delay: 0.6s;
+  --chase-delay: 0.6s;
 }
 .bulb:nth-child(8) {
-  animation-delay: 0.7s;
+  --chase-delay: 0.7s;
 }
 .bulb:nth-child(9) {
-  animation-delay: 0.8s;
+  --chase-delay: 0.8s;
 }
 .bulb:nth-child(10) {
-  animation-delay: 0.9s;
+  --chase-delay: 0.9s;
 }
 .bulb:nth-child(11) {
-  animation-delay: 1s;
+  --chase-delay: 1s;
 }
 .bulb:nth-child(12) {
-  animation-delay: 1.1s;
+  --chase-delay: 1.1s;
 }
 .bulb:nth-child(13) {
-  animation-delay: 1.2s;
+  --chase-delay: 1.2s;
 }
 .bulb:nth-child(14) {
-  animation-delay: 1.3s;
+  --chase-delay: 1.3s;
 }
 .bulb:nth-child(15) {
-  animation-delay: 1.4s;
+  --chase-delay: 1.4s;
 }
 .bulb:nth-child(16) {
-  animation-delay: 1.5s;
+  --chase-delay: 1.5s;
 }
 .bulb:nth-child(17) {
-  animation-delay: 1.6s;
+  --chase-delay: 1.6s;
 }
 
 /* Reverse direction for bottom and right bulbs */
 .marquee-bulbs-bottom .bulb:nth-child(1) {
-  animation-delay: 1.6s;
+  --chase-delay: 1.6s;
 }
 .marquee-bulbs-bottom .bulb:nth-child(2) {
-  animation-delay: 1.5s;
+  --chase-delay: 1.5s;
 }
 .marquee-bulbs-bottom .bulb:nth-child(3) {
-  animation-delay: 1.4s;
+  --chase-delay: 1.4s;
 }
 .marquee-bulbs-bottom .bulb:nth-child(4) {
-  animation-delay: 1.3s;
+  --chase-delay: 1.3s;
 }
 .marquee-bulbs-bottom .bulb:nth-child(5) {
-  animation-delay: 1.2s;
+  --chase-delay: 1.2s;
 }
 .marquee-bulbs-bottom .bulb:nth-child(6) {
-  animation-delay: 1.1s;
+  --chase-delay: 1.1s;
 }
 .marquee-bulbs-bottom .bulb:nth-child(7) {
-  animation-delay: 1s;
+  --chase-delay: 1s;
 }
 .marquee-bulbs-bottom .bulb:nth-child(8) {
-  animation-delay: 0.9s;
+  --chase-delay: 0.9s;
 }
 .marquee-bulbs-bottom .bulb:nth-child(9) {
-  animation-delay: 0.8s;
+  --chase-delay: 0.8s;
 }
 .marquee-bulbs-bottom .bulb:nth-child(10) {
-  animation-delay: 0.7s;
+  --chase-delay: 0.7s;
 }
 .marquee-bulbs-bottom .bulb:nth-child(11) {
-  animation-delay: 0.6s;
+  --chase-delay: 0.6s;
 }
 .marquee-bulbs-bottom .bulb:nth-child(12) {
-  animation-delay: 0.5s;
+  --chase-delay: 0.5s;
 }
 .marquee-bulbs-bottom .bulb:nth-child(13) {
-  animation-delay: 0.4s;
+  --chase-delay: 0.4s;
 }
 .marquee-bulbs-bottom .bulb:nth-child(14) {
-  animation-delay: 0.3s;
+  --chase-delay: 0.3s;
 }
 .marquee-bulbs-bottom .bulb:nth-child(15) {
-  animation-delay: 0.2s;
+  --chase-delay: 0.2s;
 }
 .marquee-bulbs-bottom .bulb:nth-child(16) {
-  animation-delay: 0.1s;
+  --chase-delay: 0.1s;
 }
 .marquee-bulbs-bottom .bulb:nth-child(17) {
-  animation-delay: 0s;
+  --chase-delay: 0s;
 }
 
 .marquee-bulbs-right .bulb:nth-child(1) {
-  animation-delay: 1.2s;
+  --chase-delay: 1.2s;
 }
 .marquee-bulbs-right .bulb:nth-child(2) {
-  animation-delay: 0.9s;
+  --chase-delay: 0.9s;
 }
 .marquee-bulbs-right .bulb:nth-child(3) {
-  animation-delay: 0.6s;
+  --chase-delay: 0.6s;
 }
 .marquee-bulbs-right .bulb:nth-child(4) {
-  animation-delay: 0.3s;
+  --chase-delay: 0.3s;
 }
 .marquee-bulbs-right .bulb:nth-child(5) {
-  animation-delay: 0s;
+  --chase-delay: 0s;
 }
 
 /* Inner panel — Art Deco double-line frame */
@@ -524,7 +546,7 @@
    * same bulb-to-gap ratio the sign has on a desktop — so the phone reads as
    * the same object, not a degraded one.
    *
-   * The surviving odd children keep animation-delays 0 / 0.2 / 0.4 ... 1.6,
+   * The surviving odd children keep chase delays 0 / 0.2 / 0.4 ... 1.6,
    * i.e. the same chase at double the step. No delay overrides needed. */
   .marquee-bulbs-top .bulb:nth-child(even),
   .marquee-bulbs-bottom .bulb:nth-child(even) {
@@ -534,6 +556,12 @@
   .bulb {
     width: 9px;
     height: 9px;
+    box-shadow:
+      0 0 2px var(--color-gold-warm),
+      0 0 4px var(--neon-gold-far);
+  }
+
+  .bulb::after {
     box-shadow:
       0 0 4px #e8d080,
       0 0 8px var(--color-gold-glow);
@@ -621,8 +649,12 @@
   }
 
   .bulb {
-    animation: none;
     opacity: 0.8;
+  }
+
+  .bulb::after {
+    animation: none;
+    opacity: 1;
   }
 
   .marquee-container,
@@ -632,4 +664,15 @@
     animation: none;
     opacity: 1;
   }
+}
+
+/* Off screen, the loops stop. effects.js (init/heroIdle.js) sets the class
+ * from an IntersectionObserver; the grain, the twinkle and the 44-bulb chase
+ * otherwise keep repainting while the visitor reads the showtimes two
+ * screens down. Placed last so source order beats the loops' own rules —
+ * same lesson as the reduced-motion block above. */
+.hero--offscreen::before,
+.hero--offscreen .hero-stars,
+.hero--offscreen .bulb::after {
+  animation-play-state: paused;
 }

@@ -1,3 +1,4 @@
+{% load posters %}
 <section class="coming-soon home-section home-section--alt" id="coming-soon"
          x-data="{ trailer: null, view: 'grid' }"
          x-effect="document.body.style.overflow = trailer ? 'hidden' : ''">
@@ -54,7 +55,7 @@
           <div class="coming-poster-multi">
             {% for f in movie.films %}
             {% if f.poster %}
-            <img src="{{ f.poster }}" alt="{{ f.title }} poster" class="coming-poster-img coming-poster-img--multi" loading="lazy" decoding="async" />
+            <img src="{{ f.poster|tmdb_size:'w185' }}" {% with srcset=f.poster|poster_srcset %}{% if srcset %}srcset="{{ srcset }}" sizes="60px"{% endif %}{% endwith %} width="185" height="278" alt="{{ f.title }} poster" class="coming-poster-img coming-poster-img--multi" loading="lazy" decoding="async" />
             {% else %}
             <div class="coming-poster-placeholder coming-poster-placeholder--multi">
               <span class="coming-poster-icon" role="img" aria-label="Movie poster placeholder">&#127916;</span>
@@ -63,7 +64,7 @@
             {% endfor %}
           </div>
           {% elif movie.poster %}
-          <img src="{{ movie.poster }}" alt="{{ movie.title }} poster" class="coming-poster-img" loading="lazy" decoding="async" />
+          <img src="{{ movie.poster|tmdb_size:'w185' }}" {% with srcset=movie.poster|poster_srcset %}{% if srcset %}srcset="{{ srcset }}" sizes="120px"{% endif %}{% endwith %} width="185" height="278" alt="{{ movie.title }} poster" class="coming-poster-img" loading="lazy" decoding="async" />
           {% else %}
           <div class="coming-poster-placeholder">
             <span class="coming-poster-icon" role="img" aria-label="Movie poster placeholder">&#127916;</span>

@@ -1,3 +1,4 @@
+{% load posters %}
 {% comment %}
 ComingSoon calendar month fragment (Task 5). Transcribed from the
 viewMode==='calendar' branch of ComingSoon.jsx. Returned by CalendarMonthView
@@ -75,7 +76,7 @@ under it.
             <div class="coming-calendar-cell__poster" title="{{ movie.title }}"
                  :class="{ 'coming-calendar-cell__poster--dimmed': film !== null && film !== {{ movie.film_index }} }">
               {% if movie.poster %}
-              <img src="{{ movie.poster }}" alt="{{ movie.title }}" loading="lazy" decoding="async" class="coming-calendar-cell__img" />
+              <img src="{{ movie.poster|tmdb_size:'w92' }}" alt="{{ movie.title }}" loading="lazy" decoding="async" class="coming-calendar-cell__img" />
               {% else %}
               <div class="coming-calendar-cell__placeholder">&#127916;</div>
               {% endif %}
@@ -98,7 +99,7 @@ under it.
             @mouseenter="film = {{ f.index }}" @mouseleave="film = null"
             @focusin="film = {{ f.index }}" @focusout="film = null">
           <div class="coming-calendar-key__poster">
-            {% if f.poster %}<img src="{{ f.poster }}" alt="" loading="lazy" decoding="async" />{% endif %}
+            {% if f.poster %}<img src="{{ f.poster|tmdb_size:'w154' }}" alt="" loading="lazy" decoding="async" />{% endif %}
           </div>
           <div>
             <p class="coming-calendar-key__name">{{ f.title }}</p>
