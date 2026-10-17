@@ -17,6 +17,7 @@ and what it costs. Prices from TICKET_PRICES, like the ticket line.{% endcomment
     web/tests/test_pages.py::test_full_home_composition_order and
     web/tests/test_home_sections.py:
 
+      presale       featured the pre-sale challenge banner, while it is live
       now-showing   tier 1   what is playing
       membership    featured the one big ask, on the blue band
       coming-soon   tier 2   what is playing later
@@ -28,6 +29,7 @@ and what it costs. Prices from TICKET_PRICES, like the ticket line.{% endcomment
   {% endcomment %}
 
   {% include "partials/hero.html" %}
+  {% include "partials/home_presale.html" %}
   {% include "partials/now_showing.html" %}
   {% include "partials/home_membership.html" %}
   {% include "partials/coming_soon.html" %}

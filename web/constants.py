@@ -806,3 +806,24 @@ OPEN_MIC_FAQ = [
         ),
     },
 ]
+
+
+# The Graduate (1967) pre-sale challenge, 2026-10-17. The owner books the
+# film only if 50 tickets sell by the deadline, through a Square checkout
+# link; the banner is the owner's artwork (static/img/graduate-presale-*).
+# The home page shows it through the deadline day and drops it the day
+# after (web/services/presale.py), so nothing has to be remembered. To run
+# a "the shows are on" version afterwards, move the deadline and swap the
+# copy here.
+PRESALE_CHALLENGE = {
+    "title": "The Graduate",
+    "year": 1967,
+    "url": "https://square.link/u/EYztfLV6",
+    "price": 8,
+    "goal": 50,
+    "deadline": datetime.date(2026, 10, 24),
+    "deadline_label": "October 24",
+    # Proposed showtimes, as one sentence: the banner's table is unreadable
+    # at phone widths, so this is the copy that actually carries them.
+    "showtimes_line": "Fri, Sat and Sun, Nov 27 to 29, at 4:00 and 7:30 PM",
+}

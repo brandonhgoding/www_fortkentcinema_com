@@ -1,0 +1,34 @@
+{% load static %}
+{% comment %}
+  The pre-sale challenge banner (web/constants.py PRESALE_CHALLENGE). The
+  whole picture is the link to the Square checkout. The picture is all
+  type, and at phone widths that type is ~5px tall, so the facts repeat as
+  real text under it, with the same link as a button. HomeView sets presale
+  to None after the deadline, and the section goes with it.
+{% endcomment %}
+{% if presale %}
+<section class="home-section home-section--alt home-presale" id="presale"
+         aria-labelledby="home-presale-title">
+  <div class="section-container">
+    <a href="{{ presale.url }}" class="home-presale__banner"
+       target="_blank" rel="noopener"
+       data-track="presale_click" data-track-location="home_banner">
+      <picture>
+        <source type="image/webp"
+                srcset="{% static 'img/graduate-presale-1400.webp' %} 1400w, {% static 'img/graduate-presale-2800.webp' %} 2800w"
+                sizes="(min-width: 1400px) 1336px, calc(100vw - 2rem)">
+        <img src="{% static 'img/graduate-presale-1400.jpg' %}"
+             width="1400" height="560" loading="lazy" decoding="async"
+             alt="{{ presale.title }} ({{ presale.year }}) pre-sale challenge at Fort Kent Cinema: we need to sell {{ presale.goal }} tickets by {{ presale.deadline_label }} to make the screening happen. All tickets ${{ presale.price }}. Proposed showtimes {{ presale.showtimes_line }}. If we reach {{ presale.goal }} the shows are on; if not, everyone is refunded in full.">
+      </picture>
+    </a>
+    <div class="home-presale__text">
+      <h2 class="home-presale__title" id="home-presale-title">{{ presale.title }} ({{ presale.year }}) pre-sale challenge</h2>
+      <p class="home-presale__line">We need to sell <strong>{{ presale.goal }} tickets by {{ presale.deadline_label }}</strong> to make this screening happen. All tickets ${{ presale.price }}. Proposed showtimes: {{ presale.showtimes_line }}. If we fall short, every ticket is refunded in full.</p>
+      <a href="{{ presale.url }}" class="btn-presale"
+         target="_blank" rel="noopener"
+         data-track="presale_click" data-track-location="home_button">Buy tickets, ${{ presale.price }} each</a>
+    </div>
+  </div>
+</section>
+{% endif %}
