@@ -362,3 +362,93 @@
 .home-story__all {
   margin: var(--spacing-lg) 0 0;
 }
+
+/* Pre-sale challenge banner (partials/home_presale.html). The picture is
+ * the link, full container width, on the alt ground so it does not share
+ * one with the hero's dark or Now Showing's white. Under it, the facts as
+ * text, centred, with the one button; the picture's own type is unreadable
+ * on a phone, so this is the copy that carries them there. */
+.home-presale {
+  padding: var(--spacing-2xl) 0;
+}
+
+.home-presale__banner {
+  display: block;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(20, 22, 21, 0.18);
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.home-presale__banner:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(20, 22, 21, 0.24);
+}
+
+.home-presale__banner:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 4px;
+}
+
+.home-presale__banner img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.home-presale__text {
+  max-width: 44rem;
+  margin: var(--spacing-lg) auto 0;
+  text-align: center;
+}
+
+.home-presale__title {
+  margin: 0 0 var(--spacing-xs);
+  font-family: var(--font-heading);
+  font-size: var(--type-heading);
+  line-height: 1.15;
+  color: var(--color-text);
+}
+
+.home-presale__line {
+  margin: 0 0 var(--spacing-md);
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
+/* The banner's own red, so the button reads as part of the artwork. White
+ * on #a31e22 is about 7:1. */
+.btn-presale {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0.75rem var(--spacing-lg);
+  background: #a31e22;
+  color: #ffffff;
+  font-family: var(--font-condensed);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  white-space: nowrap;
+}
+
+.btn-presale:hover {
+  background: #7f161a;
+}
+
+.btn-presale:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-presale__banner,
+  .home-presale__banner:hover {
+    transform: none;
+    transition: none;
+  }
+}
