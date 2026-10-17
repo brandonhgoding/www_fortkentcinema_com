@@ -274,6 +274,23 @@
   vertical-align: middle;
 }
 
+/* An open-captioned showing says so in a sentence under its time, where the
+   OC chip used to sit. The time stays bold; the note is quiet body text, and
+   it may wrap, so the item gives up nowrap and takes a width of its own. */
+.showtime--noted {
+  white-space: normal;
+  max-width: 16rem;
+}
+
+.showtime__note {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.35;
+  color: var(--color-gold);
+}
+
 /* Synopsis.
  *
  * Present in the markup at every width, shown only in the landscape card
