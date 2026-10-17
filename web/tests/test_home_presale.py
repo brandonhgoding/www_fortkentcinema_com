@@ -44,15 +44,40 @@ class HomePresaleBannerTests(TestCase):
         with mock.patch("web.views.today_eastern", return_value=today):
             return self.client.get(reverse("home")).content.decode()
 
+    def section(self, today="2026-10-17"):
+        html = self.home(today)
+        start = html.index('id="presale"')
+        return html[start:html.index("</section>", start)]
+
     def test_banner_links_to_the_square_checkout(self, *_):
         html = self.home()
         self.assertEqual(html.count('id="presale"'), 1)
-        start = html.index('id="presale"')
-        section = html[start:html.index("</section>", start)]
+        section = self.section()
         self.assertIn(f'href="{SQUARE}"', section)
         self.assertIn('target="_blank"', section)
-        self.assertIn('rel="noopener"', section)
+        # The site's convention for every external link.
+        self.assertIn('rel="noopener noreferrer"', section)
         self.assertIn('data-track="presale_click"', section)
+
+    def test_new_tab_and_square_are_announced(self, *_):
+        """WCAG G201: a link that opens a new window says so. The visible
+        line names Square; the sr-only span says the tab opens."""
+        section = self.section()
+        self.assertIn("Checkout on Square", section)
+        self.assertIn("opens in a new tab", section)
+        self.assertIn('class="sr-only"', section)
+
+    def test_hero_points_at_the_banner_while_it_is_live(self, *_):
+        """The hero fills the viewport and its button scrolls to Now
+        Showing, straight past the banner. A line under the hero buttons
+        sends people to it, and goes when the banner goes."""
+        html = self.home()
+        hero = html[html.index('class="hero"'):html.index('id="presale"')]
+        self.assertIn('href="#presale"', hero)
+        self.assertIn("The Graduate", hero)
+        self.assertIn('data-track="presale_click"', hero)
+        gone = self.home("2026-10-25")
+        self.assertNotIn('href="#presale"', gone)
 
     def test_banner_sits_between_the_hero_and_now_showing(self, *_):
         html = self.home()
@@ -63,13 +88,31 @@ class HomePresaleBannerTests(TestCase):
         self.assertLess(presale, now_showing)
 
     def test_the_facts_are_real_text_not_only_pixels(self, *_):
-        html = self.home()
-        start = html.index('id="presale"')
-        section = html[start:html.index("</section>", start)]
-        for fact in ("The Graduate", "50 tickets", "October 24", "$8", "7:30"):
+        section = self.section()
+        for fact in (
+            "The Graduate", "50 tickets", "Saturday, October 24", "$8",
+            "Thanksgiving", "7:30", "refund", "pick your showtime at checkout",
+        ):
             self.assertIn(fact, section, fact)
-        # The alt carries the same facts for whoever cannot see the picture.
-        self.assertRegex(section, r'alt="[^"]*The Graduate[^"]*50 tickets[^"]*"')
+        # The handwritten quote is the one human line on the poster and is
+        # unreadable on a phone, so it is real text too.
+        self.assertIn("My father insists", section)
+
+    def test_alt_is_short_and_leaves_the_facts_to_the_text(self, *_):
+        """The alt is the image link's accessible name. The facts sit in the
+        heading and paragraph right after it, so a long alt would read the
+        pitch out twice; it describes the poster instead."""
+        import re
+        alt = re.search(r'alt="([^"]*)"', self.section()).group(1)
+        self.assertIn("The Graduate", alt)
+        self.assertNotIn("50 tickets", alt)
+        self.assertLess(len(alt.split()), 20, alt)
+
+    def test_heading_leads_with_the_ask_not_the_title(self, *_):
+        section = self.section()
+        h2 = section[section.index("<h2"):section.index("</h2>")]
+        self.assertIn("Help bring", h2)
+        self.assertIn("The Graduate", h2)
 
     def test_image_is_lazy_sized_and_served_as_webp(self, *_):
         html = self.home()

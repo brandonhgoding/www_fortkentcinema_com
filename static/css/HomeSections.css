@@ -372,17 +372,14 @@
   padding: var(--spacing-2xl) 0;
 }
 
+/* No hover lift: the poster is the loud thing already, and a transform on
+ * a 1336px raster sticks after a tap on touch. It sits flat, like a one-
+ * sheet in its case. */
 .home-presale__banner {
   display: block;
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(20, 22, 21, 0.18);
-  transition: transform var(--transition-base), box-shadow var(--transition-base);
-}
-
-.home-presale__banner:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 32px rgba(20, 22, 21, 0.24);
 }
 
 .home-presale__banner:focus-visible {
@@ -410,10 +407,26 @@
   color: var(--color-text);
 }
 
+/* The poster's handwritten note, in the hero tagline's voice. */
+.home-presale__quote {
+  margin: 0 0 var(--spacing-sm);
+  font-family: var(--font-heading);
+  font-size: var(--type-lead);
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--color-text-muted);
+}
+
 .home-presale__line {
   margin: 0 0 var(--spacing-md);
   line-height: 1.5;
   color: var(--color-text);
+}
+
+.home-presale__note {
+  margin: var(--spacing-sm) 0 0;
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
 }
 
 /* The banner's own red, so the button reads as part of the artwork. White
@@ -433,7 +446,6 @@
   text-transform: uppercase;
   text-decoration: none;
   border-radius: var(--radius-md);
-  white-space: nowrap;
 }
 
 .btn-presale:hover {
@@ -443,12 +455,4 @@
 .btn-presale:focus-visible {
   outline: 3px solid var(--color-accent);
   outline-offset: 3px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .home-presale__banner,
-  .home-presale__banner:hover {
-    transform: none;
-    transition: none;
-  }
 }

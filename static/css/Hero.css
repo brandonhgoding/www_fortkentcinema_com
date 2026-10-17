@@ -409,6 +409,40 @@
   animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.45s both;
 }
 
+/* Pre-sale pointer under the buttons, while the banner below is live. Same
+ * caption voice as the member count; the link is the lit part. */
+.hero-presale {
+  z-index: 10;
+  margin: var(--spacing-md) 0 0;
+  padding: 0 var(--spacing-md);
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-style: italic;
+  line-height: 1.4;
+  text-align: center;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.45s both;
+}
+
+.hero-presale a {
+  display: inline-block;
+  min-height: 44px;
+  padding: 0.5rem 0;
+  color: var(--neon-gold-inner);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  text-decoration-color: var(--color-gold);
+}
+
+.hero-presale a:hover {
+  text-decoration-thickness: 2px;
+}
+
+.hero-presale a:focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 3px;
+}
+
 .hero-members-star {
   font-style: normal;
   font-size: 0.85em;
@@ -636,6 +670,11 @@
     margin-top: var(--spacing-sm);
     font-size: 1rem;
   }
+
+  .hero-presale {
+    margin-top: var(--spacing-sm);
+    font-size: 1rem;
+  }
 }
 
 /* REDUCED MOTION — last in the file so it wins the cascade without
@@ -660,7 +699,8 @@
   .marquee-container,
   .hero-tagline,
   .hero-cta,
-  .hero-members {
+  .hero-members,
+  .hero-presale {
     animation: none;
     opacity: 1;
   }
