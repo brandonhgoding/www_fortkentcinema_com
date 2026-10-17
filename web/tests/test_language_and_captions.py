@@ -56,6 +56,29 @@ class LanguageCaptionsTests(TestCase):
         (times,) = movie["showtimes"].values()
         self.assertEqual(times[0]["captions"], "OC")
         self.assertEqual(times[0]["captions_label"], "Open Captions")
+        self.assertEqual(
+            times[0]["captions_note"],
+            "This showing will be played with open captions.",
+        )
+
+    def test_closed_captions_carry_no_note(self) -> None:
+        self._set(captions="CC")
+        (times,) = get_now_showing()[0]["showtimes"].values()
+        self.assertEqual(times[0]["captions_note"], "")
+
+    def test_home_spells_out_open_captions_under_the_time(self) -> None:
+        # Nobody at the box office is asked what "OC" means if the showtime
+        # says it in words. The sentence sits under its time on both cards,
+        # in place of the two-letter chip.
+        self._set(captions="OC")
+        html = self.client.get(reverse("home")).content.decode()
+        note = (
+            '<span class="showtime__note">'
+            "This showing will be played with open captions.</span>"
+        )
+        self.assertEqual(html.count(note), 2)
+        self.assertIn('<span class="showtime showtime--noted">7:00 PM' + note, html)
+        self.assertNotIn(">OC<", html)
 
     def test_home_shows_label_and_caption_chip(self) -> None:
         self._set(language=Language.FRENCH, translation=Translation.SUBTITLED,

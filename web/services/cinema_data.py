@@ -16,6 +16,8 @@ from web.services.titles import listing_title
 
 CINEMA_TZ = ZoneInfo("America/New_York")
 
+OPEN_CAPTIONS_NOTE = "This showing will be played with open captions."
+
 
 def _format_showtime(dt):
     # e.g. "6:00 PM" — strip the leading zero on the hour.
@@ -66,6 +68,9 @@ def get_now_showing():
                     "iso": st.starts_at.astimezone(CINEMA_TZ).isoformat(),
                     "captions": st.captions or "",
                     "captions_label": st.get_captions_display() if st.captions else "",
+                    # Open captions are burned into the picture, so the whole
+                    # room reads them: worth a sentence, not a two-letter chip.
+                    "captions_note": OPEN_CAPTIONS_NOTE if st.captions == "OC" else "",
                 }
             )
         if not showtimes_by_date:
