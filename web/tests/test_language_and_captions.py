@@ -66,10 +66,10 @@ class LanguageCaptionsTests(TestCase):
         (times,) = get_now_showing()[0]["showtimes"].values()
         self.assertEqual(times[0]["captions_note"], "")
 
-    def test_home_spells_out_open_captions_under_the_time(self) -> None:
-        # Nobody at the box office is asked what "OC" means if the showtime
-        # says it in words. The sentence sits under its time on both cards,
-        # in place of the two-letter chip.
+    def test_home_shows_open_captions_chip_and_sentence(self) -> None:
+        # The OC chip sits beside the time, as CC does, so the row of times
+        # still scans as a row; the sentence under it says what the chip
+        # means, so nobody at the box office is asked. Both cards.
         self._set(captions="OC")
         html = self.client.get(reverse("home")).content.decode()
         note = (
@@ -77,8 +77,16 @@ class LanguageCaptionsTests(TestCase):
             "This showing will be played with open captions.</span>"
         )
         self.assertEqual(html.count(note), 2)
-        self.assertIn('<span class="showtime showtime--noted">7:00 PM' + note, html)
-        self.assertNotIn(">OC<", html)
+        for chip in ("movie-rating", "schedule-card__rating"):
+            self.assertIn(
+                '<span class="showtime showtime--noted">7:00 PM '
+                f'<abbr class="{chip}" title="Open Captions" aria-hidden="true">'
+                "OC</abbr>" + note,
+                html,
+            )
+        # The sentence is the spoken label; a second sr-only "Open Captions"
+        # would read it twice.
+        self.assertNotIn('<span class="sr-only">Open Captions</span>', html)
 
     def test_home_shows_label_and_caption_chip(self) -> None:
         self._set(language=Language.FRENCH, translation=Translation.SUBTITLED,

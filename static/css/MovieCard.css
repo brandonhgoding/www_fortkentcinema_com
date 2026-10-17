@@ -274,12 +274,18 @@
   vertical-align: middle;
 }
 
-/* An open-captioned showing says so in a sentence under its time, where the
-   OC chip used to sit. The time stays bold; the note is quiet body text, and
-   it may wrap, so the item gives up nowrap and takes a width of its own. */
+/* An open-captioned showing keeps its OC chip beside the time, so a row of
+   times still scans as a row and OC lines up with CC, and then says what the
+   chip means in a sentence underneath. The time stays bold; the note is
+   quiet body text, and it may wrap, so the item gives up nowrap and takes a
+   width of its own. The sentence is the spoken label: the chip is
+   aria-hidden and the sr-only text CC gets is left out here. */
 .showtime--noted {
   white-space: normal;
-  max-width: 16rem;
+  /* Wide enough for the sentence to sit on one line at 0.85rem; a 16rem cap
+     left "captions." orphaned on a line of its own on every card. The card
+     itself clamps this on a phone. */
+  max-width: 24rem;
 }
 
 .showtime__note {
