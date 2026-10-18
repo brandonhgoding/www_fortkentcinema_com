@@ -564,10 +564,12 @@ Flake8 gate: no new findings on changed lines (repo baseline is dirty).
    present in production make the feature live on deploy; if a quiet
    launch is wanted, deploy with the token blank on the public workers
    first.
-4. Buy one real ticket for a cheap showtime, check the email, the door
+4. Schedule `manage.py expire_ticket_orders` nightly, in the same cron as
+   `pull_square_sales`.
+5. Buy one real ticket for a cheap showtime, check the email, the door
    list, the nightly report the next morning, and refund it from the
    order log.
-5. Add the "Buy online" sentence to the hours-and-prices phone speech and
+6. Add the "Buy online" sentence to the hours-and-prices phone speech and
    the ticket info partial in a follow-up.
 
 ## Phases after this one
@@ -612,3 +614,33 @@ Flake8 gate: no new findings on changed lines (repo baseline is dirty).
 - `TICKETS_BASE_URL` falls back to the scheme and host of `SQUARE_WEBHOOK_URL`.
   `support_email` falls back to `DEFAULT_FROM_EMAIL` because `SITE_CONFIG` has
   no cinema email.
+- (2026-10-18, final review) Deleting a showtime or an engagement first
+  looked at its online orders: any order that counted as sold, was
+  REFUNDED, or was still holding seats refused the delete with "Has online
+  orders. Cancel it instead.", before any Square call. Dead orders
+  (EXPIRED, PENDING past the hold, FAILED without a payment) were deleted
+  first, since `TicketOrder.showtime` is PROTECT.
+- (2026-10-18, final review) The refund email chose its wording from
+  `showtime.is_cancelled`: a staff refund on a running show said "has been
+  refunded by the cinema" instead of claiming the show was cancelled.
+- (2026-10-18, final review) The ticket page returned 404 on GET and POST for
+  a draft or hidden run (availability's "not_listed"), whatever the Square
+  setting, instead of showing its title, poster and time.
+- (2026-10-18, final review) `tickets.spec.e164_phone` normalised the typed
+  phone for Square's prefill (US numbers gained +1; anything unusable became
+  blank), and the order kept the typed phone. `support_email` became the
+  bare address of `DEFAULT_FROM_EMAIL`, or blank when unset or on
+  `localhost`. `payment_link_body` left out `buyer_phone_number` and
+  `merchant_support_email` when blank.
+- (2026-10-18, final review) The ticket email's status write became
+  conditional (only from PENDING, PAID or FAILED), so a staff refund made
+  while the email was sending stayed REFUNDED.
+- (2026-10-18, final review) The payment webhook skipped the membership
+  handler's `process_order` for an order ID that belonged to a ticket order
+  and went straight to `confirm_payment`.
+- (2026-10-18, final review) The online allowance was capped at 10000 (same
+  error message) and each ticket quantity at 20 (was 50).
+- (2026-10-18, final review) The ticket info line under the showtimes read
+  "Buy online from the showtimes above, or pay at the box office.", with the
+  street as its own item, and Rollout gained the nightly
+  `expire_ticket_orders` step.

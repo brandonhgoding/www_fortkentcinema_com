@@ -1,8 +1,8 @@
 {% comment %}
-  How much, and where to pay. Under every set of showtimes, because there is
-  no online ticket path: the times are information, and this line is what
-  turns them into a plan. Prices come from TICKET_PRICES (web/constants.py),
-  which the phone line reads too.
+  How much, and where to pay. Under every set of showtimes: buyable times
+  link to the ticket page, and the rest are information, so this line says
+  both ways to pay. Prices come from TICKET_PRICES (web/constants.py), which
+  the phone line reads too.
 {% endcomment %}
 <p class="ticket-info">
   {% comment %} Each price is one unbreakable item, so a phone wraps between
@@ -15,7 +15,8 @@
     <a href="{% url 'membership' %}">${{ ticket_prices.member }} members</a>
   </span>
   <span class="ticket-info__where">
-    <span>Pay at the box office, {{ site_config.cinema.address.street }}</span> &middot;
+    <span>Buy online from the showtimes above, or pay at the box office.</span> &middot;
+    <span>{{ site_config.cinema.address.street }}</span> &middot;
     <a href="tel:{{ site_config.cinema.phone_e164 }}" data-track="phone_click" data-track-location="ticket_info">{{ site_config.cinema.phone }}</a>
   </span>
 </p>
