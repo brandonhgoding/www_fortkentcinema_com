@@ -75,6 +75,24 @@ class BuyFormTests(TestCase):
 
 
 class BuyPageTests(ViewTestCase):
+    def test_unlisted_runs_are_not_found(self):
+        hidden = make_showtime()
+        make_live_item(hidden.engagement, prefix="h-")
+        hidden.engagement.show_in_main_listings = False
+        hidden.engagement.save()
+        draft = make_showtime()
+        make_live_item(draft.engagement, prefix="d-")
+        draft.engagement.status = "DRAFT"
+        draft.engagement.save()
+        for showtime in [hidden, draft]:
+            url = reverse("tickets:buy", args=[showtime.pk])
+            self.assertEqual(self.client.get(url).status_code, 404)
+            self.assertEqual(self.post(showtime, adult=1).status_code, 404)
+            self.get_gateway.return_value = None
+            self.assertEqual(self.client.get(url).status_code, 404)
+            self.get_gateway.return_value = self.gw
+        self.assertFalse(TicketOrder.objects.exists())
+
     def test_buy_page_lists_prices_and_matinee(self):
         matinee_st = make_showtime(starts_at=matinee_start())
         make_live_item(matinee_st.engagement, prefix="m-")
@@ -113,12 +131,6 @@ class BuyPageTests(ViewTestCase):
 
         no_item = make_showtime()
         self.assertIn(door, self.get(no_item))
-
-        hidden = make_showtime()
-        make_live_item(hidden.engagement, prefix="h-")
-        hidden.engagement.show_in_main_listings = False
-        hidden.engagement.save()
-        self.assertIn(not_on_sale, self.get(hidden))
 
         cancelled = make_showtime(is_cancelled=True)
         make_live_item(cancelled.engagement, prefix="c-")

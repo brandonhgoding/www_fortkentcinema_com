@@ -91,9 +91,14 @@ class BuyView(View):
         return _see_other(order.square_checkout_url)
 
     def _showtime(self, pk) -> Showtime:
-        return get_object_or_404(
+        """The showtime, or 404 for a draft or hidden run (availability's
+        "not_listed"), whatever the Square setting."""
+        showtime = get_object_or_404(
             Showtime.objects.select_related("engagement", "screen"), pk=pk
         )
+        if not availability.is_listed(showtime.engagement):
+            raise Http404
+        return showtime
 
     def _render(self, request, showtime, form, *, gateway, error=""):
         result = availability.check(

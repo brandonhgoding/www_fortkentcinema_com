@@ -70,10 +70,7 @@ def _decide(
     cutoff = showtime.starts_at - datetime.timedelta(minutes=TICKET_CUTOFF_MINUTES)
     if not square_enabled:
         reason = "disabled"
-    elif (
-        engagement.status != EngagementStatus.CONFIRMED
-        or not engagement.show_in_main_listings
-    ):
+    elif not is_listed(engagement):
         reason = "not_listed"
     elif showtime.is_cancelled:
         reason = "cancelled"
@@ -91,6 +88,14 @@ def _decide(
         sold=sold_count,
         remaining=left,
         allowance=allowance,
+    )
+
+
+def is_listed(engagement) -> bool:
+    """A confirmed run shown in the main listings; others have no ticket page."""
+    return (
+        engagement.status == EngagementStatus.CONFIRMED
+        and engagement.show_in_main_listings
     )
 
 
