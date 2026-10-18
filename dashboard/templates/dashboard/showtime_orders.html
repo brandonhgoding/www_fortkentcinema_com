@@ -1,0 +1,13 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}{{ showtime.engagement.title }} orders · LeprinceOS{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <div>
+      <a href="{% url 'dashboard:engagement_detail' showtime.engagement_id %}" class="backLink">&larr; Back to {{ showtime.engagement.title }}</a>
+      <h1 class="page-title">{{ showtime.engagement.title }}</h1>
+      <p class="page-subtitle">Online orders for {{ showtime.starts_at|date:"D, M j, Y" }} at {{ showtime.starts_at|date:"g:i A" }}</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

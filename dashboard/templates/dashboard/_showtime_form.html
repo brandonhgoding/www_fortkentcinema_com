@@ -20,6 +20,13 @@
       <option value="OC" {% if captions == 'OC' %}selected{% endif %}>Open Captions (OC)</option>
     </select>
   </div>
+  <div class="formGroup">
+    <label for="st-allowance">Online tickets<span class="fieldOptional">optional</span></label>
+    <input id="st-allowance" type="number" name="online_allowance" class="input" min="0" step="1"
+           inputmode="numeric" value="{{ online_allowance }}" placeholder="{{ default_allowance }}"
+           aria-describedby="st-allowance-help" />
+    <p id="st-allowance-help" class="fieldHint">Leave blank to use the default of {{ default_allowance }}.</p>
+  </div>
   {% if mode == 'edit' %}
   <div class="formGroup">
     <label class="checkboxLabel" for="st-cancelled"><input id="st-cancelled" type="checkbox" name="is_cancelled" {% if is_cancelled %}checked{% endif %} /> Cancelled</label>
