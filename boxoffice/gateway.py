@@ -60,7 +60,7 @@ class Recipient:
 @dataclass(frozen=True)
 class Tender:
     payment_id: str
-    status: str  # card_details.status as Square gives it; "" when absent
+    status: str  # the card status, CAPTURED when paid; "" when not a card tender
 
 
 @dataclass(frozen=True)
@@ -207,6 +207,10 @@ def _matinee_uid(line: CheckoutLine) -> str:
 def _checkout_line_item(line: CheckoutLine) -> dict:
     # Square prices the line at the catalog variation's price unless told
     # otherwise; the matinee discount then brings it down to unit_cents.
+    if line.discount_cents % line.quantity:
+        raise ValueError(
+            f"Discount {line.discount_cents} is not a whole number of cents per "
+            f"ticket for quantity {line.quantity}")
     item: dict[str, Any] = {
         "catalog_object_id": line.variation_id,
         "quantity": str(line.quantity),

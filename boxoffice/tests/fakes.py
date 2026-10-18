@@ -113,7 +113,7 @@ class FakeGateway:
         for i, order in enumerate(self.orders):
             if order.order_id == order_id:
                 self.orders[i] = dataclasses.replace(
-                    order, tenders=(Tender(payment_id, "COMPLETED"),),
+                    order, tenders=(Tender(payment_id, "CAPTURED"),),
                     paid_at=datetime.datetime.now(datetime.timezone.utc))
                 return
         raise GatewayError(f"Unknown order {order_id}")

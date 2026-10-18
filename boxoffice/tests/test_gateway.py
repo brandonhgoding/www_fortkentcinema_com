@@ -554,6 +554,14 @@ class PaymentLinkBodyTests(SimpleTestCase):
         self.assertNotIn("applied_discounts", line)
         self.assertEqual(line["base_price_money"], {"amount": 800, "currency": "USD"})
 
+    def test_uneven_discount_raises(self) -> None:
+        spec = dataclasses.replace(
+            MATINEE_SPEC, lines=(CheckoutLine("var-adult", "Adult", 3, 600, 400),))
+        with self.assertRaisesMessage(
+                ValueError, "Discount 400 is not a whole number of cents per ticket "
+                "for quantity 3"):
+            payment_link_body(spec, "LOC1")
+
 
 class PaymentCallTests(SimpleTestCase):
     def test_create_payment_link_maps_response_and_errors(self) -> None:
@@ -777,13 +785,13 @@ class FakeGatewayTests(SimpleTestCase):
         self.assertEqual(gw.create_payment_link(EVENING_SPEC).order_id, "SQ-2")
         self.assertEqual(gw.search_orders(START, END), [])  # open orders never match
 
-    def test_fake_pay_marks_tender_completed(self) -> None:
+    def test_fake_pay_marks_tender_captured(self) -> None:
         gw = FakeGateway()
         res = gw.create_payment_link(MATINEE_SPEC)
         self.assertEqual(gw.retrieve_order(res.order_id).tenders, ())
         gw.pay(res.order_id, "P7")
         paid = gw.retrieve_order(res.order_id)
-        self.assertEqual(paid.tenders, (Tender("P7", "COMPLETED"),))
+        self.assertEqual(paid.tenders, (Tender("P7", "CAPTURED"),))
         self.assertIsNotNone(paid.paid_at.tzinfo)
         self.assertEqual(len(gw.orders), 1)
 
