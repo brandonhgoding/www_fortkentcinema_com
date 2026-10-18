@@ -144,12 +144,19 @@ def _send(order: TicketOrder) -> TicketOrder:
         send_ticket(order)
     except Exception as exc:
         logger.exception("Ticket email failed for order %s", order.number)
-        order.status = TicketOrder.Status.FAILED
-        order.error = f"Ticket email failed: {exc!r}"
+        status, error = TicketOrder.Status.FAILED, f"Ticket email failed: {exc!r}"
     else:
-        order.status = TicketOrder.Status.PAID
-        order.error = ""
-    order.save(update_fields=["status", "error"])
+        status, error = TicketOrder.Status.PAID, ""
+    # Conditional: a staff refund made while the email was sending wins.
+    TicketOrder.objects.filter(
+        pk=order.pk,
+        status__in=[
+            TicketOrder.Status.PENDING,
+            TicketOrder.Status.PAID,
+            TicketOrder.Status.FAILED,
+        ],
+    ).update(status=status, error=error)
+    order.refresh_from_db()
     return order
 
 

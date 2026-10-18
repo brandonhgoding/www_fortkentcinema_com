@@ -9,6 +9,7 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.utils import timezone
 
+from tickets.models import TicketOrder
 from tickets.orders import confirm_payment, expire_stale, recover_pending, resend, start
 from tickets.tests.factories import age, make_live_item, make_order, make_showtime
 
@@ -86,6 +87,33 @@ class ConfirmTests(TestCase):
         order.refresh_from_db()
         self.assertEqual((order.status, order.error), ("PAID", ""))
         self.assertEqual(len(mail.outbox), 1)
+
+    def test_refund_during_ticket_email_is_not_overwritten(self):
+        make_order(self.st, square_order_id="SQ1")
+
+        def refund_meanwhile(order):
+            TicketOrder.objects.filter(pk=order.pk).update(status="REFUNDED")
+
+        with mock.patch("tickets.orders.send_ticket", side_effect=refund_meanwhile):
+            order = confirm_payment("SQ1", "P1")
+        self.assertEqual(order.status, "REFUNDED")
+        order.refresh_from_db()
+        self.assertEqual(order.status, "REFUNDED")
+
+    def test_refund_during_failed_ticket_email_is_not_overwritten(self):
+        make_order(self.st, square_order_id="SQ1")
+
+        def refund_then_fail(order):
+            TicketOrder.objects.filter(pk=order.pk).update(status="REFUNDED")
+            raise OSError("smtp")
+
+        with (
+            mock.patch("tickets.orders.send_ticket", side_effect=refund_then_fail),
+            self.assertLogs("tickets.orders", "ERROR"),
+        ):
+            order = confirm_payment("SQ1", "P1")
+        order.refresh_from_db()
+        self.assertEqual((order.status, order.error), ("REFUNDED", ""))
 
     def test_resend_ignores_orders_without_payment(self):
         order = make_order(self.st, status="FAILED", error="down")
