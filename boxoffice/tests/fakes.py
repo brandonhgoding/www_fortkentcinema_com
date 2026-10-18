@@ -18,13 +18,16 @@ from boxoffice.spec import ItemSpec
 
 
 class FakeGateway:
-    def __init__(self, *, fail_with: GatewayError | None = None) -> None:
+    def __init__(self, *, fail_with: GatewayError | None = None,
+                 fail_on: set[str] | None = None) -> None:
         self.items: dict[str, RemoteItem] = {}
         self.orders: list[OrderData] = []
         self.categories: dict[str, str] = {}
         self.images: dict[str, tuple[str, bytes]] = {}
         self.calls: list[tuple[str, dict]] = []
         self.fail_with = fail_with
+        # Payment IDs whose refund_payment raises GatewayError("boom").
+        self.fail_on: set[str] = set() if fail_on is None else fail_on
         self._item_ids = itertools.count(1)
         self._var_ids = itertools.count(1)
         self._image_ids = itertools.count(1)
@@ -106,6 +109,8 @@ class FakeGateway:
         self._record("refund_payment", payment_id=payment_id,
                      amount_cents=amount_cents, idempotency_key=idempotency_key,
                      reason=reason)
+        if payment_id in self.fail_on:
+            raise GatewayError("boom")
         return f"R-{next(self._refund_ids)}"
 
     def pay(self, order_id: str, payment_id: str = "P1") -> None:
