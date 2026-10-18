@@ -124,6 +124,11 @@ TICKET_PRICES = {
     "matinee_until": datetime.time(16, 0),
 }
 
+# These govern online ticket sales (the `tickets` app).
+TICKET_ONLINE_SHARE = 0.5
+TICKET_HOLD_MINUTES = 20
+TICKET_CUTOFF_MINUTES = 30
+
 
 # Everything below is derived from SITE_CONFIG above, so the config stays the
 # single source of truth. SITE_CONFIG["seo"] is what templates read: it rides
