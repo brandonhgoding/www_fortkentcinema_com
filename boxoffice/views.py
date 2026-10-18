@@ -1,8 +1,11 @@
 import json
 
 from boxoffice import decorators
+from boxoffice.gateway import _timestamp
 from boxoffice.memberships import order_never_fetched, process_order
 from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
+
+from tickets.orders import confirm_payment
 
 PAYMENT_EVENTS = {"payment.created", "payment.updated"}
 
@@ -34,10 +37,15 @@ def square_webhook(request: HttpRequest) -> HttpResponse:
         payment = payload["data"]["object"]["payment"]
         status = payment["status"]
         order_id = payment.get("order_id")
+        payment_id = payment["id"]
     except (KeyError, TypeError, AttributeError):
         return HttpResponseBadRequest()
     if status == "COMPLETED" and order_id:
         sale = process_order(order_id)
+        # A payment-link ticket order, if this was one; None otherwise.
+        confirm_payment(
+            order_id, payment_id, paid_at=_timestamp(payment.get("created_at"))
+        )
         if sale is not None and order_never_fetched(sale):
             return HttpResponse(status=503)
     return HttpResponse()

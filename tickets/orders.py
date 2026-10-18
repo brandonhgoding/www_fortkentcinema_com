@@ -1,15 +1,25 @@
-"""Online ticket order lifecycle: start a checkout."""
+"""Online ticket order lifecycle: start a checkout, confirm, recover, expire."""
 
 import datetime
+import logging
 
 from boxoffice.gateway import GatewayError, SquareGateway, get_gateway
 from boxoffice.spec import SQUARE_TIERS
 from cinema.models import Showtime
 from django.db import transaction
+from django.utils import timezone
+from web.constants import TICKET_HOLD_MINUTES
 
 from tickets import availability, pricing
+from tickets.mail import send_ticket
 from tickets.models import TicketLine, TicketOrder
 from tickets.spec import checkout_spec
+
+logger = logging.getLogger(__name__)
+
+# Square's card status on a paid tender (never "COMPLETED", which is the
+# payment's status, not the tender's).
+PAID_TENDER_STATUS = "CAPTURED"
 
 
 class Refused(Exception):
@@ -86,3 +96,111 @@ def start(
     order.square_checkout_url = link.url
     order.save(update_fields=["square_order_id", "square_checkout_url"])
     return order
+
+
+def confirm_payment(
+    order_id: str, payment_id: str, *, paid_at: datetime.datetime | None = None
+) -> TicketOrder | None:
+    """Mark the order for Square order `order_id` PAID and email the ticket.
+
+    None when no ticket order matches. Already PAID or REFUNDED, or FAILED
+    with a payment (the ticket email failed), comes back unchanged, so a
+    repeated event sends no second email. An EXPIRED order still pays: the
+    buyer was charged. A failed email leaves the order FAILED with the payment
+    recorded, which still counts as sold; resend() retries it.
+    """
+    with transaction.atomic():
+        order = (
+            TicketOrder.objects.select_for_update()
+            .filter(square_order_id=order_id)
+            .first()
+        )
+        if order is None:
+            return None
+        payable = order.status in (
+            TicketOrder.Status.PENDING,
+            TicketOrder.Status.EXPIRED,
+        ) or (order.status == TicketOrder.Status.FAILED and not order.square_payment_id)
+        if not payable:
+            return order
+        order.square_payment_id = payment_id
+        order.paid_at = paid_at or timezone.now()
+        order.status = TicketOrder.Status.PAID
+        order.error = ""
+        order.save(update_fields=["square_payment_id", "paid_at", "status", "error"])
+    # Outside the transaction: the payment is recorded even if the email fails.
+    return _send(order)
+
+
+def resend(order: TicketOrder) -> TicketOrder:
+    """Retry the ticket email for a paid order whose email failed."""
+    if order.status != TicketOrder.Status.FAILED or not order.square_payment_id:
+        return order
+    return _send(order)
+
+
+def _send(order: TicketOrder) -> TicketOrder:
+    try:
+        send_ticket(order)
+    except Exception as exc:
+        logger.exception("Ticket email failed for order %s", order.number)
+        order.status = TicketOrder.Status.FAILED
+        order.error = f"Ticket email failed: {exc!r}"
+    else:
+        order.status = TicketOrder.Status.PAID
+        order.error = ""
+    order.save(update_fields=["status", "error"])
+    return order
+
+
+def recover_pending(
+    order: TicketOrder, gateway: SquareGateway | None = None
+) -> TicketOrder:
+    """Ask Square whether a PENDING order was paid, in case the webhook was lost."""
+    _recover(order, gateway)
+    return order
+
+
+def _recover(order: TicketOrder, gateway: SquareGateway | None) -> bool:
+    """recover_pending's work; False when Square could not be asked."""
+    if order.status != TicketOrder.Status.PENDING or not order.square_order_id:
+        return True
+    if gateway is None:
+        gateway = get_gateway()
+    if gateway is None:
+        return False
+    try:
+        order_data = gateway.retrieve_order(order.square_order_id)
+    except GatewayError as exc:
+        logger.warning("Could not check order %s with Square: %s", order.number, exc)
+        return False
+    for tender in order_data.tenders:
+        if tender.status == PAID_TENDER_STATUS:
+            confirmed = confirm_payment(
+                order.square_order_id, tender.payment_id, paid_at=order_data.paid_at
+            )
+            if confirmed is not None:
+                order.refresh_from_db()
+            break
+    return True
+
+
+def expire_stale(now: datetime.datetime, gateway: SquareGateway | None = None) -> int:
+    """Expire PENDING orders past the hold that Square says are unpaid.
+
+    Orders Square could not be asked about stay PENDING for the next run; past
+    the hold they no longer keep seats either way. Returns the count expired.
+    """
+    cutoff = now - datetime.timedelta(minutes=TICKET_HOLD_MINUTES)
+    expired = 0
+    stale = TicketOrder.objects.filter(
+        status=TicketOrder.Status.PENDING, created_at__lt=cutoff
+    )
+    for order in stale:
+        if not _recover(order, gateway):
+            continue
+        # Conditional update: a webhook may have paid the order meanwhile.
+        expired += TicketOrder.objects.filter(
+            pk=order.pk, status=TicketOrder.Status.PENDING
+        ).update(status=TicketOrder.Status.EXPIRED)
+    return expired

@@ -130,6 +130,13 @@ class DispatchTests(WebhookTestCase):
         self.assertEqual(resp.status_code, 200)
         self.process.assert_called_once_with("O9")
 
+    def test_completed_payment_reaches_tickets(self):
+        with mock.patch("boxoffice.views.confirm_payment") as cp:
+            post(self.client, event(order_id="SQ1"))
+        cp.assert_called_once()
+        self.assertEqual(cp.call_args.args[:2], ("SQ1", "P1"))
+        self.assertEqual(cp.call_args.kwargs, {"paid_at": PAID_AT})
+
     def test_approved_payment_is_ignored(self):
         self.assertIgnored(post(self.client, event(status="APPROVED")))
 
