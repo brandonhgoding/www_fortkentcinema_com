@@ -1,23 +1,28 @@
-"""Staff pages for online ticket orders: the door list for one showtime.
+"""Staff pages for online ticket orders.
 
-Staff tick buyers off as they arrive, set how many seats go online, resend
-a failed ticket email, refund one order, or refund every order when the
-showtime is cancelled.
+The summary shows what each showtime has sold online; the order log lists
+every order. On the door list for one showtime staff tick buyers off as
+they arrive, set how many seats go online, resend a failed ticket email,
+refund one order, or refund every order when the showtime is cancelled.
 """
 
+import datetime
 import json
+from decimal import Decimal
 
 from boxoffice.gateway import get_gateway
 from boxoffice.spec import SQUARE_TIERS
 from cinema.models import Showtime
 from django.conf import settings
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.dateformat import format as format_date
 from django.views import View
-from tickets.availability import check
+from tickets.availability import check, sold_and_gross
 from tickets.models import TicketOrder
 from tickets.orders import resend
 from tickets.refunds import refund_order, refund_showtime
@@ -27,7 +32,21 @@ from .mixins import StaffRequiredMixin
 from .views import CINEMA_TZ, INVALID_ALLOWANCE, _parse_allowance
 
 CSV_TIME = "%Y-%m-%d %H:%M"
+CSV_HEADER = [
+    "number",
+    "name",
+    "email",
+    "phone",
+    *SQUARE_TIERS,
+    "total",
+    "status",
+    "paid at",
+    "arrived at",
+]
 NOT_CANCELLED = "This showtime isn't cancelled; nothing was refunded."
+PER_PAGE = 50
+SUMMARY_TABS = ("upcoming", "past")
+LOG_ROW = "log"  # posted by the order log's buttons: answer with a log row
 
 
 def _get_showtime(pk) -> Showtime:
@@ -83,6 +102,13 @@ def _page_context(showtime: Showtime, q: str = "") -> dict:
     }
 
 
+def _with_show(orders):
+    """Orders with what their rows and CSV lines show: lines, show, arrival."""
+    return orders.select_related(
+        "redeemed_by", "showtime__engagement"
+    ).prefetch_related("lines", "showtime__engagement__engagement_films__film")
+
+
 def _with_toast(resp: HttpResponse, kind: str, message: str) -> HttpResponse:
     resp["HX-Trigger"] = json.dumps(
         {"dashboard-toast": {"kind": kind, "message": message}}
@@ -91,16 +117,25 @@ def _with_toast(resp: HttpResponse, kind: str, message: str) -> HttpResponse:
 
 
 def _row_response(request, pk, toast: tuple[str, str] | None = None):
-    """The order's row, read fresh; a redirect to the list without HTMX."""
-    order = get_object_or_404(
-        TicketOrder.objects.select_related("redeemed_by").prefetch_related("lines"),
-        pk=pk,
-    )
+    """The order's row, read fresh; a redirect to the list without HTMX.
+
+    The door list and the order log share the action endpoints; a log
+    button posts row=log to get the log's row (and list) back.
+    """
+    from_log = request.POST.get("row") == LOG_ROW
+    order = get_object_or_404(_with_show(TicketOrder.objects), pk=pk)
     if not request.headers.get("HX-Request"):
         if toast:
             messages.add_message(request, getattr(messages, toast[0].upper()), toast[1])
+        if from_log:
+            return redirect("dashboard:ticket_orders")
         return redirect("dashboard:showtime_orders", order.showtime_id)
-    resp = render(request, "dashboard/_ticket_order_row.html", {"order": order})
+    template = (
+        "dashboard/_ticket_log_row.html"
+        if from_log
+        else "dashboard/_ticket_order_row.html"
+    )
+    resp = render(request, template, {"order": order})
     return _with_toast(resp, *toast) if toast else resp
 
 
@@ -120,48 +155,44 @@ class ShowtimeOrdersView(StaffRequiredMixin, View):
         )
 
 
-class ShowtimeOrdersExportView(StaffRequiredMixin, View):
-    def get(self, request, pk):
-        showtime = _get_showtime(pk)
-        local = showtime.starts_at.astimezone(CINEMA_TZ)
-        response = HttpResponse(content_type="text/csv")
-        response["Content-Disposition"] = (
-            f'attachment; filename="orders-{local:%Y-%m-%d-%H%M}.csv"'
-        )
-        writer = safe_csv_writer(response)
-        writer.writerow(
-            [
-                "number",
-                "name",
-                "email",
-                "phone",
-                *SQUARE_TIERS,
-                "total",
-                "status",
-                "paid at",
-                "arrived at",
-            ]
-        )
-        for order in _door_orders(showtime):
-            quantities = {line.tier: line.quantity for line in order.lines.all()}
-            writer.writerow(
-                [
-                    order.number,
-                    order.name,
-                    order.email,
-                    order.phone,
-                    *(quantities.get(tier, 0) for tier in SQUARE_TIERS),
-                    f"{order.total_dollars:.2f}",
-                    order.get_status_display(),
-                    _csv_time(order.paid_at),
-                    _csv_time(order.redeemed_at),
-                ]
-            )
-        return response
+def _csv_response(filename: str, header: list[str]):
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    writer = safe_csv_writer(response)
+    writer.writerow(header)
+    return response, writer
+
+
+def _csv_row(order: TicketOrder) -> list:
+    """One order under CSV_HEADER."""
+    quantities = {line.tier: line.quantity for line in order.lines.all()}
+    return [
+        order.number,
+        order.name,
+        order.email,
+        order.phone,
+        *(quantities.get(tier, 0) for tier in SQUARE_TIERS),
+        f"{order.total_dollars:.2f}",
+        order.get_status_display(),
+        _csv_time(order.paid_at),
+        _csv_time(order.redeemed_at),
+    ]
 
 
 def _csv_time(value) -> str:
     return value.astimezone(CINEMA_TZ).strftime(CSV_TIME) if value else ""
+
+
+class ShowtimeOrdersExportView(StaffRequiredMixin, View):
+    def get(self, request, pk):
+        showtime = _get_showtime(pk)
+        local = showtime.starts_at.astimezone(CINEMA_TZ)
+        response, writer = _csv_response(
+            f"orders-{local:%Y-%m-%d-%H%M}.csv", CSV_HEADER
+        )
+        for order in _door_orders(showtime):
+            writer.writerow(_csv_row(order))
+        return response
 
 
 class ShowtimeAllowanceView(StaffRequiredMixin, View):
@@ -261,3 +292,134 @@ class TicketOrderRefundView(StaffRequiredMixin, View):
         else:
             toast = ("error", order.error)
         return _row_response(request, pk, toast)
+
+
+def _midnight(day: datetime.date) -> datetime.datetime:
+    return datetime.datetime.combine(day, datetime.time.min, tzinfo=CINEMA_TZ)
+
+
+def _dollars(cents: int) -> Decimal:
+    return Decimal(cents) / 100
+
+
+def _showtimes():
+    return Showtime.objects.select_related("engagement", "screen").prefetch_related(
+        "engagement__engagement_films__film"
+    )
+
+
+def _totals(today: datetime.date) -> dict:
+    """Online tickets and gross for today's shows and the seven days from today."""
+    week = list(
+        Showtime.objects.filter(
+            starts_at__gte=_midnight(today),
+            starts_at__lt=_midnight(today + datetime.timedelta(days=7)),
+        ).only("pk", "starts_at")
+    )
+    sales = sold_and_gross(week)
+    tomorrow = _midnight(today + datetime.timedelta(days=1))
+    totals = {}
+    for key, showtimes in (
+        ("today", [st for st in week if st.starts_at < tomorrow]),
+        ("week", week),
+    ):
+        rows = [sales.get(st.pk, (0, 0)) for st in showtimes]
+        totals[key] = {
+            "tickets": sum(tickets for tickets, _ in rows),
+            "gross_dollars": _dollars(sum(cents for _, cents in rows)),
+        }
+    return totals
+
+
+def _day_label(day: datetime.date, today: datetime.date) -> str:
+    if day == today:
+        return "Today"
+    if day == today + datetime.timedelta(days=1):
+        return "Tomorrow"
+    return format_date(day, "l, F j, Y")
+
+
+def _days(showtimes, today: datetime.date) -> list[dict]:
+    """The showtimes, in the order given, grouped by their Eastern day."""
+    showtimes = list(showtimes)
+    sales = sold_and_gross(showtimes)
+    days = []
+    for st in showtimes:
+        day = st.starts_at.astimezone(CINEMA_TZ).date()
+        if not days or days[-1]["date"] != day:
+            days.append({"date": day, "label": _day_label(day, today), "rows": []})
+        tickets, cents = sales.get(st.pk, (0, 0))
+        days[-1]["rows"].append(
+            {
+                "st": st,
+                "sold": tickets,
+                "gross_dollars": _dollars(cents),
+                "allowance": st.effective_online_allowance,
+            }
+        )
+    return days
+
+
+class TicketSummaryView(StaffRequiredMixin, View):
+    """Online sales per showtime: upcoming from today, or past (paginated)."""
+
+    def get(self, request):
+        tab = request.GET.get("tab")
+        tab = tab if tab in SUMMARY_TABS else SUMMARY_TABS[0]
+        today = timezone.localdate()
+        page_obj = None
+        if tab == "upcoming":
+            showtimes = _showtimes().filter(starts_at__gte=_midnight(today))
+            showtimes = showtimes.order_by("starts_at", "pk")
+        else:
+            past = _showtimes().filter(starts_at__lt=_midnight(today))
+            paginator = Paginator(past.order_by("-starts_at", "-pk"), PER_PAGE)
+            page_obj = paginator.get_page(request.GET.get("page"))
+            showtimes = page_obj.object_list
+        ctx = {
+            "tab": tab,
+            "tabs": SUMMARY_TABS,
+            "totals": _totals(today),
+            "days": _days(showtimes, today),
+            "page_obj": page_obj,
+        }
+        return render(request, "dashboard/tickets.html", ctx)
+
+
+def _log_orders(request) -> tuple:
+    """Every order, newest first, narrowed by a known ?status=; and that status."""
+    status = request.GET.get("status", "")
+    orders = _with_show(TicketOrder.objects.order_by("-created_at", "-pk"))
+    if status in TicketOrder.Status.values:
+        return orders.filter(status=status), status
+    return orders, ""
+
+
+class TicketOrderListView(StaffRequiredMixin, View):
+    def get(self, request):
+        orders, status = _log_orders(request)
+        page_obj = Paginator(orders, PER_PAGE).get_page(request.GET.get("page"))
+        ctx = {
+            "page_obj": page_obj,
+            "status": status,
+            "statuses": TicketOrder.Status.choices,
+        }
+        return render(request, "dashboard/ticket_orders.html", ctx)
+
+
+class TicketOrderLogExportView(StaffRequiredMixin, View):
+    """The order log as CSV: the door-list columns after the film and showtime."""
+
+    def get(self, request):
+        orders, status = _log_orders(request)
+        suffix = f"-{status.lower()}" if status else ""
+        response, writer = _csv_response(
+            f"ticket-orders-{timezone.localdate():%Y-%m-%d}{suffix}.csv",
+            ["film", "showtime", *CSV_HEADER],
+        )
+        for order in orders:
+            show = order.showtime
+            writer.writerow(
+                [show.engagement.title, _csv_time(show.starts_at), *_csv_row(order)]
+            )
+        return response

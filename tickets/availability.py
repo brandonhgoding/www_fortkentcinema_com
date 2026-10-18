@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from boxoffice.models import SquareItem
 from boxoffice.sync import live_item
 from cinema.models import Engagement, EngagementStatus, Showtime
-from django.db.models import Q, Sum
+from django.db.models import F, Q, Sum
 
 from tickets.models import TicketLine, TicketOrder
 from web.constants import TICKET_CUTOFF_MINUTES, TICKET_HOLD_MINUTES
@@ -22,14 +22,20 @@ class Availability:
     allowance: int
 
 
-def _taken_lines(now: datetime.datetime):
-    """Lines whose seats are gone: sold (see counts_as_sold) or still held."""
+def _sold_lines() -> Q:
+    """TicketLine filter for sold orders (see counts_as_sold)."""
     Status = TicketOrder.Status
+    return Q(order__status=Status.PAID) | Q(
+        order__status=Status.FAILED, order__square_payment_id__gt=""
+    )
+
+
+def _taken_lines(now: datetime.datetime):
+    """Lines whose seats are gone: sold or still held."""
     hold_start = now - datetime.timedelta(minutes=TICKET_HOLD_MINUTES)
     return TicketLine.objects.filter(
-        Q(order__status=Status.PAID)
-        | Q(order__status=Status.FAILED, order__square_payment_id__gt="")
-        | Q(order__status=Status.PENDING, order__created_at__gt=hold_start)
+        _sold_lines()
+        | Q(order__status=TicketOrder.Status.PENDING, order__created_at__gt=hold_start)
     )
 
 
@@ -131,6 +137,23 @@ def for_showtimes(
         )
         for s in showtimes
     }
+
+
+def sold_and_gross(showtimes: Iterable[Showtime]) -> dict[int, tuple[int, int]]:
+    """Showtime pk -> (tickets sold, gross cents), one query; no sales, no key.
+
+    Sold means counts_as_sold: paid, or paid but the ticket email failed.
+    """
+    pks = [s.pk for s in showtimes]
+    if not pks:
+        return {}
+    rows = (
+        TicketLine.objects.filter(_sold_lines(), order__showtime__in=pks)
+        .values("order__showtime_id")
+        .annotate(tickets=Sum("quantity"), gross=Sum(F("quantity") * F("unit_cents")))
+        .values_list("order__showtime_id", "tickets", "gross")
+    )
+    return {pk: (tickets, gross) for pk, tickets, gross in rows}
 
 
 def variation_ids(engagement: Engagement) -> dict[str, str]:

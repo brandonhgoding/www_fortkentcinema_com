@@ -1,0 +1,29 @@
+<tr id="ticket-log-{{ order.pk }}">
+  <td>{{ order.created_at|date:"M j, g:i A" }}</td>
+  <td>{{ order.number|default:"—" }}</td>
+  <td>{{ order.name }}<br />{{ order.email }}</td>
+  <td><a href="{% url 'dashboard:showtime_orders' order.showtime_id %}">{{ order.showtime.engagement.title }}</a><br />{{ order.showtime.starts_at|date:"D, M j, g:i A" }}</td>
+  <td>${{ order.total_dollars|floatformat:2 }}</td>
+  <td>
+    {% if order.status == 'PAID' %}<span class="status-badge status-active">Paid</span>
+    {% elif order.status == 'REFUNDED' or order.status == 'EXPIRED' %}<span class="status-badge status-draft">{{ order.get_status_display }}</span>
+    {% elif order.status == 'PENDING' %}<span class="status-badge status-pending">Pending</span>
+    {% else %}<span class="status-badge status-cancelled">{{ order.get_status_display }}</span>{% endif %}
+    {% if order.error %}<span class="fieldHint">{{ order.error }}</span>{% endif %}
+  </td>
+  <td>
+    <div class="actions">
+      {% if order.status == 'FAILED' and order.square_payment_id %}
+      <form method="post" action="{% url 'dashboard:ticket_order_retry' order.pk %}"
+            hx-post="{% url 'dashboard:ticket_order_retry' order.pk %}"
+            hx-target="#ticket-log-{{ order.pk }}" hx-swap="outerHTML">{% csrf_token %}<input type="hidden" name="row" value="log" /><button class="btn btn-secondary btn-sm">Retry</button></form>
+      {% endif %}
+      {% if order.counts_as_sold %}
+      <form method="post" action="{% url 'dashboard:ticket_order_refund' order.pk %}"
+            hx-post="{% url 'dashboard:ticket_order_refund' order.pk %}"
+            hx-target="#ticket-log-{{ order.pk }}" hx-swap="outerHTML"
+            data-dashboard-confirm='{"title":"Refund Order","message":"Refund {{ order.number }} ({{ order.name|escapejs }}) for ${{ order.total_dollars|floatformat:2 }}? Square returns the money and the buyer is emailed.","confirmLabel":"Refund","variant":"danger"}'>{% csrf_token %}<input type="hidden" name="row" value="log" /><button class="btn btn-danger btn-sm">Refund</button></form>
+      {% endif %}
+    </div>
+  </td>
+</tr>

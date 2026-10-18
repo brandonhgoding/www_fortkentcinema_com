@@ -1,0 +1,45 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Online ticket orders · LeprinceOS{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <div>
+      <a href="{% url 'dashboard:tickets' %}" class="backLink">&larr; Back to Online tickets</a>
+      <h1 class="page-title">Order log</h1>
+      <p class="page-subtitle">Every online ticket order, newest first.</p>
+    </div>
+    <a href="{% url 'dashboard:ticket_orders_export' %}{% if status %}?status={{ status }}{% endif %}" class="btn btn-secondary">Download CSV</a>
+  </div>
+
+  <nav class="filter-tabs" aria-label="Status">
+    <a class="filter-tab{% if not status %} active{% endif %}" href="?"{% if not status %} aria-current="page"{% endif %}>All</a>
+    {% for value, label in statuses %}
+    <a class="filter-tab{% if value == status %} active{% endif %}" href="?status={{ value }}"{% if value == status %} aria-current="page"{% endif %}>{{ label }}</a>
+    {% endfor %}
+  </nav>
+
+  {% if page_obj %}
+    <div class="tableWrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Created</th><th>Order</th><th>Buyer</th><th>Show</th>
+          <th>Amount</th><th>Status</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in page_obj %}
+          {% include "dashboard/_ticket_log_row.html" %}
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% if status %}{% include "dashboard/_pager.html" with query="status="|add:status %}{% else %}{% include "dashboard/_pager.html" %}{% endif %}
+  {% else %}
+    <div class="empty-state">
+      <h3 class="empty-state-title">No orders{% if status %} with this status{% endif %}</h3>
+      <p class="empty-state-description">Orders show up here as soon as someone starts buying online.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

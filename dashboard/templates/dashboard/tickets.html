@@ -1,0 +1,65 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% block title %}Online tickets · LeprinceOS{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/home.css' %}" />{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Online tickets</h1>
+      <p class="page-subtitle">Tickets sold online for each showtime.</p>
+    </div>
+    <a href="{% url 'dashboard:ticket_orders' %}" class="btn btn-secondary">Order log</a>
+  </div>
+
+  <div class="summaryGrid">
+    <div class="card"><div class="cardBody">
+      <p class="cardLabel">Today</p>
+      <p class="cardValue">{{ totals.today.tickets }}</p>
+      <p class="cardLabel">ticket{{ totals.today.tickets|pluralize }} &middot; ${{ totals.today.gross_dollars|floatformat:2 }}</p>
+    </div></div>
+    <div class="card"><div class="cardBody">
+      <p class="cardLabel">Next seven days</p>
+      <p class="cardValue">{{ totals.week.tickets }}</p>
+      <p class="cardLabel">ticket{{ totals.week.tickets|pluralize }} &middot; ${{ totals.week.gross_dollars|floatformat:2 }}</p>
+    </div></div>
+  </div>
+
+  <nav class="filter-tabs" aria-label="Showtimes">
+    {% for t in tabs %}
+    <a class="filter-tab{% if t == tab %} active{% endif %}" href="?tab={{ t }}"{% if t == tab %} aria-current="page"{% endif %}>{{ t|capfirst }}</a>
+    {% endfor %}
+  </nav>
+
+  {% for day in days %}
+  <section class="section">
+    <h2 class="sectionTitle">{{ day.label }}</h2>
+    <div class="tableWrapper">
+    <table class="table">
+      <thead>
+        <tr><th>Time</th><th>Film</th><th>Sold online</th><th>Gross</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for row in day.rows %}
+        <tr{% if row.st.is_cancelled %} class="cancelledRow"{% endif %}>
+          <td>{{ row.st.starts_at|date:"g:i A" }}</td>
+          <td>{{ row.st.engagement.title }}{% if row.st.is_cancelled %} <span class="status-badge status-cancelled">Cancelled</span>{% endif %}</td>
+          <td>{{ row.sold }} of {{ row.allowance }}</td>
+          <td>${{ row.gross_dollars|floatformat:2 }}</td>
+          <td><a href="{% url 'dashboard:showtime_orders' row.st.pk %}">Door list</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </section>
+  {% empty %}
+  <div class="empty-state">
+    <h3 class="empty-state-title">{% if tab == 'past' %}No past showtimes{% else %}No upcoming showtimes{% endif %}</h3>
+    <p class="empty-state-description">Showtimes appear here once they're scheduled on an engagement.</p>
+  </div>
+  {% endfor %}
+
+  {% if page_obj %}{% include "dashboard/_pager.html" with query="tab=past" %}{% endif %}
+</div>
+{% endblock %}

@@ -12,6 +12,7 @@ from tickets.availability import (
     for_showtimes,
     remaining,
     sold,
+    sold_and_gross,
     variation_ids,
 )
 from tickets.tests.factories import age, make_live_item, make_order, make_showtime
@@ -165,3 +166,26 @@ class AvailabilityTests(TestCase):
 
     def test_variation_ids_without_item(self):
         self.assertEqual(variation_ids(self.st.engagement), {})
+
+
+class SoldAndGrossTests(TestCase):
+    def test_sums_sold_tickets_and_gross_per_showtime(self):
+        st = make_showtime()
+        other = make_showtime(starts_at=st.starts_at + timedelta(hours=3))
+        empty = make_showtime(starts_at=st.starts_at + timedelta(hours=6))
+        make_order(st, status="PAID", lines={"adult": 2, "child": 1})  # 2200
+        make_order(st, status="FAILED", square_payment_id="P1", lines={"senior": 1})
+        make_order(st, status="FAILED", lines={"adult": 5})
+        make_order(st, status="PENDING", lines={"adult": 5})
+        make_order(st, status="REFUNDED", lines={"adult": 5})
+        make_order(st, status="EXPIRED", lines={"adult": 5})
+        make_order(other, status="PAID", lines={"adult": 1})
+
+        with self.assertNumQueries(1):
+            result = sold_and_gross([st, other, empty])
+
+        self.assertEqual(result, {st.pk: (4, 2900), other.pk: (1, 800)})
+
+    def test_no_showtimes_no_query(self):
+        with self.assertNumQueries(0):
+            self.assertEqual(sold_and_gross([]), {})

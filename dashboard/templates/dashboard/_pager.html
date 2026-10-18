@@ -1,0 +1,8 @@
+{% comment %}Previous / next links for a Paginator page. `query` is the rest of the query string (no "?", no page).{% endcomment %}
+{% if page_obj.has_other_pages %}
+<nav class="actions" aria-label="Pages">
+  {% if page_obj.has_previous %}<a class="btn btn-secondary btn-sm" href="?{% if query %}{{ query }}&amp;{% endif %}page={{ page_obj.previous_page_number }}">&larr; Newer</a>{% endif %}
+  <span class="fieldHint">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}<a class="btn btn-secondary btn-sm" href="?{% if query %}{{ query }}&amp;{% endif %}page={{ page_obj.next_page_number }}">Older &rarr;</a>{% endif %}
+</nav>
+{% endif %}

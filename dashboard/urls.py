@@ -108,6 +108,17 @@ urlpatterns = [
         ticket_views.ShowtimeRefundAllView.as_view(),
         name="showtime_refund_all",
     ),
+    path("tickets", ticket_views.TicketSummaryView.as_view(), name="tickets"),
+    path(
+        "tickets/orders",
+        ticket_views.TicketOrderListView.as_view(),
+        name="ticket_orders",
+    ),
+    path(
+        "tickets/orders.csv",
+        ticket_views.TicketOrderLogExportView.as_view(),
+        name="ticket_orders_export",
+    ),
     path(
         "tickets/orders/<int:pk>/arrive",
         ticket_views.TicketOrderArriveView.as_view(),
