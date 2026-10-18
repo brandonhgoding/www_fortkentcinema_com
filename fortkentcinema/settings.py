@@ -259,6 +259,10 @@ SQUARE_ENVIRONMENT = config("SQUARE_ENVIRONMENT", default="sandbox")
 SQUARE_WEBHOOK_SIGNATURE_KEY = config("SQUARE_WEBHOOK_SIGNATURE_KEY", default="")
 SQUARE_WEBHOOK_URL = config("SQUARE_WEBHOOK_URL", default="")
 
+# Online tickets: the scheme and host for the link Square sends buyers back to.
+# A setting, like SQUARE_WEBHOOK_URL: build_absolute_uri() is wrong behind nginx.
+TICKETS_BASE_URL = config("TICKETS_BASE_URL", default="")
+
 # Nightly flash-gross emails (boxoffice app). Who receives them lives in the
 # database (admin → Box Office → Email reports); how they are sent lives here.
 EMAIL_BACKEND = (
