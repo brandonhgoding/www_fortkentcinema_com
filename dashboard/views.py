@@ -47,6 +47,7 @@ from django.views.generic import TemplateView, View
 from phone.models import Voicemail, VoicemailStatus
 from tickets import alerts as ticket_alerts
 from tickets.availability import for_showtimes
+from tickets.models import TicketOrder
 
 from .forms import EngagementForm, ScreenForm
 from .mixins import StaffRequiredMixin
@@ -474,10 +475,27 @@ class EngagementStatusView(StaffRequiredMixin, View):
         return _engagement_list_response(request, tab, toast=_save_toast(engagement, "Status updated"))
 
 
+HAS_ONLINE_ORDERS = "Has online orders. Cancel it instead."
+
+
+def _clear_dead_orders(orders):
+    """Delete expired, stale and unpaid-failed orders; False if any order is live."""
+    now = timezone.now()
+    orders = list(orders)
+    if any(o.counts_as_sold or o.status == TicketOrder.Status.REFUNDED
+           or o.is_holding(now) for o in orders):
+        return False
+    TicketOrder.objects.filter(pk__in=[o.pk for o in orders]).delete()
+    return True
+
+
 class EngagementDeleteView(StaffRequiredMixin, View):
     def post(self, request, pk):
         engagement = get_object_or_404(Engagement, pk=pk)
         tab = request.GET.get("tab") or "CURRENT"
+        if not _clear_dead_orders(TicketOrder.objects.filter(showtime__engagement=engagement)):
+            return _engagement_list_response(request, tab, toast={
+                "kind": "error", "message": HAS_ONLINE_ORDERS})
         try:
             delete(engagement)
         except GatewayError as exc:
@@ -679,6 +697,9 @@ class ShowtimeDeleteView(StaffRequiredMixin, View):
     def post(self, request, pk):
         st = get_object_or_404(Showtime.objects.select_related("engagement"), pk=pk)
         engagement = st.engagement
+        if not _clear_dead_orders(st.ticket_orders.all()):
+            return _showtime_list_response(request, engagement,
+                                           {"kind": "error", "message": HAS_ONLINE_ORDERS})
         st.delete()
         return _showtime_list_response(request, engagement,
                                        {"kind": "success", "message": "Showtime deleted"})
