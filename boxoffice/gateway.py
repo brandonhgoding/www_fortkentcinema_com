@@ -114,7 +114,9 @@ def _remote_item(obj: Any) -> RemoteItem:
 def _order_line(line: Any) -> OrderLine:
     return OrderLine(
         uid=line.uid,
-        name=line.name,
+        # Register "custom amount" charges (item_type CUSTOM_AMOUNT) have no
+        # name; the ledger column is not nullable.
+        name=line.name or "Custom amount",
         variation_name=line.variation_name or "",
         catalog_object_id=line.catalog_object_id or "",
         quantity=int(float(line.quantity)),
