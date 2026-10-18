@@ -377,6 +377,18 @@ class SearchOrdersTests(SimpleTestCase):
         self.assertEqual(line.catalog_object_id, "")
         self.assertEqual(line.variation_name, "")
 
+    def test_custom_amount_line_without_name_is_labelled(self) -> None:
+        # A register "custom amount" charge (item_type CUSTOM_AMOUNT) carries
+        # no name at all, and the ledger column is not nullable.
+        line = _line(catalog_object_id=None, variation_name=None)
+        line.name = None
+        client = mock.Mock()
+        client.orders.search.return_value = mock.Mock(
+            orders=[_order("O1", "2026-10-04T18:00:00Z", [line])], cursor=None)
+        gw = SquareGateway(client, "LOC", "CAT")
+        self.assertEqual(gw.search_orders(START, END)[0].lines[0].name,
+                         "Custom amount")
+
     def test_quantity_string_becomes_int(self) -> None:
         client = mock.Mock()
         client.orders.search.return_value = mock.Mock(
