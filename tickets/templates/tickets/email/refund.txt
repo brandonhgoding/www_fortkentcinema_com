@@ -1,6 +1,6 @@
 {% autoescape off %}Hi {{ order.name }},
 
-The {{ time }} showing of {{ title }} on {{ day }} has been cancelled, so we've refunded your order {{ order.number }}: {{ total }}.
+{% if order.showtime.is_cancelled %}The {{ time }} showing of {{ title }} on {{ day }} has been cancelled, so we've refunded your order {{ order.number }}: {{ total }}.{% else %}Your order {{ order.number }} for {{ title }} on {{ day }} has been refunded by the cinema. The refund is {{ total }}.{% endif %}
 
 The money goes back to the card you paid with and should show up within a few days.
 

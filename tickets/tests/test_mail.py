@@ -51,6 +51,8 @@ class TicketEmailTests(TestCase):
         self.assertEqual(qr_png("https://x/y")[:8], b"\x89PNG\r\n\x1a\n")
 
     def test_refund_email(self):
+        self.st.is_cancelled = True
+        self.st.save()
         order = make_order(self.st, status="REFUNDED", lines={"adult": 2, "child": 1})
         send_refund(order)
         self.assertEqual(len(mail.outbox), 1)
@@ -58,4 +60,19 @@ class TicketEmailTests(TestCase):
         self.assertEqual(msg.to, ["ann@example.com"])
         self.assertRegex(msg.subject, r"^Refunded: Dune, \w{3} \w{3} \d{1,2}$")
         for text in ["cancelled", "$22.00", "within a few days", "(207) 231-5287"]:
+            self.assertIn(text, msg.body)
+
+    def test_staff_refund_email_on_a_running_show(self):
+        order = make_order(self.st, status="REFUNDED", lines={"adult": 2, "child": 1})
+        send_refund(order)
+        msg = mail.outbox[0]
+        self.assertRegex(msg.subject, r"^Refunded: Dune, \w{3} \w{3} \d{1,2}$")
+        day = msg.subject.split(", ", 1)[1]
+        self.assertIn(
+            f"Your order {order.number} for Dune on {day} has been refunded "
+            "by the cinema.",
+            msg.body,
+        )
+        self.assertNotIn("cancelled", msg.body)
+        for text in ["$22.00", "within a few days", "(207) 231-5287"]:
             self.assertIn(text, msg.body)
