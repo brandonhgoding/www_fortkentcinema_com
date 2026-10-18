@@ -5,6 +5,7 @@ from boxoffice.gateway import _timestamp
 from boxoffice.memberships import order_never_fetched, process_order
 from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
 
+from tickets.models import TicketOrder
 from tickets.orders import confirm_payment
 
 PAYMENT_EVENTS = {"payment.created", "payment.updated"}
@@ -41,7 +42,9 @@ def square_webhook(request: HttpRequest) -> HttpResponse:
     except (KeyError, TypeError, AttributeError):
         return HttpResponseBadRequest()
     if status == "COMPLETED" and order_id:
-        sale = process_order(order_id)
+        # A ticket order holds no membership, so skip that handler's fetch.
+        is_ticket = TicketOrder.objects.filter(square_order_id=order_id).exists()
+        sale = None if is_ticket else process_order(order_id)
         # A payment-link ticket order, if this was one; None otherwise.
         confirm_payment(
             order_id, payment_id, paid_at=_timestamp(payment.get("created_at"))
