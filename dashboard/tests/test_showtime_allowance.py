@@ -52,6 +52,11 @@ class ShowtimeAllowanceTests(TestCase):
         self.st.refresh_from_db()
         self.assertIsNone(self.st.online_allowance)
 
+    def test_allowance_of_ten_thousand_is_saved(self) -> None:
+        self.edit(online_allowance="10000")
+        self.st.refresh_from_db()
+        self.assertEqual(self.st.online_allowance, 10000)
+
     def test_zero_allowance_is_saved(self) -> None:
         self.edit(online_allowance="0")
         self.st.refresh_from_db()
@@ -68,7 +73,7 @@ class ShowtimeAllowanceTests(TestCase):
         self.assertIn('placeholder="50"', html)
 
     def test_edit_rejects_negative_or_non_number(self) -> None:
-        for bad in ("-1", "lots", "2.5"):
+        for bad in ("-1", "lots", "2.5", "10001"):
             with self.subTest(bad=bad):
                 resp = self.edit(online_allowance=bad)
                 self.assertIn(ALLOWANCE_ERROR, resp.content.decode())

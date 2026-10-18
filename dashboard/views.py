@@ -551,6 +551,7 @@ def _parse_starts_at(date_str, time_str):
 
 INVALID_DATE_TIME = "Enter a valid date and time."
 INVALID_ALLOWANCE = "Online allowance must be a whole number."
+MAX_ALLOWANCE = 10000
 CANCELLED_ENGAGEMENT = "This engagement is cancelled. Confirm it before adding showtimes."
 
 
@@ -563,7 +564,7 @@ def _parse_allowance(value):
         allowance = int(value)
     except ValueError:
         return None, False
-    return allowance, allowance >= 0
+    return allowance, 0 <= allowance <= MAX_ALLOWANCE
 
 
 def _showtime_updated_toast(st, moved):

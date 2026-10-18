@@ -66,8 +66,10 @@ class BuyFormTests(TestCase):
         for phone in ["555-010", "call me maybe", "207-555-0100 x12", "1" * 21]:
             self.assertIn("phone", self.form(phone=phone).errors, phone)
 
-    def test_over_fifty_is_invalid(self):
-        self.assertIn("adult", self.form(adult=51).errors)
+    def test_over_twenty_is_invalid(self):
+        self.assertTrue(self.form(adult=20).is_valid())
+        for tier in ["adult", "senior", "child"]:
+            self.assertIn(tier, self.form(**{tier: 21}).errors, tier)
 
     def test_honeypot(self):
         self.assertTrue(self.form(website="x").is_bot)

@@ -11,7 +11,7 @@ PHONE_PUNCTUATION = re.compile(r"[\s().\-/]")
 def _quantity_field() -> forms.IntegerField:
     return forms.IntegerField(
         min_value=0,
-        max_value=50,
+        max_value=20,
         initial=0,
     )
 
