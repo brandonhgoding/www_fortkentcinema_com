@@ -57,9 +57,8 @@ class ShowtimeDeleteGuardTests(DeleteGuardTestCase):
         resp = self.delete()
         self.assertEqual(toast(resp)["kind"], "success")
         self.assertFalse(Showtime.objects.filter(pk=self.st.pk).exists())
-        self.assertFalse(
-            TicketOrder.objects.filter(pk__in=[expired.pk, stale.pk, failed.pk]).exists()
-        )
+        dead = [expired.pk, stale.pk, failed.pk]
+        self.assertFalse(TicketOrder.objects.filter(pk__in=dead).exists())
 
 
 class EngagementDeleteGuardTests(DeleteGuardTestCase):

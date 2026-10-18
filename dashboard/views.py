@@ -493,7 +493,8 @@ class EngagementDeleteView(StaffRequiredMixin, View):
     def post(self, request, pk):
         engagement = get_object_or_404(Engagement, pk=pk)
         tab = request.GET.get("tab") or "CURRENT"
-        if not _clear_dead_orders(TicketOrder.objects.filter(showtime__engagement=engagement)):
+        orders = TicketOrder.objects.filter(showtime__engagement=engagement)
+        if not _clear_dead_orders(orders):
             return _engagement_list_response(request, tab, toast={
                 "kind": "error", "message": HAS_ONLINE_ORDERS})
         try:
@@ -699,8 +700,8 @@ class ShowtimeDeleteView(StaffRequiredMixin, View):
         st = get_object_or_404(Showtime.objects.select_related("engagement"), pk=pk)
         engagement = st.engagement
         if not _clear_dead_orders(st.ticket_orders.all()):
-            return _showtime_list_response(request, engagement,
-                                           {"kind": "error", "message": HAS_ONLINE_ORDERS})
+            refused = {"kind": "error", "message": HAS_ONLINE_ORDERS}
+            return _showtime_list_response(request, engagement, refused)
         st.delete()
         return _showtime_list_response(request, engagement,
                                        {"kind": "success", "message": "Showtime deleted"})
