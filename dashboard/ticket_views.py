@@ -27,6 +27,7 @@ from .mixins import StaffRequiredMixin
 from .views import CINEMA_TZ, INVALID_ALLOWANCE, _parse_allowance
 
 CSV_TIME = "%Y-%m-%d %H:%M"
+NOT_CANCELLED = "This showtime isn't cancelled; nothing was refunded."
 
 
 def _get_showtime(pk) -> Showtime:
@@ -193,11 +194,16 @@ class ShowtimeRefundAllView(StaffRequiredMixin, View):
 
     def post(self, request, pk):
         showtime = _get_showtime(pk)
-        summary = refund_showtime(showtime, gateway=get_gateway())
-        message = f"{summary.refunded} refunded"
-        if summary.failed:
-            message += f", {summary.failed} failed"
-        kind = "warning" if summary.failed else "success"
+        # The banner only shows on a cancelled showtime, but a stale tab or a
+        # double submit could still post here.
+        if not showtime.is_cancelled:
+            kind, message = "error", NOT_CANCELLED
+        else:
+            summary = refund_showtime(showtime, gateway=get_gateway())
+            message = f"{summary.refunded} refunded"
+            if summary.failed:
+                message += f", {summary.failed} failed"
+            kind = "warning" if summary.failed else "success"
         if not request.headers.get("HX-Request"):
             messages.add_message(request, getattr(messages, kind.upper()), message)
             return redirect("dashboard:showtime_orders", pk)
@@ -231,22 +237,27 @@ class TicketOrderRetryView(StaffRequiredMixin, View):
 
     def post(self, request, pk):
         order = get_object_or_404(TicketOrder, pk=pk)
+        if order.status != TicketOrder.Status.FAILED or not order.square_payment_id:
+            # Already sent (a double click or a stale row), or never paid.
+            return _row_response(request, pk, ("info", "Nothing to resend"))
         order = resend(order)
         if order.status == TicketOrder.Status.PAID:
             toast = ("success", f"Ticket emailed to {order.email}")
         else:
-            toast = ("error", order.error or "Nothing to resend")
+            toast = ("error", order.error)
         return _row_response(request, pk, toast)
 
 
 class TicketOrderRefundView(StaffRequiredMixin, View):
     def post(self, request, pk):
         order = get_object_or_404(TicketOrder, pk=pk)
+        if not order.counts_as_sold:
+            return _row_response(request, pk, ("info", "Already refunded"))
         order = refund_order(order, reason="Refunded by staff", gateway=get_gateway())
         if order.status == TicketOrder.Status.REFUNDED and order.error:
             toast = ("warning", f"Refunded {order.number}. {order.error}")
         elif order.status == TicketOrder.Status.REFUNDED:
             toast = ("success", f"Refunded {order.number}")
         else:
-            toast = ("error", order.error or "Nothing to refund")
+            toast = ("error", order.error)
         return _row_response(request, pk, toast)

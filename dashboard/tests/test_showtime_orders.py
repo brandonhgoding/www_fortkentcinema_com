@@ -289,6 +289,25 @@ class RefundAllTests(DoorListTestCase):
         self.assertEqual(zed.status, "PAID")
         self.assertEqual(zed.error, "boom")
 
+    def test_refund_all_refuses_a_showtime_that_is_not_cancelled(self) -> None:
+        self.paid("Ann Lee", payment="P1")
+        self.paid("Zed Moss", payment="P2")
+        url = reverse("dashboard:showtime_refund_all", args=[self.st.pk])
+        refused = "This showtime isn't cancelled; nothing was refunded."
+        fake = FakeGateway()
+        with mock.patch("dashboard.ticket_views.get_gateway", return_value=fake):
+            resp = self.client.post(url, HTTP_HX_REQUEST="true")
+            self.assertEqual(toast(resp), {"kind": "error", "message": refused})
+            self.assertIn('id="door-list"', resp.content.decode())
+            resp = self.client.post(url, follow=True)
+            self.assertRedirects(resp, self.url)
+            self.assertContains(resp, "nothing was refunded")
+        self.assertEqual(fake.calls, [])
+        self.assertEqual(
+            list(TicketOrder.objects.values_list("status", flat=True)),
+            ["PAID", "PAID"],
+        )
+
     def test_refund_all_without_failures_and_without_htmx(self) -> None:
         self.cancel()
         self.paid("Ann Lee")
@@ -339,14 +358,34 @@ class RetryAndRefundTests(DoorListTestCase):
         self.assertIn("status-draft", html)
         self.assertNotIn(">Arrive</button>", html)
 
-    def test_retry_on_an_order_that_needs_nothing_toasts_an_error(self) -> None:
-        order = make_order(self.st, status="FAILED", error="Square said no")
-        resp = self.client.post(
-            reverse("dashboard:ticket_order_retry", args=[order.pk]),
-            HTTP_HX_REQUEST="true",
-        )
-        self.assertEqual(toast(resp), {"kind": "error", "message": "Square said no"})
+    def test_retry_on_an_order_that_needs_nothing_says_so(self) -> None:
+        unpaid = make_order(self.st, status="FAILED", error="Square said no")
+        paid = self.paid()
+        for order in (unpaid, paid):
+            with self.subTest(status=order.status):
+                with mock.patch("dashboard.ticket_views.resend") as resend:
+                    resp = self.client.post(
+                        reverse("dashboard:ticket_order_retry", args=[order.pk]),
+                        HTTP_HX_REQUEST="true",
+                    )
+                resend.assert_not_called()
+                self.assertEqual(
+                    toast(resp), {"kind": "info", "message": "Nothing to resend"}
+                )
+                self.assertIn(f'id="ticket-order-{order.pk}"', resp.content.decode())
         self.assertEqual(len(mail.outbox), 0)
+
+    def test_refund_on_an_already_refunded_order_says_so(self) -> None:
+        order = make_order(self.st, status="REFUNDED", square_payment_id="P1")
+        fake = FakeGateway()
+        with mock.patch("dashboard.ticket_views.get_gateway", return_value=fake):
+            resp = self.client.post(
+                reverse("dashboard:ticket_order_refund", args=[order.pk]),
+                HTTP_HX_REQUEST="true",
+            )
+        self.assertEqual(toast(resp), {"kind": "info", "message": "Already refunded"})
+        self.assertIn(f'id="ticket-order-{order.pk}"', resp.content.decode())
+        self.assertEqual(fake.calls, [])
 
     def test_failed_refund_keeps_the_row_and_toasts_the_error(self) -> None:
         order = self.paid(payment="P1")
