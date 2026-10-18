@@ -231,17 +231,18 @@
 
    These were <button class="showtime"> carrying cursor:pointer, a hover fill
    and a :focus-visible ring — three separate promises that tapping one buys a
-   ticket. There is no online ticketing path anywhere in this project: no
+   ticket. At the time there was no online ticketing path at all: no
    ticket URL on the Showtime model, no booking link in any template, no JS
-   bound to .showtime, and the only Square link on the site is the gift card.
-   Tickets are sold at the door. The markup is now a <span>, and the
+   bound to .showtime, and the only Square link on the site was the gift card.
+   Tickets were sold at the door. The markup became a <span>, and the
    interactive affordances are deliberately gone with it.
 
-   Do NOT restore cursor:pointer, :hover or :focus-visible here. The hover
-   fill was a false affordance, not decoration, and a <span> is not focusable
-   so the ring could never have shown for a keyboard user anyway. If online
-   sales ever land, this goes back to a <button> and the states come back
-   with it — together, not one at a time.
+   Do NOT restore cursor:pointer, :hover or :focus-visible on .showtime. The
+   hover fill was a false affordance, not decoration, and a <span> is not
+   focusable so the ring could never have shown for a keyboard user anyway.
+   Online sales have since landed (2026-10): a showing that can be bought
+   online is an <a class="showtime showtime--buy"> instead, and the states
+   live on that modifier below — together, never on the plain chip.
 
    The chip went too (2026-10 audit): even without the hover, a tinted box
    with a border still read as a button on a phone, and people tapped it.
@@ -264,6 +265,49 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   color: var(--color-text);
+}
+
+/* A showing on sale online (partials/showtime_chip.html). Same type as the
+   plain time so the row still reads as a schedule; the accent colour, the
+   "Buy" tag and the hover/focus states are what say "tap me". The block
+   padding takes the tap target to about 44px without changing the type. */
+.showtime--buy {
+  padding: 0.6rem 0;
+  color: var(--color-gold);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.showtime--buy:hover {
+  color: var(--color-gold-light);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.showtime--buy:focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* The small "Buy" tag after the time. inline-block keeps the link's hover
+   underline off it. */
+.showtime__buy {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-gold);
+  color: var(--color-on-accent);
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  line-height: 1.4;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.showtime--buy:hover .showtime__buy {
+  background: var(--color-gold-light);
 }
 
 /* CC / OC after a time, wearing the rating chip (.movie-rating here,

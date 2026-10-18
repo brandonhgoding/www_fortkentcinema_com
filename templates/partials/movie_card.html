@@ -58,17 +58,14 @@
     {% if movie.synopsis %}
     <p class="movie-synopsis">{{ movie.synopsis }}</p>
     {% endif %}
-    {% comment %} Spans, not buttons. There is no online ticket path in this
-    project at all — Showtime carries no booking URL and the only Square link
-    on the site is the gift card — so a <button> here promised a purchase that
-    cannot happen. These are schedule chips; .showtime is styled to match.
-    CC/OC wear the rating chip after the time; OC also gets a sentence under
-    the time, which doubles as its screen-reader label. Same markup in
+    {% comment %} Each chip links to buy online, notes it is sold out online,
+    or stays a plain chip when online sales are closed. The markup and its
+    rules live in partials/showtime_chip.html, shared with
     movie_schedule_card.html. {% endcomment %}
     {% for slot in movie.upcoming %}
     <div class="movie-showtimes" x-show="dates[idx] === '{{ slot.key }}'">
       {% for time in slot.times %}
-      <span class="showtime{% if time.captions_note %} showtime--noted{% endif %}">{{ time.time }}{% if time.captions %} <abbr class="movie-rating" title="{{ time.captions_label }}" aria-hidden="true">{{ time.captions }}</abbr>{% if not time.captions_note %}<span class="sr-only">{{ time.captions_label }}</span>{% endif %}{% endif %}{% if time.captions_note %}<span class="showtime__note">{{ time.captions_note }}</span>{% endif %}</span>
+      {% include "partials/showtime_chip.html" with rating_class="movie-rating" %}
       {% endfor %}
     </div>
     {% endfor %}
