@@ -93,6 +93,41 @@ urlpatterns = [
         ticket_views.ShowtimeOrdersView.as_view(),
         name="showtime_orders",
     ),
+    path(
+        "showtimes/<int:pk>/orders.csv",
+        ticket_views.ShowtimeOrdersExportView.as_view(),
+        name="showtime_orders_export",
+    ),
+    path(
+        "showtimes/<int:pk>/allowance",
+        ticket_views.ShowtimeAllowanceView.as_view(),
+        name="showtime_allowance",
+    ),
+    path(
+        "showtimes/<int:pk>/refund-all",
+        ticket_views.ShowtimeRefundAllView.as_view(),
+        name="showtime_refund_all",
+    ),
+    path(
+        "tickets/orders/<int:pk>/arrive",
+        ticket_views.TicketOrderArriveView.as_view(),
+        name="ticket_order_arrive",
+    ),
+    path(
+        "tickets/orders/<int:pk>/unarrive",
+        ticket_views.TicketOrderUnarriveView.as_view(),
+        name="ticket_order_unarrive",
+    ),
+    path(
+        "tickets/orders/<int:pk>/retry",
+        ticket_views.TicketOrderRetryView.as_view(),
+        name="ticket_order_retry",
+    ),
+    path(
+        "tickets/orders/<int:pk>/refund",
+        ticket_views.TicketOrderRefundView.as_view(),
+        name="ticket_order_refund",
+    ),
     path("polls", poll_views.PollListView.as_view(), name="polls"),
     path("polls/new", poll_views.PollCreateView.as_view(), name="poll_create"),
     path("polls/<int:pk>/edit", poll_views.PollEditView.as_view(), name="poll_edit"),
