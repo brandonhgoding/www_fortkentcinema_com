@@ -22,7 +22,7 @@ def qr_png(url: str) -> bytes:
     return buffer.getvalue()
 
 
-def _context(order: TicketOrder) -> dict:
+def ticket_context(order: TicketOrder) -> dict:
     showtime = order.showtime
     starts_at = showtime.starts_at.astimezone(CINEMA_TZ)
     lines = sorted(
@@ -46,7 +46,7 @@ def _context(order: TicketOrder) -> dict:
 
 
 def send_ticket(order: TicketOrder) -> None:
-    context = _context(order)
+    context = ticket_context(order)
     when = f"{context['day']} at {context['time']}"
     message = EmailMultiAlternatives(
         subject=f"Your tickets: {context['title']}, {when}",
@@ -64,7 +64,7 @@ def send_ticket(order: TicketOrder) -> None:
 
 
 def send_refund(order: TicketOrder) -> None:
-    context = _context(order)
+    context = ticket_context(order)
     message = EmailMultiAlternatives(
         subject=f"Refunded: {context['title']}, {context['day']}",
         body=render_to_string("tickets/email/refund.txt", context),

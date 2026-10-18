@@ -1,0 +1,8 @@
+{% comment %}
+  In place of the buy form when the showtime cannot be bought online.
+  `closed_sentence` comes from tickets.views.CLOSED_SENTENCES.
+{% endcomment %}
+<div class="ticket-page__closed">
+  <p>{{ closed_sentence }}</p>
+  <a href="/#now-showing" class="btn btn-secondary">See what's playing</a>
+</div>
