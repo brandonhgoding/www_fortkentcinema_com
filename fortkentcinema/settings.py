@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "audience.apps.AudienceConfig",
     "phone.apps.PhoneConfig",
     "boxoffice.apps.BoxofficeConfig",
+    "tickets.apps.TicketsConfig",
     "rest_framework",
     "corsheaders",
 ]
