@@ -113,6 +113,14 @@ class ShowtimeAllowanceTests(TestCase):
             },
         )
 
+    def test_moving_a_showtime_with_one_order_warns_in_the_singular(self) -> None:
+        make_order(self.st, status="PAID", lines={"adult": 3})
+        resp = self.edit(time="20:00")
+        self.assertEqual(
+            self.toast(resp)["message"],
+            "Showtime updated. 1 online order was emailed the old time. Let them know.",
+        )
+
     def test_editing_without_moving_does_not_warn(self) -> None:
         make_order(self.st, status="PAID")
         resp = self.edit(online_allowance="10")

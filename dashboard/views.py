@@ -545,8 +545,9 @@ def _showtime_updated_toast(st, moved):
     emailed = sum(order.counts_as_sold for order in orders)
     if not emailed:
         return {"kind": "success", "message": "Showtime updated"}
-    return {"kind": "warning", "message": f"Showtime updated. {emailed} online orders "
-            "were emailed the old time. Let them know."}
+    orders_were = "online order was" if emailed == 1 else "online orders were"
+    return {"kind": "warning", "message": f"Showtime updated. {emailed} {orders_were} "
+            "emailed the old time. Let them know."}
 
 
 def _render_showtime_form(request, engagement, action_url, submit_label, mode,
@@ -602,7 +603,8 @@ class ShowtimeCreateView(StaffRequiredMixin, View):
             if conflicts:
                 return again([format_overlap_error(c) for c in conflicts])
             Showtime.objects.create(engagement=engagement, starts_at=starts_at,
-                                    captions=captions, online_allowance=online_allowance)
+                                    captions=captions,
+                                    online_allowance=online_allowance)
         return _showtime_list_response(request, engagement,
                                        {"kind": "success", "message": "Showtime created"}, close_drawer=True)
 
