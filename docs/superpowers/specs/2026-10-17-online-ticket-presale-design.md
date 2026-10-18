@@ -1,7 +1,7 @@
 # Online ticket pre-sale — buy a showtime on the site, see it in the dashboard — Design
 
 **Date:** 2026-10-17
-**Status:** Awaiting user review (design phase)
+**Status:** Implemented on feat/online-tickets (see Amendments)
 **Repo:** `www_fortkentcinema_com` (branch: `feat/online-tickets`)
 **Builds on:** `2026-10-05-square-sync-design.md` (the `boxoffice` app, its
 gateway, the per-run Square ticket items), `2026-10-09-square-membership-webhook-design.md`
@@ -577,3 +577,38 @@ Flake8 gate: no new findings on changed lines (repo baseline is dirty).
 - **Member sign-in.** A member tier on the ticket page for a signed-in
   member, priced from `TICKET_PRICES["member"]`, which `TicketLine.tier`
   already allows.
+
+## Amendments (implementation, 2026-10-18)
+
+- `CheckoutSpec`, `CheckoutLine`, `CheckoutResult` and `Tender` live in
+  `boxoffice/gateway.py`, so `boxoffice` never imports `tickets`;
+  `tickets/spec.py` builds the spec.
+- Square's tender card status when paid is `CAPTURED` (never `COMPLETED`).
+  `recover_pending` treats `CAPTURED` as paid, and the fake gateway's `pay()`
+  writes `CAPTURED`.
+- `payment_link_body` raises `ValueError` if a line's discount does not divide
+  evenly by its quantity.
+- The paid confirmation page serves its QR from `tickets/order/<token>/qr.png`
+  (`tickets:order_qr`), with a private cache, and returns 404 unless the order
+  is paid.
+- Page CSS is `static/css/TicketPage.css`, bundled through
+  `frontend/styles/main.css`. The desktop `movie_card.html` and the schedule
+  card share `partials/showtime_chip.html`; chip CSS lives in `MovieCard.css`.
+- A sold-out showing keeps its ticket URL (the SoldOut offer points at the
+  ticket page). `ticket_url` means "has a ticket page", not "purchasable".
+- An all-zero order on an unbuyable show is refused with the availability
+  reason, not "quantity"; the form rejects all-zero before `start` is reached.
+- The moved-showtime warning is a warning toast on the drawer-save response,
+  not an inline list, because the drawer closes on save.
+- The summary's Upcoming/Past split is Eastern midnight today.
+- `cancelled_with_orders` and the door list count orders that count as sold
+  (PAID, or FAILED with a payment ID), not PAID only.
+- Refund-all is refused server-side when the showtime is not cancelled.
+- The sandbox completion check (Task 6 of the plan) was not run during
+  implementation and is the first rollout step. If a fulfillment-free
+  payment-link order does not reach COMPLETED on payment, `boxoffice/pull.py`
+  needs an OPEN-order search by `reference_id` prefix `FK-` before the nightly
+  report sees online sales.
+- `TICKETS_BASE_URL` falls back to the scheme and host of `SQUARE_WEBHOOK_URL`.
+  `support_email` falls back to `DEFAULT_FROM_EMAIL` because `SITE_CONFIG` has
+  no cinema email.
