@@ -547,6 +547,16 @@ class PaymentLinkBodyTests(SimpleTestCase):
                           "buyer_phone_number": "2075550100"})
         self.assertEqual(body["idempotency_key"], "tok")
 
+    def test_blank_phone_is_left_out_of_prepopulated_data(self) -> None:
+        body = payment_link_body(dataclasses.replace(MATINEE_SPEC, buyer_phone=""), "LOC1")
+        self.assertEqual(body["pre_populated_data"], {"buyer_email": "ann@example.com"})
+
+    def test_blank_support_email_is_left_out_of_checkout_options(self) -> None:
+        spec = dataclasses.replace(MATINEE_SPEC, support_email="")
+        opts = payment_link_body(spec, "LOC1")["checkout_options"]
+        self.assertNotIn("merchant_support_email", opts)
+        self.assertEqual(opts["redirect_url"], spec.redirect_url)
+
     def test_evening_body_has_no_discounts_key(self) -> None:
         order = payment_link_body(EVENING_SPEC, "LOC1")["order"]
         self.assertNotIn("discounts", order)

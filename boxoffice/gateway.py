@@ -237,20 +237,23 @@ def payment_link_body(spec: CheckoutSpec, location_id: str) -> dict:
     ]
     if discounts:
         order["discounts"] = discounts
+    options: dict[str, Any] = {
+        "redirect_url": spec.redirect_url,
+        "ask_for_shipping_address": False,
+        "allow_tipping": False,
+        "accepted_payment_methods": {"apple_pay": True, "google_pay": True},
+    }
+    # Leave out a blank support email or phone rather than send Square "".
+    if spec.support_email:
+        options["merchant_support_email"] = spec.support_email
+    prefill = {"buyer_email": spec.buyer_email}
+    if spec.buyer_phone:
+        prefill["buyer_phone_number"] = spec.buyer_phone
     return {
         "idempotency_key": spec.idempotency_key,
         "order": order,
-        "checkout_options": {
-            "redirect_url": spec.redirect_url,
-            "ask_for_shipping_address": False,
-            "allow_tipping": False,
-            "merchant_support_email": spec.support_email,
-            "accepted_payment_methods": {"apple_pay": True, "google_pay": True},
-        },
-        "pre_populated_data": {
-            "buyer_email": spec.buyer_email,
-            "buyer_phone_number": spec.buyer_phone,
-        },
+        "checkout_options": options,
+        "pre_populated_data": prefill,
     }
 
 
