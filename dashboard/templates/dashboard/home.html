@@ -48,7 +48,7 @@
     {% if today_showtimes %}
     <div class="tableWrapper">
         <table class="table">
-          <thead><tr><th>Time</th><th>Film</th><th>Screen</th><th>Format</th><th>Status</th></tr></thead>
+          <thead><tr><th>Time</th><th>Film</th><th>Screen</th><th>Format</th><th>Online</th><th>Status</th></tr></thead>
           <tbody>
             {% for st in today_showtimes %}
             <tr>
@@ -56,6 +56,7 @@
               <td class="filmCell">{{ st.engagement.title }}</td>
               <td class="screenCell">{{ st.screen.name }}</td>
               <td class="formatCell">{{ st.engagement.presentation_format|upper }}</td>
+              <td class="onlineCell">{{ st.online_sold }} online</td>
               <td>{% if st.is_cancelled %}<span class="status-badge status-cancelled">Cancelled</span>{% else %}<span class="status-badge status-active">Active</span>{% endif %}</td>
             </tr>
             {% endfor %}
@@ -71,7 +72,7 @@
         </div>
         <div class="showtimeCardBody">
           <h3 class="showtimeFilm">{{ st.engagement.title }}</h3>
-          <div class="showtimeMeta"><span>{{ st.screen.name }}</span><span class="showtimeFormat">{{ st.engagement.presentation_format|upper }}</span></div>
+          <div class="showtimeMeta"><span>{{ st.screen.name }}</span><span class="showtimeFormat">{{ st.engagement.presentation_format|upper }}</span><span class="showtimeOnline">{{ st.online_sold }} online</span></div>
         </div>
       </div>
       {% endfor %}

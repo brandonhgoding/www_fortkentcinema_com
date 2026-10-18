@@ -3,6 +3,8 @@ from __future__ import annotations
 import datetime
 
 from django.urls import reverse
+from django.utils import timezone
+from django.utils.dateformat import format as format_date
 
 
 def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
@@ -12,12 +14,17 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
                        new_voicemails: int = 0,
                        square_pull_status: str | None = None,
                        square_sync_failures: int = 0,
-                       square_membership_failures: int = 0) -> list[dict]:
+                       square_membership_failures: int = 0,
+                       ticket_failures: int = 0,
+                       nearly_sold_out=(),
+                       cancelled_with_orders=()) -> list[dict]:
     """Server-side port of the React useSmartAlerts hook.
 
     engagements: iterable of Engagement (all engagements).
     tomorrow_showtimes_count: number of showtimes scheduled for tomorrow.
     today: local date.
+    nearly_sold_out: (showtime, sold, allowance) rows, see tickets.alerts.
+    cancelled_with_orders: (showtime, sold orders) rows, see tickets.alerts.
     """
     engagements = list(engagements)
     alerts: list[dict] = []
@@ -100,4 +107,39 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
             "url": reverse("dashboard:square_sales"),
         })
 
+    if ticket_failures > 0:
+        n = ticket_failures
+        if n == 1:
+            message = "1 online ticket order needs attention"
+        else:
+            message = f"{n} online ticket orders need attention"
+        alerts.append({
+            "id": "ticket-failures", "type": "warning",
+            "message": message,
+            "url": reverse("dashboard:ticket_orders") + "?status=FAILED",
+        })
+
+    for showtime, sold, allowance in nearly_sold_out:
+        alerts.append({
+            "id": f"nearly-sold-out-{showtime.pk}", "type": "info",
+            "message": (f"{_showing(showtime)} is nearly sold out online "
+                        f"({sold} of {allowance})"),
+            "url": reverse("dashboard:showtime_orders", args=[showtime.pk]),
+        })
+
+    for showtime, count in cancelled_with_orders:
+        unit = "order" if count == 1 else "orders"
+        alerts.append({
+            "id": f"cancelled-orders-{showtime.pk}", "type": "warning",
+            "message": (f"{_showing(showtime)} is cancelled with {count} "
+                        f"unrefunded online {unit}"),
+            "url": reverse("dashboard:showtime_orders", args=[showtime.pk]),
+        })
+
     return alerts
+
+
+def _showing(showtime) -> str:
+    """'Dune at 7:00 PM', in the cinema's time."""
+    starts = format_date(timezone.localtime(showtime.starts_at), "g:i A")
+    return f"{showtime.engagement.title} at {starts}"

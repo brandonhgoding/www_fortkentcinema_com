@@ -2,7 +2,7 @@ import datetime
 import json
 from zoneinfo import ZoneInfo
 
-from boxoffice.gateway import GatewayError
+from boxoffice.gateway import GatewayError, disabled_reason
 from boxoffice.models import MembershipSale, SquareItem
 from boxoffice.reports import pull_status, sales_panel
 from boxoffice.sync import delete, live_item, schedule, sync
@@ -45,6 +45,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.generic import TemplateView, View
 from phone.models import Voicemail, VoicemailStatus
+from tickets import alerts as ticket_alerts
 from tickets.availability import for_showtimes
 
 from .forms import EngagementForm, ScreenForm
@@ -69,12 +70,17 @@ class HomeView(StaffRequiredMixin, TemplateView):
         today_start, today_end = day_range(today, tomorrow)
         tomo_start, tomo_end = day_range(tomorrow, day_after)
 
-        today_showtimes = (
+        today_showtimes = list(
             Showtime.objects.filter(starts_at__gte=today_start, starts_at__lt=today_end)
             .select_related("screen")
             .prefetch_related("engagement__engagement_films__film")
             .order_by("starts_at")
         )
+        now = timezone.now()
+        availability = for_showtimes(
+            today_showtimes, now, square_enabled=disabled_reason() is None)
+        for st in today_showtimes:
+            st.online_sold = availability[st.pk].sold
         tomorrow_count = Showtime.objects.filter(
             starts_at__gte=tomo_start, starts_at__lt=tomo_end, is_cancelled=False).count()
 
@@ -110,6 +116,9 @@ class HomeView(StaffRequiredMixin, TemplateView):
                     deleted_at__isnull=True).exclude(last_error="").count(),
                 square_membership_failures=MembershipSale.objects.filter(
                     status=MembershipSale.Status.FAILED).count(),
+                ticket_failures=ticket_alerts.failures_count(),
+                nearly_sold_out=ticket_alerts.nearly_sold_out(now),
+                cancelled_with_orders=ticket_alerts.cancelled_with_orders(),
             ),
             "sales_panel": sales_panel(today),
             "display_name": user.get_short_name() or user.get_username(),
