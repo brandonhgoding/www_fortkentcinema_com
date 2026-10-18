@@ -5,7 +5,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import ProtectedError
 from django.test import SimpleTestCase, TestCase
 
-from tickets.models import new_number, new_token
+from tickets.models import TicketLine, new_number, new_token
 from tickets.tests.factories import make_order, make_showtime
 
 
@@ -58,3 +58,19 @@ class OrderModelTests(TestCase):
         make_order(self.st, square_order_id="SQ1")
         with self.assertRaises(IntegrityError), transaction.atomic():
             make_order(self.st, square_order_id="SQ1")
+
+    def test_email_is_stripped_and_lowercased_on_save(self):
+        order = make_order(self.st, email=" Ann@Example.com")
+        order.refresh_from_db()
+        self.assertEqual(order.email, "ann@example.com")
+
+    def test_zero_quantity_line_is_rejected(self):
+        order = make_order(self.st)
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            TicketLine.objects.create(
+                order=order,
+                tier="child",
+                quantity=0,
+                unit_cents=600,
+                square_variation_id="VAR-child",
+            )

@@ -80,6 +80,10 @@ class TicketOrder(models.Model):
     def __str__(self) -> str:
         return self.number
 
+    def save(self, *args, **kwargs):
+        self.email = self.email.strip().lower()
+        super().save(*args, **kwargs)
+
     def is_holding(self, now: datetime.datetime) -> bool:
         """PENDING and still inside the hold window: the seats are spoken for."""
         if self.status != self.Status.PENDING:
@@ -118,7 +122,11 @@ class TicketLine(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["order", "tier"], name="tickets_one_line_per_tier"
-            )
+            ),
+            models.CheckConstraint(
+                condition=Q(quantity__gte=1),
+                name="tickets_line_quantity_at_least_one",
+            ),
         ]
 
     def __str__(self) -> str:
