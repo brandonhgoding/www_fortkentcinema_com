@@ -140,6 +140,21 @@ class OrderLogTests(StaffTestCase):
         self.assertEqual(len(page1.context["page_obj"]), 50)
         self.assertEqual(list(page2.context["page_obj"]), [failed])
 
+    def test_never_started_checkouts_are_listed_quietly(self) -> None:
+        order = make_order(self.st, status="ABANDONED", error="Square: down")
+
+        resp = self.client.get(self.url, {"status": "ABANDONED"})
+
+        self.assertEqual(list(resp.context["page_obj"]), [order])
+        self.assertContains(resp, "Never started")
+        self.assertContains(resp, "Square: down")
+        # Grey like Expired, not the red "needs attention" badge.
+        self.assertContains(resp, "status-badge status-draft")
+        self.assertNotContains(resp, "status-badge status-cancelled")
+        self.assertNotContains(
+            resp, reverse("dashboard:ticket_order_retry", args=[order.pk])
+        )
+
     def test_unknown_status_shows_everything(self) -> None:
         make_order(self.st, status="PAID")
         resp = self.client.get(self.url, {"status": "BOGUS"})

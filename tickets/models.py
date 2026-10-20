@@ -37,6 +37,9 @@ class TicketOrder(models.Model):
         EXPIRED = "EXPIRED", "Expired"
         REFUNDED = "REFUNDED", "Refunded"
         FAILED = "FAILED", "Needs attention"
+        # Square never gave us a payment link, so the buyer never saw a
+        # checkout and was told to try again. Terminal; nothing to retry.
+        ABANDONED = "ABANDONED", "Never started"
 
     TIERS = SQUARE_TIERS
 
@@ -52,7 +55,7 @@ class TicketOrder(models.Model):
     email = models.EmailField()
     phone = models.CharField(max_length=40)
     status = models.CharField(
-        max_length=8, choices=Status.choices, default=Status.PENDING
+        max_length=9, choices=Status.choices, default=Status.PENDING
     )
     square_order_id = models.CharField(max_length=64, blank=True, default="")
     square_payment_id = models.CharField(max_length=64, blank=True, default="")

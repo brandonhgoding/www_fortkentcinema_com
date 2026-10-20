@@ -449,6 +449,8 @@ are set.
 - `EMAIL_HOST_PASSWORD`
 - `EMAIL_USE_TLS` (default True)
 - `DEFAULT_FROM_EMAIL`
+- `ADMINS` (comma-separated addresses that receive ERROR emails; empty means
+  nobody)
 
 Deploy note: `requirements.txt` bumped `typing_extensions` from 4.14.0 to
 4.16.0 (required by the Square SDK's `anyio` dependency); the deploy's
@@ -464,10 +466,27 @@ read them that way even if the server's clock is UTC.
 CRON_TZ=America/New_York
 45 23 * * *  cd /srv/www_fortkentcinema_com && .venv/bin/python manage.py pull_square_sales
 0  2  * * *  cd /srv/www_fortkentcinema_com && .venv/bin/python manage.py sync_square_catalog
+30 2  * * *  cd /srv/www_fortkentcinema_com && .venv/bin/python manage.py expire_ticket_orders
 ```
 
+All three go on the `api_fortkentcinema_com` entry only, beside the existing
+cron jobs: the two entries share one database, so a second copy would run
+each job twice.
+
 Command flags: `pull_square_sales [--date YYYY-MM-DD] [--days N] [--dry-run]
-[--no-email]` and `sync_square_catalog [--date YYYY-MM-DD] [--dry-run]`.
+[--no-email]`, `sync_square_catalog [--date YYYY-MM-DD] [--dry-run]` and
+`expire_ticket_orders` (no flags; marks PENDING online orders past the
+20-minute hold EXPIRED after asking Square whether they were paid).
+
+The 23:45 pull emails the day's reports as soon as it stores the day. A sale
+closed between 23:45 and midnight is stored by the next night's three-day
+lookback, so the ledger and the dashboard heal themselves, but the email
+already sent for that day is final: no report is re-sent.
+
+A failed pull exits non-zero and the dashboard shows an alert the next
+morning. With `ADMINS` set, any ERROR logged by the site or a cron job is
+also emailed to those addresses (subject `[Fort Kent Cinema] ERROR ...`),
+and every log line on stderr carries a timestamp.
 
 ### Admin steps
 
@@ -510,7 +529,7 @@ not count as a To address, and a report with no To address is skipped.
 4. **Reports.** Run `pull_square_sales --dry-run` for the cutover day and
    compare against the old script's output for the same day. The old script
    lives outside this repository, so this comparison is manual: run it as
-   usual and set the two outputs side by side. Then add the two
+   usual and set the two outputs side by side. Then add the three
    cron entries and retire the script's cron.
 5. **Verify over the first week** that `admissions` is filling and the
    ticket report matches what the booker received before.

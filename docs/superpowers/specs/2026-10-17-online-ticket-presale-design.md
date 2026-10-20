@@ -225,7 +225,7 @@ sold(showtime) = Σ quantity over lines of orders where
 remaining(showtime) = max(effective_allowance − sold, 0)
 ```
 
-REFUNDED, EXPIRED and FAILED orders hold nothing. A FAILED order that
+REFUNDED, EXPIRED, ABANDONED and FAILED orders hold nothing. A FAILED order that
 carries a payment ID (email failed after payment) is counted as sold,
 because the buyer has a ticket; implementation: a FAILED order with a
 non-blank `square_payment_id` is treated as PAID for counting and for the
@@ -238,9 +238,11 @@ door list, and shows a "resend email" Retry.
 - **PAID**: Square reported a completed payment. Email sent.
 - **EXPIRED**: PENDING past the hold, recovery fetch found no payment.
 - **REFUNDED**: refund issued through Square.
-- **FAILED**: the payment-link call failed (no `square_order_id`), or
-  the email after payment failed (`square_payment_id` set). The error
-  text says which.
+- **FAILED**: the email after payment failed (`square_payment_id` set).
+  Counted as sold; "Needs attention" until the email is resent.
+- **ABANDONED**: the payment-link call failed (no `square_order_id`), so
+  the buyer never saw a checkout and was told to try again. Terminal;
+  listed in the order log under "Never started", never on the home alert.
 
 ### What is untouched
 
@@ -680,3 +682,10 @@ Flake8 gate: no new findings on changed lines (repo baseline is dirty).
   named in the order's metadata when that showtime still exists; moving a
   showtime in the dashboard re-dates its lines (`recompute_show_dates`), and
   deleting one no longer re-dates them.
+- (2026-10-20) A checkout Square never started is `ABANDONED` (tickets 0004,
+  which also moves existing FAILED orders without a payment). During a
+  Square outage every buyer attempt used to become a FAILED order on the
+  home page's "needs attention" alert with nothing for staff to do; now
+  FAILED means only "paid, email not sent". The runbook's cron block gained
+  `expire_ticket_orders`, and settings gained `LOGGING` (timestamped stderr,
+  ERROR emailed to `ADMINS`).

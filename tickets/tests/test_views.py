@@ -230,7 +230,7 @@ class BuyPostTests(ViewTestCase):
         self.assertIn(
             "We couldn't start checkout. Please try again, or buy at the door.", text(r)
         )
-        self.assertEqual(TicketOrder.objects.get().status, "FAILED")
+        self.assertEqual(TicketOrder.objects.get().status, "ABANDONED")
 
     def test_post_when_closed_is_refused(self):
         self.get_gateway.return_value = None
@@ -292,6 +292,9 @@ class OrderPageTests(ViewTestCase):
         failed = make_order(self.st, status="FAILED", error="x")
         self.assertIn("This checkout did not start.", self.page(failed))
 
+        abandoned = make_order(self.st, status="ABANDONED", error="x")
+        self.assertIn("This checkout did not start.", self.page(abandoned))
+
     def test_order_states_are_pure(self):
         from tickets.views import order_state
 
@@ -305,6 +308,7 @@ class OrderPageTests(ViewTestCase):
             ("EXPIRED", "expired"),
             ("REFUNDED", "refunded"),
             ("FAILED", "failed"),
+            ("ABANDONED", "abandoned"),
         ]:
             self.assertEqual(order_state(TicketOrder(status=status), now), state)
         paid_but_no_email = TicketOrder(status="FAILED", square_payment_id="P1")

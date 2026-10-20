@@ -280,3 +280,49 @@ EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
 # stalled SMTP server hold a worker forever.
 EMAIL_TIMEOUT = config("EMAIL_TIMEOUT", default=10, cast=int)
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="webmaster@localhost")
+
+# Who hears about errors. Comma-separated addresses; empty means nobody is
+# emailed, and the only signal left is a cron job's exit code.
+ADMINS = [(address, address) for address in config("ADMINS", default="", cast=Csv())]
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+EMAIL_SUBJECT_PREFIX = "[Fort Kent Cinema] "
+
+# Every logger, not just django.*: INFO and up to stderr with a timestamp
+# (gunicorn and cron both keep stderr), and ERROR and up to ADMINS by email
+# outside DEBUG. The django logger is redefined without handlers so a 500
+# reaches the root handlers once instead of Django's own copy as well.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "require_debug_false": {"()": "django.utils.log.RequireDebugFalse"},
+    },
+    "formatters": {
+        "timed": {
+            "format": "{asctime} {levelname} {name}: {message}",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            # Tests assert on their own captured logs (assertLogs), and the
+            # 403s and 404s they expect would otherwise print; keep them quiet.
+            "level": "ERROR" if TESTING else "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "timed",
+        },
+        "mail_admins": {
+            "level": "ERROR",
+            "filters": ["require_debug_false"],
+            "class": "django.utils.log.AdminEmailHandler",
+        },
+    },
+    "root": {
+        "handlers": ["console", "mail_admins"],
+        "level": "INFO",
+    },
+    "loggers": {
+        "django": {"handlers": [], "level": "INFO", "propagate": True},
+    },
+}

@@ -240,7 +240,11 @@ class VoicemailAudioTests(VoicemailTestCase):
                     open_recording.side_effect = outcome
                 else:
                     open_recording.return_value = outcome
-                self.assertEqual(self.client.get(self.audio_url()).status_code, 502)
+                # A 502 is logged as an ERROR (and emailed to ADMINS in
+                # production); capture it so the test output stays quiet.
+                with self.assertLogs("django.request", "ERROR"):
+                    response = self.client.get(self.audio_url())
+                self.assertEqual(response.status_code, 502)
 
 
 class SidebarBadgeTests(VoicemailTestCase):

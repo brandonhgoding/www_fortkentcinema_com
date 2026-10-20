@@ -6,7 +6,7 @@
   <td>${{ order.total_dollars|floatformat:2 }}</td>
   <td>
     {% if order.status == 'PAID' %}<span class="status-badge status-active">Paid</span>
-    {% elif order.status == 'REFUNDED' or order.status == 'EXPIRED' %}<span class="status-badge status-draft">{{ order.get_status_display }}</span>
+    {% elif order.status == 'REFUNDED' or order.status == 'EXPIRED' or order.status == 'ABANDONED' %}<span class="status-badge status-draft">{{ order.get_status_display }}</span>
     {% elif order.status == 'PENDING' %}<span class="status-badge status-pending">Pending</span>
     {% else %}<span class="status-badge status-cancelled">{{ order.get_status_display }}</span>{% endif %}
     {% if order.error %}<span class="fieldHint">{{ order.error }}</span>{% endif %}

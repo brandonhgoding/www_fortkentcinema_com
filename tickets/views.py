@@ -85,7 +85,7 @@ class BuyView(View):
         except orders.Refused as refused:
             error = CLOSED_SENTENCES[refused.reason]
             return self._render(request, showtime, form, gateway=gateway, error=error)
-        if order.status == TicketOrder.Status.FAILED:
+        if order.status == TicketOrder.Status.ABANDONED:
             return self._render(
                 request, showtime, form, gateway=gateway, error=CHECKOUT_FAILED
             )

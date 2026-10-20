@@ -46,7 +46,7 @@ def start(
     """Hold the seats as a PENDING order, then ask Square for a payment link.
 
     Raises Refused before anything is saved. A gateway failure does not raise:
-    the order comes back FAILED with the error recorded.
+    the order comes back ABANDONED with the error recorded.
     """
     if gateway is None:
         gateway = get_gateway()
@@ -94,7 +94,7 @@ def start(
     try:
         link = _create_link(gateway, checkout_spec(order, variation_ids))
     except GatewayError as exc:
-        order.status = TicketOrder.Status.FAILED
+        order.status = TicketOrder.Status.ABANDONED
         order.error = str(exc)
         order.save(update_fields=["status", "error"])
         return order

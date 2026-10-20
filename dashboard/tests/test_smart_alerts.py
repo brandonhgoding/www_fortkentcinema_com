@@ -196,6 +196,8 @@ class TicketAlertQueryTests(TestCase):
         make_order(st, status="FAILED", square_payment_id="PAY-1")
         make_order(st, status="PAID", square_payment_id="PAY-2")
         make_order(st, status="EXPIRED")
+        # A checkout Square never started needs nobody's attention.
+        make_order(st, status="ABANDONED", error="down")
         self.assertEqual(failures_count(), 2)
 
     def test_nearly_sold_out_at_ninety_percent(self):

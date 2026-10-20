@@ -95,13 +95,15 @@ class StartTests(TestCase):
         self.assertEqual(gw.customers["C-1"]["phone"], "")
         self.assertEqual(order.status, "PENDING")
 
-    def test_gateway_error_marks_failed(self):
+    def test_gateway_error_abandons_the_order(self):
+        # Nothing for staff to do: the buyer was told to try again.
         gw = FakeGateway(fail_with=GatewayError("down"))
         make_live_item(self.st.engagement)
         order = self._start({"adult": 1}, gw)
         order.refresh_from_db()
         self.assertEqual(
-            (order.status, order.error, order.square_order_id), ("FAILED", "down", "")
+            (order.status, order.error, order.square_order_id),
+            ("ABANDONED", "down", ""),
         )
 
     def test_rejected_phone_retries_once_without_the_prefill(self):
@@ -131,7 +133,7 @@ class StartTests(TestCase):
         ):
             order = self._start({"adult": 1}, gw)
         order.refresh_from_db()
-        self.assertEqual((order.status, order.error), ("FAILED", "down"))
+        self.assertEqual((order.status, order.error), ("ABANDONED", "down"))
 
     def test_refuses_when_short_or_zero(self):
         make_live_item(self.st.engagement)
