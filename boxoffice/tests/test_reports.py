@@ -1,4 +1,5 @@
 import datetime
+from zoneinfo import ZoneInfo
 
 from boxoffice.models import (
     EmailRecipient, EmailReport, SaleLine, SalesPull, SquareItem, SquareVariation,
@@ -11,10 +12,16 @@ from boxoffice.tests.test_pull import make_eng
 from django.core import mail
 from django.test import TestCase, override_settings
 from django.utils import timezone
+from tickets.tests.factories import make_showtime
 
 DAY = datetime.date(2026, 10, 9)
 LOGGER = "boxoffice.reports"
 _seq = iter(range(1, 10_000))
+
+
+def at_eastern(day: datetime.date, hour: int, minute: int) -> datetime.datetime:
+    return datetime.datetime.combine(
+        day, datetime.time(hour, minute), tzinfo=ZoneInfo("America/New_York"))
 
 
 def make_line(item_name, gross_cents, quantity=1, **over) -> SaleLine:
@@ -63,6 +70,28 @@ class AggregationTests(TestCase):
         make_line("Uncategorised", 800, category_id="")
         with override_settings(SQUARE_TICKET_CATEGORY_ID=""):
             self.assertEqual(ticket_report(DAY), [])
+
+    def test_ticket_report_dates_online_sales_by_show_day(self) -> None:
+        # Sold on DAY for a show two days later: the owner summary counts it
+        # on DAY, the ticket report on the show day.
+        show_day = DAY + datetime.timedelta(days=2)
+        showtime = make_showtime(starts_at=at_eastern(show_day, 19, 0))
+        make_line("Dune", 800, engagement=showtime.engagement, showtime=showtime)
+        self.assertEqual(owner_summary(DAY), [ItemTotal("Dune", 1, 800)])
+        self.assertEqual(ticket_report(DAY), [])
+        self.assertEqual(ticket_report(show_day), [ItemTotal("Dune", 1, 800)])
+
+    def test_tier_totals_date_online_sales_by_show_day(self) -> None:
+        show_day = DAY + datetime.timedelta(days=2)
+        showtime = make_showtime(starts_at=at_eastern(show_day, 19, 0))
+        item = SquareItem.objects.create(engagement=showtime.engagement, name="Dune")
+        adult = SquareVariation.objects.create(
+            item=item, square_id="V1", sku="s1", tier="adult", name="Adult",
+            price_cents=1000, ordinal=0)
+        make_line("Dune", 1000, quantity=2, variation=adult,
+                  engagement=showtime.engagement, showtime=showtime)
+        self.assertEqual(tier_totals(DAY)["adult"], 0)
+        self.assertEqual(tier_totals(show_day)["adult"], 2)
 
     def test_tier_totals_cover_the_three_variations(self) -> None:
         eng = make_eng()

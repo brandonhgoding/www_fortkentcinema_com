@@ -7,8 +7,9 @@ from boxoffice.models import SaleLine, SalesPull, SquareVariation
 from boxoffice.pull import business_date, day_bounds, pull_day
 from boxoffice.sync import live_item, push
 from boxoffice.tests.fakes import FakeGateway
-from cinema.models import Engagement, EngagementFilm, Film, Screen
+from cinema.models import Engagement, EngagementFilm, Film, Screen, Showtime
 from django.test import SimpleTestCase, TestCase, override_settings
+from tickets.tests.factories import make_order
 
 LOGGER = "boxoffice.pull"
 DAY = datetime.date(2026, 10, 9)
@@ -83,6 +84,21 @@ class PullDayTests(TestCase):
         self.assertEqual(ticket.category_id, TICKETS)
         self.assertIsNotNone(pull.finished_at)
         self.assertEqual(pull.business_date, DAY)
+
+    def test_online_order_line_is_linked_to_its_showtime(self) -> None:
+        showtime = Showtime.objects.create(
+            engagement=self.eng, screen=self.eng.screen,
+            starts_at=at_eastern(2026, 10, 11, 19, 0))
+        make_order(showtime, status="PAID", square_order_id="O1")
+        self.gw.orders = [
+            order("O1", at_eastern(2026, 10, 9, 12, 0),
+                  line("L1", "Dune", "Adult", self.adult_id, 2, 1600)),
+            order("O2", at_eastern(2026, 10, 9, 19, 5),
+                  line("L2", "Dune", "Adult", self.adult_id, 1, 800)),
+        ]
+        pull_day(datetime.date(2026, 10, 9), self.gw)
+        self.assertEqual(SaleLine.objects.get(line_uid="L1").showtime, showtime)
+        self.assertIsNone(SaleLine.objects.get(line_uid="L2").showtime)
 
     def test_unattributed_categories_resolved_in_one_lookup(self) -> None:
         self.gw.categories = {"VPOP": "CAT-SNACKS"}

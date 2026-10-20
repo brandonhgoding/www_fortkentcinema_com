@@ -1,4 +1,4 @@
-from cinema.models import Engagement
+from cinema.models import Engagement, Showtime
 from django.db import models
 
 from .square_variation import SquareVariation
@@ -22,6 +22,11 @@ class SaleLine(models.Model):
     )
     engagement = models.ForeignKey(
         Engagement, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    # The showtime an online ticket order was for; register sales have none.
+    # The ticket report dates a line by its show day when this is set.
+    showtime = models.ForeignKey(
+        Showtime, null=True, blank=True, on_delete=models.SET_NULL
     )
 
     class Meta:
