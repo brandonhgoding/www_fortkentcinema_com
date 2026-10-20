@@ -7,6 +7,7 @@ from boxoffice.gateway import (
     CheckoutResult,
     CheckoutSpec,
     GatewayError,
+    InvalidPhone,
     OrderData,
     OrderLine,
     RemoteItem,
@@ -19,7 +20,7 @@ from boxoffice.spec import ItemSpec
 
 class FakeGateway:
     def __init__(self, *, fail_with: GatewayError | None = None,
-                 fail_on: set[str] | None = None) -> None:
+                 fail_on: set[str] | None = None, reject_phone: bool = False) -> None:
         self.items: dict[str, RemoteItem] = {}
         self.orders: list[OrderData] = []
         self.categories: dict[str, str] = {}
@@ -28,6 +29,8 @@ class FakeGateway:
         self.fail_with = fail_with
         # Payment IDs whose refund_payment raises GatewayError("boom").
         self.fail_on: set[str] = set() if fail_on is None else fail_on
+        # Like Square: a payment link with a phone it cannot parse is refused.
+        self.reject_phone = reject_phone
         self._item_ids = itertools.count(1)
         self._var_ids = itertools.count(1)
         self._image_ids = itertools.count(1)
@@ -93,6 +96,8 @@ class FakeGateway:
 
     def create_payment_link(self, spec: CheckoutSpec) -> CheckoutResult:
         self._record("create_payment_link", spec=spec)
+        if self.reject_phone and spec.buyer_phone:
+            raise InvalidPhone("INVALID_PHONE_NUMBER")
         n = next(self._link_ids)
         order_id = f"SQ-{n}"
         lines = tuple(

@@ -1,9 +1,10 @@
 """Online ticket order lifecycle: start a checkout, confirm, recover, expire."""
 
+import dataclasses
 import datetime
 import logging
 
-from boxoffice.gateway import GatewayError, SquareGateway, get_gateway
+from boxoffice.gateway import GatewayError, InvalidPhone, SquareGateway, get_gateway
 from boxoffice.spec import SQUARE_TIERS
 from cinema.models import Showtime
 from django.db import transaction
@@ -86,7 +87,7 @@ def start(
         )
     # Outside the transaction: never hold the showtime lock across a Square call.
     try:
-        link = gateway.create_payment_link(checkout_spec(order, variation_ids))
+        link = _create_link(gateway, checkout_spec(order, variation_ids))
     except GatewayError as exc:
         order.status = TicketOrder.Status.FAILED
         order.error = str(exc)
@@ -96,6 +97,25 @@ def start(
     order.square_checkout_url = link.url
     order.save(update_fields=["square_order_id", "square_checkout_url"])
     return order
+
+
+def _create_link(gateway: SquareGateway, spec):
+    """Ask Square for the payment link; once more without the phone if it balks.
+
+    Square validates the prefilled phone against the world's numbering plans,
+    so a mistyped area code would otherwise cost the buyer their checkout.
+    The phone stays on the order for staff. A fresh idempotency key: Square
+    refuses a reused key with a different body.
+    """
+    try:
+        return gateway.create_payment_link(spec)
+    except InvalidPhone:
+        if not spec.buyer_phone:
+            raise
+        logger.info("Square rejected the phone prefill for %s; retrying without",
+                    spec.reference)
+        return gateway.create_payment_link(dataclasses.replace(
+            spec, buyer_phone="", idempotency_key=f"{spec.idempotency_key}-nophone"))
 
 
 def confirm_payment(
