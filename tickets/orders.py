@@ -157,6 +157,13 @@ def confirm_payment(
     return _send(order)
 
 
+def handle_square_payment(
+    order_id: str, payment_id: str, paid_at: datetime.datetime | None
+) -> bool:
+    """The box office webhook's handler: True when the order was one of ours."""
+    return confirm_payment(order_id, payment_id, paid_at=paid_at) is not None
+
+
 def resend(order: TicketOrder) -> TicketOrder:
     """Retry the ticket email for a paid order whose email failed."""
     if order.status != TicketOrder.Status.FAILED or not order.square_payment_id:

@@ -82,11 +82,13 @@ def _order(order_id: str, closed_at: str, lines: list[mock.Mock],
            fulfillments: list[mock.Mock] | None = None,
            tenders: list[mock.Mock] | None = None,
            created_at: str | None = None,
-           reference_id: str | None = None) -> mock.Mock:
+           reference_id: str | None = None,
+           metadata: dict[str, str] | None = None) -> mock.Mock:
     # A Mock invents missing attributes, so "absent" must be an explicit None.
     return mock.Mock(id=order_id, closed_at=closed_at, line_items=lines,
                      fulfillments=fulfillments, tenders=tenders,
-                     created_at=created_at, reference_id=reference_id)
+                     created_at=created_at, reference_id=reference_id,
+                     metadata=metadata)
 
 
 def _shipment(display_name: str | None = "Ann Lee",
@@ -469,6 +471,18 @@ class SearchOrdersTests(SimpleTestCase):
                          ["LOC"])
         self.assertEqual([(o.order_id, o.closed_at, o.reference_id) for o in orders],
                          [("O1", None, "FK-ABCDE")])
+
+    def test_order_data_reads_the_showtime_from_metadata(self) -> None:
+        # payment_link_body writes metadata.showtime on every website order;
+        # Square carries it back, so the ledger need not ask the website.
+        client = mock.Mock()
+        client.orders.search.return_value = mock.Mock(orders=[
+            _order("O1", None, [_line()], metadata={"showtime": "5"}),
+            _order("O2", None, [_line()]),
+            _order("O3", None, [_line()], metadata={"showtime": "soon"}),
+        ], cursor=None)
+        orders = SquareGateway(client, "LOC", "CAT").search_open_orders(START, END)
+        self.assertEqual([o.showtime_id for o in orders], [5, None, None])
 
     def test_order_without_reference_has_blank_reference_id(self) -> None:
         client = mock.Mock()
@@ -1023,6 +1037,7 @@ class FakeGatewayTests(SimpleTestCase):
                           for li in order.lines],
                          [("var-adult", 2, 1200), ("var-child", 1, 600)])
         self.assertEqual(order.reference_id, "FK-ABCDE")
+        self.assertEqual(order.showtime_id, 5)
         self.assertEqual(gw.create_payment_link(EVENING_SPEC).order_id, "SQ-2")
         self.assertEqual(gw.search_orders(START, END), [])  # open orders never match
 

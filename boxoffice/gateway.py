@@ -84,6 +84,7 @@ class OrderData:
     paid_at: datetime.datetime | None = None
     tenders: tuple[Tender, ...] = ()
     reference_id: str = ""  # the website's order number on payment-link orders
+    showtime_id: int | None = None  # from metadata.showtime, which we write
 
 
 @dataclass(frozen=True)
@@ -221,7 +222,13 @@ def _order_data(order: Any) -> OrderData:
         paid_at=_paid_at(order),
         tenders=tuple(_tender(t) for t in (order.tenders or [])),
         reference_id=order.reference_id or "",
+        showtime_id=_showtime_id(order.metadata),
     )
+
+
+def _showtime_id(metadata: dict[str, str] | None) -> int | None:
+    value = (metadata or {}).get("showtime", "")
+    return int(value) if value.isdigit() else None
 
 
 def _usd(cents: int) -> dict:

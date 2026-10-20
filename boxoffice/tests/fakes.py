@@ -126,7 +126,8 @@ class FakeGateway:
             for i, line in enumerate(spec.lines)
         )
         self.orders.append(OrderData(order_id=order_id, closed_at=None, lines=lines,
-                                     reference_id=spec.reference))
+                                     reference_id=spec.reference,
+                                     showtime_id=spec.showtime_id))
         return CheckoutResult(order_id=order_id, url=f"https://square.link/u/{n}")
 
     def refund_payment(self, *, payment_id: str, amount_cents: int,

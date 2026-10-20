@@ -661,3 +661,15 @@ Flake8 gate: no new findings on changed lines (repo baseline is dirty).
   never undoes it). The ticket report, owner summary, tier totals, the
   dashboard sales panel and `Engagement.admissions` count what was kept.
   Register refunds are still not read from Square.
+- (2026-10-20) `boxoffice` no longer imports `tickets` at all. The webhook
+  offers each completed payment to handlers registered through
+  `boxoffice.payment_events.register_payment_handler` (the tickets app
+  registers `tickets.orders.handle_square_payment` in `TicketsConfig.ready`),
+  in order, stopping at the first that claims it; the membership handler runs
+  only when none does. A handler that raises is logged, the others still run,
+  and the response is 503 so Square retries. The nightly pull reads the
+  showtime from the order's own `metadata.showtime` (written by
+  `payment_link_body`) and asks a registered `boxoffice.pull.WebsiteOrders`
+  source (`tickets.ledger.TicketOrders`) only for what Square cannot say:
+  which orders were refunded in full, and which were paid in a window, for the
+  missing-online guard.

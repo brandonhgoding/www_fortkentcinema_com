@@ -1,8 +1,8 @@
 """Pull a business day's Square sales into the SaleLine ledger."""
-import dataclasses
 import datetime
 import logging
 from collections.abc import Iterable
+from typing import Protocol
 from zoneinfo import ZoneInfo
 
 from boxoffice.gateway import GatewayError, OrderData, OrderLine, SquareGateway
@@ -13,11 +13,35 @@ from django.conf import settings
 from django.db import transaction
 from django.db.models import F, Sum
 from django.utils import timezone
-from tickets.models import TicketOrder
 
 logger = logging.getLogger(__name__)
 
 EASTERN = ZoneInfo("America/New_York")
+
+
+class WebsiteOrders(Protocol):
+    """What the website knows about its own Square orders.
+
+    The tickets app registers an implementation at startup; the ledger never
+    imports it. Which showtime an order was for comes from the order itself
+    (Square carries our metadata back), so only what Square cannot say is
+    asked here.
+    """
+
+    def refunded(self, order_ids: Iterable[str]) -> set[str]:
+        """The Square ids among ``order_ids`` refunded in full."""
+
+    def paid(self, start: datetime.datetime,
+             end: datetime.datetime) -> set[str]:
+        """Square ids of orders the buyer paid in [start, end)."""
+
+
+website: WebsiteOrders | None = None
+
+
+def register_website(source: WebsiteOrders) -> None:
+    global website
+    website = source
 
 
 def day_bounds(day: datetime.date) -> tuple[datetime.datetime, datetime.datetime]:
@@ -62,7 +86,7 @@ def pull_day(day: datetime.date, gateway: SquareGateway) -> SalesPull:
         orders = day_orders(day, gateway)
         lines = [(o, ln) for o in orders for ln in o.lines]
         variations = _resolve_variations(ln.catalog_object_id for _, ln in lines)
-        online = _resolve_online(o.order_id for o in orders)
+        refunded = _resolve_refunded(o.order_id for o in orders)
         categories = _resolve_categories(
             gateway,
             {ln.catalog_object_id for _, ln in lines
@@ -73,7 +97,7 @@ def pull_day(day: datetime.date, gateway: SquareGateway) -> SalesPull:
             touched = {row.engagement_id for row in existing.values()
                        if row.engagement_id is not None}
             for o, ln in lines:
-                stored = _store_line(o, ln, variations, categories, online,
+                stored = _store_line(o, ln, variations, categories, refunded,
                                      existing.get((o.order_id, ln.uid)))
                 if stored.engagement_id is not None:
                     touched.add(stored.engagement_id)
@@ -141,21 +165,11 @@ def _resolve_variations(ids: Iterable[str]) -> dict[str, SquareVariation]:
             SquareVariation.objects.filter(square_id__in=wanted).select_related("item")}
 
 
-@dataclasses.dataclass(frozen=True)
-class _Online:
-    """What the website knows about one of its orders."""
-    showtime_id: int
-    refunded: bool
-
-
-def _resolve_online(order_ids: Iterable[str]) -> dict[str, _Online]:
-    """Map Square order ID -> the website's order, for orders placed there."""
-    rows = TicketOrder.objects.filter(
-        square_order_id__in=set(order_ids)
-    ).values_list("square_order_id", "showtime_id", "status")
-    return {order_id: _Online(showtime_id,
-                              status == TicketOrder.Status.REFUNDED)
-            for order_id, showtime_id, status in rows}
+def _resolve_refunded(order_ids: Iterable[str]) -> set[str]:
+    """The Square ids among ``order_ids`` the website refunded in full."""
+    if website is None:
+        return set()
+    return website.refunded(set(order_ids))
 
 
 def _resolve_categories(gateway: SquareGateway,
@@ -172,13 +186,12 @@ def _missing_online_orders(day: datetime.date) -> list[str]:
     disagree with ours, so a change in what the open-order search returns
     shows up on the dashboard instead of as quietly short reports.
     """
-    start, end = day_bounds(day)
-    paid = (TicketOrder.objects.filter(paid_at__gte=start, paid_at__lt=end)
-            .exclude(square_order_id="")
-            .values_list("square_order_id", flat=True))
+    if website is None:
+        return []
+    paid = website.paid(*day_bounds(day))
     stored = set(SaleLine.objects.filter(order_id__in=paid)
                  .values_list("order_id", flat=True))
-    missing = sorted(set(paid) - stored)
+    missing = sorted(paid - stored)
     if missing:
         logger.warning("Paid online orders missing from the ledger for %s: %s",
                        day, ", ".join(missing))
@@ -198,7 +211,7 @@ def _existing_rows(lines: list[tuple[OrderData, OrderLine]]
 
 
 def _store_line(o: OrderData, ln: OrderLine, variations: dict[str, SquareVariation],
-                categories: dict[str, str], online: dict[str, _Online],
+                categories: dict[str, str], refunded: set[str],
                 existing: SaleLine | None) -> SaleLine:
     variation = variations.get(ln.catalog_object_id) if ln.catalog_object_id else None
     if variation is not None:
@@ -216,7 +229,7 @@ def _store_line(o: OrderData, ln: OrderLine, variations: dict[str, SquareVariati
             "category_id": (categories.get(ln.catalog_object_id, "")
                             or (existing.category_id if existing else "")),
         }
-    web = online.get(o.order_id)
+    given_back = o.order_id in refunded
     stored, _ = SaleLine.objects.update_or_create(
         order_id=o.order_id, line_uid=ln.uid,
         defaults={
@@ -230,9 +243,9 @@ def _store_line(o: OrderData, ln: OrderLine, variations: dict[str, SquareVariati
             "catalog_object_id": ln.catalog_object_id,
             "quantity": ln.quantity,
             "gross_cents": ln.gross_cents,
-            "showtime_id": web.showtime_id if web else None,
-            "refunded_quantity": ln.quantity if web and web.refunded else 0,
-            "refunded_cents": ln.gross_cents if web and web.refunded else 0,
+            "showtime_id": o.showtime_id,
+            "refunded_quantity": ln.quantity if given_back else 0,
+            "refunded_cents": ln.gross_cents if given_back else 0,
             **attribution,
         },
     )

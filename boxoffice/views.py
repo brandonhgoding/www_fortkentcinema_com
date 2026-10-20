@@ -1,12 +1,13 @@
 import json
+import logging
 
 from boxoffice import decorators
 from boxoffice.gateway import _timestamp
 from boxoffice.memberships import order_never_fetched, process_order
+from boxoffice.payment_events import dispatch
 from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
 
-from tickets.models import TicketOrder
-from tickets.orders import confirm_payment
+logger = logging.getLogger(__name__)
 
 PAYMENT_EVENTS = {"payment.created", "payment.updated"}
 
@@ -20,10 +21,12 @@ def square_webhook(request: HttpRequest) -> HttpResponse:
     ``payment.created`` usually arrives APPROVED and ``payment.updated`` brings
     COMPLETED; either is accepted once COMPLETED.
 
-    Square retries anything but a 2xx. process_order records its own failures
-    on the sale row, so a well-formed event gets a 200, except a 503 when the
-    order was never fetched: Square's retry then fetches it again, and the
-    FAILED row stays as the backstop if Square gives up.
+    Registered handlers (the tickets app's) get the payment first; the
+    membership handler runs only when none claims it. Square retries anything
+    but a 2xx. process_order records its own failures on the sale row, so a
+    well-formed event gets a 200, except a 503 when a retry could help: the
+    order was never fetched, or a handler crashed. The FAILED row stays as
+    the backstop if Square gives up.
     """
     try:
         payload = json.loads(request.body)
@@ -42,13 +45,16 @@ def square_webhook(request: HttpRequest) -> HttpResponse:
     except (KeyError, TypeError, AttributeError):
         return HttpResponseBadRequest()
     if status == "COMPLETED" and order_id:
-        # A ticket order holds no membership, so skip that handler's fetch.
-        is_ticket = TicketOrder.objects.filter(square_order_id=order_id).exists()
-        sale = None if is_ticket else process_order(order_id)
-        # A payment-link ticket order, if this was one; None otherwise.
-        confirm_payment(
-            order_id, payment_id, paid_at=_timestamp(payment.get("created_at"))
-        )
-        if sale is not None and order_never_fetched(sale):
+        result = dispatch(order_id, payment_id, _timestamp(payment.get("created_at")))
+        retry = result.failed
+        if not result.claimed:
+            try:
+                sale = process_order(order_id)
+            except Exception:
+                logger.exception("Membership handler failed for order %s", order_id)
+                retry = True
+            else:
+                retry = retry or (sale is not None and order_never_fetched(sale))
+        if retry:
             return HttpResponse(status=503)
     return HttpResponse()

@@ -38,8 +38,9 @@ def at_eastern(*parts) -> datetime.datetime:
     return datetime.datetime(*parts, tzinfo=ZoneInfo("America/New_York"))
 
 
-def order(order_id, closed_at, *lines) -> OrderData:
-    return OrderData(order_id=order_id, closed_at=closed_at, lines=tuple(lines))
+def order(order_id, closed_at, *lines, showtime_id=None) -> OrderData:
+    return OrderData(order_id=order_id, closed_at=closed_at, lines=tuple(lines),
+                     showtime_id=showtime_id)
 
 
 def line(uid, name, variation_name="", catalog_object_id="", quantity=1,
@@ -89,13 +90,15 @@ class PullDayTests(TestCase):
         self.assertEqual(pull.business_date, DAY)
 
     def test_online_order_line_is_linked_to_its_showtime(self) -> None:
+        # From the order's own metadata, not the website's records: Square is
+        # the source, and the link survives the website forgetting the order.
         showtime = Showtime.objects.create(
             engagement=self.eng, screen=self.eng.screen,
             starts_at=at_eastern(2026, 10, 11, 19, 0))
-        make_order(showtime, status="PAID", square_order_id="O1")
         self.gw.orders = [
             order("O1", at_eastern(2026, 10, 9, 12, 0),
-                  line("L1", "Dune", "Adult", self.adult_id, 2, 1600)),
+                  line("L1", "Dune", "Adult", self.adult_id, 2, 1600),
+                  showtime_id=showtime.pk),
             order("O2", at_eastern(2026, 10, 9, 19, 5),
                   line("L2", "Dune", "Adult", self.adult_id, 1, 800)),
         ]
@@ -395,3 +398,32 @@ class PullDayTests(TestCase):
         self.eng.refresh_from_db()
         self.assertEqual(self.eng.admissions, 0)
         mark_refunded("SQ-NOT-PULLED-YET")  # nothing to mark, no error
+
+    def test_pull_works_without_a_website_source(self) -> None:
+        # The ledger does not depend on the tickets app: with nothing
+        # registered, lines are stored, nothing is refunded, and the
+        # missing-online guard has nothing to compare against.
+        _, order_id = self.link_order()
+        self.gw.pay(order_id, paid_at=at_eastern(2026, 10, 9, 12, 0))
+        with mock.patch("boxoffice.pull.website", None):
+            pull = pull_day(DAY, self.gw)
+        self.assertEqual((pull.status, pull.lines, pull.missing_online), ("OK", 1, 0))
+        stored = SaleLine.objects.get(order_id=order_id)
+        self.assertEqual((stored.refunded_quantity, stored.showtime_id),
+                         (0, stored.showtime_id))
+        self.assertIsNotNone(stored.showtime_id)
+
+    def test_refund_mark_comes_from_the_website_source(self) -> None:
+        _, order_id = self.link_order()
+        self.gw.pay(order_id, paid_at=at_eastern(2026, 10, 9, 12, 0))
+
+        class Source:
+            def refunded(self, order_ids):
+                return {order_id}
+
+            def paid(self, start, end):
+                return set()
+
+        with mock.patch("boxoffice.pull.website", Source()):
+            pull_day(DAY, self.gw)
+        self.assertEqual(SaleLine.objects.get(order_id=order_id).refunded_quantity, 2)

@@ -132,7 +132,9 @@ class DispatchTests(WebhookTestCase):
         self.process.assert_called_once_with("O9")
 
     def test_completed_payment_reaches_tickets(self):
-        with mock.patch("boxoffice.views.confirm_payment") as cp:
+        # The tickets app registers its handler at startup; boxoffice does
+        # not import it.
+        with mock.patch("tickets.orders.confirm_payment") as cp:
             post(self.client, event(order_id="SQ1"))
         cp.assert_called_once()
         self.assertEqual(cp.call_args.args[:2], ("SQ1", "P1"))
@@ -141,12 +143,28 @@ class DispatchTests(WebhookTestCase):
     def test_ticket_order_skips_the_membership_handler(self):
         st = make_showtime()
         make_order(st, square_order_id="SQ1")
-        with mock.patch("boxoffice.views.confirm_payment") as cp:
+        with mock.patch("tickets.orders.confirm_payment", return_value=object()) as cp:
             resp = post(self.client, event(order_id="SQ1"))
         self.assertEqual(resp.status_code, 200)
         self.process.assert_not_called()
         cp.assert_called_once()
         self.assertEqual(cp.call_args.args[:2], ("SQ1", "P1"))
+
+    def test_handler_crash_still_records_the_membership_and_asks_for_retry(self):
+        def crash(order_id, payment_id, paid_at):
+            raise RuntimeError("tickets down")
+
+        with mock.patch("boxoffice.payment_events._handlers", [crash]), \
+                self.assertLogs("boxoffice.payment_events", "ERROR"):
+            resp = post(self.client, event("O9"))
+        self.assertEqual(resp.status_code, 503)
+        self.process.assert_called_once_with("O9")
+
+    def test_membership_crash_asks_for_retry_instead_of_a_500(self):
+        self.process.side_effect = RuntimeError("db down")
+        with self.assertLogs("boxoffice.views", "ERROR"):
+            resp = post(self.client, event("O9"))
+        self.assertEqual(resp.status_code, 503)
 
     def test_approved_payment_is_ignored(self):
         self.assertIgnored(post(self.client, event(status="APPROVED")))
