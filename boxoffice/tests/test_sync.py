@@ -596,6 +596,17 @@ class ReconcileImageTests(TestCase):
         self.assertEqual(len(uploads), 1)
         self.assertEqual(uploads[0][1]["name"], "Dune")
 
+    def test_rename_keeps_the_poster(self) -> None:
+        with mock.patch(FETCH, return_value=b"jpg"):
+            reconcile(self.today, self.gw)
+        self.eng.display_title = "Dune: Part One"
+        self.eng.save()
+        push(self.eng, self.gw)
+        self.assertIn("img-1", self.gw.images)
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.image_id, "img-1")
+        self.assertEqual(self.gw.calls[-1][1]["image_id"], "img-1")
+
     def test_poster_fetch_failure_is_skipped_not_an_error(self) -> None:
         with mock.patch(FETCH, return_value=None):
             report = reconcile(self.today, self.gw)

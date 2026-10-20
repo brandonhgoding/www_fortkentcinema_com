@@ -293,8 +293,15 @@ class SquareGateway:
         self.category_id = category_id
 
     def upsert_item(self, spec: ItemSpec, *, item_id: str | None, version: int | None,
-                    variation_ids_by_tier: dict[str, str]) -> UpsertResult:
-        item_obj = self._item_object(spec, item_id, version, variation_ids_by_tier)
+                    variation_ids_by_tier: dict[str, str],
+                    image_id: str = "") -> UpsertResult:
+        """Create or replace the item; ``image_id`` is the poster to keep on it.
+
+        Catalog updates replace the whole object, so an update that leaves
+        out the image loses the poster from the register tile.
+        """
+        item_obj = self._item_object(spec, item_id, version, variation_ids_by_tier,
+                                     image_id)
 
         def upsert() -> UpsertResult:
             response = self.client.catalog.batch_upsert(
@@ -452,7 +459,7 @@ class SquareGateway:
         return _call(lookup)
 
     def _item_object(self, spec: ItemSpec, item_id: str | None, version: int | None,
-                     variation_ids_by_tier: dict[str, str]) -> dict:
+                     variation_ids_by_tier: dict[str, str], image_id: str) -> dict:
         object_id = item_id or _temp_item_id(spec)
         obj: dict[str, Any] = {"type": "ITEM", "id": object_id}
         if version is not None:
@@ -473,6 +480,8 @@ class SquareGateway:
                 ],
             },
         })
+        if image_id:
+            obj["item_data"]["image_ids"] = [image_id]
         return obj
 
     def _variation_object(self, spec: ItemSpec, var: VariationSpec, item_id: str,

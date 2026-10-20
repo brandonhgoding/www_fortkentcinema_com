@@ -94,7 +94,8 @@ def _upsert(gateway: SquareGateway, item: SquareItem | None,
         return gateway.upsert_item(
             spec, item_id=item.square_id, version=item.version,
             variation_ids_by_tier=dict(
-                item.variations.values_list("tier", "square_id")))
+                item.variations.values_list("tier", "square_id")),
+            image_id=item.image_id)
     except VersionMismatch:
         remote = gateway.retrieve_item(item.square_id)
         logger.warning(
@@ -105,7 +106,8 @@ def _upsert(gateway: SquareGateway, item: SquareItem | None,
                for v in spec.variations if v.sku in remote.variation_ids_by_sku}
         return gateway.upsert_item(spec, item_id=remote.item_id,
                                    version=remote.version,
-                                   variation_ids_by_tier=ids)
+                                   variation_ids_by_tier=ids,
+                                   image_id=item.image_id)
 
 
 def push(engagement: Engagement,

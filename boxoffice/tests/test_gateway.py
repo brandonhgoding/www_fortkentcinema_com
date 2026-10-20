@@ -166,6 +166,22 @@ class UpsertRequestTests(SimpleTestCase):
                          {"I1"})
         self.assertEqual(result, UpsertResult("I1", 4, stored))
 
+    def test_update_sends_the_item_image_so_square_keeps_it(self) -> None:
+        # Catalog updates replace the whole object: an item sent without its
+        # image_ids loses the poster from the register tile.
+        client = mock.Mock()
+        client.catalog.batch_upsert.return_value = _upsert_response([], version=4)
+        stored = {t: f"V{i}" for i, t in enumerate(TIERS)}
+        gw = SquareGateway(client, "LOC", "CAT")
+        gw.upsert_item(SPEC_FOR_7, item_id="I1", version=3,
+                       variation_ids_by_tier=stored, image_id="IMG1")
+        item = client.catalog.batch_upsert.call_args.kwargs["batches"][0]["objects"][0]
+        self.assertEqual(item["item_data"]["image_ids"], ["IMG1"])
+        gw.upsert_item(SPEC_FOR_7, item_id="I1", version=4,
+                       variation_ids_by_tier=stored)
+        item = client.catalog.batch_upsert.call_args.kwargs["batches"][0]["objects"][0]
+        self.assertNotIn("image_ids", item["item_data"])
+
     def test_update_with_missing_tier_mints_temp_id_for_it(self) -> None:
         client = mock.Mock()
         client.catalog.batch_upsert.return_value = _upsert_response(
@@ -883,6 +899,20 @@ class FakeGatewayTests(SimpleTestCase):
         self.assertNotIn(image_id, gw.images)
         with self.assertRaises(GatewayError):
             gw.upload_item_image("nope", b"jpg", "Dune")
+
+    def test_fake_update_without_the_image_drops_it_like_square(self) -> None:
+        gw = FakeGateway()
+        created = gw.upsert_item(SPEC_FOR_7, item_id=None, version=None,
+                                 variation_ids_by_tier={})
+        image_id = gw.upload_item_image(created.item_id, b"jpg", "Dune")
+        kept = gw.upsert_item(SPEC_FOR_7, item_id=created.item_id,
+                              version=created.version,
+                              variation_ids_by_tier=created.variation_ids_by_tier,
+                              image_id=image_id)
+        self.assertIn(image_id, gw.images)
+        gw.upsert_item(SPEC_FOR_7, item_id=created.item_id, version=kept.version,
+                       variation_ids_by_tier=created.variation_ids_by_tier)
+        self.assertNotIn(image_id, gw.images)
 
     def test_create_mints_ids_and_update_bumps_version(self) -> None:
         gw = FakeGateway()

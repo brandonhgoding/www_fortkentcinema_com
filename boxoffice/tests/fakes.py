@@ -47,9 +47,10 @@ class FakeGateway:
             raise self.fail_with
 
     def upsert_item(self, spec: ItemSpec, *, item_id: str | None, version: int | None,
-                    variation_ids_by_tier: dict[str, str]) -> UpsertResult:
+                    variation_ids_by_tier: dict[str, str],
+                    image_id: str = "") -> UpsertResult:
         self._record("upsert_item", spec=spec, item_id=item_id, version=version,
-                     variation_ids_by_tier=variation_ids_by_tier)
+                     variation_ids_by_tier=variation_ids_by_tier, image_id=image_id)
         if item_id is None:
             item_id = f"item-{next(self._item_ids)}"
             new_version = 1
@@ -61,6 +62,11 @@ class FakeGateway:
                 raise VersionMismatch(
                     f"Item {item_id} is at version {stored.version}, not {version}")
             new_version = stored.version + 1
+            # Like Square: the update replaces the whole item, so an image
+            # not named in it is detached.
+            for stored_image_id, (owner, _) in list(self.images.items()):
+                if owner == item_id and stored_image_id != image_id:
+                    del self.images[stored_image_id]
         ids_by_tier = {
             v.tier: variation_ids_by_tier.get(v.tier) or f"var-{next(self._var_ids)}"
             for v in spec.variations
