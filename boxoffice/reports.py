@@ -9,6 +9,7 @@ from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 
 from .models import EmailReport, SaleLine, SalesPull
+from .pull import day_bounds
 from .spec import priced_tiers
 
 logger = logging.getLogger(__name__)
@@ -45,19 +46,31 @@ def owner_summary(day: datetime.date) -> list[ItemTotal]:
     return _group(SaleLine.objects.filter(business_date=day))
 
 
+def on_show_day(day: datetime.date) -> Q:
+    """Ticket lines for ``day``'s shows.
+
+    An online order is dated by its showtime, so a ticket bought on Tuesday
+    for Friday's show counts on Friday; a register sale (no showtime) rings
+    up on the day of the show, so its sale date stands.
+    """
+    start, end = day_bounds(day)
+    return Q(showtime__isnull=True, business_date=day) | Q(
+        showtime__starts_at__gte=start, showtime__starts_at__lt=end)
+
+
 def ticket_report(day: datetime.date) -> list[ItemTotal]:
     wanted = Q(engagement__isnull=False, engagement__in_ticket_report=True)
     category = settings.SQUARE_TICKET_CATEGORY_ID
     if category:
         wanted |= Q(engagement__isnull=True, category_id=category)
-    return _group(SaleLine.objects.filter(wanted, business_date=day))
+    return _group(SaleLine.objects.filter(wanted, on_show_day(day)))
 
 
 def tier_totals(day: datetime.date) -> dict[str, int]:
     totals = {tier: 0 for tier, _ in priced_tiers()}
     rows = (
         SaleLine.objects.filter(
-            business_date=day, engagement__isnull=False, variation__isnull=False)
+            on_show_day(day), engagement__isnull=False, variation__isnull=False)
         .values("variation__tier")
         .annotate(quantity=Sum("quantity"))
     )

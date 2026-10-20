@@ -11,6 +11,7 @@ from django.conf import settings
 from django.db import transaction
 from django.db.models import Sum
 from django.utils import timezone
+from tickets.models import TicketOrder
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,7 @@ def pull_day(day: datetime.date, gateway: SquareGateway) -> SalesPull:
         orders = _closed_orders(gateway.search_orders(*day_bounds(day)))
         lines = [(o, ln) for o in orders for ln in o.lines]
         variations = _resolve_variations(ln.catalog_object_id for _, ln in lines)
+        showtimes = _resolve_showtimes(o.order_id for o in orders)
         categories = _resolve_categories(
             gateway,
             {ln.catalog_object_id for _, ln in lines
@@ -49,7 +51,7 @@ def pull_day(day: datetime.date, gateway: SquareGateway) -> SalesPull:
             touched = {row.engagement_id for row in existing.values()
                        if row.engagement_id is not None}
             for o, ln in lines:
-                stored = _store_line(o, ln, variations, categories,
+                stored = _store_line(o, ln, variations, categories, showtimes,
                                      existing.get((o.order_id, ln.uid)))
                 if stored.engagement_id is not None:
                     touched.add(stored.engagement_id)
@@ -90,6 +92,13 @@ def _resolve_variations(ids: Iterable[str]) -> dict[str, SquareVariation]:
             SquareVariation.objects.filter(square_id__in=wanted).select_related("item")}
 
 
+def _resolve_showtimes(order_ids: Iterable[str]) -> dict[str, int]:
+    """Map Square order ID -> showtime pk for orders placed through the website."""
+    return dict(
+        TicketOrder.objects.filter(square_order_id__in=set(order_ids))
+        .values_list("square_order_id", "showtime_id"))
+
+
 def _resolve_categories(gateway: SquareGateway,
                         unknown_ids: set[str]) -> dict[str, str]:
     if not unknown_ids:
@@ -110,7 +119,8 @@ def _existing_rows(lines: list[tuple[OrderData, OrderLine]]
 
 
 def _store_line(o: OrderData, ln: OrderLine, variations: dict[str, SquareVariation],
-                categories: dict[str, str], existing: SaleLine | None) -> SaleLine:
+                categories: dict[str, str], showtimes: dict[str, int],
+                existing: SaleLine | None) -> SaleLine:
     variation = variations.get(ln.catalog_object_id) if ln.catalog_object_id else None
     if variation is not None:
         attribution = {
@@ -137,6 +147,7 @@ def _store_line(o: OrderData, ln: OrderLine, variations: dict[str, SquareVariati
             "catalog_object_id": ln.catalog_object_id,
             "quantity": ln.quantity,
             "gross_cents": ln.gross_cents,
+            "showtime_id": showtimes.get(o.order_id),
             **attribution,
         },
     )
