@@ -40,11 +40,14 @@ def post_raw(client, body: str, *, signature: str | None = "valid") -> HttpRespo
                        content_type="application/json", **extra)
 
 
-def event(order_id="O1", status="COMPLETED", type="payment.updated") -> dict:
+def event(order_id="O1", status="COMPLETED", type="payment.updated",
+          amount: int | None = None) -> dict:
     payment = {"id": "P1", "order_id": order_id, "status": status,
                "created_at": "2026-10-03T03:12:00.000Z"}
     if order_id is None:
         del payment["order_id"]
+    if amount is not None:
+        payment["amount_money"] = {"amount": amount, "currency": "USD"}
     return {
         "type": type,
         "event_id": "E1",
@@ -138,7 +141,24 @@ class DispatchTests(WebhookTestCase):
             post(self.client, event(order_id="SQ1"))
         cp.assert_called_once()
         self.assertEqual(cp.call_args.args[:2], ("SQ1", "P1"))
-        self.assertEqual(cp.call_args.kwargs, {"paid_at": PAID_AT})
+        self.assertEqual(cp.call_args.kwargs,
+                         {"paid_at": PAID_AT, "amount_cents": None})
+
+    def test_payment_amount_reaches_tickets(self):
+        with mock.patch("tickets.orders.confirm_payment") as cp:
+            post(self.client, event(order_id="SQ1", amount=1600))
+        self.assertEqual(cp.call_args.kwargs["amount_cents"], 1600)
+
+    def test_payment_for_less_than_the_order_total_is_not_confirmed(self):
+        st = make_showtime()
+        order = make_order(st, square_order_id="SQ1")
+        with self.assertLogs("tickets.orders", "ERROR"):
+            resp = post(self.client, event(order_id="SQ1", amount=100))
+        self.assertEqual(resp.status_code, 200)
+        order.refresh_from_db()
+        self.assertEqual(order.status, "PENDING")
+        self.assertIn("100", order.error)
+        self.process.assert_not_called()
 
     def test_ticket_order_skips_the_membership_handler(self):
         st = make_showtime()
@@ -151,7 +171,7 @@ class DispatchTests(WebhookTestCase):
         self.assertEqual(cp.call_args.args[:2], ("SQ1", "P1"))
 
     def test_handler_crash_still_records_the_membership_and_asks_for_retry(self):
-        def crash(order_id, payment_id, paid_at):
+        def crash(order_id, payment_id, paid_at, amount_cents):
             raise RuntimeError("tickets down")
 
         with mock.patch("boxoffice.payment_events._handlers", [crash]), \

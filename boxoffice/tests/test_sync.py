@@ -177,6 +177,29 @@ class PushTests(TestCase):
         self.assertEqual((item.square_id, item.last_error), ("item-1", ""))
         self.assertEqual(SquareItem.objects.count(), 1)
 
+    def test_two_first_pushes_keep_one_item(self) -> None:
+        # A double-submitted save: the second push's write-back trips the
+        # one-live-row constraint, so it discards its own Square item and
+        # takes the winner's row. The item Square keeps is the row's.
+        real_upsert = self.gw.upsert_item
+        raced = []
+
+        def upsert_then_lose_the_race(spec, **kwargs):
+            result = real_upsert(spec, **kwargs)
+            if not raced:
+                raced.append(True)
+                push(self.eng, self.gw)  # the other request finishes first
+            return result
+
+        self.gw.upsert_item = upsert_then_lose_the_race
+        with self.assertLogs(LOGGER, "WARNING") as logs:
+            item = push(self.eng, self.gw)
+        self.assertEqual(SquareItem.objects.filter(deleted_at__isnull=True).count(), 1)
+        self.assertEqual(item, live_item(self.eng))
+        self.assertEqual(list(self.gw.items), [item.square_id])
+        self.assertEqual(item.last_error, "")
+        self.assertIn("another push", logs.output[0])
+
     @override_settings(SQUARE_ACCESS_TOKEN="")
     def test_none_gateway_does_nothing(self) -> None:
         with self.assertLogs(LOGGER, "INFO"):
@@ -408,6 +431,18 @@ class ReconcileTests(TestCase):
         self.assertEqual((report.errors, report.unknown_items), ([], []))
         self.assertEqual(report.deleted, [eng.pk])
 
+    def test_delete_failure_of_an_item_left_behind_is_reported(self) -> None:
+        eng = make_eng()
+        item = push(eng, self.gw)
+        SquareItem.objects.filter(pk=item.pk).update(deleted_at=timezone.now())
+        with mock.patch.object(self.gw, "delete_item",
+                               side_effect=GatewayError("down")):
+            report = reconcile(self.today, self.gw)
+        self.assertIn(item.square_id, self.gw.items)
+        self.assertEqual(report.deleted, [])
+        self.assertEqual(report.errors, [
+            f"Deleting item {item.square_id} left behind by a retired row: down"])
+
     def test_dry_run_leaves_an_item_left_behind_by_a_retired_row(self) -> None:
         eng = make_eng()
         item = push(eng, self.gw)
@@ -559,22 +594,63 @@ class ReconcileTests(TestCase):
     def test_transient_error_checking_a_moved_item_does_not_retire_it(self) -> None:
         # An item outside the category whose check fails for any reason but
         # "gone" must stay linked: retiring it would mint a duplicate item.
+        # The failure goes on the row, so the push pass re-pushes the same
+        # item at once, which is what puts it back in the category.
         eng = make_eng()
         item = push(eng, self.gw)
         real_list = self.gw.list_ticket_items
         self.gw.list_ticket_items = lambda: [
             r for r in real_list() if r.item_id != item.square_id]
         with mock.patch.object(self.gw, "retrieve_item",
-                               side_effect=GatewayError("down")):
+                               side_effect=GatewayError("down")), \
+                self.assertLogs(LOGGER, "WARNING"):
             report = reconcile(self.today, self.gw)
         item.refresh_from_db()
-        self.assertIsNone(item.deleted_at)
+        self.assertEqual((item.deleted_at, item.last_error), (None, ""))
         self.assertEqual(SquareItem.objects.count(), 1)
-        self.assertEqual(len(self.gw.items), 1)
-        self.assertEqual(report.pushed, [])
+        self.assertEqual(list(self.gw.items), [item.square_id])
+        self.assertEqual(report.pushed, [eng.pk])
         self.assertEqual(len(report.errors), 1)
         self.assertIn(f"Restoring item {item.square_id}", report.errors[0])
         self.assertIn("down", report.errors[0])
+
+    def test_restore_failure_is_recorded_on_the_row(self) -> None:
+        # The pill goes red, and the push pass retries the row at once (an
+        # error row never counts as unchanged), so a Square outage is
+        # reported twice for the engagement in the one run.
+        eng = make_eng()
+        item = push(eng, self.gw)
+        real_list = self.gw.list_ticket_items
+        self.gw.list_ticket_items = lambda: [
+            r for r in real_list() if r.item_id != item.square_id]
+        with mock.patch.object(self.gw, "retrieve_item",
+                               side_effect=GatewayError("down")), \
+                mock.patch.object(self.gw, "upsert_item",
+                                  side_effect=GatewayError("down")), \
+                self.assertLogs(LOGGER, "WARNING"):
+            report = reconcile(self.today, self.gw)
+        item.refresh_from_db()
+        self.assertIsNone(item.deleted_at)
+        self.assertIn("down", item.last_error)
+        self.assertEqual(report.pushed, [])
+        self.assertEqual(len(report.errors), 2)
+
+    def test_ended_run_missing_from_square_is_left_to_the_delete_pass(self) -> None:
+        # Not restored, not reported as deleted by hand: the delete pass
+        # retires the row (the fake accepts a delete of an unknown item).
+        eng = make_eng()
+        item = push(eng, self.gw)
+        Engagement.objects.filter(pk=eng.pk).update(end_date=datetime.date(2026, 10, 1))
+        del self.gw.items[item.square_id]
+        report = reconcile(self.today, self.gw)
+        self.assertEqual((report.pushed, report.errors), ([], []))
+        self.assertEqual(report.deleted, [eng.pk])
+        self.assertIsNone(live_item(eng))
+
+    @override_settings(SQUARE_ACCESS_TOKEN="")
+    def test_disabled_reconcile_is_an_empty_report(self) -> None:
+        with self.assertLogs(LOGGER, "INFO"):
+            self.assertEqual(reconcile(self.today), ReconcileReport())
 
     def test_dry_run_reports_missing_item_without_touching_it(self) -> None:
         eng = make_eng()

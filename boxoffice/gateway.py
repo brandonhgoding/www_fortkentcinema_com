@@ -1,5 +1,6 @@
 """The only module that talks to Square. Everything else uses these types."""
 import datetime
+import decimal
 import functools
 import hashlib
 import json
@@ -70,7 +71,33 @@ class Recipient:
 @dataclass(frozen=True)
 class Tender:
     payment_id: str
-    status: str  # the card status, CAPTURED when paid; "" when not a card tender
+    # The tender kind's own status (CAPTURED for a card, Afterpay or Square
+    # account; COMPLETED for a bank account); "" for kinds without one.
+    status: str
+    type: str = "CARD"  # Square's tender type: CARD, WALLET, BUY_NOW_PAY_LATER...
+    amount_cents: int | None = None  # None when Square omits amount_money
+
+    @property
+    def paid(self) -> bool:
+        """Whether the money has moved.
+
+        A card-like tender is paid once captured. A wallet (Cash App Pay),
+        cash, gift card or other tender carries no status: Square records one
+        only once it is paid, and payment links complete in one step.
+        """
+        if self.type in CAPTURED_TENDER_TYPES:
+            return self.status == "CAPTURED"
+        if self.type == "BANK_ACCOUNT":
+            return self.status == "COMPLETED"
+        return True
+
+
+# Tender kinds whose details block reads CAPTURED once paid.
+CAPTURED_TENDER_TYPES = frozenset({"CARD", "BUY_NOW_PAY_LATER", "SQUARE_ACCOUNT"})
+_TENDER_DETAILS = {"CARD": "card_details",
+                   "BUY_NOW_PAY_LATER": "buy_now_pay_later_details",
+                   "SQUARE_ACCOUNT": "square_account_details",
+                   "BANK_ACCOUNT": "bank_account_details"}
 
 
 @dataclass(frozen=True)
@@ -182,9 +209,18 @@ def _order_line(line: Any) -> OrderLine:
         name=line.name or "Custom amount",
         variation_name=line.variation_name or "",
         catalog_object_id=line.catalog_object_id or "",
-        quantity=int(float(line.quantity)),
+        quantity=_whole_units(line.quantity),
         gross_cents=line.total_money.amount,
     )
+
+
+def _whole_units(quantity: str) -> int:
+    """Square's decimal quantity ("2.00000000") as a count.
+
+    A weighed line ("1.5" lb) counts as its nearest whole unit, rounding
+    halves up; the gross is exact either way.
+    """
+    return int(decimal.Decimal(quantity).to_integral_value(decimal.ROUND_HALF_UP))
 
 
 def _recipient(order: Any) -> Recipient | None:
@@ -229,9 +265,13 @@ def _paid_at(order: Any) -> datetime.datetime | None:
 
 
 def _tender(tender: Any) -> Tender:
-    card_details = getattr(tender, "card_details", None)
+    details_attr = _TENDER_DETAILS.get(tender.type)
+    details = getattr(tender, details_attr, None) if details_attr else None
     return Tender(payment_id=tender.id,
-                  status=getattr(card_details, "status", None) or "")
+                  status=getattr(details, "status", None) or "",
+                  type=tender.type,
+                  amount_cents=(tender.amount_money.amount
+                                if tender.amount_money else None))
 
 
 def _order_data(order: Any) -> OrderData:

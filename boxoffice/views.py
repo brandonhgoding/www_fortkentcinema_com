@@ -12,6 +12,13 @@ logger = logging.getLogger(__name__)
 PAYMENT_EVENTS = {"payment.created", "payment.updated"}
 
 
+def _amount_cents(payment: dict) -> int | None:
+    """What the buyer paid, or None when the event does not say."""
+    money = payment.get("amount_money")
+    amount = money.get("amount") if isinstance(money, dict) else None
+    return amount if isinstance(amount, int) and not isinstance(amount, bool) else None
+
+
 @decorators.square_webhook
 def square_webhook(request: HttpRequest) -> HttpResponse:
     """Square's payment events: record the sale once the payment completes.
@@ -46,7 +53,7 @@ def square_webhook(request: HttpRequest) -> HttpResponse:
         return HttpResponseBadRequest()
     if status == "COMPLETED" and order_id:
         paid_at = parse_timestamp(payment.get("created_at"))
-        result = dispatch(order_id, payment_id, paid_at)
+        result = dispatch(order_id, payment_id, paid_at, _amount_cents(payment))
         retry = result.failed
         if not result.claimed:
             try:

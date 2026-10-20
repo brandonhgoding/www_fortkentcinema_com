@@ -47,7 +47,7 @@ class HandlerTests(TestCase):
     def test_claims_its_own_order_only(self) -> None:
         st = make_showtime()
         order = make_order(st, square_order_id="SQ1")
-        self.assertTrue(handle_square_payment("SQ1", "P1", at(3, 3)))
+        self.assertTrue(handle_square_payment("SQ1", "P1", at(3, 3), order.total_cents))
         order.refresh_from_db()
         self.assertEqual((order.status, order.square_payment_id), ("PAID", "P1"))
-        self.assertFalse(handle_square_payment("SQ-unknown", "P2", None))
+        self.assertFalse(handle_square_payment("SQ-unknown", "P2", None, None))

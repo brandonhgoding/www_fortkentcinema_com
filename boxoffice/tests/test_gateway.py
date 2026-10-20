@@ -80,6 +80,18 @@ def _line(uid: str = "L1", catalog_object_id: str | None = "V0",
     return line
 
 
+def _tender(payment_id: str, *, type: str = "CARD", amount: int | None = 1600,
+            card_details=None, bank_account_details=None,
+            buy_now_pay_later_details=None, square_account_details=None) -> mock.Mock:
+    # A Mock invents missing attributes, so every details block is explicit.
+    return mock.Mock(id=payment_id, created_at="2026-10-03T03:12:00Z", type=type,
+                     amount_money=None if amount is None else mock.Mock(amount=amount),
+                     card_details=card_details,
+                     bank_account_details=bank_account_details,
+                     buy_now_pay_later_details=buy_now_pay_later_details,
+                     square_account_details=square_account_details)
+
+
 def _order(order_id: str, closed_at: str, lines: list[mock.Mock],
            fulfillments: list[mock.Mock] | None = None,
            tenders: list[mock.Mock] | None = None,
@@ -577,6 +589,18 @@ class SearchOrdersTests(SimpleTestCase):
         self.assertIsInstance(line.quantity, int)
         self.assertEqual(line.gross_cents, 1600)
 
+    def test_weighed_quantity_is_rounded_not_truncated(self) -> None:
+        # A weighed concession line ("1.5" lb) counts as its nearest whole
+        # unit; truncating would drop the count while the gross stayed right.
+        client = mock.Mock()
+        client.orders.search.return_value = mock.Mock(
+            orders=[_order("O1", "2026-10-04T18:00:00Z",
+                           [_line(uid="L1", quantity="1.50000000", amount=900),
+                            _line(uid="L2", quantity="1.49000000", amount=890)])],
+            cursor=None)
+        lines = SquareGateway(client, "LOC", "CAT").search_orders(START, END)[0].lines
+        self.assertEqual([ln.quantity for ln in lines], [2, 1])
+
     def test_order_without_closed_at_has_none(self) -> None:
         client = mock.Mock()
         client.orders.search.return_value = mock.Mock(
@@ -832,15 +856,44 @@ class PaymentCallTests(SimpleTestCase):
                 payment_id="P1", amount_cents=1, idempotency_key="k", reason="r")
 
     def test_order_data_reads_tenders(self) -> None:
-        order = _order("O1", None, [_line()], tenders=[mock.Mock(
-            id="P1", created_at="2026-10-03T03:12:00Z",
-            card_details=mock.Mock(status="CAPTURED"))])
-        self.assertEqual(_order_data(order).tenders, (Tender("P1", "CAPTURED"),))
+        order = _order("O1", None, [_line()], tenders=[_tender(
+            "P1", card_details=mock.Mock(status="CAPTURED"), amount=1600)])
+        self.assertEqual(_order_data(order).tenders,
+                         (Tender("P1", "CAPTURED", "CARD", 1600),))
 
     def test_tender_without_card_details_has_blank_status(self) -> None:
-        order = _order("O1", None, [_line()], tenders=[mock.Mock(
-            id="P1", created_at="2026-10-03T03:12:00Z", card_details=None)])
-        self.assertEqual(_order_data(order).tenders, (Tender("P1", ""),))
+        order = _order("O1", None, [_line()], tenders=[_tender("P1", amount=None)])
+        self.assertEqual(_order_data(order).tenders, (Tender("P1", "", "CARD"),))
+
+    def test_card_tender_is_paid_only_once_captured(self) -> None:
+        self.assertTrue(Tender("P1", "CAPTURED", "CARD").paid)
+        self.assertFalse(Tender("P1", "AUTHORIZED", "CARD").paid)
+        self.assertFalse(Tender("P1", "", "CARD").paid)
+
+    def test_wallet_tender_carries_no_status_and_is_paid(self) -> None:
+        # Cash App Pay: Square records the tender with no details block, and
+        # only once the money has moved.
+        order = _order("O1", None, [_line()], tenders=[_tender(
+            "P1", type="WALLET", amount=1600)])
+        (tender,) = _order_data(order).tenders
+        self.assertEqual(tender, Tender("P1", "", "WALLET", 1600))
+        self.assertTrue(tender.paid)
+
+    def test_afterpay_tender_reads_its_own_status(self) -> None:
+        order = _order("O1", None, [_line()], tenders=[_tender(
+            "P1", type="BUY_NOW_PAY_LATER",
+            buy_now_pay_later_details=mock.Mock(status="CAPTURED"))])
+        (tender,) = _order_data(order).tenders
+        self.assertEqual(tender.status, "CAPTURED")
+        self.assertTrue(tender.paid)
+        self.assertFalse(Tender("P1", "AUTHORIZED", "BUY_NOW_PAY_LATER").paid)
+
+    def test_bank_tender_is_paid_when_completed(self) -> None:
+        order = _order("O1", None, [_line()], tenders=[_tender(
+            "P1", type="BANK_ACCOUNT",
+            bank_account_details=mock.Mock(status="COMPLETED"))])
+        self.assertTrue(_order_data(order).tenders[0].paid)
+        self.assertFalse(Tender("P1", "PENDING", "BANK_ACCOUNT").paid)
 
     def test_order_without_tenders_has_none(self) -> None:
         self.assertEqual(_order_data(_order("O1", None, [_line()])).tenders, ())
@@ -1143,8 +1196,17 @@ class FakeGatewayTests(SimpleTestCase):
         self.assertEqual(gw.retrieve_order(res.order_id).tenders, ())
         gw.pay(res.order_id, "P7")
         paid = gw.retrieve_order(res.order_id)
-        self.assertEqual(paid.tenders, (Tender("P7", "CAPTURED"),))
+        # The tender covers the order: the sum of its lines.
+        total = sum(ln.unit_cents * ln.quantity for ln in MATINEE_SPEC.lines)
+        self.assertEqual(paid.tenders, (Tender("P7", "CAPTURED", "CARD", total),))
         self.assertIsNotNone(paid.paid_at.tzinfo)
+
+    def test_fake_pay_can_use_a_wallet_or_pay_short(self) -> None:
+        gw = FakeGateway()
+        res = gw.create_payment_link(MATINEE_SPEC)
+        gw.pay(res.order_id, "P8", tender_type="WALLET", amount_cents=100)
+        self.assertEqual(gw.retrieve_order(res.order_id).tenders,
+                         (Tender("P8", "", "WALLET", 100),))
         self.assertEqual(len(gw.orders), 1)
 
     def test_fake_refund_payment_records_and_mints_ids(self) -> None:

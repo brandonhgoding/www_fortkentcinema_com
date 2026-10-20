@@ -38,6 +38,30 @@ class ConfirmTests(TestCase):
         order = confirm_payment("SQ1", "P1")
         self.assertGreaterEqual(order.paid_at, before)
 
+    def test_payment_for_the_wrong_amount_is_not_confirmed(self):
+        # Defence in depth: the signed event is authentic, but a payment that
+        # does not cover the order must not issue a ticket. Staff see the
+        # error on the row; the error is mailed to ADMINS.
+        order = make_order(self.st, square_order_id="SQ1")
+        with self.assertLogs("tickets.orders", "ERROR"):
+            result = confirm_payment("SQ1", "P1", paid_at=PAID_AT, amount_cents=100)
+        self.assertEqual((result.status, result.square_payment_id), ("PENDING", ""))
+        self.assertIn("100", result.error)
+        self.assertIn(str(order.total_cents), result.error)
+        self.assertEqual(len(mail.outbox), 0)
+        # The right payment later still pays and clears the note.
+        result = confirm_payment("SQ1", "P2", paid_at=PAID_AT,
+                                 amount_cents=order.total_cents)
+        self.assertEqual((result.status, result.error), ("PAID", ""))
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_wrong_amount_on_a_paid_order_changes_nothing(self):
+        # A replay is answered before the amount is looked at.
+        make_order(self.st, status="PAID", square_order_id="SQ1",
+                   square_payment_id="P1")
+        result = confirm_payment("SQ1", "P1", amount_cents=100)
+        self.assertEqual((result.status, result.error), ("PAID", ""))
+
     def test_unknown_order_is_ignored(self):
         self.assertIsNone(confirm_payment("nope", "P1"))
         self.assertEqual(len(mail.outbox), 0)
@@ -142,6 +166,22 @@ class RecoveryTests(TestCase):
         order = recover_pending(order, gateway=self.gw)
         self.assertEqual((order.status, order.square_payment_id), ("PAID", "P3"))
         self.assertEqual(len(mail.outbox), 1)
+
+    def test_recover_pending_accepts_a_wallet_tender(self):
+        # Cash App Pay leaves a tender with no card status; it is still paid.
+        order = self._start()
+        self.gw.pay(order.square_order_id, "P4", tender_type="WALLET")
+        order = recover_pending(order, gateway=self.gw)
+        self.assertEqual((order.status, order.square_payment_id), ("PAID", "P4"))
+
+    def test_recover_pending_checks_the_tender_amount(self):
+        order = self._start()
+        self.gw.pay(order.square_order_id, "P5", amount_cents=100)
+        with self.assertLogs("tickets.orders", "ERROR"):
+            order = recover_pending(order, gateway=self.gw)
+        self.assertEqual(order.status, "PENDING")
+        self.assertIn("100", order.error)
+        self.assertEqual(len(mail.outbox), 0)
 
     def test_recover_pending_leaves_unpaid_order(self):
         order = self._start()

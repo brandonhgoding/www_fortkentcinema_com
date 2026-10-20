@@ -87,6 +87,15 @@ class SyncSquareCatalogCommandTests(TestCase):
             call_command("sync_square_catalog", stdout=out)
         self.assertIn("Deleted 1", out.getvalue())
 
+    def test_unknown_items_are_printed_and_are_not_an_error(self) -> None:
+        gw = FakeGateway()
+        gw.items["hand"] = RemoteItem("hand", 1, "Popcorn", {})
+        out = StringIO()
+        with mock.patch(COMMAND_GATEWAY, return_value=gw):
+            call_command("sync_square_catalog", "--date", "2026-10-10", stdout=out)
+        self.assertIn("Unknown items in ticket category: Popcorn (hand)",
+                      out.getvalue())
+
     def test_errors_print_and_raise(self) -> None:
         gw = FakeGateway()
         gw.items["orphan"] = RemoteItem("orphan", 1, "Old", {"fkc-eng-9-adult": "v"})

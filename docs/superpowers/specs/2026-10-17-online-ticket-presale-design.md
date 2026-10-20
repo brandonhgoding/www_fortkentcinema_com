@@ -589,7 +589,8 @@ Flake8 gate: no new findings on changed lines (repo baseline is dirty).
   `tickets/spec.py` builds the spec.
 - Square's tender card status when paid is `CAPTURED` (never `COMPLETED`).
   `recover_pending` treats `CAPTURED` as paid, and the fake gateway's `pay()`
-  writes `CAPTURED`.
+  writes `CAPTURED`. (Since 2026-10-20 recovery asks `Tender.paid`, which
+  knows the other tender kinds; see the amendment below.)
 - `payment_link_body` raises `ValueError` if a line's discount does not divide
   evenly by its quantity.
 - The paid confirmation page serves its QR from `tickets/order/<token>/qr.png`
@@ -689,3 +690,19 @@ Flake8 gate: no new findings on changed lines (repo baseline is dirty).
   FAILED means only "paid, email not sent". The runbook's cron block gained
   `expire_ticket_orders`, and settings gained `LOGGING` (timestamped stderr,
   ERROR emailed to `ADMINS`).
+- (2026-10-20) Recovery recognises every tender kind. `Tender` carries
+  Square's `type` and `amount_cents`, and `Tender.paid` says whether the
+  money moved: a card, Afterpay or Square-account tender once `CAPTURED`, a
+  bank tender once `COMPLETED`, and a wallet (Cash App Pay), cash, gift card
+  or other tender as soon as it exists, since Square records those only once
+  paid and payment links complete in one step. `recover_pending` and
+  `expire_stale` use it, so a lost webhook for a wallet payment no longer
+  ends in an expired paid order.
+- (2026-10-20) The payment amount is checked. Payment handlers take a fourth
+  argument, `amount_cents` (`payment.amount_money.amount` from the event,
+  the tender's amount on recovery, None when unknown). `confirm_payment`
+  refuses a payment that does not equal the order's total: the order keeps
+  its status, the mismatch goes on `TicketOrder.error` (shown on the order
+  log row) and an ERROR is logged, so ADMINS get the email. A replay of an
+  already-paid order is still answered before the amount is looked at. A
+  payment with no amount in the event is confirmed as before.

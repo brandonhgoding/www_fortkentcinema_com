@@ -19,10 +19,6 @@ from tickets.spec import checkout_spec
 
 logger = logging.getLogger(__name__)
 
-# Square's card status on a paid tender (never "COMPLETED", which is the
-# payment's status, not the tender's).
-PAID_TENDER_STATUS = "CAPTURED"
-
 
 class Refused(Exception):
     """The order cannot be placed; .reason is an availability reason string."""
@@ -124,7 +120,8 @@ def _create_link(gateway: Gateway, spec):
 
 
 def confirm_payment(
-    order_id: str, payment_id: str, *, paid_at: datetime.datetime | None = None
+    order_id: str, payment_id: str, *, paid_at: datetime.datetime | None = None,
+    amount_cents: int | None = None,
 ) -> TicketOrder | None:
     """Mark the order for Square order `order_id` PAID and email the ticket.
 
@@ -133,6 +130,11 @@ def confirm_payment(
     repeated event sends no second email. An EXPIRED order still pays: the
     buyer was charged. A failed email leaves the order FAILED with the payment
     recorded, which still counts as sold; resend() retries it.
+
+    A payment that does not cover the order's total (defence in depth: Square
+    charges the order's total) issues no ticket: the order is left as it was
+    with the mismatch on its error, and an error is logged for ADMINS. None
+    for amount_cents means the caller could not say, and the check is skipped.
     """
     with transaction.atomic():
         order = (
@@ -148,6 +150,13 @@ def confirm_payment(
         ) or (order.status == TicketOrder.Status.FAILED and not order.square_payment_id)
         if not payable:
             return order
+        if amount_cents is not None and amount_cents != order.total_cents:
+            order.error = (f"Square payment {payment_id} was for {amount_cents} "
+                           f"cents but the order total is {order.total_cents}; "
+                           "check it before issuing the ticket")
+            order.save(update_fields=["error"])
+            logger.error("Order %s: %s", order.number, order.error)
+            return order
         order.square_payment_id = payment_id
         order.paid_at = paid_at or timezone.now()
         order.status = TicketOrder.Status.PAID
@@ -158,10 +167,12 @@ def confirm_payment(
 
 
 def handle_square_payment(
-    order_id: str, payment_id: str, paid_at: datetime.datetime | None
+    order_id: str, payment_id: str, paid_at: datetime.datetime | None,
+    amount_cents: int | None,
 ) -> bool:
     """The box office webhook's handler: True when the order was one of ours."""
-    return confirm_payment(order_id, payment_id, paid_at=paid_at) is not None
+    return confirm_payment(order_id, payment_id, paid_at=paid_at,
+                           amount_cents=amount_cents) is not None
 
 
 def resend(order: TicketOrder) -> TicketOrder:
@@ -214,9 +225,10 @@ def _recover(order: TicketOrder, gateway: Gateway | None) -> bool:
         logger.warning("Could not check order %s with Square: %s", order.number, exc)
         return False
     for tender in order_data.tenders:
-        if tender.status == PAID_TENDER_STATUS:
+        if tender.paid:
             confirmed = confirm_payment(
-                order.square_order_id, tender.payment_id, paid_at=order_data.paid_at
+                order.square_order_id, tender.payment_id,
+                paid_at=order_data.paid_at, amount_cents=tender.amount_cents,
             )
             if confirmed is not None:
                 order.refresh_from_db()

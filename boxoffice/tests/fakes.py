@@ -164,12 +164,22 @@ class FakeGateway:
         return customer_id
 
     def pay(self, order_id: str, payment_id: str = "P1",
-            paid_at: datetime.datetime | None = None) -> None:
-        """Test helper: the buyer completes the payment link's checkout."""
+            paid_at: datetime.datetime | None = None, *,
+            tender_type: str = "CARD", amount_cents: int | None = None) -> None:
+        """Test helper: the buyer completes the payment link's checkout.
+
+        The tender covers the order unless ``amount_cents`` says otherwise. A
+        card tender reads CAPTURED; any other kind carries no status, as in
+        Square.
+        """
         for i, order in enumerate(self.orders):
             if order.order_id == order_id:
+                if amount_cents is None:
+                    amount_cents = sum(line.gross_cents for line in order.lines)
+                status = "CAPTURED" if tender_type == "CARD" else ""
                 self.orders[i] = dataclasses.replace(
-                    order, tenders=(Tender(payment_id, "CAPTURED"),),
+                    order,
+                    tenders=(Tender(payment_id, status, tender_type, amount_cents),),
                     paid_at=paid_at or datetime.datetime.now(datetime.timezone.utc))
                 return
         raise NotFound(f"Unknown order {order_id}")

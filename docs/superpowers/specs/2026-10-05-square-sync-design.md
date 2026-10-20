@@ -358,7 +358,7 @@ The ledger. One row per order line item.
 | `variation_name` | `CharField(max_length=80, blank=True)` | |
 | `catalog_object_id` | `CharField(max_length=64, blank=True, db_index=True)` | variation ID; blank for ad-hoc amounts |
 | `category_id` | `CharField(max_length=64, blank=True)` | resolved from the catalog at pull time |
-| `quantity` | `PositiveIntegerField` | Square sends `"1.00000000"`; integer tickets only |
+| `quantity` | `PositiveIntegerField` | Square sends `"1.00000000"`; a weighed line rounds to the nearest unit, halves up |
 | `gross_cents` | `IntegerField` | `total_money`, after discounts, before tax |
 | `variation` | `FK(SquareVariation, null=True, on_delete=SET_NULL)` | attribution |
 | `engagement` | `FK(Engagement, null=True, on_delete=SET_NULL)` | denormalised from `variation` for cheap aggregation |
@@ -624,3 +624,14 @@ Nothing in Phase 1 needs to change for this; it is additive.
   poster that cannot be fetched or uploaded is reported as a skip and retried
   the next night; it is never an error. `SquareItem.image_id` records it
   (migration 0005).
+- (2026-10-20) Two first pushes at once for one engagement (a
+  double-submitted save, or a save racing the nightly reconcile) used to
+  leave a second, unlinked item in Square and an `IntegrityError` in the
+  log. `push` now catches the one-live-row constraint on its write-back,
+  deletes the item it just made, logs a warning, and returns the row the
+  other push wrote. If that delete fails too, the nightly audit reports the
+  item as Django-made without a link row.
+- (2026-10-20) A failed restore of an item missing from the ticket category
+  is recorded on the row as `last_error` (the pill goes red), so the push
+  pass in the same run re-pushes it at once; an outage is therefore reported
+  twice for that engagement in the one run.

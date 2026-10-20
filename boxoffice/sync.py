@@ -16,7 +16,7 @@ from boxoffice.models import SquareItem, SquareVariation
 from boxoffice.posters import fetch_poster
 from boxoffice.spec import ItemSpec, desired_item
 from cinema.models import Engagement, EngagementStatus
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
@@ -126,7 +126,22 @@ def push(engagement: Engagement,
         result = _upsert(gateway, item, spec)
     except GatewayError as exc:
         return _record_error(engagement, str(exc))
-    return _write_back(engagement, item, spec, result)
+    try:
+        return _write_back(engagement, item, spec, result)
+    except IntegrityError:
+        if item is not None:
+            raise
+        # Two first pushes at once (a double-submitted save, or a save racing
+        # the nightly reconcile): the other made the live row while Square was
+        # making this item. One live row per engagement, so this item goes.
+        logger.warning("Square item %s for engagement %s discarded: another "
+                       "push finished first", result.item_id, engagement.pk)
+        try:
+            gateway.delete_item(result.item_id)
+        except GatewayError as exc:
+            # The nightly audit reports it as a Django-made item without a row.
+            logger.warning("Could not discard item %s: %s", result.item_id, exc)
+        return live_item(engagement)
 
 
 def _retire(item: SquareItem) -> None:
@@ -307,9 +322,11 @@ def _audit_missing(listed: set[str], today: datetime.date, gateway: Gateway,
             _write_back(engagement, row, spec, result)
             report.pushed.append(engagement.pk)
         except Exception as exc:
-            report.errors.append(
-                f"Restoring item {row.square_id} for engagement "
-                f"{engagement.pk}: {exc!r}")
+            message = (f"Restoring item {row.square_id} for engagement "
+                       f"{engagement.pk}: {exc!r}")
+            report.errors.append(message)
+            # On the row too: the pill goes red and the push pass retries it.
+            _record_error(engagement, message)
 
 
 def _reconcile_pushes(today: datetime.date, gateway: Gateway,
