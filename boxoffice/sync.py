@@ -169,7 +169,14 @@ def delete(engagement: Engagement, gateway: SquareGateway | None = None) -> None
                        engagement.pk, item.last_error)
         return
     if gateway is not None:
-        _delete_remote(gateway, item)
+        try:
+            _delete_remote(gateway, item)
+        except GatewayError as exc:
+            # The pill goes red; the nightly reconcile's delete pass retries.
+            item.last_error = (f"Square delete failed: {exc}; "
+                               "the nightly reconcile will retry")
+            item.save(update_fields=["last_error"])
+            raise
     _retire(item)
 
 

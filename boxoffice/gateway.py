@@ -1,10 +1,11 @@
 """The only module that talks to Square. Everything else uses these types."""
 import datetime
+import hashlib
+import json
 import functools
 import logging
 from dataclasses import dataclass
 from typing import Any, Callable, TypeVar
-from uuid import uuid4
 
 import httpx
 import pydantic
@@ -201,6 +202,22 @@ def _timestamp(value: str | None) -> datetime.datetime | None:
     return datetime.datetime.fromisoformat(value) if value else None
 
 
+# catalog.batch_get takes at most this many object ids per call.
+BATCH_GET_LIMIT = 1000
+
+
+def _idempotency_key(kind: str, *parts: object) -> str:
+    """A key that repeats for the same request, so a retry after a timeout
+    finds Square's first answer instead of making a second object. Square
+    refuses a reused key with a different body, which is why the body is in
+    the hash. At most 128 characters, Square's limit."""
+    digest = hashlib.sha256()
+    for part in parts:
+        digest.update(part if isinstance(part, bytes)
+                      else json.dumps(part, sort_keys=True, default=str).encode())
+    return f"{kind}-{digest.hexdigest()}"
+
+
 def _paid_at(order: Any) -> datetime.datetime | None:
     tenders = order.tenders or []
     first_tender = tenders[0].created_at if tenders else None
@@ -313,7 +330,8 @@ class SquareGateway:
 
         def upsert() -> UpsertResult:
             response = self.client.catalog.batch_upsert(
-                idempotency_key=str(uuid4()), batches=[{"objects": [item_obj]}])
+                idempotency_key=_idempotency_key("item", item_obj),
+                batches=[{"objects": [item_obj]}])
             minted = {m.client_object_id: m.object_id
                       for m in (response.id_mappings or [])}
             ids_by_tier = {
@@ -335,9 +353,9 @@ class SquareGateway:
         _call(self.client.catalog.batch_delete, object_ids=[item_id])
 
     def retrieve_item(self, item_id: str) -> RemoteItem:
+        # The variations are embedded in the item, so no related objects.
         return _call(lambda: _remote_item(
-            self.client.catalog.object.get(item_id, include_related_objects=True)
-            .object))
+            self.client.catalog.object.get(item_id).object))
 
     def search_orders(self, start: datetime.datetime,
                       end: datetime.datetime) -> list[OrderData]:
@@ -430,7 +448,7 @@ class SquareGateway:
         """
         return _call(lambda: self.client.catalog.images.create(
             request={
-                "idempotency_key": str(uuid4()),
+                "idempotency_key": _idempotency_key("poster", item_id, image),
                 "object_id": item_id,
                 "is_primary": True,
                 "image": {"type": "IMAGE", "id": "#poster",
@@ -440,31 +458,34 @@ class SquareGateway:
         ).image.id)
 
     def lookup_categories(self, variation_ids: list[str]) -> dict[str, str]:
-        if not variation_ids:
-            return {}
+        result: dict[str, str] = {}
+        # batch_get takes at most 1000 ids; a day will not need two batches,
+        # but a backfill might.
+        for start in range(0, len(variation_ids), BATCH_GET_LIMIT):
+            result.update(_call(self._lookup_categories,
+                                variation_ids[start:start + BATCH_GET_LIMIT]))
+        return result
 
-        def lookup() -> dict[str, str]:
-            # Deleted objects too: a hand-made item removed at cutover still
-            # sold today.
-            response = self.client.catalog.batch_get(
-                object_ids=variation_ids, include_related_objects=True,
-                include_deleted_objects=True)
-            item_category = {}
-            for item in response.related_objects or []:
-                cats = _category_ids(item)
-                if cats:
-                    item_category[item.id] = cats[0]
-            result = {}
-            for var in response.objects or []:
-                data = getattr(var, "item_variation_data", None)
-                if data is None:
-                    continue  # a line's catalog_object_id that is not a variation
-                cat = item_category.get(data.item_id)
-                if cat:
-                    result[var.id] = cat
-            return result
-
-        return _call(lookup)
+    def _lookup_categories(self, variation_ids: list[str]) -> dict[str, str]:
+        # Deleted objects too: a hand-made item removed at cutover still
+        # sold today.
+        response = self.client.catalog.batch_get(
+            object_ids=variation_ids, include_related_objects=True,
+            include_deleted_objects=True)
+        item_category = {}
+        for item in response.related_objects or []:
+            cats = _category_ids(item)
+            if cats:
+                item_category[item.id] = cats[0]
+        result = {}
+        for var in response.objects or []:
+            data = getattr(var, "item_variation_data", None)
+            if data is None:
+                continue  # a line's catalog_object_id that is not a variation
+            cat = item_category.get(data.item_id)
+            if cat:
+                result[var.id] = cat
+        return result
 
     def _item_object(self, spec: ItemSpec, item_id: str | None, version: int | None,
                      variation_ids_by_tier: dict[str, str], image_id: str) -> dict:
