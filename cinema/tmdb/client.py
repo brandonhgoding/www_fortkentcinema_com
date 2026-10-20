@@ -123,7 +123,11 @@ class TMDBClient:
         Raises:
             TMDBAPIError: If the request fails
         """
-        return self._make_request(f"/movie/{movie_id}")
+        # The MPA rating is not on the movie itself; it rides along in the
+        # release-dates block, appended here rather than fetched separately.
+        return self._make_request(
+            f"/movie/{movie_id}", {"append_to_response": "release_dates"}
+        )
 
     def build_image_url(self, path: str | None, size: str = "w500") -> str:
         """

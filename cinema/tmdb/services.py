@@ -87,6 +87,7 @@ class TMDBService:
                 - vote_average: float
                 - popularity: float
                 - imdb_id: str | None
+                - certification: str (the US MPA rating, or "")
 
         Raises:
             TMDBAPIError: If the request fails
@@ -150,4 +151,27 @@ class TMDBService:
             "vote_average": movie.get("vote_average", 0.0),
             "popularity": movie.get("popularity", 0.0),
             "imdb_id": movie.get("imdb_id"),
+            "certification": us_certification(movie),
         }
+
+
+# TMDB release types: 3 is the theatrical release, the one the MPA rated.
+THEATRICAL = 3
+
+
+def us_certification(movie: dict[str, Any]) -> str:
+    """The US rating from an appended ``release_dates`` block, or "".
+
+    A film is listed once per release (theatrical, digital, physical, TV)
+    and a re-rated classic can disagree across them, so the theatrical
+    rating wins; any other non-blank US rating is the fallback.
+    """
+    for country in movie.get("release_dates", {}).get("results", []):
+        if country.get("iso_3166_1") != "US":
+            continue
+        releases = country.get("release_dates", [])
+        rated = [r for r in releases if (r.get("certification") or "").strip()]
+        theatrical = [r for r in rated if r.get("type") == THEATRICAL]
+        for release in theatrical + rated:
+            return release["certification"].strip()
+    return ""
