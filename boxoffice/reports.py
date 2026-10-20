@@ -10,7 +10,6 @@ from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 
 from .models import EmailReport, SaleLine, SalesPull
-from .spec import priced_tiers
 
 logger = logging.getLogger(__name__)
 
@@ -67,20 +66,6 @@ def ticket_report(day: datetime.date) -> list[ItemTotal]:
     return _group(SaleLine.objects.filter(wanted, on_show_day(day)))
 
 
-def tier_totals(day: datetime.date) -> dict[str, int]:
-    totals = {tier: 0 for tier, _ in priced_tiers()}
-    rows = (
-        SaleLine.objects.filter(
-            on_show_day(day), engagement__isnull=False, variation__isnull=False)
-        .values("variation__tier")
-        .annotate(quantity=Sum(KEPT_QUANTITY))
-    )
-    for r in rows:
-        if r["variation__tier"] in totals:
-            totals[r["variation__tier"]] = r["quantity"]
-    return totals
-
-
 def render_report(kind: str, day: datetime.date, rows: list[ItemTotal]) -> str:
     return render_to_string(TEMPLATES[kind], {
         "day": day,
@@ -95,6 +80,7 @@ def send_reports(day: datetime.date, pull: SalesPull, *, dry_run: bool = False) 
         EmailReport.Kind.OWNER_SUMMARY: owner_summary,
         EmailReport.Kind.TICKET_REPORT: ticket_report,
     }
+    failures: list[str] = []
     for kind, build in builders.items():
         report = EmailReport.objects.filter(kind=kind).first()
         if report is None or not report.enabled:
@@ -110,11 +96,20 @@ def send_reports(day: datetime.date, pull: SalesPull, *, dry_run: bool = False) 
             logger.info("Dry run %s email\nSubject: %s\nTo: %s\nCc: %s\n\n%s",
                         kind, report.subject, ", ".join(to), ", ".join(cc), body)
             continue
-        EmailMessage(subject=report.subject, body=body, to=to, cc=cc).send()
+        # Each email on its own: the booker's report still goes out when the
+        # owner's summary bounces. Failures are raised together at the end.
+        try:
+            EmailMessage(subject=report.subject, body=body, to=to, cc=cc).send()
+        except Exception as exc:
+            logger.exception("Could not send %s email for %s", kind, day)
+            failures.append(f"{kind}: {exc!r}")
+            continue
         flag = SENT_FLAGS[kind]
         setattr(pull, flag, True)
         pull.save(update_fields=[flag])
         logger.info("Sent %s email for %s to %s", kind, day, ", ".join(to))
+    if failures:
+        raise RuntimeError("; ".join(failures))
 
 
 @dataclass(frozen=True)

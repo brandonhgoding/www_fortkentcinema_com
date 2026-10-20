@@ -1,12 +1,12 @@
 import datetime
 import json
-from zoneinfo import ZoneInfo
 
 from boxoffice.gateway import GatewayError, square_enabled
 from boxoffice.models import MembershipSale, SquareItem
 from boxoffice.pull import recompute_show_dates
 from boxoffice.reports import pull_status, sales_panel
 from boxoffice.sync import delete, live_item, schedule, sync
+from cinema.dates import CINEMA_TZ
 from cinema.models import (
     AdInquiry,
     Engagement,
@@ -513,9 +513,6 @@ class EngagementSquareRetryView(StaffRequiredMixin, View):
         engagement = get_object_or_404(Engagement, pk=pk)
         sync(engagement)
         return redirect("dashboard:engagement_detail", pk=pk)
-
-
-CINEMA_TZ = ZoneInfo("America/New_York")
 
 
 def showtime_rows(engagement, now):

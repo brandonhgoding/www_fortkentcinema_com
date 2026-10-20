@@ -2,7 +2,7 @@
 
 import logging
 
-from boxoffice.gateway import GatewayError, InvalidPhone, SquareGateway
+from boxoffice.gateway import Gateway, GatewayError, InvalidPhone
 
 from tickets.models import TicketOrder
 from tickets.spec import e164_phone
@@ -10,7 +10,7 @@ from tickets.spec import e164_phone
 logger = logging.getLogger(__name__)
 
 
-def ensure_customer(gateway: SquareGateway, order: TicketOrder) -> str:
+def ensure_customer(gateway: Gateway, order: TicketOrder) -> str:
     """The id of the Square customer for ``order``'s buyer, or "" on failure.
 
     One profile per email address, never overwritten: a repeat buyer keeps
@@ -28,7 +28,7 @@ def ensure_customer(gateway: SquareGateway, order: TicketOrder) -> str:
         return ""
 
 
-def _create(gateway: SquareGateway, order: TicketOrder, phone: str) -> str:
+def _create(gateway: Gateway, order: TicketOrder, phone: str) -> str:
     fields = {"given_name": order.first_name, "family_name": order.last_name,
               "email": order.email, "idempotency_key": f"customer-{order.token}"}
     try:

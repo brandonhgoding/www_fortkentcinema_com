@@ -1,6 +1,6 @@
 import re
 
-from boxoffice.spec import SQUARE_TIERS
+from tickets.tiers import ONLINE_TIERS
 from django import forms
 
 # Spaces and the punctuation people type in phone numbers; stripped before
@@ -60,9 +60,9 @@ class BuyForm(forms.Form):
 
     def clean(self):
         cleaned = super().clean()
-        if all(cleaned.get(tier) == 0 for tier in SQUARE_TIERS):
+        if all(cleaned.get(tier) == 0 for tier in ONLINE_TIERS):
             raise forms.ValidationError("Pick at least one ticket.")
         return cleaned
 
     def quantities(self) -> dict[str, int]:
-        return {tier: self.cleaned_data[tier] for tier in SQUARE_TIERS}
+        return {tier: self.cleaned_data[tier] for tier in ONLINE_TIERS}

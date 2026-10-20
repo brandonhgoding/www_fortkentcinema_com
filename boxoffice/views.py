@@ -2,7 +2,7 @@ import json
 import logging
 
 from boxoffice import decorators
-from boxoffice.gateway import _timestamp
+from boxoffice.gateway import parse_timestamp
 from boxoffice.memberships import order_never_fetched, process_order
 from boxoffice.payment_events import dispatch
 from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
@@ -45,7 +45,8 @@ def square_webhook(request: HttpRequest) -> HttpResponse:
     except (KeyError, TypeError, AttributeError):
         return HttpResponseBadRequest()
     if status == "COMPLETED" and order_id:
-        result = dispatch(order_id, payment_id, _timestamp(payment.get("created_at")))
+        paid_at = parse_timestamp(payment.get("created_at"))
+        result = dispatch(order_id, payment_id, paid_at)
         retry = result.failed
         if not result.claimed:
             try:

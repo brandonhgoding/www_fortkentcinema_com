@@ -5,7 +5,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import ProtectedError
 from django.test import SimpleTestCase, TestCase
 
-from tickets.models import TicketLine, new_number, new_token, split_name
+from tickets.models import TicketLine, TicketOrder, new_number, new_token, split_name
 from tickets.tests.factories import make_order, make_showtime
 
 
@@ -27,6 +27,18 @@ class SplitNameTests(SimpleTestCase):
         self.assertEqual(split_name("Brandon"), ("Brandon", ""))
         self.assertEqual(split_name("  Brandon  "), ("Brandon", ""))
         self.assertEqual(split_name(""), ("", ""))
+
+
+class TierVocabularyTests(SimpleTestCase):
+    def test_online_tiers_are_the_website_vocabulary(self) -> None:
+        from boxoffice.spec import SQUARE_TIERS
+        from tickets.tiers import ONLINE_TIERS
+
+        self.assertIs(TicketOrder.TIERS, ONLINE_TIERS)
+        # Every tier sold online today is rung through a Square variation; a
+        # tier with no SKU (member sign-in) would relax this.
+        self.assertTrue(set(ONLINE_TIERS) <= set(SQUARE_TIERS))
+        self.assertEqual(ONLINE_TIERS, ("adult", "senior", "child"))
 
 
 class OrderModelTests(TestCase):

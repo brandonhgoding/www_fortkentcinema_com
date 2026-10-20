@@ -2,9 +2,8 @@
 src/utils/showtimeDates.js. All logic runs in the cinema's local timezone so
 "today" and labels match the box office, not the visitor's device."""
 import datetime
-from zoneinfo import ZoneInfo
 
-CINEMA_TZ = ZoneInfo("America/New_York")
+from cinema.dates import CINEMA_TZ
 
 
 def today_eastern():

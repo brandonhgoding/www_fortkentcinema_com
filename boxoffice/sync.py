@@ -6,7 +6,7 @@ import logging
 from boxoffice.gateway import (
     GatewayError,
     NotFound,
-    SquareGateway,
+    Gateway,
     UpsertResult,
     VersionMismatch,
     disabled_reason,
@@ -32,7 +32,7 @@ def should_have_item(engagement: Engagement, today: datetime.date) -> bool:
             and engagement.end_date >= today)
 
 
-def _resolve(gateway: SquareGateway | None) -> SquareGateway | None:
+def _resolve(gateway: Gateway | None) -> Gateway | None:
     gateway = gateway if gateway is not None else get_gateway()
     if gateway is None:
         logger.info("Square sync disabled (%s)", disabled_reason())
@@ -85,7 +85,7 @@ def _write_back(engagement: Engagement, item: SquareItem | None, spec: ItemSpec,
     return item
 
 
-def _upsert(gateway: SquareGateway, item: SquareItem | None,
+def _upsert(gateway: Gateway, item: SquareItem | None,
             spec: ItemSpec) -> UpsertResult:
     if item is None or item.square_id is None:
         return gateway.upsert_item(spec, item_id=None, version=None,
@@ -111,7 +111,7 @@ def _upsert(gateway: SquareGateway, item: SquareItem | None,
 
 
 def push(engagement: Engagement,
-         gateway: SquareGateway | None = None) -> SquareItem | None:
+         gateway: Gateway | None = None) -> SquareItem | None:
     gateway = _resolve(gateway)
     if gateway is None:
         return None
@@ -135,7 +135,7 @@ def _retire(item: SquareItem) -> None:
     item.save(update_fields=["deleted_at"])
 
 
-def _delete_remote(gateway: SquareGateway, item: SquareItem) -> None:
+def _delete_remote(gateway: Gateway, item: SquareItem) -> None:
     """Remove the item from Square, then its poster image as best effort.
 
     Square keeps images as separate catalog objects, so deleting the item
@@ -153,7 +153,7 @@ def _delete_remote(gateway: SquareGateway, item: SquareItem) -> None:
                            item.image_id, item.square_id, exc)
 
 
-def delete(engagement: Engagement, gateway: SquareGateway | None = None) -> None:
+def delete(engagement: Engagement, gateway: Gateway | None = None) -> None:
     item = live_item(engagement)
     if item is None:
         return
@@ -180,7 +180,7 @@ def delete(engagement: Engagement, gateway: SquareGateway | None = None) -> None
     _retire(item)
 
 
-def sync(engagement: Engagement, gateway: SquareGateway | None = None) -> None:
+def sync(engagement: Engagement, gateway: Gateway | None = None) -> None:
     """Never raises: it runs after commit, where an error would fail the save."""
     try:
         gateway = gateway if gateway is not None else get_gateway()
@@ -226,7 +226,7 @@ class ReconcileReport:
     image_skips: list[str] = dataclasses.field(default_factory=list)
 
 
-def _audit_remote(today: datetime.date, gateway: SquareGateway, dry_run: bool,
+def _audit_remote(today: datetime.date, gateway: Gateway, dry_run: bool,
                   report: ReconcileReport) -> None:
     try:
         remote_items = gateway.list_ticket_items()
@@ -257,7 +257,7 @@ def _audit_remote(today: datetime.date, gateway: SquareGateway, dry_run: bool,
                    report)
 
 
-def _remove_left_behind(retired: SquareItem, gateway: SquareGateway,
+def _remove_left_behind(retired: SquareItem, gateway: Gateway,
                         dry_run: bool, report: ReconcileReport) -> None:
     if not dry_run:
         try:
@@ -271,7 +271,7 @@ def _remove_left_behind(retired: SquareItem, gateway: SquareGateway,
         report.deleted.append(retired.engagement_id)
 
 
-def _audit_missing(listed: set[str], today: datetime.date, gateway: SquareGateway,
+def _audit_missing(listed: set[str], today: datetime.date, gateway: Gateway,
                    dry_run: bool, report: ReconcileReport) -> None:
     """Live rows whose item is not in the ticket category: deleted or moved by hand.
 
@@ -280,7 +280,8 @@ def _audit_missing(listed: set[str], today: datetime.date, gateway: SquareGatewa
     """
     missing = SquareItem.objects.filter(
         deleted_at__isnull=True, square_id__isnull=False
-    ).exclude(square_id__in=listed).select_related("engagement").order_by("pk")
+    ).exclude(square_id__in=listed).select_related("engagement").prefetch_related(
+        "engagement__engagement_films__film").order_by("pk")
     for row in missing:
         engagement = row.engagement
         if engagement is None or not should_have_item(engagement, today):
@@ -311,7 +312,7 @@ def _audit_missing(listed: set[str], today: datetime.date, gateway: SquareGatewa
                 f"{engagement.pk}: {exc!r}")
 
 
-def _reconcile_pushes(today: datetime.date, gateway: SquareGateway,
+def _reconcile_pushes(today: datetime.date, gateway: Gateway,
                       dry_run: bool, report: ReconcileReport) -> None:
     wanted = Engagement.objects.filter(
         status=EngagementStatus.CONFIRMED, end_date__gte=today).order_by("pk")
@@ -322,7 +323,7 @@ def _reconcile_pushes(today: datetime.date, gateway: SquareGateway,
             report.errors.append(f"Pushing engagement {engagement.pk}: {exc!r}")
 
 
-def _reconcile_push(engagement: Engagement, gateway: SquareGateway,
+def _reconcile_push(engagement: Engagement, gateway: Gateway,
                     dry_run: bool, report: ReconcileReport) -> None:
     try:
         spec = desired_item(engagement)
@@ -343,7 +344,7 @@ def _reconcile_push(engagement: Engagement, gateway: SquareGateway,
         report.pushed.append(engagement.pk)
 
 
-def _reconcile_deletes(today: datetime.date, gateway: SquareGateway,
+def _reconcile_deletes(today: datetime.date, gateway: Gateway,
                        dry_run: bool, report: ReconcileReport) -> None:
     live_rows = SquareItem.objects.filter(
         deleted_at__isnull=True).select_related("engagement").order_by("pk")
@@ -357,7 +358,7 @@ def _reconcile_deletes(today: datetime.date, gateway: SquareGateway,
 
 
 def _reconcile_delete(row: SquareItem, today: datetime.date,
-                      gateway: SquareGateway, dry_run: bool,
+                      gateway: Gateway, dry_run: bool,
                       report: ReconcileReport) -> None:
     engagement = row.engagement
     if engagement is None:
@@ -375,7 +376,7 @@ def _reconcile_delete(row: SquareItem, today: datetime.date,
     report.deleted.append(engagement.pk)
 
 
-def _reconcile_images(gateway: SquareGateway, dry_run: bool,
+def _reconcile_images(gateway: Gateway, dry_run: bool,
                       report: ReconcileReport) -> None:
     """Give every live item without a picture its film's poster as the icon.
 
@@ -387,7 +388,8 @@ def _reconcile_images(gateway: SquareGateway, dry_run: bool,
     rows = SquareItem.objects.filter(
         deleted_at__isnull=True, square_id__isnull=False, image_id="",
         engagement__isnull=False,
-    ).select_related("engagement").order_by("pk")
+    ).select_related("engagement").prefetch_related(
+        "engagement__engagement_films__film").order_by("pk")
     for row in rows:
         engagement = row.engagement
         film = engagement.primary_film
@@ -412,7 +414,7 @@ def _reconcile_images(gateway: SquareGateway, dry_run: bool,
             report.image_skips.append(f"{engagement.title}: {exc!r}")
 
 
-def reconcile(today: datetime.date, gateway: SquareGateway | None = None,
+def reconcile(today: datetime.date, gateway: Gateway | None = None,
               *, dry_run: bool = False) -> ReconcileReport:
     """Bring Square in line with Django; with dry_run, only report the plan."""
     report = ReconcileReport()

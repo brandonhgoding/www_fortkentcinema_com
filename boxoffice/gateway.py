@@ -1,11 +1,11 @@
 """The only module that talks to Square. Everything else uses these types."""
 import datetime
+import functools
 import hashlib
 import json
-import functools
 import logging
 from dataclasses import dataclass
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, Protocol, TypeVar
 
 import httpx
 import pydantic
@@ -198,7 +198,11 @@ def _recipient(order: Any) -> Recipient | None:
     return None
 
 
-def _timestamp(value: str | None) -> datetime.datetime | None:
+def parse_timestamp(value: str | None) -> datetime.datetime | None:
+    """Square's RFC 3339 timestamps ("...Z") as aware datetimes; None stays None.
+
+    fromisoformat accepts the trailing Z from Python 3.11 (see the README).
+    """
     return datetime.datetime.fromisoformat(value) if value else None
 
 
@@ -221,7 +225,7 @@ def _idempotency_key(kind: str, *parts: object) -> str:
 def _paid_at(order: Any) -> datetime.datetime | None:
     tenders = order.tenders or []
     first_tender = tenders[0].created_at if tenders else None
-    return _timestamp(first_tender or order.created_at)
+    return parse_timestamp(first_tender or order.created_at)
 
 
 def _tender(tender: Any) -> Tender:
@@ -233,7 +237,7 @@ def _tender(tender: Any) -> Tender:
 def _order_data(order: Any) -> OrderData:
     return OrderData(
         order_id=order.id,
-        closed_at=_timestamp(order.closed_at),
+        closed_at=parse_timestamp(order.closed_at),
         lines=tuple(_order_line(li) for li in (order.line_items or [])),
         recipient=_recipient(order),
         paid_at=_paid_at(order),
@@ -309,6 +313,44 @@ def payment_link_body(spec: CheckoutSpec, location_id: str) -> dict:
         "checkout_options": options,
         "pre_populated_data": prefill,
     }
+
+
+class Gateway(Protocol):
+    """What the rest of the site asks of Square. SquareGateway is the real
+    one; boxoffice.tests.fakes.FakeGateway stands in for it in tests, and a
+    test pins both to these signatures."""
+
+    def upsert_item(self, spec: ItemSpec, *, item_id: str | None, version: int | None,
+                    variation_ids_by_tier: dict[str, str],
+                    image_id: str = "") -> UpsertResult: ...
+
+    def delete_item(self, item_id: str) -> None: ...
+
+    def retrieve_item(self, item_id: str) -> RemoteItem: ...
+
+    def search_orders(self, start: datetime.datetime,
+                      end: datetime.datetime) -> list[OrderData]: ...
+
+    def search_open_orders(self, start: datetime.datetime,
+                           end: datetime.datetime) -> list[OrderData]: ...
+
+    def retrieve_order(self, order_id: str) -> OrderData: ...
+
+    def create_payment_link(self, spec: CheckoutSpec) -> CheckoutResult: ...
+
+    def refund_payment(self, *, payment_id: str, amount_cents: int,
+                       idempotency_key: str, reason: str) -> str: ...
+
+    def find_customer(self, email: str) -> str | None: ...
+
+    def create_customer(self, *, given_name: str, family_name: str, email: str,
+                        phone: str, idempotency_key: str) -> str: ...
+
+    def list_ticket_items(self) -> list[RemoteItem]: ...
+
+    def upload_item_image(self, item_id: str, image: bytes, name: str) -> str: ...
+
+    def lookup_categories(self, variation_ids: list[str]) -> dict[str, str]: ...
 
 
 class SquareGateway:

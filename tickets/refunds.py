@@ -3,7 +3,7 @@
 import dataclasses
 import logging
 
-from boxoffice.gateway import GatewayError, SquareGateway, disabled_reason, get_gateway
+from boxoffice.gateway import Gateway, GatewayError, disabled_reason, get_gateway
 from boxoffice.pull import mark_refunded
 from cinema.models import Showtime
 from django.utils import timezone
@@ -21,7 +21,7 @@ class RefundSummary:
 
 
 def refund_order(
-    order: TicketOrder, *, reason: str, gateway: SquareGateway | None = None
+    order: TicketOrder, *, reason: str, gateway: Gateway | None = None
 ) -> TicketOrder:
     """Refund a sold order in full and email the buyer.
 
@@ -67,7 +67,7 @@ def refund_showtime(
     showtime: Showtime,
     *,
     reason: str = "Showtime cancelled",
-    gateway: SquareGateway | None = None,
+    gateway: Gateway | None = None,
 ) -> RefundSummary:
     """Refund every sold order on the showtime, oldest first.
 

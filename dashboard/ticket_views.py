@@ -11,7 +11,7 @@ import json
 from decimal import Decimal
 
 from boxoffice.gateway import get_gateway, square_enabled
-from boxoffice.spec import SQUARE_TIERS
+from tickets.tiers import ONLINE_TIERS
 from cinema.models import Showtime
 from django.contrib import messages
 from django.core.paginator import Paginator
@@ -37,7 +37,7 @@ CSV_HEADER = [
     "last name",
     "email",
     "phone",
-    *SQUARE_TIERS,
+    *ONLINE_TIERS,
     "total",
     "status",
     "paid at",
@@ -176,7 +176,7 @@ def _csv_row(order: TicketOrder) -> list:
         order.last_name,
         order.email,
         order.phone,
-        *(quantities.get(tier, 0) for tier in SQUARE_TIERS),
+        *(quantities.get(tier, 0) for tier in ONLINE_TIERS),
         f"{order.total_dollars:.2f}",
         order.get_status_display(),
         _csv_time(order.paid_at),

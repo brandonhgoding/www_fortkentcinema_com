@@ -22,8 +22,10 @@ from boxoffice.gateway import (
     Tender,
     UpsertResult,
     VersionMismatch,
+    Gateway,
     _order_data,
     disabled_reason,
+    parse_timestamp,
     square_enabled,
     get_gateway,
     payment_link_body,
@@ -287,8 +289,8 @@ class CatalogCallTests(SimpleTestCase):
         ]
         client.catalog.object.get.return_value = mock.Mock(object=obj)
         item = SquareGateway(client, "LOC", "CAT").retrieve_item("I1")
-        client.catalog.object.get.assert_called_once_with(
-            "I1", include_related_objects=True)
+        # Variations are embedded in the item; related objects are never read.
+        client.catalog.object.get.assert_called_once_with("I1")
         self.assertEqual(item, RemoteItem(
             "I1", 5, "Dune", {"fkc-eng-7-adult": "V0", "fkc-eng-7-senior": "V1"}))
 
@@ -372,6 +374,49 @@ class CatalogCallTests(SimpleTestCase):
             status_code=400, body={"errors": [{"code": "INVALID_VALUE"}]})
         with self.assertRaises(GatewayError):
             SquareGateway(client, "LOC", "CAT").upload_item_image("I1", b"x", "Dune")
+
+    def test_lookup_categories_asks_in_batches_of_a_thousand(self) -> None:
+        client = mock.Mock()
+        client.catalog.batch_get.side_effect = [
+            mock.Mock(objects=[mock.Mock(id="V1",
+                                         item_variation_data=mock.Mock(item_id="I1"))],
+                      related_objects=[_catalog_item("I1", ["CAT"])]),
+            mock.Mock(objects=[mock.Mock(id="V1001",
+                                         item_variation_data=mock.Mock(item_id="I2"))],
+                      related_objects=[_catalog_item("I2", ["POP"])]),
+        ]
+        ids = [f"V{i}" for i in range(1, 1002)]
+        result = SquareGateway(client, "LOC", "CAT").lookup_categories(ids)
+        sent = [c.kwargs["object_ids"] for c in client.catalog.batch_get.call_args_list]
+        self.assertEqual([len(s) for s in sent], [1000, 1])
+        self.assertEqual(sent[0][0], "V1")
+        self.assertEqual(sent[1], ["V1001"])
+        self.assertEqual(result, {"V1": "CAT", "V1001": "POP"})
+
+    def test_upsert_idempotency_key_repeats_for_the_same_request(self) -> None:
+        # A timeout-then-retry must not mint a second item in Square.
+        def key(version: int) -> str:
+            client = mock.Mock()
+            client.catalog.batch_upsert.return_value = _upsert_response([], version)
+            SquareGateway(client, "LOC", "CAT").upsert_item(
+                SPEC_FOR_7, item_id="I1", version=version,
+                variation_ids_by_tier={t: f"V{i}" for i, t in enumerate(TIERS)})
+            return client.catalog.batch_upsert.call_args.kwargs["idempotency_key"]
+        self.assertEqual(key(4), key(4))
+        self.assertNotEqual(key(4), key(5))
+        self.assertLessEqual(len(key(4)), 128)
+
+    def test_upload_idempotency_key_repeats_for_the_same_poster(self) -> None:
+        def key(image: bytes) -> str:
+            client = mock.Mock()
+            client.catalog.images.create.return_value = mock.Mock(
+                image=mock.Mock(id="IMG1"))
+            SquareGateway(client, "LOC", "CAT").upload_item_image(
+                "I1", image, "Dune")
+            return client.catalog.images.create.call_args.kwargs["request"][
+                "idempotency_key"]
+        self.assertEqual(key(b"jpeg"), key(b"jpeg"))
+        self.assertNotEqual(key(b"jpeg"), key(b"other"))
 
     def test_lookup_categories_with_no_ids_makes_no_call(self) -> None:
         client = mock.Mock()
@@ -912,6 +957,17 @@ class GetGatewayTests(SimpleTestCase):
         self.assertIn("SQUARE_ENVIRONMENT", logs.output[0])
 
 
+class ParseTimestampTests(SimpleTestCase):
+    def test_square_z_timestamp_is_aware_utc(self) -> None:
+        when = parse_timestamp("2026-10-03T03:12:00.000Z")
+        self.assertEqual(when, datetime.datetime(2026, 10, 3, 3, 12,
+                                                 tzinfo=datetime.timezone.utc))
+
+    def test_blank_is_none(self) -> None:
+        self.assertIsNone(parse_timestamp(None))
+        self.assertIsNone(parse_timestamp(""))
+
+
 class FakeGatewayTests(SimpleTestCase):
     def test_public_methods_match_the_real_gateway(self) -> None:
         public = [n for n in vars(SquareGateway) if not n.startswith("_")]
@@ -919,6 +975,31 @@ class FakeGatewayTests(SimpleTestCase):
         for name in public:
             self.assertEqual(inspect.signature(getattr(FakeGateway, name)),
                              inspect.signature(getattr(SquareGateway, name)), name)
+
+    def test_both_gateways_implement_the_protocol(self) -> None:
+        # Gateway is what callers are typed against; the fake and the real
+        # one must both offer every method on it, with the same signature.
+        protocol = [n for n in vars(Gateway)
+                    if not n.startswith("_") and callable(getattr(Gateway, n))]
+        self.assertEqual(len(protocol), 13)
+        for name in protocol:
+            for cls in (SquareGateway, FakeGateway):
+                self.assertEqual(inspect.signature(getattr(cls, name)),
+                                 inspect.signature(getattr(Gateway, name)),
+                                 f"{cls.__name__}.{name}")
+
+    def test_refund_with_a_reused_key_returns_the_same_refund(self) -> None:
+        # Like Square: an idempotency key names one refund, so a retry after
+        # a timeout gets the first answer back instead of a second refund.
+        gw = FakeGateway()
+        first = gw.refund_payment(payment_id="P1", amount_cents=800,
+                                  idempotency_key="refund-FK-1", reason="x")
+        again = gw.refund_payment(payment_id="P1", amount_cents=800,
+                                  idempotency_key="refund-FK-1", reason="x")
+        other = gw.refund_payment(payment_id="P1", amount_cents=800,
+                                  idempotency_key="refund-FK-2", reason="x")
+        self.assertEqual(first, again)
+        self.assertNotEqual(first, other)
 
     def test_retrieve_order_returns_by_id_or_raises(self) -> None:
         gw = FakeGateway()
@@ -1072,4 +1153,6 @@ class FakeGatewayTests(SimpleTestCase):
                   "idempotency_key": "refund-FK-ABCDE", "reason": "Showtime cancelled"}
         self.assertEqual(gw.refund_payment(**kwargs), "R-1")
         self.assertEqual(gw.calls[-1], ("refund_payment", kwargs))
-        self.assertEqual(gw.refund_payment(**kwargs), "R-2")
+        self.assertEqual(
+            gw.refund_payment(**{**kwargs, "idempotency_key": "refund-FK-ZZZZZ"}),
+            "R-2")

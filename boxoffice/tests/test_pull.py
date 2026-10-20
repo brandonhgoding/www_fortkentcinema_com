@@ -64,6 +64,27 @@ class BusinessDateTests(SimpleTestCase):
         self.assertEqual(start.isoformat(), "2026-10-09T00:00:00-04:00")
         self.assertEqual(end.isoformat(), "2026-10-10T00:00:00-04:00")
 
+    def test_day_bounds_span_the_fall_back_day(self) -> None:
+        # Clocks go back on 1 November 2026: the day is 25 hours long.
+        start, end = day_bounds(datetime.date(2026, 11, 1))
+        self.assertEqual(start.isoformat(), "2026-11-01T00:00:00-04:00")
+        self.assertEqual(end.isoformat(), "2026-11-02T00:00:00-05:00")
+        self.assertEqual(end.astimezone(datetime.UTC) - start.astimezone(datetime.UTC),
+                         datetime.timedelta(hours=25))
+
+    def test_day_bounds_span_the_spring_forward_day(self) -> None:
+        # Clocks go forward on 8 March 2026: the day is 23 hours long.
+        start, end = day_bounds(datetime.date(2026, 3, 8))
+        self.assertEqual(start.isoformat(), "2026-03-08T00:00:00-05:00")
+        self.assertEqual(end.isoformat(), "2026-03-09T00:00:00-04:00")
+        self.assertEqual(end.astimezone(datetime.UTC) - start.astimezone(datetime.UTC),
+                         datetime.timedelta(hours=23))
+
+    def test_winter_sale_at_eastern_midnight_belongs_to_the_new_day(self) -> None:
+        # 05:00 UTC on 10 January is 00:00 EST on 10 January (UTC-5).
+        when = datetime.datetime(2026, 1, 10, 5, 0, tzinfo=datetime.UTC)
+        self.assertEqual(business_date(when), datetime.date(2026, 1, 10))
+
 
 @override_settings(SQUARE_TICKET_CATEGORY_ID=TICKETS)
 class PullDayTests(TestCase):

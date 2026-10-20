@@ -1,6 +1,7 @@
 import datetime
 from decimal import Decimal
 
+from cinema.dates import business_date
 from django.db import models
 
 
@@ -50,9 +51,6 @@ class MembershipSale(models.Model):
     def purchase_date(self) -> datetime.date | None:
         if self.paid_at is None:
             return None
-        # Imported here: boxoffice.pull imports the models package.
-        from boxoffice.pull import business_date
-
         return business_date(self.paid_at)
 
     @property

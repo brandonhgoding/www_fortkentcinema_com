@@ -6,15 +6,13 @@ unchanged. No request-time cache — reads the DB directly."""
 
 import calendar
 import datetime
-from zoneinfo import ZoneInfo
 
 from django.utils import timezone
 
+from cinema.dates import CINEMA_TZ
 from cinema.models import Engagement, Showtime
 
 from web.services.titles import listing_title
-
-CINEMA_TZ = ZoneInfo("America/New_York")
 
 OPEN_CAPTIONS_NOTE = "This showing will be played with open captions."
 

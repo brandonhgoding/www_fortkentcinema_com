@@ -1,12 +1,11 @@
 import datetime
+from unittest import mock
 from zoneinfo import ZoneInfo
 
-from boxoffice.models import (
-    EmailRecipient, EmailReport, SaleLine, SalesPull, SquareItem, SquareVariation,
-)
+from boxoffice.models import EmailRecipient, EmailReport, SaleLine, SalesPull
 from boxoffice.reports import (
     DaySales, ItemTotal, owner_summary, pull_status, render_report,
-    sales_panel, send_reports, ticket_report, tier_totals,
+    sales_panel, send_reports, ticket_report,
 )
 from boxoffice.tests.test_pull import make_eng
 from django.core import mail
@@ -99,19 +98,6 @@ class AggregationTests(TestCase):
         self.assertEqual(ticket_report(DAY), [])
         self.assertEqual(ticket_report(show_day), [ItemTotal("Dune", 1, 800)])
 
-    def test_tier_totals_date_online_sales_by_show_day(self) -> None:
-        show_day = DAY + datetime.timedelta(days=2)
-        showtime = make_showtime(starts_at=at_eastern(show_day, 19, 0))
-        item = SquareItem.objects.create(engagement=showtime.engagement, name="Dune")
-        adult = SquareVariation.objects.create(
-            item=item, square_id="V1", sku="s1", tier="adult", name="Adult",
-            price_cents=1000, ordinal=0)
-        make_line("Dune", 1000, quantity=2, variation=adult,
-                  engagement=showtime.engagement, showtime=showtime,
-                  show_date=show_day)
-        self.assertEqual(tier_totals(DAY)["adult"], 0)
-        self.assertEqual(tier_totals(show_day)["adult"], 2)
-
     def test_a_deleted_showtime_keeps_its_show_day(self) -> None:
         # The stored day is the record; losing the showtime row must not
         # flip the line back to its sale day.
@@ -120,25 +106,6 @@ class AggregationTests(TestCase):
                   show_date=show_day)
         self.assertEqual(ticket_report(DAY), [])
         self.assertEqual(ticket_report(show_day), [ItemTotal("Dune", 1, 800)])
-
-    def test_tier_totals_cover_the_three_variations(self) -> None:
-        eng = make_eng()
-        item = SquareItem.objects.create(engagement=eng, name="Dune")
-        adult = SquareVariation.objects.create(
-            item=item, square_id="V1", sku="s1", tier="adult", name="Adult",
-            price_cents=1000, ordinal=0)
-        matinee = SquareVariation.objects.create(
-            item=item, square_id="V2", sku="s2", tier="matinee", name="Matinee",
-            price_cents=800, ordinal=3)
-        make_line("Dune", 1000, quantity=2, variation=adult, engagement=eng)
-        make_line("Dune", 800, variation=matinee, engagement=eng)
-        make_line("Popcorn", 500, quantity=4)
-        make_line("Dune", 1000, quantity=3, variation=adult, engagement=eng,
-                  refunded_quantity=3, refunded_cents=3000)
-        self.assertEqual(
-            tier_totals(DAY),
-            {"adult": 2, "senior": 0, "child": 0},
-        )
 
 
 class RenderTests(TestCase):
@@ -209,6 +176,27 @@ class SendReportsTests(TestCase):
         self.assertIn("Popcorn: 1 sold for $5.00", text)
         self.pull.refresh_from_db()
         self.assertFalse(self.pull.owner_email_sent or self.pull.report_email_sent)
+
+    def test_one_failed_email_does_not_stop_the_other(self) -> None:
+        # The booker still gets the ticket report when the owner's summary
+        # bounces; the failure is raised once both have been tried.
+        real_send = mail.EmailMessage.send
+
+        def send(message):
+            if message.subject == "Daily Sales Summary":
+                raise RuntimeError("smtp down")
+            return real_send(message)
+
+        with mock.patch.object(mail.EmailMessage, "send", send), \
+                self.assertLogs(LOGGER, "ERROR"), \
+                self.assertRaises(RuntimeError) as cm:
+            send_reports(DAY, self.pull)
+        self.assertEqual([m.to for m in mail.outbox], [["booker@example.com"]])
+        self.pull.refresh_from_db()
+        self.assertFalse(self.pull.owner_email_sent)
+        self.assertTrue(self.pull.report_email_sent)
+        self.assertIn("OWNER_SUMMARY", str(cm.exception))
+        self.assertIn("smtp down", str(cm.exception))
 
     def test_subject_comes_from_admin_row(self) -> None:
         self.owner.subject = "Flash gross"

@@ -3,11 +3,11 @@ import datetime
 import logging
 from collections.abc import Iterable
 from typing import Protocol
-from zoneinfo import ZoneInfo
 
-from boxoffice.gateway import GatewayError, OrderData, OrderLine, SquareGateway
+from boxoffice.gateway import Gateway, GatewayError, OrderData, OrderLine
 from boxoffice.models import SaleLine, SalesPull, SquareVariation
 from boxoffice.spec import ONLINE_REFERENCE_PREFIX
+from cinema.dates import CINEMA_TZ, business_date
 from cinema.models import Engagement, Showtime
 from django.conf import settings
 from django.db import transaction
@@ -15,8 +15,6 @@ from django.db.models import F, Sum
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
-
-EASTERN = ZoneInfo("America/New_York")
 
 
 class WebsiteOrders(Protocol):
@@ -46,15 +44,13 @@ def register_website(source: WebsiteOrders) -> None:
 
 def day_bounds(day: datetime.date) -> tuple[datetime.datetime, datetime.datetime]:
     """[midnight, next midnight) Eastern, aware."""
-    start = datetime.datetime.combine(day, datetime.time.min, tzinfo=EASTERN)
+    start = datetime.datetime.combine(day, datetime.time.min, tzinfo=CINEMA_TZ)
     end = datetime.datetime.combine(
-        day + datetime.timedelta(days=1), datetime.time.min, tzinfo=EASTERN)
+        day + datetime.timedelta(days=1), datetime.time.min, tzinfo=CINEMA_TZ)
     return start, end
 
 
-def business_date(when: datetime.datetime) -> datetime.date:
-    """The Eastern calendar day a sale (or anything else) happened on."""
-    return when.astimezone(EASTERN).date()
+__all__ = ["business_date", "CINEMA_TZ"]  # re-exported for the ledger's callers
 
 
 def sold_at(order: OrderData) -> datetime.datetime | None:
@@ -67,7 +63,7 @@ def sold_at(order: OrderData) -> datetime.datetime | None:
     return order.paid_at or order.closed_at
 
 
-def day_orders(day: datetime.date, gateway: SquareGateway) -> list[OrderData]:
+def day_orders(day: datetime.date, gateway: Gateway) -> list[OrderData]:
     """Every order sold on ``day``: the register's closed orders and the
     website's paid payment-link orders, which Square leaves OPEN."""
     start, end = day_bounds(day)
@@ -76,7 +72,7 @@ def day_orders(day: datetime.date, gateway: SquareGateway) -> list[OrderData]:
     return orders
 
 
-def pull_day(day: datetime.date, gateway: SquareGateway) -> SalesPull:
+def pull_day(day: datetime.date, gateway: Gateway) -> SalesPull:
     """Store every order line sold on ``day``; the returned row says how it went."""
     # Created FAILED so a pull killed mid-run still raises the dashboard alert.
     pull = SalesPull.objects.create(business_date=day,
@@ -195,7 +191,7 @@ def _resolve_refunded(order_ids: Iterable[str]) -> set[str]:
     return website.refunded(set(order_ids))
 
 
-def _resolve_categories(gateway: SquareGateway,
+def _resolve_categories(gateway: Gateway,
                         unknown_ids: set[str]) -> dict[str, str]:
     if not unknown_ids:
         return {}

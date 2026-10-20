@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from boxoffice.spec import SQUARE_TIERS
+from tickets.tiers import ONLINE_TIERS
 from web.constants import TICKET_PRICES
 from web.services.cinema_data import CINEMA_TZ
 
@@ -43,5 +43,5 @@ def price_table(starts_at: datetime) -> list[PriceRow]:
             unit_cents(tier, starts_at),
             discount_cents(tier, starts_at),
         )
-        for tier in SQUARE_TIERS
+        for tier in ONLINE_TIERS
     ]

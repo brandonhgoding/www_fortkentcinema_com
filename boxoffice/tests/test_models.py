@@ -2,13 +2,15 @@ import datetime
 
 from audience.models import Member, MembershipTerm, MembershipTier
 from boxoffice.models import (
+    EmailRecipient,
+    EmailReport,
     MembershipSale,
     SaleLine,
-    SalesPull,
     SquareItem,
     SquareVariation,
 )
 from cinema.models import Engagement, Screen
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.test import TestCase
 from django.utils import timezone
@@ -79,10 +81,21 @@ class SaleLineTests(TestCase):
             SaleLine.objects.create(**kwargs)
 
 
-class SalesPullTests(TestCase):
-    def test_status_choices(self) -> None:
-        self.assertEqual(SalesPull.Status.OK, "OK")
-        self.assertEqual(SalesPull.Status.FAILED, "FAILED")
+class EmailRecipientTests(TestCase):
+    def setUp(self) -> None:
+        self.report = EmailReport.objects.get(kind=EmailReport.Kind.OWNER_SUMMARY)
+
+    def test_address_is_stored_lowercased_and_stripped(self) -> None:
+        recipient = EmailRecipient.objects.create(
+            report=self.report, address="  Owner@Example.com ")
+        recipient.refresh_from_db()
+        self.assertEqual(recipient.address, "owner@example.com")
+
+    def test_admin_validation_catches_a_duplicate_in_another_case(self) -> None:
+        EmailRecipient.objects.create(report=self.report, address="owner@example.com")
+        duplicate = EmailRecipient(report=self.report, address="Owner@Example.com")
+        with self.assertRaises(ValidationError):
+            duplicate.full_clean()
 
 
 class MembershipSaleTests(TestCase):

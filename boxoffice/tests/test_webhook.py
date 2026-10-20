@@ -155,14 +155,16 @@ class DispatchTests(WebhookTestCase):
             raise RuntimeError("tickets down")
 
         with mock.patch("boxoffice.payment_events._handlers", [crash]), \
-                self.assertLogs("boxoffice.payment_events", "ERROR"):
+                self.assertLogs("boxoffice.payment_events", "ERROR"), \
+                self.assertLogs("django.request", "ERROR"):
             resp = post(self.client, event("O9"))
         self.assertEqual(resp.status_code, 503)
         self.process.assert_called_once_with("O9")
 
     def test_membership_crash_asks_for_retry_instead_of_a_500(self):
         self.process.side_effect = RuntimeError("db down")
-        with self.assertLogs("boxoffice.views", "ERROR"):
+        with self.assertLogs("boxoffice.views", "ERROR"), \
+                self.assertLogs("django.request", "ERROR"):
             resp = post(self.client, event("O9"))
         self.assertEqual(resp.status_code, 503)
 
@@ -219,7 +221,10 @@ class DispatchTests(WebhookTestCase):
         self.process.return_value = MembershipSale(
             order_id="O9", status="FAILED", paid_at=None,
             error="Could not fetch the order from Square: boom")
-        self.assertEqual(post(self.client, event("O9")).status_code, 503)
+        # A 503 is logged as an ERROR; capture it so the test output stays quiet.
+        with self.assertLogs("django.request", "ERROR"):
+            resp = post(self.client, event("O9"))
+        self.assertEqual(resp.status_code, 503)
 
     def test_attribution_failure_still_returns_200(self):
         self.process.return_value = MembershipSale(
@@ -241,6 +246,21 @@ class EndToEndTests(TestCase):
         self.enterContext(patch_logger())
         MembershipTier.objects.filter(slug="individual").update(
             square_variation_id=INDIVIDUAL)
+
+    def test_signed_event_pays_a_ticket_order_once(self):
+        # No mocks between Square's bytes and the buyer's inbox; the replay
+        # Square sends after a slow 200 must not email a second ticket.
+        from django.core import mail
+        order = make_order(make_showtime(), square_order_id="O1")
+        first = post(self.client, event("O1"))
+        replay = post(self.client, event("O1"))
+        self.assertEqual((first.status_code, replay.status_code), (200, 200))
+        order.refresh_from_db()
+        self.assertEqual((order.status, order.square_payment_id, order.paid_at),
+                         ("PAID", "P1", PAID_AT))
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn(order.number, mail.outbox[0].body)
+        self.assertFalse(MembershipSale.objects.exists())
 
     def test_signed_event_creates_the_member(self):
         gw = FakeGateway()

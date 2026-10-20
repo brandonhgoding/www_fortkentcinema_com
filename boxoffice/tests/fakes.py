@@ -39,6 +39,8 @@ class FakeGateway:
         self._image_ids = itertools.count(1)
         self._link_ids = itertools.count(1)
         self._refund_ids = itertools.count(1)
+        # Like Square: an idempotency key names one refund for good.
+        self.refunds_by_key: dict[str, str] = {}
         self._customer_ids = itertools.count(1)
 
     def _record(self, method: str, **kwargs) -> None:
@@ -137,7 +139,9 @@ class FakeGateway:
                      reason=reason)
         if payment_id in self.fail_on:
             raise GatewayError("boom")
-        return f"R-{next(self._refund_ids)}"
+        if idempotency_key not in self.refunds_by_key:
+            self.refunds_by_key[idempotency_key] = f"R-{next(self._refund_ids)}"
+        return self.refunds_by_key[idempotency_key]
 
     def find_customer(self, email: str) -> str | None:
         self._record("find_customer", email=email)

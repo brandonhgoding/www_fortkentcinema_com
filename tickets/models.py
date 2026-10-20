@@ -2,12 +2,14 @@ import datetime
 import secrets
 from decimal import Decimal
 
-from boxoffice.spec import ONLINE_REFERENCE_PREFIX, SQUARE_TIERS
+from boxoffice.spec import ONLINE_REFERENCE_PREFIX
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
 
 from web.constants import TICKET_HOLD_MINUTES
+
+from tickets.tiers import ONLINE_TIERS
 
 # No 0/O/1/I: the code is read aloud at the door.
 NUMBER_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
@@ -41,7 +43,7 @@ class TicketOrder(models.Model):
         # checkout and was told to try again. Terminal; nothing to retry.
         ABANDONED = "ABANDONED", "Never started"
 
-    TIERS = SQUARE_TIERS
+    TIERS = ONLINE_TIERS
 
     number = models.CharField(max_length=12, unique=True, default=new_number)
     token = models.CharField(max_length=43, unique=True, default=new_token)
@@ -123,7 +125,7 @@ class TicketOrder(models.Model):
     def breakdown(self) -> str:
         quantities = {line.tier: line.quantity for line in self.lines.all()}
         return ", ".join(
-            f"{quantities[tier]} {tier}" for tier in SQUARE_TIERS if tier in quantities
+            f"{quantities[tier]} {tier}" for tier in ONLINE_TIERS if tier in quantities
         )
 
 

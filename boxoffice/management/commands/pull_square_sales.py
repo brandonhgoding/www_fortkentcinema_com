@@ -3,7 +3,8 @@ import logging
 
 from boxoffice.gateway import GatewayError, disabled_reason, get_gateway
 from boxoffice.models import SalesPull
-from boxoffice.pull import EASTERN, day_orders, pull_day
+from boxoffice.pull import day_orders, pull_day
+from cinema.dates import CINEMA_TZ
 from boxoffice.reports import owner_summary, render_report, send_reports, ticket_report
 from django.core.management.base import BaseCommand, CommandError
 
@@ -31,7 +32,7 @@ class Command(BaseCommand):
         if gateway is None:
             self.stdout.write(f"Square sync disabled ({disabled_reason()})")
             return
-        target = options["date"] or datetime.datetime.now(EASTERN).date()
+        target = options["date"] or datetime.datetime.now(CINEMA_TZ).date()
         window = [target - datetime.timedelta(days=n) for n in range(days - 1, -1, -1)]
         if options["dry_run"]:
             self.dry_run(window, target, gateway)

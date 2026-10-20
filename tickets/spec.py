@@ -5,7 +5,7 @@ from email.utils import parseaddr
 from urllib.parse import urlsplit
 
 from boxoffice.gateway import CheckoutLine, CheckoutSpec
-from boxoffice.spec import SQUARE_TIERS
+from tickets.tiers import ONLINE_TIERS
 from django.conf import settings
 from django.urls import reverse
 
@@ -64,7 +64,7 @@ def checkout_spec(order: TicketOrder, variation_ids: dict[str, str]) -> Checkout
             unit_cents=pricing.unit_cents(tier, starts_at),
             discount_cents=pricing.discount_cents(tier, starts_at) * quantities[tier],
         )
-        for tier in SQUARE_TIERS
+        for tier in ONLINE_TIERS
         if tier in quantities
     )
     return CheckoutSpec(

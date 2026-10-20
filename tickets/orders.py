@@ -4,8 +4,8 @@ import dataclasses
 import datetime
 import logging
 
-from boxoffice.gateway import GatewayError, InvalidPhone, SquareGateway, get_gateway
-from boxoffice.spec import SQUARE_TIERS
+from boxoffice.gateway import Gateway, GatewayError, InvalidPhone, get_gateway
+from tickets.tiers import ONLINE_TIERS
 from cinema.models import Showtime
 from django.db import transaction
 from django.utils import timezone
@@ -41,7 +41,7 @@ def start(
     phone: str,
     quantities: dict[str, int],
     now: datetime.datetime,
-    gateway: SquareGateway | None = None,
+    gateway: Gateway | None = None,
 ) -> TicketOrder:
     """Hold the seats as a PENDING order, then ask Square for a payment link.
 
@@ -52,7 +52,7 @@ def start(
         gateway = get_gateway()
     quantities = {
         tier: quantities.get(tier, 0)
-        for tier in SQUARE_TIERS
+        for tier in ONLINE_TIERS
         if quantities.get(tier, 0) > 0
     }
     wanted = sum(quantities.values())
@@ -104,7 +104,7 @@ def start(
     return order
 
 
-def _create_link(gateway: SquareGateway, spec):
+def _create_link(gateway: Gateway, spec):
     """Ask Square for the payment link; once more without the phone if it balks.
 
     Square validates the prefilled phone against the world's numbering plans,
@@ -193,14 +193,14 @@ def _send(order: TicketOrder) -> TicketOrder:
 
 
 def recover_pending(
-    order: TicketOrder, gateway: SquareGateway | None = None
+    order: TicketOrder, gateway: Gateway | None = None
 ) -> TicketOrder:
     """Ask Square whether a PENDING order was paid, in case the webhook was lost."""
     _recover(order, gateway)
     return order
 
 
-def _recover(order: TicketOrder, gateway: SquareGateway | None) -> bool:
+def _recover(order: TicketOrder, gateway: Gateway | None) -> bool:
     """recover_pending's work; False when Square could not be asked."""
     if order.status != TicketOrder.Status.PENDING or not order.square_order_id:
         return True
@@ -224,7 +224,7 @@ def _recover(order: TicketOrder, gateway: SquareGateway | None) -> bool:
     return True
 
 
-def expire_stale(now: datetime.datetime, gateway: SquareGateway | None = None) -> int:
+def expire_stale(now: datetime.datetime, gateway: Gateway | None = None) -> int:
     """Expire PENDING orders past the hold that Square says are unpaid.
 
     Orders Square could not be asked about stay PENDING for the next run; past

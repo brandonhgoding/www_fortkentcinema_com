@@ -47,3 +47,11 @@ class EmailRecipient(models.Model):
 
     def __str__(self) -> str:
         return self.address
+
+    def clean(self) -> None:
+        # Before the unique check, so the admin catches "Owner@" vs "owner@".
+        self.address = self.address.strip().lower()
+
+    def save(self, *args, **kwargs) -> None:
+        self.address = self.address.strip().lower()
+        super().save(*args, **kwargs)

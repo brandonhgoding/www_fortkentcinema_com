@@ -19,12 +19,12 @@ from boxoffice.gateway import (
     OrderData,
     OrderLine,
     Recipient,
-    SquareGateway,
+    Gateway,
     disabled_reason,
     get_gateway,
 )
 from boxoffice.models import MembershipSale
-from boxoffice.pull import business_date
+from cinema.dates import business_date
 from django.db import transaction
 from django.utils import timezone
 
@@ -208,7 +208,7 @@ def _attribute(sale_pk: int, order_id: str, facts: _Facts) -> MembershipSale:
 
 
 def process_order(order_id: str,
-                  gateway: SquareGateway | None = None) -> MembershipSale | None:
+                  gateway: Gateway | None = None) -> MembershipSale | None:
     """Record the membership sale in Square order ``order_id``.
 
     None when the order has no membership line: nothing is recorded.

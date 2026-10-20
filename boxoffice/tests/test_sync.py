@@ -5,6 +5,8 @@ from unittest import mock
 from boxoffice.gateway import GatewayError, RemoteItem
 from boxoffice.models import SaleLine, SquareItem, SquareVariation
 from boxoffice.sync import (
+    ReconcileReport,
+    _reconcile_images,
     delete,
     live_item,
     push,
@@ -223,6 +225,17 @@ class DeleteTests(TestCase):
             delete(self.eng, self.gw)
         item.refresh_from_db()
         self.assertIsNone(item.deleted_at)
+
+    def test_delete_failure_is_recorded_on_the_row(self) -> None:
+        # The dashboard pill goes red, and the nightly reconcile retries.
+        item = push(self.eng, self.gw)
+        self.gw.fail_with = GatewayError("nope")
+        with self.assertRaises(GatewayError):
+            delete(self.eng, self.gw)
+        item.refresh_from_db()
+        self.assertEqual(
+            item.last_error,
+            "Square delete failed: nope; the nightly reconcile will retry")
 
     def test_delete_of_never_pushed_row_is_local(self) -> None:
         self.gw.fail_with = GatewayError("boom")
@@ -596,6 +609,16 @@ class ReconcileImageTests(TestCase):
         uploads = [c for c in self.gw.calls if c[0] == "upload_item_image"]
         self.assertEqual(len(uploads), 1)
         self.assertEqual(uploads[0][1]["name"], "Dune")
+
+    def test_poster_pass_reads_films_in_one_query_per_pass(self) -> None:
+        # One query for the rows, one for their films' links, one for the
+        # films: never one per item.
+        second = make_eng()
+        push(second, self.gw)
+        report = ReconcileReport()
+        with self.assertNumQueries(3):
+            _reconcile_images(self.gw, True, report)
+        self.assertEqual(sorted(report.images), sorted([self.eng.pk, second.pk]))
 
     def test_rename_keeps_the_poster(self) -> None:
         with mock.patch(FETCH, return_value=b"jpg"):
