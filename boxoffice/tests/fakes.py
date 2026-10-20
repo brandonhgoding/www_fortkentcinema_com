@@ -8,6 +8,7 @@ from boxoffice.gateway import (
     CheckoutSpec,
     GatewayError,
     InvalidPhone,
+    NotFound,
     OrderData,
     OrderLine,
     RemoteItem,
@@ -55,7 +56,7 @@ class FakeGateway:
         else:
             stored = self.items.get(item_id)
             if stored is None:
-                raise GatewayError(f"Unknown item {item_id}")
+                raise NotFound(f"Unknown item {item_id}")
             if version is not None and version != stored.version:
                 raise VersionMismatch(
                     f"Item {item_id} is at version {stored.version}, not {version}")
@@ -80,7 +81,7 @@ class FakeGateway:
     def retrieve_item(self, item_id: str) -> RemoteItem:
         self._record("retrieve_item", item_id=item_id)
         if item_id not in self.items:
-            raise GatewayError(f"Unknown item {item_id}")
+            raise NotFound(f"Unknown item {item_id}")
         return self.items[item_id]
 
     def search_orders(self, start: datetime.datetime,
@@ -104,7 +105,7 @@ class FakeGateway:
         for order in self.orders:
             if order.order_id == order_id:
                 return order
-        raise GatewayError(f"Unknown order {order_id}")
+        raise NotFound(f"Unknown order {order_id}")
 
     def create_payment_link(self, spec: CheckoutSpec) -> CheckoutResult:
         self._record("create_payment_link", spec=spec)
@@ -160,7 +161,7 @@ class FakeGateway:
                     order, tenders=(Tender(payment_id, "CAPTURED"),),
                     paid_at=paid_at or datetime.datetime.now(datetime.timezone.utc))
                 return
-        raise GatewayError(f"Unknown order {order_id}")
+        raise NotFound(f"Unknown order {order_id}")
 
     def list_ticket_items(self) -> list[RemoteItem]:
         self._record("list_ticket_items")
@@ -169,7 +170,7 @@ class FakeGateway:
     def upload_item_image(self, item_id: str, image: bytes, name: str) -> str:
         self._record("upload_item_image", item_id=item_id, image=image, name=name)
         if item_id not in self.items:
-            raise GatewayError(f"Unknown item {item_id}")
+            raise NotFound(f"Unknown item {item_id}")
         image_id = f"img-{next(self._image_ids)}"
         self.images[image_id] = (item_id, image)
         return image_id

@@ -12,6 +12,7 @@ from boxoffice.gateway import (
     CheckoutSpec,
     GatewayError,
     InvalidPhone,
+    NotFound,
     OrderData,
     OrderLine,
     Recipient,
@@ -186,6 +187,19 @@ class UpsertRequestTests(SimpleTestCase):
         with self.assertRaises(VersionMismatch):
             SquareGateway(client, "LOC", "CAT").upsert_item(
                 SPEC_FOR_7, item_id="I1", version=1, variation_ids_by_tier={})
+
+    def test_not_found_is_typed(self) -> None:
+        # Only a real 404 may be read as "gone"; a 5xx is "ask again later".
+        client = mock.Mock()
+        client.catalog.object.get.side_effect = ApiError(
+            status_code=404, body={"errors": [{"code": "NOT_FOUND"}]})
+        with self.assertRaises(NotFound):
+            SquareGateway(client, "LOC", "CAT").retrieve_item("I1")
+        client.orders.get.side_effect = ApiError(
+            status_code=500, body={"errors": [{"code": "INTERNAL_SERVER_ERROR"}]})
+        with self.assertRaises(GatewayError) as ctx:
+            SquareGateway(client, "LOC", "CAT").retrieve_order("O1")
+        self.assertNotIsInstance(ctx.exception, NotFound)
 
     def test_other_api_error_is_gateway_error(self) -> None:
         client = mock.Mock()
@@ -848,8 +862,15 @@ class FakeGatewayTests(SimpleTestCase):
         order = OrderData("O1", None, (), Recipient("Ann", "a@b.c", ""))
         gw.orders.append(order)
         self.assertIs(gw.retrieve_order("O1"), order)
-        with self.assertRaises(GatewayError):
+        with self.assertRaises(NotFound):
             gw.retrieve_order("nope")
+
+    def test_unknown_item_is_not_found(self) -> None:
+        gw = FakeGateway()
+        with self.assertRaises(NotFound):
+            gw.retrieve_item("nope")
+        with self.assertRaises(NotFound):
+            gw.upload_item_image("nope", b"jpg", "Dune")
 
     def test_upload_item_image_mints_ids_and_delete_removes_them(self) -> None:
         gw = FakeGateway()

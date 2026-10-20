@@ -29,6 +29,10 @@ class InvalidPhone(GatewayError):
     """Square could not parse the buyer phone sent as a checkout prefill."""
 
 
+class NotFound(GatewayError):
+    """Square has no such object: the one failure a retry cannot fix."""
+
+
 @dataclass(frozen=True)
 class RemoteItem:
     item_id: str
@@ -126,6 +130,8 @@ def _call(fn: Callable[..., T], *args: Any, **kwargs: Any) -> T:
             raise VersionMismatch(str(exc.body)) from exc
         if "INVALID_PHONE_NUMBER" in codes:
             raise InvalidPhone(str(exc.body)) from exc
+        if "NOT_FOUND" in codes or exc.status_code == 404:
+            raise NotFound(str(exc.body)) from exc
         raise GatewayError(str(exc.body)) from exc
     except (httpx.HTTPError, pydantic.ValidationError) as exc:
         # The SDK does not wrap transport failures or unparseable responses.

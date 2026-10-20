@@ -485,6 +485,26 @@ class ReconcileTests(TestCase):
         self.assertEqual(live_item(eng).pk, item.pk)
         self.assertEqual(SquareItem.objects.count(), 1)
 
+    def test_transient_error_checking_a_moved_item_does_not_retire_it(self) -> None:
+        # An item outside the category whose check fails for any reason but
+        # "gone" must stay linked: retiring it would mint a duplicate item.
+        eng = make_eng()
+        item = push(eng, self.gw)
+        real_list = self.gw.list_ticket_items
+        self.gw.list_ticket_items = lambda: [
+            r for r in real_list() if r.item_id != item.square_id]
+        with mock.patch.object(self.gw, "retrieve_item",
+                               side_effect=GatewayError("down")):
+            report = reconcile(self.today, self.gw)
+        item.refresh_from_db()
+        self.assertIsNone(item.deleted_at)
+        self.assertEqual(SquareItem.objects.count(), 1)
+        self.assertEqual(len(self.gw.items), 1)
+        self.assertEqual(report.pushed, [])
+        self.assertEqual(len(report.errors), 1)
+        self.assertIn(f"Restoring item {item.square_id}", report.errors[0])
+        self.assertIn("down", report.errors[0])
+
     def test_dry_run_reports_missing_item_without_touching_it(self) -> None:
         eng = make_eng()
         old = push(eng, self.gw)

@@ -5,6 +5,7 @@ import logging
 
 from boxoffice.gateway import (
     GatewayError,
+    NotFound,
     SquareGateway,
     UpsertResult,
     VersionMismatch,
@@ -250,7 +251,9 @@ def _audit_missing(listed: set[str], today: datetime.date, gateway: SquareGatewa
         try:
             try:
                 gateway.retrieve_item(row.square_id)
-            except GatewayError:
+            except NotFound:
+                # Only "gone" may retire the row: anything else (a timeout, a
+                # 5xx) must leave it linked, or the push pass mints a twin.
                 _retire(row)
                 report.errors.append(
                     f"Item {row.square_id} for engagement {engagement.pk} was "
