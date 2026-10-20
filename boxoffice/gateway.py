@@ -601,6 +601,10 @@ class SquareGateway:
             "type": "ITEM_VARIATION",
             "id": var_id or _temp_variation_id(spec, var.tier),
         }
+        # The item's version, stamped on every existing variation. Checked in
+        # the sandbox on 2026-10-20 (docs/qa/2026-10-20-square-variation-
+        # versions-sandbox-check.md): two renames in a row after a push both
+        # succeed, so Square accepts this; do not store a version per variation.
         if var_id and version is not None:
             obj["version"] = version
         obj.update({

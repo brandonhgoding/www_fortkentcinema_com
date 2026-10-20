@@ -631,6 +631,10 @@ Nothing in Phase 1 needs to change for this; it is additive.
   deletes the item it just made, logs a warning, and returns the row the
   other push wrote. If that delete fails too, the nightly audit reports the
   item as Django-made without a link row.
+- (2026-10-20) Sandbox check closed review item M2: an update stamps every
+  existing variation with the item's version, and two renames in a row after
+  a push both succeeded, so Square accepts that. No version per variation is
+  stored.
 - (2026-10-20) A failed restore of an item missing from the ticket category
   is recorded on the row as `last_error` (the pill goes red), so the push
   pass in the same run re-pushes it at once; an outage is therefore reported
