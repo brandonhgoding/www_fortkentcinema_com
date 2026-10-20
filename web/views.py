@@ -2,7 +2,6 @@ import calendar
 import datetime
 import json
 
-from django.conf import settings
 from django.core import signing
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxLengthValidator, validate_email
@@ -16,7 +15,7 @@ from django.views.generic import TemplateView
 
 from audience.models import Member, MembershipTier, Subscriber
 from blog.models import BlogPost
-from boxoffice.gateway import disabled_reason
+from boxoffice.gateway import square_enabled
 from cinema import voting as vote_engine
 from cinema.models import (
     Poll,
@@ -183,7 +182,7 @@ def _add_ticket_state(times):
         "engagement", "screen"
     )
     states = availability.for_showtimes(
-        showtimes, timezone.now(), square_enabled=disabled_reason() is None
+        showtimes, timezone.now(), square_enabled=square_enabled()
     )
     for time in times:
         state = states.get(time.get("showtime_id"))

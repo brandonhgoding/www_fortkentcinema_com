@@ -130,12 +130,23 @@ class HomeRenderTests(TestCase):
         self.assertNotIn("Yesterday&#x27;s Sales", html)
         self.assertNotIn("Yesterday's Sales", html)
 
-    @override_settings(SQUARE_ACCESS_TOKEN="tok")
+    @override_settings(SQUARE_ACCESS_TOKEN="tok", SQUARE_LOCATION_ID="",
+                       SQUARE_TICKET_CATEGORY_ID="C")
+    def test_sales_panel_hidden_when_misconfigured(self) -> None:
+        # The public site hides Buy links on a blank id; the dashboard must
+        # agree that Square is off rather than go by the token alone.
+        html = self.client.get(reverse("dashboard:home")).content.decode()
+        self.assertNotIn("Yesterday's Sales", html)
+        self.assertNotIn("No sales pulled yet", html)
+
+    @override_settings(SQUARE_ACCESS_TOKEN="tok", SQUARE_LOCATION_ID="L",
+                       SQUARE_TICKET_CATEGORY_ID="C")
     def test_sales_panel_empty_state(self) -> None:
         html = self.client.get(reverse("dashboard:home")).content.decode()
         self.assertIn("No sales pulled yet", html)
 
-    @override_settings(SQUARE_ACCESS_TOKEN="tok")
+    @override_settings(SQUARE_ACCESS_TOKEN="tok", SQUARE_LOCATION_ID="L",
+                       SQUARE_TICKET_CATEGORY_ID="C")
     def test_sales_panel_with_sales_and_failed_pull_alert(self) -> None:
         yesterday = timezone.localdate() - datetime.timedelta(days=1)
         SalesPull.objects.create(

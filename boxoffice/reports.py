@@ -2,6 +2,7 @@ import datetime
 import logging
 from dataclasses import dataclass
 
+from boxoffice.gateway import square_enabled
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.db.models import F, Q, QuerySet, Sum
@@ -149,7 +150,7 @@ def day_sales(day: datetime.date) -> DaySales:
 
 
 def sales_panel(today: datetime.date) -> dict | None:
-    if not settings.SQUARE_ACCESS_TOKEN:
+    if not square_enabled():
         return None
     last_week = today - datetime.timedelta(days=8)
     return {

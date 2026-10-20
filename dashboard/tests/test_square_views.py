@@ -34,7 +34,8 @@ class StaffTestCase(TestCase):
         self.today = timezone.localdate()
 
 
-@override_settings(SQUARE_ACCESS_TOKEN="tok")
+@override_settings(SQUARE_ACCESS_TOKEN="tok", SQUARE_LOCATION_ID="L",
+                   SQUARE_TICKET_CATEGORY_ID="C")
 class EngagementSquareHookTests(StaffTestCase):
     def _payload(self, **over):
         data = {
@@ -97,7 +98,8 @@ class EngagementSquareHookTests(StaffTestCase):
         self.assertIn("Engagement deleted", resp["HX-Trigger"])
 
 
-@override_settings(SQUARE_ACCESS_TOKEN="tok")
+@override_settings(SQUARE_ACCESS_TOKEN="tok", SQUARE_LOCATION_ID="L",
+                   SQUARE_TICKET_CATEGORY_ID="C")
 class SquarePillTests(StaffTestCase):
     def _detail(self, eng) -> str:
         url = reverse("dashboard:engagement_detail", args=[eng.pk])
@@ -215,7 +217,8 @@ class RetryViewSquareTests(StaffTestCase):
         self.assertIn("item-1", self.gw.items)
 
 
-@override_settings(SQUARE_ACCESS_TOKEN="tok")
+@override_settings(SQUARE_ACCESS_TOKEN="tok", SQUARE_LOCATION_ID="L",
+                   SQUARE_TICKET_CATEGORY_ID="C")
 class SaveToastTests(StaffTestCase):
     """In production the view's atomic block commits on exit and runs the
     on-commit sync before the toast is built. A TestCase never commits (and

@@ -10,10 +10,9 @@ import datetime
 import json
 from decimal import Decimal
 
-from boxoffice.gateway import get_gateway
+from boxoffice.gateway import get_gateway, square_enabled
 from boxoffice.spec import SQUARE_TIERS
 from cinema.models import Showtime
-from django.conf import settings
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
@@ -82,7 +81,7 @@ def _search(orders, q: str):
 
 def _count_context(showtime: Showtime) -> dict:
     availability = check(
-        showtime, timezone.now(), square_enabled=bool(settings.SQUARE_ACCESS_TOKEN)
+        showtime, timezone.now(), square_enabled=square_enabled()
     )
     return {
         "showtime": showtime,

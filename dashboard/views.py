@@ -2,7 +2,7 @@ import datetime
 import json
 from zoneinfo import ZoneInfo
 
-from boxoffice.gateway import GatewayError, disabled_reason
+from boxoffice.gateway import GatewayError, square_enabled
 from boxoffice.models import MembershipSale, SquareItem
 from boxoffice.reports import pull_status, sales_panel
 from boxoffice.sync import delete, live_item, schedule, sync
@@ -36,7 +36,6 @@ from cinema.social_cards import (
 )
 from cinema.tmdb import TMDBAPIError
 from cinema.tmdb.services import TMDBService
-from django.conf import settings
 from django.db import transaction
 from django.db.models import ProtectedError, Q
 from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
@@ -79,7 +78,7 @@ class HomeView(StaffRequiredMixin, TemplateView):
         )
         now = timezone.now()
         availability = for_showtimes(
-            today_showtimes, now, square_enabled=disabled_reason() is None)
+            today_showtimes, now, square_enabled=square_enabled())
         for st in today_showtimes:
             st.online_sold = availability[st.pk].sold
         tomorrow_count = Showtime.objects.filter(
@@ -112,7 +111,7 @@ class HomeView(StaffRequiredMixin, TemplateView):
                 ).count(),
                 square_pull_status=(
                     pull_status(today - datetime.timedelta(days=1))
-                    if settings.SQUARE_ACCESS_TOKEN else None),
+                    if square_enabled() else None),
                 square_sync_failures=SquareItem.objects.filter(
                     deleted_at__isnull=True).exclude(last_error="").count(),
                 square_membership_failures=MembershipSale.objects.filter(
@@ -340,7 +339,7 @@ class EngagementDetailView(StaffRequiredMixin, TemplateView):
             "dashboard:engagement_social_card",
             args=[engagement.pk, FACEBOOK_BANNER],
         )
-        ctx["square_enabled"] = bool(settings.SQUARE_ACCESS_TOKEN)
+        ctx["square_enabled"] = square_enabled()
         ctx["square_item"] = live_item(engagement)
         return ctx
 
@@ -398,7 +397,7 @@ def _render_engagement_form(request, form, action_url, submit_label, film_ids, f
 
 def _save_toast(engagement, message):
     # The on-commit Square sync has run by now (the atomic block has exited).
-    item = live_item(engagement) if settings.SQUARE_ACCESS_TOKEN else None
+    item = live_item(engagement) if square_enabled() else None
     if item is not None and item.last_error:
         return {"kind": "error", "message": "Saved. Square sync failed — see the run"}
     return {"kind": "success", "message": message}
@@ -522,7 +521,7 @@ def showtime_rows(engagement, now):
     """Each showtime with its online tickets taken and its allowance, for the list."""
     showtimes = list(engagement.showtimes.select_related("screen", "engagement"))
     availability = for_showtimes(
-        showtimes, now, square_enabled=bool(settings.SQUARE_ACCESS_TOKEN))
+        showtimes, now, square_enabled=square_enabled())
     return [{"st": st, "sold": availability[st.pk].sold,
              "allowance": availability[st.pk].allowance} for st in showtimes]
 

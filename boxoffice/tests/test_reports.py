@@ -209,7 +209,13 @@ class SalesPanelTests(TestCase):
     def test_none_when_disabled(self) -> None:
         self.assertIsNone(sales_panel(datetime.date(2026, 10, 9)))
 
-    @override_settings(SQUARE_ACCESS_TOKEN="tok")
+    @override_settings(SQUARE_ACCESS_TOKEN="tok", SQUARE_LOCATION_ID="",
+                       SQUARE_TICKET_CATEGORY_ID="C")
+    def test_none_when_misconfigured(self) -> None:
+        self.assertIsNone(sales_panel(datetime.date(2026, 10, 9)))
+
+    @override_settings(SQUARE_ACCESS_TOKEN="tok", SQUARE_LOCATION_ID="L",
+                       SQUARE_TICKET_CATEGORY_ID="C")
     def test_yesterday_and_same_weekday_last_week(self) -> None:
         eng = make_eng()
         oct8 = datetime.date(2026, 10, 8)
@@ -230,7 +236,8 @@ class SalesPanelTests(TestCase):
         self.assertEqual(panel["yesterday"].gross_dollars, "21.00")
         self.assertEqual(panel["yesterday"].concessions_dollars, "5.00")
 
-    @override_settings(SQUARE_ACCESS_TOKEN="tok")
+    @override_settings(SQUARE_ACCESS_TOKEN="tok", SQUARE_LOCATION_ID="L",
+                       SQUARE_TICKET_CATEGORY_ID="C")
     def test_zeros_and_has_pulls(self) -> None:
         SalesPull.objects.create(
             business_date=datetime.date(2026, 10, 8), status=SalesPull.Status.OK)

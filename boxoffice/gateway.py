@@ -1,5 +1,6 @@
 """The only module that talks to Square. Everything else uses these types."""
 import datetime
+import functools
 import logging
 from dataclasses import dataclass
 from typing import Any, Callable, TypeVar
@@ -535,15 +536,31 @@ def disabled_reason() -> str | None:
     return None
 
 
+def square_enabled() -> bool:
+    """The one answer to "is Square on?", for every page, panel and command."""
+    return disabled_reason() is None
+
+
+@functools.lru_cache(maxsize=4)
+def _client(token: str, environment: SquareEnvironment) -> Square:
+    # One client per process: it holds the connection pool, and get_gateway()
+    # runs on page views. Cached on its inputs, so a settings change in a
+    # test (or a token rotation after a restart) gets a fresh one.
+    # The push runs inside the dashboard request; fail well before the worker does.
+    return Square(token=token, environment=environment, timeout=10)
+
+
+def reset_client_cache() -> None:
+    _client.cache_clear()
+
+
 def get_gateway() -> SquareGateway | None:
     reason = disabled_reason()
     if reason is not None:
         if settings.SQUARE_ACCESS_TOKEN:
             logger.error("Square sync disabled: %s", reason)
         return None
-    token = settings.SQUARE_ACCESS_TOKEN
-    environment = ENVIRONMENTS[settings.SQUARE_ENVIRONMENT]
-    # The push runs inside the dashboard request; fail well before the worker does.
-    client = Square(token=token, environment=environment, timeout=10)
+    client = _client(settings.SQUARE_ACCESS_TOKEN,
+                     ENVIRONMENTS[settings.SQUARE_ENVIRONMENT])
     return SquareGateway(client, location_id=settings.SQUARE_LOCATION_ID,
                          category_id=settings.SQUARE_TICKET_CATEGORY_ID)

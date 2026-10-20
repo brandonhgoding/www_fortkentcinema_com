@@ -6,6 +6,7 @@ from unittest import mock
 import httpx
 import pydantic
 
+import boxoffice.gateway as gateway_module
 from boxoffice.gateway import (
     CheckoutLine,
     CheckoutResult,
@@ -23,6 +24,7 @@ from boxoffice.gateway import (
     VersionMismatch,
     _order_data,
     disabled_reason,
+    square_enabled,
     get_gateway,
     payment_link_body,
 )
@@ -786,9 +788,40 @@ class PaymentCallTests(SimpleTestCase):
 
 
 class GetGatewayTests(SimpleTestCase):
+    def setUp(self) -> None:
+        gateway_module.reset_client_cache()
+
     @override_settings(SQUARE_ACCESS_TOKEN="")
     def test_blank_token_returns_none(self) -> None:
         self.assertIsNone(get_gateway())
+
+    def test_square_enabled_only_when_fully_configured(self) -> None:
+        # The one answer to "is Square on?", for every page and panel.
+        with override_settings(SQUARE_ACCESS_TOKEN="tok", SQUARE_LOCATION_ID="L",
+                               SQUARE_TICKET_CATEGORY_ID="C"):
+            self.assertTrue(square_enabled())
+        with override_settings(SQUARE_ACCESS_TOKEN="", SQUARE_LOCATION_ID="L",
+                               SQUARE_TICKET_CATEGORY_ID="C"):
+            self.assertFalse(square_enabled())
+        with override_settings(SQUARE_ACCESS_TOKEN="tok", SQUARE_LOCATION_ID="",
+                               SQUARE_TICKET_CATEGORY_ID="C"):
+            self.assertFalse(square_enabled())
+
+    @override_settings(SQUARE_ACCESS_TOKEN="tok", SQUARE_LOCATION_ID="L",
+                       SQUARE_TICKET_CATEGORY_ID="C", SQUARE_ENVIRONMENT="sandbox")
+    def test_client_is_built_once_and_shared(self) -> None:
+        # get_gateway() runs on page views; the client holds the connection
+        # pool, so one per process, not one per call.
+        with mock.patch("boxoffice.gateway.Square") as Square:
+            first, second = get_gateway(), get_gateway()
+        Square.assert_called_once()
+        self.assertIs(first.client, second.client)
+        with override_settings(SQUARE_ACCESS_TOKEN="other"), \
+                mock.patch("boxoffice.gateway.Square") as Square:
+            get_gateway()
+        Square.assert_called_once_with(token="other",
+                                       environment=SquareEnvironment.SANDBOX,
+                                       timeout=10)
 
     @override_settings(SQUARE_ACCESS_TOKEN="tok", SQUARE_LOCATION_ID="L",
                        SQUARE_TICKET_CATEGORY_ID="C", SQUARE_ENVIRONMENT="sandbox")
