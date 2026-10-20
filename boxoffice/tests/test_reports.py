@@ -229,6 +229,12 @@ class PullStatusTests(TestCase):
         SalesPull.objects.create(business_date=day, status=SalesPull.Status.OK)
         self.assertEqual(pull_status(day), "OK")
 
+    def test_ok_pull_that_missed_online_orders_is_incomplete(self) -> None:
+        day = datetime.date(2026, 10, 8)
+        SalesPull.objects.create(business_date=day, status=SalesPull.Status.OK,
+                                 missing_online=2)
+        self.assertEqual(pull_status(day), "INCOMPLETE")
+
     def test_pull_that_never_finished_is_failed(self) -> None:
         day = datetime.date(2026, 10, 8)
         SalesPull.objects.create(business_date=day, status=SalesPull.Status.FAILED,

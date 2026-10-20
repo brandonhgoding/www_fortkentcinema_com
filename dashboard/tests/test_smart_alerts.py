@@ -143,6 +143,14 @@ class VoicemailAlertTests(TestCase):
         self.assertEqual(self._square_ids(square_pull_status=None), [])
         self.assertEqual(self._square_ids(square_pull_status="OK"), [])
 
+    def test_incomplete_pull_names_the_online_orders(self) -> None:
+        incomplete = build_smart_alerts(
+            [], 1, self.today, square_pull_status="INCOMPLETE")
+        self.assertEqual(
+            [(a["id"], a["type"], a["message"]) for a in incomplete],
+            [("square-pull-incomplete", "warning",
+              "Yesterday's Square sales pull missed paid online ticket orders")])
+
     def test_square_sync_failed_message_pluralises(self) -> None:
         one = build_smart_alerts([], 1, self.today, square_sync_failures=1)
         self.assertEqual(one[0]["message"], "1 run failed to sync to Square")

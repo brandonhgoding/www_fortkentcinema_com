@@ -1,14 +1,16 @@
+import dataclasses
 import datetime
 from unittest import mock
 from zoneinfo import ZoneInfo
 
-from boxoffice.gateway import GatewayError, OrderData, OrderLine
+from boxoffice.gateway import GatewayError, OrderData, OrderLine, Tender
 from boxoffice.models import SaleLine, SalesPull, SquareVariation
 from boxoffice.pull import business_date, day_bounds, pull_day
 from boxoffice.sync import live_item, push
 from boxoffice.tests.fakes import FakeGateway
 from cinema.models import Engagement, EngagementFilm, Film, Screen, Showtime
 from django.test import SimpleTestCase, TestCase, override_settings
+from tickets.spec import checkout_spec
 from tickets.tests.factories import make_order
 
 LOGGER = "boxoffice.pull"
@@ -269,3 +271,84 @@ class PullDayTests(TestCase):
         self.assertEqual(self.gw.calls[0][0], "search_orders")
         self.assertEqual(self.gw.calls[0][1]["start"], at_eastern(2026, 10, 9, 0, 0))
         self.assertEqual(self.gw.calls[0][1]["end"], at_eastern(2026, 10, 10, 0, 0))
+
+    # Square leaves a paid payment-link order OPEN (sandbox, 2026-10-19), so the
+    # COMPLETED search never sees it; the pull asks for open orders too and
+    # dates such a sale by when the buyer paid.
+
+    def link_order(self, quantity: int = 2):
+        """A website order with its payment link made; (ticket order, Square id)."""
+        showtime = Showtime.objects.create(
+            engagement=self.eng, screen=self.eng.screen,
+            starts_at=at_eastern(2026, 10, 11, 19, 0))
+        ticket_order = make_order(showtime, lines={"adult": quantity})
+        link = self.gw.create_payment_link(
+            checkout_spec(ticket_order, {"adult": self.adult_id}))
+        ticket_order.square_order_id = link.order_id
+        ticket_order.save(update_fields=["square_order_id"])
+        return ticket_order, link.order_id
+
+    def test_paid_payment_link_order_is_stored_on_its_payment_day(self) -> None:
+        ticket_order, order_id = self.link_order(quantity=2)
+        self.gw.pay(order_id, paid_at=at_eastern(2026, 10, 9, 12, 0))
+        pull = pull_day(DAY, self.gw)
+        self.assertEqual((pull.status, pull.orders, pull.lines), ("OK", 1, 1))
+        stored = SaleLine.objects.get(order_id=order_id)
+        self.assertEqual(stored.business_date, DAY)
+        self.assertIsNone(stored.closed_at)
+        self.assertEqual(stored.showtime, ticket_order.showtime)
+        self.assertEqual((stored.engagement_id, stored.quantity, stored.gross_cents),
+                         (self.eng.pk, 2, 1600))
+        self.eng.refresh_from_db()
+        self.assertEqual(self.eng.admissions, 2)
+
+    def test_unpaid_payment_link_order_is_not_stored(self) -> None:
+        self.link_order()
+        pull = pull_day(DAY, self.gw)
+        self.assertEqual((pull.status, pull.orders, pull.lines), ("OK", 0, 0))
+        self.assertFalse(SaleLine.objects.exists())
+
+    def test_open_order_without_our_reference_is_not_stored(self) -> None:
+        # A register tab left open with a part payment is not a sale yet.
+        self.gw.orders = [OrderData(
+            "TAB", None, (line("L1", "Dune", "Adult", self.adult_id),),
+            paid_at=at_eastern(2026, 10, 9, 20, 0),
+            tenders=(Tender("P1", "CAPTURED"),), reference_id="")]
+        pull = pull_day(DAY, self.gw)
+        self.assertEqual((pull.status, pull.orders, pull.lines), ("OK", 0, 0))
+        self.assertFalse(SaleLine.objects.exists())
+
+    def test_completed_payment_link_order_keeps_its_payment_day(self) -> None:
+        # Staff marking the digital fulfillment done closes the order days
+        # later; the COMPLETED search then returns it, and it must not move.
+        _, order_id = self.link_order()
+        self.gw.pay(order_id, paid_at=at_eastern(2026, 10, 9, 12, 0))
+        pull_day(DAY, self.gw)
+        closed_at = at_eastern(2026, 10, 12, 9, 0)
+        self.gw.orders = [dataclasses.replace(o, closed_at=closed_at)
+                          if o.order_id == order_id else o for o in self.gw.orders]
+        later = pull_day(datetime.date(2026, 10, 12), self.gw)
+        self.assertEqual((later.status, later.orders), ("OK", 1))
+        stored = SaleLine.objects.get()
+        self.assertEqual((stored.business_date, stored.closed_at), (DAY, closed_at))
+
+    def test_pull_counts_paid_online_orders_missing_from_the_ledger(self) -> None:
+        # The guard for the day Square stops returning our paid orders: a
+        # website order paid on the day with no ledger line after the pull.
+        showtime = Showtime.objects.create(
+            engagement=self.eng, screen=self.eng.screen,
+            starts_at=at_eastern(2026, 10, 11, 19, 0))
+        make_order(showtime, status="PAID", square_order_id="SQ-GONE",
+                   paid_at=at_eastern(2026, 10, 9, 12, 0))
+        make_order(showtime, status="PAID", square_order_id="SQ-OTHER-DAY",
+                   paid_at=at_eastern(2026, 10, 10, 12, 0))
+        with self.assertLogs(LOGGER, "WARNING") as logs:
+            pull = pull_day(DAY, self.gw)
+        self.assertEqual((pull.status, pull.missing_online), ("OK", 1))
+        self.assertIn("SQ-GONE", logs.output[0])
+
+    def test_stored_online_orders_are_not_missing(self) -> None:
+        _, order_id = self.link_order()
+        self.gw.pay(order_id, paid_at=at_eastern(2026, 10, 9, 12, 0))
+        pull = pull_day(DAY, self.gw)
+        self.assertEqual((pull.status, pull.missing_online), ("OK", 0))

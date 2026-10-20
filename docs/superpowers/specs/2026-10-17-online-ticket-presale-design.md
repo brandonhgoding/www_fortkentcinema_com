@@ -644,3 +644,12 @@ Flake8 gate: no new findings on changed lines (repo baseline is dirty).
   "Buy online from the showtimes above, or pay at the box office.", with the
   street as its own item, and Rollout gained the nightly
   `expire_ticket_orders` step.
+- (2026-10-19, sandbox Part B) A paid payment-link order does **not** reach
+  COMPLETED: Square adds a DIGITAL fulfillment (PROPOSED) and the order stays
+  OPEN with its tender CAPTURED, so `search_orders` never returns it.
+  Fixed 2026-10-20: `boxoffice/pull.py` also asks the gateway for OPEN orders
+  updated in the day (`search_open_orders`; Square has no reference filter)
+  and keeps the ones whose `reference_id` starts with `FK-` and that carry a
+  tender. Such a line is dated by its payment time (`OrderData.paid_at`),
+  so it does not move when staff close the order later, and its `closed_at`
+  is null (`SaleLine.closed_at` became nullable, boxoffice 0009).

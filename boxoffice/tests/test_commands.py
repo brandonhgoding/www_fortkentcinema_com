@@ -2,7 +2,7 @@ import datetime
 from io import StringIO
 from unittest import mock
 
-from boxoffice.gateway import GatewayError, RemoteItem
+from boxoffice.gateway import GatewayError, OrderData, RemoteItem, Tender
 from boxoffice.models import EmailRecipient, EmailReport, SaleLine, SalesPull
 from boxoffice.tests.fakes import FakeGateway
 from boxoffice.tests.test_pull import at_eastern, line, order
@@ -135,6 +135,14 @@ class PullSquareSalesCommandTests(TestCase):
         self.assertEqual(SaleLine.objects.count(), 0)
         self.assertEqual(SalesPull.objects.count(), 0)
         self.assertEqual(mail.outbox, [])
+
+    def test_dry_run_counts_paid_payment_link_orders(self) -> None:
+        self.gw.orders.append(OrderData(
+            "SQ-1", None, (line("L1", "Dune", "Adult", "VADULT", 2, 1600),),
+            paid_at=at_eastern(2026, 10, 9, 12, 0),
+            tenders=(Tender("P1", "CAPTURED"),), reference_id="FK-ABCDE"))
+        out = self.run_command("--date", "2026-10-09", "--days", "1", "--dry-run")
+        self.assertIn("Would store 3 lines from 2 orders for 2026-10-09", out)
 
     def test_dry_run_gateway_error_exits_nonzero(self) -> None:
         out = StringIO()

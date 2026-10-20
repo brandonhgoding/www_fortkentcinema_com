@@ -24,6 +24,10 @@ class ItemSpec:
 # prices are rung as Square discounts, so they stay out of this list.
 SQUARE_TIERS = ("adult", "senior", "child")
 
+# Every website order number, and so every payment-link order's reference_id
+# in Square, starts with this; the sales pull tells our orders apart by it.
+ONLINE_REFERENCE_PREFIX = "FK-"
+
 
 def priced_tiers() -> list[tuple[str, int]]:
     return [(tier, TICKET_PRICES[tier]) for tier in SQUARE_TIERS]

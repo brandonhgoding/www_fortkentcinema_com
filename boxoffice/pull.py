@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 
 from boxoffice.gateway import GatewayError, OrderData, OrderLine, SquareGateway
 from boxoffice.models import SaleLine, SalesPull, SquareVariation
+from boxoffice.spec import ONLINE_REFERENCE_PREFIX
 from cinema.models import Engagement
 from django.conf import settings
 from django.db import transaction
@@ -26,18 +27,38 @@ def day_bounds(day: datetime.date) -> tuple[datetime.datetime, datetime.datetime
     return start, end
 
 
-def business_date(closed_at: datetime.datetime) -> datetime.date:
-    return closed_at.astimezone(EASTERN).date()
+def business_date(when: datetime.datetime) -> datetime.date:
+    """The Eastern calendar day a sale (or anything else) happened on."""
+    return when.astimezone(EASTERN).date()
+
+
+def sold_at(order: OrderData) -> datetime.datetime | None:
+    """When the sale happened: the payment, else the register closing the order.
+
+    A register order is paid and closed in the same moment. A website order
+    is paid when the buyer checks out and stays OPEN in Square, so only its
+    payment time dates it, including once staff close it days later.
+    """
+    return order.paid_at or order.closed_at
+
+
+def day_orders(day: datetime.date, gateway: SquareGateway) -> list[OrderData]:
+    """Every order sold on ``day``: the register's closed orders and the
+    website's paid payment-link orders, which Square leaves OPEN."""
+    start, end = day_bounds(day)
+    orders = _datable_orders(gateway.search_orders(start, end))
+    orders += _paid_online_orders(gateway.search_open_orders(start, end))
+    return orders
 
 
 def pull_day(day: datetime.date, gateway: SquareGateway) -> SalesPull:
-    """Store every order line closed on ``day``; the returned row says how it went."""
+    """Store every order line sold on ``day``; the returned row says how it went."""
     # Created FAILED so a pull killed mid-run still raises the dashboard alert.
     pull = SalesPull.objects.create(business_date=day,
                                     status=SalesPull.Status.FAILED,
                                     error="Pull did not finish")
     try:
-        orders = _closed_orders(gateway.search_orders(*day_bounds(day)))
+        orders = day_orders(day, gateway)
         lines = [(o, ln) for o in orders for ln in o.lines]
         variations = _resolve_variations(ln.catalog_object_id for _, ln in lines)
         showtimes = _resolve_showtimes(o.order_id for o in orders)
@@ -56,13 +77,15 @@ def pull_day(day: datetime.date, gateway: SquareGateway) -> SalesPull:
                 if stored.engagement_id is not None:
                     touched.add(stored.engagement_id)
             recompute_admissions(touched)
+        missing = _missing_online_orders(day)
     except GatewayError as exc:
         logger.warning("Sales pull for %s failed: %s", day, exc)
         return _finish(pull, SalesPull.Status.FAILED, error=str(exc))
     except Exception as exc:
         logger.exception("Sales pull for %s failed unexpectedly", day)
         return _finish(pull, SalesPull.Status.FAILED, error=repr(exc))
-    return _finish(pull, SalesPull.Status.OK, orders=len(orders), lines=len(lines))
+    return _finish(pull, SalesPull.Status.OK, orders=len(orders), lines=len(lines),
+                   missing_online=len(missing))
 
 
 def recompute_admissions(engagement_ids: Iterable[int]) -> None:
@@ -73,14 +96,26 @@ def recompute_admissions(engagement_ids: Iterable[int]) -> None:
         Engagement.objects.filter(pk=engagement_id).update(admissions=total)
 
 
-def _closed_orders(orders: list[OrderData]) -> list[OrderData]:
+def _datable_orders(orders: list[OrderData]) -> list[OrderData]:
     kept = []
     for o in orders:
-        if o.closed_at is None:
-            logger.warning("Skipping order %s with no closed_at", o.order_id)
+        if sold_at(o) is None:
+            logger.warning("Skipping order %s with no closed_at or payment",
+                           o.order_id)
         else:
             kept.append(o)
     return kept
+
+
+def _paid_online_orders(orders: list[OrderData]) -> list[OrderData]:
+    """The website's orders that have been paid.
+
+    The open search also returns links nobody paid and the register's open
+    tabs; a part-paid tab is not a sale yet.
+    """
+    return [o for o in orders
+            if o.reference_id.startswith(ONLINE_REFERENCE_PREFIX)
+            and o.tenders and o.paid_at is not None]
 
 
 def _resolve_variations(ids: Iterable[str]) -> dict[str, SquareVariation]:
@@ -104,6 +139,26 @@ def _resolve_categories(gateway: SquareGateway,
     if not unknown_ids:
         return {}
     return gateway.lookup_categories(sorted(unknown_ids))
+
+
+def _missing_online_orders(day: datetime.date) -> list[str]:
+    """Square ids of website orders paid on ``day`` with no line in the ledger.
+
+    Square's own records are the ledger's source; this only says when they
+    disagree with ours, so a change in what the open-order search returns
+    shows up on the dashboard instead of as quietly short reports.
+    """
+    start, end = day_bounds(day)
+    paid = (TicketOrder.objects.filter(paid_at__gte=start, paid_at__lt=end)
+            .exclude(square_order_id="")
+            .values_list("square_order_id", flat=True))
+    stored = set(SaleLine.objects.filter(order_id__in=paid)
+                 .values_list("order_id", flat=True))
+    missing = sorted(set(paid) - stored)
+    if missing:
+        logger.warning("Paid online orders missing from the ledger for %s: %s",
+                       day, ", ".join(missing))
+    return missing
 
 
 def _existing_rows(lines: list[tuple[OrderData, OrderLine]]
@@ -140,7 +195,8 @@ def _store_line(o: OrderData, ln: OrderLine, variations: dict[str, SquareVariati
     stored, _ = SaleLine.objects.update_or_create(
         order_id=o.order_id, line_uid=ln.uid,
         defaults={
-            "business_date": business_date(o.closed_at),
+            # day_orders keeps only orders with a sale time.
+            "business_date": business_date(sold_at(o)),  # type: ignore[arg-type]
             "closed_at": o.closed_at,
             "item_name": ln.name,
             "variation_name": ln.variation_name,
@@ -155,10 +211,11 @@ def _store_line(o: OrderData, ln: OrderLine, variations: dict[str, SquareVariati
 
 
 def _finish(pull: SalesPull, status: str, *, orders: int = 0, lines: int = 0,
-            error: str = "") -> SalesPull:
+            missing_online: int = 0, error: str = "") -> SalesPull:
     pull.status = status
     pull.orders = orders
     pull.lines = lines
+    pull.missing_online = missing_online
     pull.error = error
     pull.finished_at = timezone.now()
     pull.save()

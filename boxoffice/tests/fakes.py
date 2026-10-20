@@ -90,6 +90,15 @@ class FakeGateway:
         return [o for o in self.orders
                 if o.closed_at is not None and start <= o.closed_at < end]
 
+    def search_open_orders(self, start: datetime.datetime,
+                           end: datetime.datetime) -> list[OrderData]:
+        self._record("search_open_orders", start=start, end=end)
+        # Like Square's updated_at filter on OPEN orders: an unpaid link order
+        # was touched when made (always, here), a paid one when it was paid.
+        return [o for o in self.orders
+                if o.closed_at is None
+                and (o.paid_at is None or start <= o.paid_at < end)]
+
     def retrieve_order(self, order_id: str) -> OrderData:
         self._record("retrieve_order", order_id=order_id)
         for order in self.orders:
@@ -109,7 +118,8 @@ class FakeGateway:
                       gross_cents=line.unit_cents * line.quantity)
             for i, line in enumerate(spec.lines)
         )
-        self.orders.append(OrderData(order_id=order_id, closed_at=None, lines=lines))
+        self.orders.append(OrderData(order_id=order_id, closed_at=None, lines=lines,
+                                     reference_id=spec.reference))
         return CheckoutResult(order_id=order_id, url=f"https://square.link/u/{n}")
 
     def refund_payment(self, *, payment_id: str, amount_cents: int,
@@ -141,13 +151,14 @@ class FakeGateway:
             "email": email, "phone": phone}
         return customer_id
 
-    def pay(self, order_id: str, payment_id: str = "P1") -> None:
+    def pay(self, order_id: str, payment_id: str = "P1",
+            paid_at: datetime.datetime | None = None) -> None:
         """Test helper: the buyer completes the payment link's checkout."""
         for i, order in enumerate(self.orders):
             if order.order_id == order_id:
                 self.orders[i] = dataclasses.replace(
                     order, tenders=(Tender(payment_id, "CAPTURED"),),
-                    paid_at=datetime.datetime.now(datetime.timezone.utc))
+                    paid_at=paid_at or datetime.datetime.now(datetime.timezone.utc))
                 return
         raise GatewayError(f"Unknown order {order_id}")
 

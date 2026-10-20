@@ -87,6 +87,12 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
             "id": "square-pull-missing", "type": "warning",
             "message": "No Square sales pull ran yesterday",
         })
+    elif square_pull_status == "INCOMPLETE":
+        alerts.append({
+            "id": "square-pull-incomplete", "type": "warning",
+            "message": "Yesterday's Square sales pull missed paid online "
+                       "ticket orders",
+        })
 
     if square_sync_failures > 0:
         unit = "run" if square_sync_failures == 1 else "runs"

@@ -9,8 +9,10 @@ class SaleLine(models.Model):
 
     order_id = models.CharField(max_length=64)
     line_uid = models.CharField(max_length=64)
+    # The Eastern day of the sale: when the register closed the order, or when
+    # the buyer paid a website order (those stay OPEN in Square, never closed).
     business_date = models.DateField(db_index=True)
-    closed_at = models.DateTimeField()
+    closed_at = models.DateTimeField(null=True, blank=True)
     item_name = models.CharField(max_length=200)
     variation_name = models.CharField(max_length=80, blank=True)
     catalog_object_id = models.CharField(max_length=64, blank=True, db_index=True)

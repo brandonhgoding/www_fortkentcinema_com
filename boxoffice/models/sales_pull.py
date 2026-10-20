@@ -18,6 +18,9 @@ class SalesPull(models.Model):
     owner_email_sent = models.BooleanField(default=False)
     report_email_sent = models.BooleanField(default=False)
     error = models.TextField(blank=True)
+    # Website orders paid on the day that the pull did not store: the guard
+    # for Square no longer returning them. Zero on a complete pull.
+    missing_online = models.PositiveIntegerField(default=0)
 
     class Meta:
         ordering = ["-business_date", "-started_at"]

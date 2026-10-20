@@ -2,7 +2,7 @@ import datetime
 import secrets
 from decimal import Decimal
 
-from boxoffice.spec import SQUARE_TIERS
+from boxoffice.spec import ONLINE_REFERENCE_PREFIX, SQUARE_TIERS
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -14,7 +14,8 @@ NUMBER_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
 
 def new_number() -> str:
-    return "FK-" + "".join(secrets.choice(NUMBER_ALPHABET) for _ in range(5))
+    return ONLINE_REFERENCE_PREFIX + "".join(
+        secrets.choice(NUMBER_ALPHABET) for _ in range(5))
 
 
 def new_token() -> str:

@@ -78,6 +78,7 @@ class OrderData:
     # reach COMPLETED (closed_at) only when staff mark the shipment done.
     paid_at: datetime.datetime | None = None
     tenders: tuple[Tender, ...] = ()
+    reference_id: str = ""  # the website's order number on payment-link orders
 
 
 @dataclass(frozen=True)
@@ -201,6 +202,7 @@ def _order_data(order: Any) -> OrderData:
         recipient=_recipient(order),
         paid_at=_paid_at(order),
         tenders=tuple(_tender(t) for t in (order.tenders or [])),
+        reference_id=order.reference_id or "",
     )
 
 
@@ -303,13 +305,30 @@ class SquareGateway:
 
     def search_orders(self, start: datetime.datetime,
                       end: datetime.datetime) -> list[OrderData]:
+        """Orders closed in [start, end): the register's completed sales."""
+        return self._search("COMPLETED", "closed_at", start, end)
+
+    def search_open_orders(self, start: datetime.datetime,
+                           end: datetime.datetime) -> list[OrderData]:
+        """Orders still OPEN that were touched in [start, end).
+
+        A paid payment-link order stays OPEN (Square adds a digital
+        fulfillment nobody completes), so it never has a closed_at. Square
+        cannot filter by reference, so this returns every open order updated
+        in the window, paid or not; the caller keeps the ones it wants.
+        """
+        return self._search("OPEN", "updated_at", start, end)
+
+    def _search(self, state: str, stamp: str, start: datetime.datetime,
+                end: datetime.datetime) -> list[OrderData]:
+        # Square requires the sort field to match the date filter's field.
         query = {
             "filter": {
-                "state_filter": {"states": ["COMPLETED"]},
-                "date_time_filter": {"closed_at": {
+                "state_filter": {"states": [state]},
+                "date_time_filter": {stamp: {
                     "start_at": start.isoformat(), "end_at": end.isoformat()}},
             },
-            "sort": {"sort_field": "CLOSED_AT", "sort_order": "ASC"},
+            "sort": {"sort_field": stamp.upper(), "sort_order": "ASC"},
         }
         orders: list[OrderData] = []
         page: dict[str, Any] = {}

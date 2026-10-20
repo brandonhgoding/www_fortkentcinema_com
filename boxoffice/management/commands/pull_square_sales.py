@@ -3,7 +3,7 @@ import logging
 
 from boxoffice.gateway import GatewayError, disabled_reason, get_gateway
 from boxoffice.models import SalesPull
-from boxoffice.pull import EASTERN, day_bounds, pull_day
+from boxoffice.pull import EASTERN, day_orders, pull_day
 from boxoffice.reports import owner_summary, render_report, send_reports, ticket_report
 from django.core.management.base import BaseCommand, CommandError
 
@@ -41,7 +41,7 @@ class Command(BaseCommand):
     def dry_run(self, window, target, gateway) -> None:
         for day in window:
             try:
-                orders = gateway.search_orders(*day_bounds(day))
+                orders = day_orders(day, gateway)
             except GatewayError as exc:
                 self.stdout.write(f"ERROR: {exc}")
                 raise CommandError(f"Dry run failed for {day}") from exc

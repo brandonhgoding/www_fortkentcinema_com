@@ -78,11 +78,12 @@ def _line(uid: str = "L1", catalog_object_id: str | None = "V0",
 def _order(order_id: str, closed_at: str, lines: list[mock.Mock],
            fulfillments: list[mock.Mock] | None = None,
            tenders: list[mock.Mock] | None = None,
-           created_at: str | None = None) -> mock.Mock:
+           created_at: str | None = None,
+           reference_id: str | None = None) -> mock.Mock:
     # A Mock invents missing attributes, so "absent" must be an explicit None.
     return mock.Mock(id=order_id, closed_at=closed_at, line_items=lines,
                      fulfillments=fulfillments, tenders=tenders,
-                     created_at=created_at)
+                     created_at=created_at, reference_id=reference_id)
 
 
 def _shipment(display_name: str | None = "Ann Lee",
@@ -376,6 +377,32 @@ class SearchOrdersTests(SimpleTestCase):
                              catalog_object_id="V0", quantity=1, gross_cents=800),),
         ))
         self.assertIsNotNone(orders[1].closed_at.tzinfo)
+
+    def test_search_open_orders_filters_open_by_updated_at(self) -> None:
+        # Square cannot filter orders by reference, so the pull asks for every
+        # OPEN order touched in the window and keeps the paid website ones.
+        client = mock.Mock()
+        client.orders.search.return_value = mock.Mock(
+            orders=[_order("O1", None, [_line()], reference_id="FK-ABCDE")],
+            cursor=None)
+        orders = SquareGateway(client, "LOC", "CAT").search_open_orders(START, END)
+        query = client.orders.search.call_args.kwargs["query"]
+        self.assertEqual(query["filter"]["state_filter"], {"states": ["OPEN"]})
+        self.assertEqual(query["filter"]["date_time_filter"], {"updated_at": {
+            "start_at": START.isoformat(), "end_at": END.isoformat()}})
+        self.assertEqual(query["sort"],
+                         {"sort_field": "UPDATED_AT", "sort_order": "ASC"})
+        self.assertEqual(client.orders.search.call_args.kwargs["location_ids"],
+                         ["LOC"])
+        self.assertEqual([(o.order_id, o.closed_at, o.reference_id) for o in orders],
+                         [("O1", None, "FK-ABCDE")])
+
+    def test_order_without_reference_has_blank_reference_id(self) -> None:
+        client = mock.Mock()
+        client.orders.search.return_value = mock.Mock(
+            orders=[_order("O1", "2026-10-04T18:00:00Z", [_line()])], cursor=None)
+        [o] = SquareGateway(client, "LOC", "CAT").search_orders(START, END)
+        self.assertEqual(o.reference_id, "")
 
     def test_empty_page_returns_no_orders(self) -> None:
         client = mock.Mock()
@@ -757,7 +784,7 @@ class GetGatewayTests(SimpleTestCase):
 class FakeGatewayTests(SimpleTestCase):
     def test_public_methods_match_the_real_gateway(self) -> None:
         public = [n for n in vars(SquareGateway) if not n.startswith("_")]
-        self.assertEqual(len(public), 12)
+        self.assertEqual(len(public), 13)
         for name in public:
             self.assertEqual(inspect.signature(getattr(FakeGateway, name)),
                              inspect.signature(getattr(SquareGateway, name)), name)
@@ -816,10 +843,11 @@ class FakeGatewayTests(SimpleTestCase):
             lambda: gw.delete_item("x"), lambda: gw.retrieve_item("x"),
             lambda: gw.search_orders(START, END), lambda: gw.list_ticket_items(),
             lambda: gw.lookup_categories(["v"]),
+            lambda: gw.search_open_orders(START, END),
         ]:
             with self.assertRaisesMessage(GatewayError, "down"):
                 call()
-        self.assertEqual(len(gw.calls), 6)
+        self.assertEqual(len(gw.calls), 7)
         gw.fail_with = None
         self.assertEqual(gw.upsert_item(SPEC_FOR_7, item_id=None, version=None,
                                         variation_ids_by_tier={}).item_id, "item-1")
@@ -856,8 +884,24 @@ class FakeGatewayTests(SimpleTestCase):
         self.assertEqual([(li.catalog_object_id, li.quantity, li.gross_cents)
                           for li in order.lines],
                          [("var-adult", 2, 1200), ("var-child", 1, 600)])
+        self.assertEqual(order.reference_id, "FK-ABCDE")
         self.assertEqual(gw.create_payment_link(EVENING_SPEC).order_id, "SQ-2")
         self.assertEqual(gw.search_orders(START, END), [])  # open orders never match
+
+    def test_fake_search_open_orders_returns_open_orders_touched_in_window(self):
+        # Like Square's updated_at filter: an unpaid link order is "touched" when
+        # made, a paid one when paid; a closed order is no longer open.
+        gw = FakeGateway()
+        gw.create_payment_link(MATINEE_SPEC)  # SQ-1, never paid
+        gw.create_payment_link(EVENING_SPEC)  # SQ-2
+        gw.create_payment_link(EVENING_SPEC)  # SQ-3
+        gw.pay("SQ-2", paid_at=START)
+        gw.pay("SQ-3", paid_at=END)
+        gw.orders.append(OrderData("closed", START, ()))
+        self.assertEqual([o.order_id for o in gw.search_open_orders(START, END)],
+                         ["SQ-1", "SQ-2"])
+        self.assertEqual(gw.calls[-1],
+                         ("search_open_orders", {"start": START, "end": END}))
 
     def test_fake_pay_marks_tender_captured(self) -> None:
         gw = FakeGateway()
