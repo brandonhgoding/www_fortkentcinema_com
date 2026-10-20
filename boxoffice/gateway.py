@@ -110,6 +110,14 @@ class CheckoutResult:
 
 
 def _call(fn: Callable[..., T], *args: Any, **kwargs: Any) -> T:
+    """Run ``fn``, which calls Square and reads the reply, as one gateway step.
+
+    Every way that can go wrong is a GatewayError, so callers have one thing
+    to catch: the webhook answers 503, the pull marks the day FAILED, the
+    ticket page shows a message. The reply is read inside too, because a
+    shape this module does not expect must not escape as a bare
+    AttributeError and turn into a 500.
+    """
     try:
         return fn(*args, **kwargs)
     except ApiError as exc:
@@ -122,6 +130,9 @@ def _call(fn: Callable[..., T], *args: Any, **kwargs: Any) -> T:
     except (httpx.HTTPError, pydantic.ValidationError) as exc:
         # The SDK does not wrap transport failures or unparseable responses.
         raise GatewayError(f"{type(exc).__name__}: {exc}") from exc
+    except (AttributeError, KeyError, TypeError, ValueError) as exc:
+        raise GatewayError(
+            f"Unexpected response: {type(exc).__name__}: {exc}") from exc
 
 
 def _temp_item_id(spec: ItemSpec) -> str:
@@ -278,20 +289,24 @@ class SquareGateway:
     def upsert_item(self, spec: ItemSpec, *, item_id: str | None, version: int | None,
                     variation_ids_by_tier: dict[str, str]) -> UpsertResult:
         item_obj = self._item_object(spec, item_id, version, variation_ids_by_tier)
-        response = _call(self.client.catalog.batch_upsert,
-                         idempotency_key=str(uuid4()),
-                         batches=[{"objects": [item_obj]}])
-        minted = {m.client_object_id: m.object_id for m in (response.id_mappings or [])}
-        ids_by_tier = {
-            v.tier: variation_ids_by_tier.get(v.tier)
-            or minted[_temp_variation_id(spec, v.tier)]
-            for v in spec.variations
-        }
-        return UpsertResult(
-            item_id=item_id or minted[_temp_item_id(spec)],
-            version=response.objects[0].version,
-            variation_ids_by_tier=ids_by_tier,
-        )
+
+        def upsert() -> UpsertResult:
+            response = self.client.catalog.batch_upsert(
+                idempotency_key=str(uuid4()), batches=[{"objects": [item_obj]}])
+            minted = {m.client_object_id: m.object_id
+                      for m in (response.id_mappings or [])}
+            ids_by_tier = {
+                v.tier: variation_ids_by_tier.get(v.tier)
+                or minted[_temp_variation_id(spec, v.tier)]
+                for v in spec.variations
+            }
+            return UpsertResult(
+                item_id=item_id or minted[_temp_item_id(spec)],
+                version=response.objects[0].version,
+                variation_ids_by_tier=ids_by_tier,
+            )
+
+        return _call(upsert)
 
     def delete_item(self, item_id: str) -> None:
         # batch_delete "succeeds even if only a portion of the targeted IDs can be
@@ -299,9 +314,9 @@ class SquareGateway:
         _call(self.client.catalog.batch_delete, object_ids=[item_id])
 
     def retrieve_item(self, item_id: str) -> RemoteItem:
-        response = _call(self.client.catalog.object.get, item_id,
-                         include_related_objects=True)
-        return _remote_item(response.object)
+        return _call(lambda: _remote_item(
+            self.client.catalog.object.get(item_id, include_related_objects=True)
+            .object))
 
     def search_orders(self, start: datetime.datetime,
                       end: datetime.datetime) -> list[OrderData]:
@@ -331,32 +346,39 @@ class SquareGateway:
             "sort": {"sort_field": stamp.upper(), "sort_order": "ASC"},
         }
         orders: list[OrderData] = []
-        page: dict[str, Any] = {}
+        cursor: str | None = None
         while True:
+            page = {"cursor": cursor} if cursor else {}
             response = _call(self.client.orders.search,
                              location_ids=[self.location_id], query=query, **page)
-            orders.extend(_order_data(o) for o in (response.orders or []))
-            if not response.cursor:
+            orders.extend(_call(
+                lambda: [_order_data(o) for o in (response.orders or [])]))
+            cursor = _call(lambda: response.cursor)
+            if not cursor:
                 return orders
-            page = {"cursor": response.cursor}
 
     def retrieve_order(self, order_id: str) -> OrderData:
-        response = _call(self.client.orders.get, order_id)
-        return _order_data(response.order)
+        return _call(lambda: _order_data(self.client.orders.get(order_id).order))
 
     def create_payment_link(self, spec: CheckoutSpec) -> CheckoutResult:
-        response = _call(self.client.checkout.payment_links.create,
-                         **payment_link_body(spec, self.location_id))
-        link = response.payment_link
-        return CheckoutResult(order_id=link.order_id, url=link.url)
+        # Built first: a bad spec is a programming error, not a gateway one.
+        body = payment_link_body(spec, self.location_id)
+
+        def create() -> CheckoutResult:
+            link = self.client.checkout.payment_links.create(**body).payment_link
+            return CheckoutResult(order_id=link.order_id, url=link.url)
+
+        return _call(create)
 
     def find_customer(self, email: str) -> str | None:
         """The id of the customer whose email is exactly ``email``, if any."""
-        response = _call(self.client.customers.search,
-                         query={"filter": {"email_address": {"exact": email}}},
-                         limit=1)
-        customers = response.customers or []
-        return customers[0].id if customers else None
+        def search() -> str | None:
+            response = self.client.customers.search(
+                query={"filter": {"email_address": {"exact": email}}}, limit=1)
+            customers = response.customers or []
+            return customers[0].id if customers else None
+
+        return _call(search)
 
     def create_customer(self, *, given_name: str, family_name: str, email: str,
                         phone: str, idempotency_key: str) -> str:
@@ -364,22 +386,20 @@ class SquareGateway:
         # Square rejects an empty string for the optional fields; omit them.
         fields = {"given_name": given_name, "family_name": family_name,
                   "email_address": email, "phone_number": phone}
-        response = _call(self.client.customers.create,
-                         idempotency_key=idempotency_key,
-                         **{k: v for k, v in fields.items() if v})
-        return response.customer.id
+        return _call(lambda: self.client.customers.create(
+            idempotency_key=idempotency_key,
+            **{k: v for k, v in fields.items() if v}).customer.id)
 
     def refund_payment(self, *, payment_id: str, amount_cents: int,
                        idempotency_key: str, reason: str) -> str:
-        response = _call(self.client.refunds.refund_payment,
-                         idempotency_key=idempotency_key, payment_id=payment_id,
-                         amount_money=_usd(amount_cents), reason=reason)
-        return response.refund.id
+        return _call(lambda: self.client.refunds.refund_payment(
+            idempotency_key=idempotency_key, payment_id=payment_id,
+            amount_money=_usd(amount_cents), reason=reason).refund.id)
 
     def list_ticket_items(self) -> list[RemoteItem]:
-        objects = _call(lambda: list(self.client.catalog.list(types="ITEM")))
-        return [_remote_item(obj) for obj in objects
-                if self.category_id in _category_ids(obj)]
+        return _call(lambda: [
+            _remote_item(obj) for obj in self.client.catalog.list(types="ITEM")
+            if self.category_id in _category_ids(obj)])
 
     def upload_item_image(self, item_id: str, image: bytes, name: str) -> str:
         """Attach ``image`` to the item as its primary picture; returns the image id.
@@ -387,8 +407,7 @@ class SquareGateway:
         Square cannot fetch from a URL, so the caller downloads the poster and
         hands over the bytes. TMDB posters are JPEGs.
         """
-        response = _call(
-            self.client.catalog.images.create,
+        return _call(lambda: self.client.catalog.images.create(
             request={
                 "idempotency_key": str(uuid4()),
                 "object_id": item_id,
@@ -397,29 +416,34 @@ class SquareGateway:
                           "image_data": {"name": name}},
             },
             image_file=("poster.jpg", image, "image/jpeg"),
-        )
-        return response.image.id
+        ).image.id)
 
     def lookup_categories(self, variation_ids: list[str]) -> dict[str, str]:
         if not variation_ids:
             return {}
-        # Deleted objects too: a hand-made item removed at cutover still sold today.
-        response = _call(self.client.catalog.batch_get, object_ids=variation_ids,
-                         include_related_objects=True, include_deleted_objects=True)
-        item_category = {}
-        for item in response.related_objects or []:
-            cats = _category_ids(item)
-            if cats:
-                item_category[item.id] = cats[0]
-        result = {}
-        for var in response.objects or []:
-            data = getattr(var, "item_variation_data", None)
-            if data is None:
-                continue  # a line's catalog_object_id that is not a variation
-            cat = item_category.get(data.item_id)
-            if cat:
-                result[var.id] = cat
-        return result
+
+        def lookup() -> dict[str, str]:
+            # Deleted objects too: a hand-made item removed at cutover still
+            # sold today.
+            response = self.client.catalog.batch_get(
+                object_ids=variation_ids, include_related_objects=True,
+                include_deleted_objects=True)
+            item_category = {}
+            for item in response.related_objects or []:
+                cats = _category_ids(item)
+                if cats:
+                    item_category[item.id] = cats[0]
+            result = {}
+            for var in response.objects or []:
+                data = getattr(var, "item_variation_data", None)
+                if data is None:
+                    continue  # a line's catalog_object_id that is not a variation
+                cat = item_category.get(data.item_id)
+                if cat:
+                    result[var.id] = cat
+            return result
+
+        return _call(lookup)
 
     def _item_object(self, spec: ItemSpec, item_id: str | None, version: int | None,
                      variation_ids_by_tier: dict[str, str]) -> dict:

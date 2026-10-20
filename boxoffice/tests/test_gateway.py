@@ -345,6 +345,47 @@ class CatalogCallTests(SimpleTestCase):
         client.catalog.batch_get.assert_not_called()
 
 
+class ResponseShapeTests(SimpleTestCase):
+    """A response the SDK parsed but this module cannot read is a GatewayError.
+
+    Callers branch on GatewayError (the webhook answers 503, the pull marks
+    the day FAILED, the ticket page shows a message); a bare AttributeError
+    from a surprising shape would be a 500 instead.
+    """
+
+    def test_search_line_without_total_money_is_gateway_error(self) -> None:
+        line = _line()
+        line.total_money = None
+        client = mock.Mock()
+        client.orders.search.return_value = mock.Mock(
+            orders=[_order("O1", "2026-10-04T18:00:00Z", [line])], cursor=None)
+        with self.assertRaisesMessage(GatewayError, "AttributeError"):
+            SquareGateway(client, "LOC", "CAT").search_orders(START, END)
+
+    def test_retrieved_order_with_bad_timestamp_is_gateway_error(self) -> None:
+        client = mock.Mock()
+        client.orders.get.return_value = mock.Mock(
+            order=_order("O1", "yesterday", [_line()]))
+        with self.assertRaisesMessage(GatewayError, "ValueError"):
+            SquareGateway(client, "LOC", "CAT").retrieve_order("O1")
+
+    def test_upsert_without_id_mappings_is_gateway_error(self) -> None:
+        client = mock.Mock()
+        client.catalog.batch_upsert.return_value = mock.Mock(
+            id_mappings=[], objects=[mock.Mock(version=1)])
+        with self.assertRaisesMessage(GatewayError, "KeyError"):
+            SquareGateway(client, "LOC", "CAT").upsert_item(
+                SPEC_FOR_7, item_id=None, version=None, variation_ids_by_tier={})
+
+    def test_uneven_discount_is_still_a_value_error(self) -> None:
+        # The request body is built before Square is called; its own checks
+        # are programming errors, not gateway failures.
+        bad = dataclasses.replace(
+            MATINEE_SPEC, lines=(CheckoutLine("var-adult", "Adult", 3, 600, 400),))
+        with self.assertRaises(ValueError):
+            SquareGateway(mock.Mock(), "LOC", "CAT").create_payment_link(bad)
+
+
 class SearchOrdersTests(SimpleTestCase):
     def test_filters_completed_by_closed_at_and_pages(self) -> None:
         client = mock.Mock()
