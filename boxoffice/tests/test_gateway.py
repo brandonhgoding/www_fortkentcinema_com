@@ -780,6 +780,19 @@ class GetGatewayTests(SimpleTestCase):
         self.assertEqual(Square.call_args.kwargs["environment"],
                          SquareEnvironment.PRODUCTION)
 
+    @override_settings(SQUARE_ACCESS_TOKEN="tok", SQUARE_LOCATION_ID="L",
+                       SQUARE_TICKET_CATEGORY_ID="C", SQUARE_ENVIRONMENT="Prod")
+    def test_unknown_environment_is_disabled_and_logged(self) -> None:
+        # A misspelt setting must not quietly pick the sandbox: with the
+        # production token every call would be refused while Buy buttons show.
+        with mock.patch("boxoffice.gateway.Square") as Square, \
+                self.assertLogs("boxoffice.gateway", "ERROR") as logs:
+            self.assertIsNone(get_gateway())
+        Square.assert_not_called()
+        self.assertEqual(disabled_reason(),
+                         "SQUARE_ENVIRONMENT is 'Prod', not sandbox or production")
+        self.assertIn("SQUARE_ENVIRONMENT", logs.output[0])
+
 
 class FakeGatewayTests(SimpleTestCase):
     def test_public_methods_match_the_real_gateway(self) -> None:

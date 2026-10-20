@@ -468,21 +468,32 @@ class SquareGateway:
         return obj
 
 
+ENVIRONMENTS = {
+    "sandbox": SquareEnvironment.SANDBOX,
+    "production": SquareEnvironment.PRODUCTION,
+}
+
+
 def disabled_reason() -> str | None:
     """Why the sync is off, or None when every Square setting is present.
 
     A blank token is the deliberate off switch and is not an error. A token
     with a blank location or category ID is a misconfiguration: pushing
     would create items Square rejects, so the sync stays off and says why.
+    So is an environment that is neither name: it must not quietly fall
+    back to the sandbox, where a production token is refused on every call.
     """
     if not settings.SQUARE_ACCESS_TOKEN:
         return "no SQUARE_ACCESS_TOKEN"
     blank = [name for name in ("SQUARE_LOCATION_ID", "SQUARE_TICKET_CATEGORY_ID")
              if not getattr(settings, name)]
-    if not blank:
-        return None
-    verb = "is" if len(blank) == 1 else "are"
-    return f"{' and '.join(blank)} {verb} blank"
+    if blank:
+        verb = "is" if len(blank) == 1 else "are"
+        return f"{' and '.join(blank)} {verb} blank"
+    if settings.SQUARE_ENVIRONMENT not in ENVIRONMENTS:
+        return (f"SQUARE_ENVIRONMENT is {settings.SQUARE_ENVIRONMENT!r}, "
+                "not sandbox or production")
+    return None
 
 
 def get_gateway() -> SquareGateway | None:
@@ -492,9 +503,7 @@ def get_gateway() -> SquareGateway | None:
             logger.error("Square sync disabled: %s", reason)
         return None
     token = settings.SQUARE_ACCESS_TOKEN
-    environment = (SquareEnvironment.PRODUCTION
-                   if settings.SQUARE_ENVIRONMENT == "production"
-                   else SquareEnvironment.SANDBOX)
+    environment = ENVIRONMENTS[settings.SQUARE_ENVIRONMENT]
     # The push runs inside the dashboard request; fail well before the worker does.
     client = Square(token=token, environment=environment, timeout=10)
     return SquareGateway(client, location_id=settings.SQUARE_LOCATION_ID,

@@ -251,6 +251,7 @@ TWILIO_WEBHOOK_BASE_URL = config("TWILIO_WEBHOOK_BASE_URL", default="")
 SQUARE_ACCESS_TOKEN = config("SQUARE_ACCESS_TOKEN", default="")
 SQUARE_LOCATION_ID = config("SQUARE_LOCATION_ID", default="")
 SQUARE_TICKET_CATEGORY_ID = config("SQUARE_TICKET_CATEGORY_ID", default="")
+# Exactly "sandbox" or "production"; anything else disables the sync.
 SQUARE_ENVIRONMENT = config("SQUARE_ENVIRONMENT", default="sandbox")
 
 # Square membership webhook. The key verifies X-Square-HmacSha256-Signature; a
