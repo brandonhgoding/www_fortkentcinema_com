@@ -94,8 +94,9 @@ class DoorListTests(DoorListTestCase):
         resp = self.client.get(self.url)
         html = resp.content.decode()
         names = ["Ann Lee", "Cy Vance", "Ed Fox", "Zed Moss", "Bob Ray", "Di Ross"]
+        # Door order: by last name, the way people say it at the window.
         self.assertEqual(
-            self.row_names(html, names), ["Ann Lee", "Cy Vance", "Ed Fox", "Zed Moss"]
+            self.row_names(html, names), ["Ed Fox", "Ann Lee", "Zed Moss", "Cy Vance"]
         )
         self.assertIn("2 adult, 1 child", html)
         self.assertIn("$22.00", html)
@@ -121,6 +122,9 @@ class DoorListTests(DoorListTestCase):
         self.assertIn("Ann Lee", html)
         self.assertNotIn("Zed Moss", html)
         self.assertNotIn("<html", html)  # rows partial only
+        html = self.client.get(self.url, {"q": "moss"}).content.decode()
+        self.assertIn("Zed Moss", html)
+        self.assertNotIn("Ann Lee", html)
         html = self.client.get(self.url, {"q": zed.number.lower()}).content.decode()
         self.assertIn("Zed Moss", html)
         self.assertNotIn(ann.number, html)
@@ -198,7 +202,7 @@ class DoorListTests(DoorListTestCase):
 
     def test_csv_columns_and_formula_neutralising(self) -> None:
         order = self.paid(
-            "=HYPERLINK()",
+            "=HYPERLINK() Fox",
             lines={"adult": 2, "child": 1},
             email="h@example.com",
             paid_at=datetime.datetime(2026, 7, 1, 12, 30, tzinfo=TZ),
@@ -214,7 +218,8 @@ class DoorListTests(DoorListTestCase):
             rows[0],
             [
                 "number",
-                "name",
+                "first name",
+                "last name",
                 "email",
                 "phone",
                 "adult",
@@ -232,6 +237,7 @@ class DoorListTests(DoorListTestCase):
             [
                 order.number,
                 "'=HYPERLINK()",
+                "Fox",
                 "h@example.com",
                 "207-555-0100",
                 "2",

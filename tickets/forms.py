@@ -22,10 +22,17 @@ class BuyForm(forms.Form):
     adult = _quantity_field()
     senior = _quantity_field()
     child = _quantity_field()
-    name = forms.CharField(
-        max_length=200,
-        label="Your name",
-        widget=forms.TextInput(attrs={"autocomplete": "name"}),
+    # Two boxes, not one: Square customers carry given and family names, and
+    # the door list sorts by the family name.
+    first_name = forms.CharField(
+        max_length=100,
+        label="First name",
+        widget=forms.TextInput(attrs={"autocomplete": "given-name"}),
+    )
+    last_name = forms.CharField(
+        max_length=100,
+        label="Last name",
+        widget=forms.TextInput(attrs={"autocomplete": "family-name"}),
     )
     email = forms.EmailField(
         label="Email", widget=forms.EmailInput(attrs={"autocomplete": "email"})

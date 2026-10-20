@@ -516,6 +516,11 @@ class RetrieveOrderTests(SimpleTestCase):
 
 
 class PaymentLinkBodyTests(SimpleTestCase):
+    def test_customer_id_goes_on_the_order_only_when_set(self) -> None:
+        self.assertNotIn("customer_id", payment_link_body(MATINEE_SPEC, "LOC1")["order"])
+        spec = dataclasses.replace(MATINEE_SPEC, customer_id="C7")
+        self.assertEqual(payment_link_body(spec, "LOC1")["order"]["customer_id"], "C7")
+
     def test_payment_link_body_matinee(self) -> None:
         spec = MATINEE_SPEC
         body = payment_link_body(spec, "LOC1")
@@ -573,6 +578,49 @@ class PaymentLinkBodyTests(SimpleTestCase):
                 ValueError, "Discount 400 is not a whole number of cents per ticket "
                 "for quantity 3"):
             payment_link_body(spec, "LOC1")
+
+
+class CustomerCallTests(SimpleTestCase):
+    def test_find_customer_matches_the_exact_email(self) -> None:
+        client = mock.Mock()
+        client.customers.search.return_value = mock.Mock(
+            customers=[mock.Mock(id="C1"), mock.Mock(id="C2")])
+        gw = SquareGateway(client, "LOC1", "CAT1")
+        self.assertEqual(gw.find_customer("ann@example.com"), "C1")
+        client.customers.search.assert_called_once_with(
+            query={"filter": {"email_address": {"exact": "ann@example.com"}}},
+            limit=1)
+        client.customers.search.return_value = mock.Mock(customers=None)
+        self.assertIsNone(gw.find_customer("nobody@example.com"))
+
+    def test_create_customer_sends_names_email_and_phone(self) -> None:
+        client = mock.Mock()
+        client.customers.create.return_value = mock.Mock(customer=mock.Mock(id="C7"))
+        gw = SquareGateway(client, "LOC1", "CAT1")
+        self.assertEqual(
+            gw.create_customer(given_name="Ann", family_name="Lee",
+                               email="ann@example.com", phone="+12075550100",
+                               idempotency_key="cust-tok"), "C7")
+        client.customers.create.assert_called_once_with(
+            idempotency_key="cust-tok", given_name="Ann", family_name="Lee",
+            email_address="ann@example.com", phone_number="+12075550100")
+        client.customers.create.reset_mock()
+        gw.create_customer(given_name="Cher", family_name="", email="c@example.com",
+                           phone="", idempotency_key="k2")
+        # Square rejects "" for a phone or family name; leave them out.
+        client.customers.create.assert_called_once_with(
+            idempotency_key="k2", given_name="Cher", email_address="c@example.com")
+
+    def test_create_customer_rejected_phone_is_typed(self) -> None:
+        client = mock.Mock()
+        client.customers.create.side_effect = ApiError(
+            status_code=400,
+            body={"errors": [{"code": "INVALID_PHONE_NUMBER", "field": "phone_number"}]})
+        gw = SquareGateway(client, "LOC1", "CAT1")
+        with self.assertRaises(InvalidPhone):
+            gw.create_customer(given_name="Ann", family_name="Lee",
+                               email="ann@example.com", phone="+12973198270",
+                               idempotency_key="k")
 
 
 class PaymentCallTests(SimpleTestCase):
@@ -709,7 +757,7 @@ class GetGatewayTests(SimpleTestCase):
 class FakeGatewayTests(SimpleTestCase):
     def test_public_methods_match_the_real_gateway(self) -> None:
         public = [n for n in vars(SquareGateway) if not n.startswith("_")]
-        self.assertEqual(len(public), 10)
+        self.assertEqual(len(public), 12)
         for name in public:
             self.assertEqual(inspect.signature(getattr(FakeGateway, name)),
                              inspect.signature(getattr(SquareGateway, name)), name)

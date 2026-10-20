@@ -7,7 +7,7 @@ from cinema.models import Engagement, EngagementFilm, Film, Screen, Showtime
 from django.utils import timezone
 from web.constants import TICKET_PRICES
 
-from tickets.models import TicketLine, TicketOrder
+from tickets.models import TicketLine, TicketOrder, split_name
 
 UNIT_CENTS = {"adult": 800, "senior": 700, "child": 600}
 
@@ -39,8 +39,11 @@ def make_order(
     showtime: Showtime, *, status: str = "PENDING", lines: dict | None = None, **over
 ) -> TicketOrder:
     lines = {"adult": 1} if lines is None else lines
+    # Callers may give a full `name`; it is split like the migration does.
+    first, last = split_name(over.pop("name", "Ann Lee"))
     fields = {
-        "name": "Ann Lee",
+        "first_name": first,
+        "last_name": last,
         "email": "ann@example.com",
         "phone": "207-555-0100",
         "total_cents": sum(UNIT_CENTS[t] * q for t, q in lines.items()),

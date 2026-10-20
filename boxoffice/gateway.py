@@ -99,6 +99,7 @@ class CheckoutSpec:
     buyer_phone: str
     support_email: str
     idempotency_key: str
+    customer_id: str = ""  # the buyer's Square customer; "" sends none
 
 
 @dataclass(frozen=True)
@@ -237,6 +238,8 @@ def payment_link_body(spec: CheckoutSpec, location_id: str) -> dict:
         "metadata": {"showtime": str(spec.showtime_id)},
         "line_items": [_checkout_line_item(line) for line in spec.lines],
     }
+    if spec.customer_id:
+        order["customer_id"] = spec.customer_id
     discounts = [
         {"uid": _matinee_uid(line), "name": "Matinee", "type": "FIXED_AMOUNT",
          "scope": "LINE_ITEM", "amount_money": _usd(line.discount_cents)}
@@ -327,6 +330,25 @@ class SquareGateway:
                          **payment_link_body(spec, self.location_id))
         link = response.payment_link
         return CheckoutResult(order_id=link.order_id, url=link.url)
+
+    def find_customer(self, email: str) -> str | None:
+        """The id of the customer whose email is exactly ``email``, if any."""
+        response = _call(self.client.customers.search,
+                         query={"filter": {"email_address": {"exact": email}}},
+                         limit=1)
+        customers = response.customers or []
+        return customers[0].id if customers else None
+
+    def create_customer(self, *, given_name: str, family_name: str, email: str,
+                        phone: str, idempotency_key: str) -> str:
+        """Make a customer profile and return its id. ``phone`` is E.164 or ""."""
+        # Square rejects an empty string for the optional fields; omit them.
+        fields = {"given_name": given_name, "family_name": family_name,
+                  "email_address": email, "phone_number": phone}
+        response = _call(self.client.customers.create,
+                         idempotency_key=idempotency_key,
+                         **{k: v for k, v in fields.items() if v})
+        return response.customer.id
 
     def refund_payment(self, *, payment_id: str, amount_cents: int,
                        idempotency_key: str, reason: str) -> str:

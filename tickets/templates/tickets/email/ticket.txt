@@ -1,4 +1,4 @@
-{% autoescape off %}Hi {{ order.name }},
+{% autoescape off %}Hi {{ order.first_name }},
 
 Thanks for buying tickets at the Fort Kent Cinema. Here they are.
 

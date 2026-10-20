@@ -14,7 +14,7 @@ from tickets.orders import confirm_payment, expire_stale, recover_pending, resen
 from tickets.tests.factories import age, make_live_item, make_order, make_showtime
 
 PAID_AT = datetime.datetime(2026, 10, 3, 3, 12, tzinfo=datetime.timezone.utc)
-BUYER = {"name": "Ann Lee", "email": "ann@example.com", "phone": "207-555-0100"}
+BUYER = {"first_name": "Ann", "last_name": "Lee", "email": "ann@example.com", "phone": "207-555-0100"}
 
 
 class ConfirmTests(TestCase):

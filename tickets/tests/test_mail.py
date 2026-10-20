@@ -22,6 +22,7 @@ class TicketEmailTests(TestCase):
         )
         self.assertTrue(msg.subject.endswith(" at 7:00 PM"))
         for text in [
+            "Hi Ann,",
             order.number,
             "Dune",
             "7:00 PM",
@@ -59,7 +60,8 @@ class TicketEmailTests(TestCase):
         msg = mail.outbox[0]
         self.assertEqual(msg.to, ["ann@example.com"])
         self.assertRegex(msg.subject, r"^Refunded: Dune, \w{3} \w{3} \d{1,2}$")
-        for text in ["cancelled", "$22.00", "within a few days", "(207) 231-5287"]:
+        for text in ["Hi Ann,", "cancelled", "$22.00", "within a few days",
+                     "(207) 231-5287"]:
             self.assertIn(text, msg.body)
 
     def test_staff_refund_email_on_a_running_show(self):

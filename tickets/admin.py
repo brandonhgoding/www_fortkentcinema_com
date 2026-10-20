@@ -16,12 +16,13 @@ class TicketOrderAdmin(admin.ModelAdmin):
         "created_at",
         "status",
         "showtime",
-        "name",
+        "first_name",
+        "last_name",
         "email",
         "total_dollars",
     )
     list_filter = ("status",)
-    search_fields = ("number", "name", "email")
+    search_fields = ("number", "first_name", "last_name", "email")
     readonly_fields = (
         "number",
         "token",

@@ -1,4 +1,4 @@
-{% autoescape off %}Hi {{ order.name }},
+{% autoescape off %}Hi {{ order.first_name }},
 
 {% if order.showtime.is_cancelled %}The {{ time }} showing of {{ title }} on {{ day }} has been cancelled, so we've refunded your order {{ order.number }}: {{ total }}.{% else %}Your order {{ order.number }} for {{ title }} on {{ day }} has been refunded by the cinema. The refund is {{ total }}.{% endif %}
 
