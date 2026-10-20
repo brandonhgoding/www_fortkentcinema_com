@@ -1,9 +1,13 @@
 import datetime
+from zoneinfo import ZoneInfo
 
 from cinema.models import Engagement, EngagementFilm, Film, Screen
 from dashboard.smart_alerts import build_smart_alerts
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
+from tickets.alerts import cancelled_with_orders, failures_count, nearly_sold_out
+from tickets.tests.factories import make_order, make_showtime
 
 
 def make_eng(screen, film, *, end, status="CONFIRMED", start=None, title=None):
@@ -172,3 +176,120 @@ class AdInquiryAlertTests(TestCase):
 
     def test_links_to_the_list(self):
         self.assertEqual(self._alert(1)["url"], reverse("dashboard:ad_inquiries"))
+
+
+class TicketAlertQueryTests(TestCase):
+    def setUp(self) -> None:
+        self.now = timezone.now()
+
+    def test_failures_count_counts_failed_with_or_without_payment(self):
+        st = make_showtime()
+        make_order(st, status="FAILED")
+        make_order(st, status="FAILED", square_payment_id="PAY-1")
+        make_order(st, status="PAID", square_payment_id="PAY-2")
+        make_order(st, status="EXPIRED")
+        self.assertEqual(failures_count(), 2)
+
+    def test_nearly_sold_out_at_ninety_percent(self):
+        # Default allowance: half of a 100-seat screen = 50.
+        tomorrow = make_showtime(starts_at=self.now + datetime.timedelta(days=1))
+        make_order(tomorrow, status="PAID", lines={"adult": 45})
+        self.assertEqual(nearly_sold_out(self.now), [(tomorrow, 45, 50)])
+
+        tomorrow.ticket_orders.get().lines.update(quantity=44)
+        self.assertEqual(nearly_sold_out(self.now), [])
+
+    def test_nearly_sold_out_counts_seats_on_hold(self):
+        st = make_showtime(starts_at=self.now + datetime.timedelta(days=1))
+        make_order(st, status="PAID", lines={"adult": 40})
+        make_order(st, status="PENDING", lines={"adult": 5})
+        self.assertEqual(nearly_sold_out(self.now), [(st, 45, 50)])
+
+    def test_nearly_sold_out_only_within_two_days(self):
+        three_days = make_showtime(starts_at=self.now + datetime.timedelta(days=3))
+        two_days = make_showtime(starts_at=self.now + datetime.timedelta(days=2))
+        started = make_showtime(starts_at=self.now - datetime.timedelta(minutes=1))
+        for st in (three_days, two_days, started):
+            make_order(st, status="PAID", lines={"adult": 50})
+        self.assertEqual(nearly_sold_out(self.now), [])
+
+    def test_nearly_sold_out_skips_cancelled_and_zero_allowance(self):
+        soon = self.now + datetime.timedelta(hours=5)
+        cancelled = make_showtime(starts_at=soon, is_cancelled=True)
+        make_order(cancelled, status="PAID", lines={"adult": 50})
+        make_showtime(starts_at=soon, online_allowance=0)
+        self.assertEqual(nearly_sold_out(self.now), [])
+
+    def test_cancelled_with_orders_past_and_future(self):
+        past = make_showtime(
+            starts_at=self.now - datetime.timedelta(days=3), is_cancelled=True
+        )
+        make_order(past, status="PAID", square_payment_id="PAY-1")
+        make_order(past, status="PAID", square_payment_id="PAY-2")
+        make_order(past, status="REFUNDED", square_payment_id="PAY-3")
+        future = make_showtime(is_cancelled=True)
+        make_order(future, status="FAILED", square_payment_id="PAY-4")
+        refunded = make_showtime(is_cancelled=True)
+        make_order(refunded, status="REFUNDED", square_payment_id="PAY-5")
+        make_order(refunded, status="FAILED")
+        live = make_showtime()
+        make_order(live, status="PAID", square_payment_id="PAY-6")
+        self.assertEqual(
+            sorted(cancelled_with_orders(), key=lambda row: row[0].pk),
+            [(past, 2), (future, 1)],
+        )
+
+
+class OnlineTicketAlertTests(TestCase):
+    def setUp(self) -> None:
+        self.today = datetime.date(2026, 7, 10)
+        self.showtime = make_showtime(
+            starts_at=datetime.datetime(
+                2026, 7, 11, 19, 0, tzinfo=ZoneInfo("America/New_York")
+            )
+        )
+
+    def _alert(self, alert_id: str, **kwargs) -> dict | None:
+        alerts = build_smart_alerts([], 1, self.today, **kwargs)
+        return next((a for a in alerts if a["id"] == alert_id), None)
+
+    def test_ticket_failures_alert_singular_and_plural(self):
+        self.assertIsNone(self._alert("ticket-failures"))
+        one = self._alert("ticket-failures", ticket_failures=1)
+        self.assertEqual(one["message"], "1 online ticket order needs attention")
+        self.assertEqual(one["type"], "warning")
+        self.assertEqual(
+            one["url"], reverse("dashboard:ticket_orders") + "?status=FAILED"
+        )
+        two = self._alert("ticket-failures", ticket_failures=2)
+        self.assertEqual(two["message"], "2 online ticket orders need attention")
+
+    def test_nearly_sold_out_alert(self):
+        alert = self._alert(
+            f"nearly-sold-out-{self.showtime.pk}",
+            nearly_sold_out=[(self.showtime, 45, 50)],
+        )
+        self.assertEqual(
+            alert["message"], "Dune at 7:00 PM is nearly sold out online (45 of 50)"
+        )
+        self.assertEqual(alert["type"], "info")
+        self.assertEqual(
+            alert["url"], reverse("dashboard:showtime_orders", args=[self.showtime.pk])
+        )
+
+    def test_cancelled_with_orders_alert_singular_and_plural(self):
+        alert_id = f"cancelled-orders-{self.showtime.pk}"
+        one = self._alert(alert_id, cancelled_with_orders=[(self.showtime, 1)])
+        self.assertEqual(
+            one["message"],
+            "Dune at 7:00 PM is cancelled with 1 unrefunded online order",
+        )
+        self.assertEqual(one["type"], "warning")
+        self.assertEqual(
+            one["url"], reverse("dashboard:showtime_orders", args=[self.showtime.pk])
+        )
+        two = self._alert(alert_id, cancelled_with_orders=[(self.showtime, 3)])
+        self.assertEqual(
+            two["message"],
+            "Dune at 7:00 PM is cancelled with 3 unrefunded online orders",
+        )

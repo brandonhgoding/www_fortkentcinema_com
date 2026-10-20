@@ -44,6 +44,16 @@ class TicketInfoContentTests(TestCase):
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_now_showing")
+    def test_points_to_online_tickets_and_the_box_office(self, ns, _cs):
+        ns.return_value = [movie()]
+        line = ticket_info(self.client.get(reverse("home")).content.decode())
+        self.assertIn(
+            "Buy online from the showtimes above, or pay at the box office.", line
+        )
+        self.assertIn(SITE_CONFIG["cinema"]["address"]["street"], line)
+
+    @mock.patch("web.views.get_coming_soon", return_value=[])
+    @mock.patch("web.views.get_now_showing")
     def test_member_price_links_to_membership(self, ns, _cs):
         ns.return_value = [movie()]
         line = ticket_info(self.client.get(reverse("home")).content.decode())

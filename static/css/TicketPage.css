@@ -1,0 +1,256 @@
+/* /tickets/<pk>/ and /tickets/order/<token>/ — tickets/templates/tickets/.
+ *
+ * One narrow column at every width: a phone is where people buy. The form's
+ * field and error styles follow the rentals inquiry form
+ * (PrivateRentalsPage.css, .rental-inquire__*) so the site has one look for
+ * a form; the prefix is separate so a change to one page cannot move the
+ * other.
+ */
+
+.ticket-page {
+  min-height: 100vh;
+  padding: calc(80px + var(--spacing-xl)) 16px var(--spacing-2xl);
+  background: linear-gradient(180deg, var(--color-bg-charcoal) 0%, var(--color-bg-dark) 100%);
+}
+
+.ticket-page__container {
+  max-width: 34rem;
+  margin: 0 auto;
+  font-family: var(--font-body);
+  color: var(--color-cream);
+  line-height: 1.6;
+}
+
+.ticket-page__container p {
+  margin-bottom: var(--spacing-sm);
+}
+
+.ticket-page__container a:not(.btn) {
+  color: var(--color-gold);
+}
+
+/* Movie header: poster beside the facts. */
+.ticket-page__movie {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: flex-start;
+  margin-bottom: var(--spacing-lg);
+}
+
+.ticket-page__poster {
+  flex: none;
+  width: 96px;
+  height: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-brass);
+}
+
+.ticket-page__title {
+  font-family: var(--font-heading);
+  font-size: var(--type-sub);
+  line-height: 1.15;
+  color: var(--color-gold);
+  margin-bottom: var(--spacing-xs);
+}
+
+.ticket-page__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--spacing-sm);
+  color: var(--color-cream-muted);
+  font-size: 0.95rem;
+}
+
+.ticket-page__when {
+  font-weight: 600;
+}
+
+.ticket-page__note,
+.ticket-page__small {
+  color: var(--color-cream-muted);
+  font-size: 0.9rem;
+}
+
+.ticket-page__label {
+  font-family: var(--font-condensed);
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--color-cream-muted);
+}
+
+/* Form */
+.ticket-page__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.ticket-page__form .btn {
+  align-self: stretch;
+}
+
+.ticket-page__tickets {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+.ticket-page__tickets legend {
+  margin-bottom: var(--spacing-xs);
+}
+
+.ticket-page__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-xs) var(--spacing-sm);
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--color-brass);
+}
+
+.ticket-page__tier {
+  display: flex;
+  flex-direction: column;
+}
+
+.ticket-page__tier-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.ticket-page__price {
+  color: var(--color-cream-muted);
+}
+
+.ticket-page__matinee {
+  font-family: var(--font-condensed);
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--color-gold);
+}
+
+.ticket-page__stepper {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.ticket-page__stepper input {
+  width: 4rem;
+  text-align: center;
+}
+
+.ticket-page__step {
+  width: 2.75rem;
+  height: 2.75rem;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--color-gold);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-brass);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.ticket-page__step:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 1px;
+}
+
+.ticket-page__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.ticket-page__form input:not([type="hidden"]) {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--color-bg-dark);
+  border: 1px solid var(--color-brass);
+  border-radius: 3px;
+  color: var(--color-cream);
+}
+
+.ticket-page__field input {
+  width: 100%;
+}
+
+.ticket-page__form input:focus {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 1px;
+}
+
+.ticket-page__row .ticket-page__field-error {
+  flex-basis: 100%;
+}
+
+.ticket-page__error,
+.ticket-page__field-error {
+  color: var(--color-danger);
+  font-size: 0.9rem;
+}
+
+.ticket-page__error {
+  padding: var(--spacing-sm);
+  border-left: 3px solid var(--color-gold);
+  background: var(--color-bg-dark);
+}
+
+.ticket-page__total {
+  font-size: 1.15rem;
+  text-align: right;
+}
+
+.ticket-page__closed {
+  padding: var(--spacing-md);
+  border-left: 3px solid var(--color-gold);
+  background: var(--color-bg-card);
+}
+
+/* Order page: the ticket itself. */
+.ticket-page__ticket {
+  text-align: center;
+  padding: var(--spacing-lg) var(--spacing-md);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-brass);
+  border-radius: var(--radius-lg);
+}
+
+.ticket-page__film {
+  font-family: var(--font-heading);
+  font-size: var(--type-lead);
+  margin-bottom: 0;
+}
+
+.ticket-page__qr {
+  display: block;
+  width: 200px;
+  max-width: 100%;
+  height: auto;
+  margin: var(--spacing-sm) auto;
+}
+
+/* Printed, the ticket is the page: no chrome, no gradient. */
+@media print {
+  .nav,
+  .footer,
+  .skip-link {
+    display: none;
+  }
+
+  .ticket-page {
+    min-height: 0;
+    padding: 0;
+    background: none;
+  }
+
+  .ticket-page__ticket {
+    border: 0;
+  }
+}

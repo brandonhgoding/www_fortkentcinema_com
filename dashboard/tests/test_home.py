@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
+from tickets.tests.factories import make_order
 
 User = get_user_model()
 
@@ -153,3 +154,30 @@ class HomeRenderTests(TestCase):
         MembershipSale.objects.create(order_id="O2", status="SKIPPED")
         html = self.client.get(reverse("dashboard:home")).content.decode()
         self.assertIn("1 Square membership sale needs attention", html)
+
+    def test_home_today_panel_shows_online_count(self) -> None:
+        eng = make_eng(self.screen, self.film)
+        st = Showtime.objects.create(
+            engagement=eng, starts_at=self._local(timezone.localdate(), 23, 30))
+        make_order(st, status="PAID", lines={"adult": 2, "child": 1})
+        make_order(st, status="EXPIRED", lines={"adult": 4})
+        html = self.client.get(reverse("dashboard:home")).content.decode()
+        self.assertIn("<th>Online</th>", html)
+        # Table cell and phone card line.
+        self.assertEqual(html.count("3 online"), 2)
+
+    def test_online_ticket_alerts(self) -> None:
+        eng = make_eng(self.screen, self.film)
+        tomorrow = timezone.localdate() + datetime.timedelta(days=1)
+        soon = Showtime.objects.create(
+            engagement=eng, starts_at=self._local(tomorrow, 19), online_allowance=10)
+        make_order(soon, status="PAID", lines={"adult": 9})
+        gone = Showtime.objects.create(
+            engagement=eng, starts_at=self._local(tomorrow, 14), is_cancelled=True)
+        make_order(gone, status="PAID", square_payment_id="PAY-1")
+        make_order(gone, status="FAILED")
+        html = self.client.get(reverse("dashboard:home")).content.decode()
+        self.assertIn("1 online ticket order needs attention", html)
+        self.assertIn("Dune at 7:00 PM is nearly sold out online (9 of 10)", html)
+        self.assertIn(
+            "Dune at 2:00 PM is cancelled with 1 unrefunded online order", html)

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Tickets: {{ movie.title }}, {{ day }} | Fort Kent Cinema{% endblock %}
+{% block description %}Buy tickets online for {{ movie.title }} at the Fort Kent Cinema, {{ day }} at {{ time }}.{% endblock %}
+
+{% comment %}
+  One page per showtime, reached from the home page's showtime chips. It
+  changes by the minute (counts, cutoff) and has no business in search
+  results; the home page's JSON-LD offers are what search engines read.
+{% endcomment %}
+{% block robots %}noindex, nofollow{% endblock %}
+
+{% block content %}
+<div class="ticket-page">
+  <div class="ticket-page__container">
+    <header class="ticket-page__movie">
+      {% if movie.poster %}
+        <img class="ticket-page__poster" src="{{ movie.poster }}" alt="Poster for {{ movie.title }}" width="120" height="180">
+      {% endif %}
+      <div>
+        <h1 class="ticket-page__title">{{ movie.title }}</h1>
+        <p class="ticket-page__meta">
+          {% if movie.rating %}<span>{{ movie.rating }}</span>{% endif %}
+          {% if movie.runtime %}<span>{{ movie.runtime }}</span>{% endif %}
+          {% if movie.language_label %}<span>{{ movie.language_label }}</span>{% endif %}
+        </p>
+        <p class="ticket-page__when">{{ day }} at {{ time }}, {{ showtime.screen.name }}</p>
+        {% if movie.captions_note %}
+          <p class="ticket-page__note">{{ movie.captions_note }}</p>
+        {% endif %}
+      </div>
+    </header>
+
+    {% if availability.purchasable %}
+      {% comment %}
+        The number inputs are the submitted fields, so the form works without
+        JavaScript. Alpine only adds the minus/plus buttons and the running
+        total (both x-cloak, hidden until Alpine starts).
+      {% endcomment %}
+      <form class="ticket-page__form" method="post" novalidate
+            x-data="{ total: 0, sum() { let t = 0; this.$root.querySelectorAll('[data-price]').forEach(i => { t += Math.max(parseInt(i.value, 10) || 0, 0) * Number(i.dataset.price) }); this.total = t } }"
+            x-init="sum()" @input="sum()">
+        {% csrf_token %}
+        {% if error %}
+          <p class="ticket-page__error" role="alert">{{ error }}</p>
+        {% endif %}
+        {% for message in form.non_field_errors %}
+          <p class="ticket-page__error" role="alert">{{ message }}</p>
+        {% endfor %}
+        {{ form.website }}
+
+        <fieldset class="ticket-page__tickets">
+          <legend class="ticket-page__label">Tickets</legend>
+          {% for ticket in tickets %}
+            <div class="ticket-page__row" x-data>
+              <label class="ticket-page__tier" for="{{ ticket.field.id_for_label }}">
+                <span class="ticket-page__tier-name">{{ ticket.row.label }}</span>
+                <span class="ticket-page__price">{{ ticket.price }}{% if is_matinee %} <span class="ticket-page__matinee">Matinee</span>{% endif %}</span>
+              </label>
+              <div class="ticket-page__stepper">
+                <button type="button" class="ticket-page__step" x-cloak aria-label="One fewer {{ ticket.row.label|lower }}"
+                        @click="$refs.qty.stepDown(); $refs.qty.dispatchEvent(new Event('input', { bubbles: true }))">&minus;</button>
+                <input type="number" name="{{ ticket.field.html_name }}" id="{{ ticket.field.id_for_label }}"
+                       value="{{ ticket.field.value|default_if_none:0 }}" min="0" max="50" inputmode="numeric"
+                       data-price="{{ ticket.row.unit_cents }}" x-ref="qty">
+                <button type="button" class="ticket-page__step" x-cloak aria-label="One more {{ ticket.row.label|lower }}"
+                        @click="$refs.qty.stepUp(); $refs.qty.dispatchEvent(new Event('input', { bubbles: true }))">+</button>
+              </div>
+              {% if ticket.field.errors %}
+                <span class="ticket-page__field-error">{{ ticket.field.errors|join:" " }}</span>
+              {% endif %}
+            </div>
+          {% endfor %}
+          {% if few_left %}
+            <p class="ticket-page__note">{{ availability.remaining }} left online</p>
+          {% endif %}
+        </fieldset>
+
+        {% for field in contact_fields %}
+          <label class="ticket-page__field">
+            <span class="ticket-page__label">{{ field.label }}</span>
+            {{ field }}
+            {% if field.errors %}
+              <span class="ticket-page__field-error">{{ field.errors|join:" " }}</span>
+            {% endif %}
+          </label>
+        {% endfor %}
+
+        <p class="ticket-page__total" x-cloak>Total <strong x-text="'$' + (total / 100).toFixed(2)">$0.00</strong></p>
+        <button type="submit" class="btn btn-primary" data-track="ticket_checkout_submit">Continue to payment</button>
+        <p class="ticket-page__small">You'll pay on Square's secure page. Members pay ${{ ticket_prices.member }} at the door.</p>
+      </form>
+    {% else %}
+      {% include "tickets/_closed.html" %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

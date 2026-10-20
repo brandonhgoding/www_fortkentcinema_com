@@ -16,12 +16,15 @@ from django.views.generic import TemplateView
 
 from audience.models import Member, MembershipTier, Subscriber
 from blog.models import BlogPost
+from boxoffice.gateway import disabled_reason
 from cinema import voting as vote_engine
 from cinema.models import (
     Poll,
     PollStatus,
+    Showtime,
     Vote,
 )
+from tickets import availability
 from web.constants import (
     AD_ARTWORK_DEADLINE_DAY,
     AD_SLIDE_PRICE,
@@ -125,12 +128,24 @@ class HomeView(TemplateView):
             ]
             movie["dates_json"] = json.dumps(ups)
 
+        _add_ticket_state(
+            time
+            for movie in now_showing
+            for slot in movie["upcoming"]
+            for time in slot["times"]
+        )
+
         # One schema.org ScreeningEvent per upcoming showtime, flattened here
         # so partials/home_jsonld.html is a single loop with one forloop.last.
         # A time dict with no "iso" (older fixtures, hand-built callers) is
         # skipped: an event with no startDate is worse than no event.
         ctx["ns_events"] = [
-            {"movie": movie, "iso": time["iso"]}
+            {
+                "movie": movie,
+                "iso": time["iso"],
+                "ticket_url": time["ticket_url"],
+                "sold_out": time["sold_out"],
+            }
             for movie in now_showing
             for slot in movie["upcoming"]
             for time in slot["times"]
@@ -152,6 +167,32 @@ class HomeView(TemplateView):
         )
 
         return ctx
+
+
+def _add_ticket_state(times):
+    """Give each listed time dict its online-ticket state, in place.
+
+    `ticket_url` is the buy page when the showing can sell now, and is kept
+    when it is sold out online (the JSON-LD offer still names the page);
+    otherwise it is "". `sold_out` is True only for a sold-out showing.
+    One for_showtimes() call for every chip: database only, never Square.
+    """
+    times = list(times)
+    ids = [t["showtime_id"] for t in times if t.get("showtime_id")]
+    showtimes = Showtime.objects.filter(pk__in=ids).select_related(
+        "engagement", "screen"
+    )
+    states = availability.for_showtimes(
+        showtimes, timezone.now(), square_enabled=disabled_reason() is None
+    )
+    for time in times:
+        state = states.get(time.get("showtime_id"))
+        sold_out = state is not None and state.reason == "sold_out"
+        has_page = state is not None and (state.purchasable or sold_out)
+        time["ticket_url"] = (
+            reverse("tickets:buy", args=[time["showtime_id"]]) if has_page else ""
+        )
+        time["sold_out"] = sold_out
 
 
 def _initial_calendar_month(coming_soon):

@@ -1,0 +1,38 @@
+<tr id="ticket-order-{{ order.pk }}"{% if order.status == 'REFUNDED' %} class="cancelledRow"{% endif %}>
+  <td>{{ order.number }}</td>
+  <td>{{ order.name }}</td>
+  <td>{{ order.phone }}</td>
+  <td>{{ order.breakdown }}</td>
+  <td>${{ order.total_dollars|floatformat:2 }}</td>
+  <td>
+    {% if order.status == 'PAID' %}<span class="status-badge status-active">Paid</span>
+    {% elif order.status == 'REFUNDED' %}<span class="status-badge status-draft">Refunded</span>
+    {% else %}<span class="status-badge status-cancelled">{{ order.get_status_display }}</span>{% endif %}
+    {% if order.error %}<span class="fieldHint">{{ order.error }}</span>{% endif %}
+    {% if order.status == 'FAILED' %}
+    <form method="post" action="{% url 'dashboard:ticket_order_retry' order.pk %}"
+          hx-post="{% url 'dashboard:ticket_order_retry' order.pk %}"
+          hx-target="#ticket-order-{{ order.pk }}" hx-swap="outerHTML">{% csrf_token %}<button class="btn btn-secondary btn-sm">Resend email</button></form>
+    {% endif %}
+  </td>
+  <td>
+    {% if order.counts_as_sold %}
+    <div class="actions">
+      {% if order.redeemed_at %}
+      <span>Arrived {{ order.redeemed_at|date:"g:i A" }}{% if order.redeemed_by %} · {{ order.redeemed_by.get_short_name|default:order.redeemed_by.get_username }}{% endif %}</span>
+      <form method="post" action="{% url 'dashboard:ticket_order_unarrive' order.pk %}"
+            hx-post="{% url 'dashboard:ticket_order_unarrive' order.pk %}"
+            hx-target="#ticket-order-{{ order.pk }}" hx-swap="outerHTML">{% csrf_token %}<button class="btn btn-secondary btn-sm">Undo</button></form>
+      {% else %}
+      <form method="post" action="{% url 'dashboard:ticket_order_arrive' order.pk %}"
+            hx-post="{% url 'dashboard:ticket_order_arrive' order.pk %}"
+            hx-target="#ticket-order-{{ order.pk }}" hx-swap="outerHTML">{% csrf_token %}<button class="btn btn-primary btn-sm">Arrive</button></form>
+      {% endif %}
+      <form method="post" action="{% url 'dashboard:ticket_order_refund' order.pk %}"
+            hx-post="{% url 'dashboard:ticket_order_refund' order.pk %}"
+            hx-target="#ticket-order-{{ order.pk }}" hx-swap="outerHTML"
+            data-dashboard-confirm='{"title":"Refund Order","message":"Refund {{ order.number }} ({{ order.name|escapejs }}) for ${{ order.total_dollars|floatformat:2 }}? Square returns the money and the buyer is emailed.","confirmLabel":"Refund","variant":"danger"}'>{% csrf_token %}<button class="btn btn-danger btn-sm">Refund</button></form>
+    </div>
+    {% endif %}
+  </td>
+</tr>

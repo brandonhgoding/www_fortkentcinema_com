@@ -1,0 +1,53 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% block title %}{{ showtime.engagement.title }} orders · LeprinceOS{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/engagement_detail.css' %}" />{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <div>
+      <a href="{% url 'dashboard:engagement_detail' showtime.engagement_id %}" class="backLink">&larr; Back to {{ showtime.engagement.title }}</a>
+      <h1 class="page-title">{{ showtime.engagement.title }}</h1>
+      <p class="page-subtitle">Online orders for {{ showtime.starts_at|date:"D, M j, Y" }} at {{ showtime.starts_at|date:"g:i A" }}</p>
+      {% include "dashboard/_allowance_form.html" %}
+    </div>
+    <a href="{% url 'dashboard:showtime_orders_export' showtime.pk %}" class="btn btn-secondary">Download CSV</a>
+  </div>
+
+  <div id="door-list">
+    {% if refundable_count %}
+    <div class="alert alertWarning" role="alert">
+      <div class="alertIcon">⚠</div>
+      <p class="alertMessage">This showtime is cancelled. {{ refundable_count }} online order{{ refundable_count|pluralize }} still need{{ refundable_count|pluralize:"s," }} refunding.</p>
+      <form method="post" action="{% url 'dashboard:showtime_refund_all' showtime.pk %}"
+            hx-post="{% url 'dashboard:showtime_refund_all' showtime.pk %}"
+            hx-target="#door-list" hx-select="#door-list" hx-swap="outerHTML"
+            hx-select-oob="#online-count"
+            data-dashboard-confirm='{"title":"Refund All Orders","message":"Refund {{ refundable_count }} order{{ refundable_count|pluralize }} totalling ${{ refundable_dollars|floatformat:2 }}? Square returns the money and each buyer is emailed.","confirmLabel":"Refund all","variant":"danger"}'>{% csrf_token %}<button class="btn btn-danger btn-sm">Refund all</button></form>
+    </div>
+    {% endif %}
+
+    <div class="searchWrapper">
+      <label for="door-search" class="fieldHint">Find by name or order number</label>
+      <input type="search" class="input" id="door-search" name="q" value="{{ q }}" autocomplete="off"
+             hx-get="{% url 'dashboard:showtime_orders' showtime.pk %}"
+             hx-trigger="input changed delay:300ms, search"
+             hx-target="#ticket-order-rows" hx-swap="innerHTML" />
+    </div>
+
+    <div class="tableWrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Order</th><th>Name</th><th>Phone</th><th>Tickets</th>
+          <th>Total</th><th>Status</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="ticket-order-rows">
+        {% include "dashboard/_ticket_order_rows.html" %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

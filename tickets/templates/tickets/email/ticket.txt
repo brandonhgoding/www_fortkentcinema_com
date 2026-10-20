@@ -1,0 +1,20 @@
+{% autoescape off %}Hi {{ order.name }},
+
+Thanks for buying tickets at the Fort Kent Cinema. Here they are.
+
+Order {{ order.number }}
+{{ title }}
+{{ day }} at {{ time }}, {{ screen }}
+
+{% for line in lines %}{{ line }}
+{% endfor %}Total {{ total }}
+
+Show this at the door, or just give your name.
+Tickets are non-refundable unless the show is cancelled.
+
+Your tickets online: {{ url }}
+
+Fort Kent Cinema
+{{ cinema.address.street }}, {{ cinema.address.city }}, {{ cinema.address.state }} {{ cinema.address.zip }}
+{{ cinema.phone }}
+{% endautoescape %}

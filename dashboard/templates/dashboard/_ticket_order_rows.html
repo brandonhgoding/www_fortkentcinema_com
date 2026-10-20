@@ -1,0 +1,5 @@
+{% for order in orders %}
+  {% include "dashboard/_ticket_order_row.html" %}
+{% empty %}
+  <tr><td colspan="7">No online orders{% if q %} match &ldquo;{{ q }}&rdquo;{% endif %}.</td></tr>
+{% endfor %}

@@ -48,3 +48,6 @@ pydantic==2.13.5
 pydantic_core==2.46.5
 annotated-types==0.8.0
 typing-inspection==0.4.4
+
+# Online tickets (tickets app: QR on the ticket email)
+qrcode==8.2

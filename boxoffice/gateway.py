@@ -58,6 +58,12 @@ class Recipient:
 
 
 @dataclass(frozen=True)
+class Tender:
+    payment_id: str
+    status: str  # the card status, CAPTURED when paid; "" when not a card tender
+
+
+@dataclass(frozen=True)
 class OrderData:
     order_id: str
     closed_at: datetime.datetime | None  # aware; None when Square omits it
@@ -67,6 +73,34 @@ class OrderData:
     # created_at; aware, None when Square gives neither. Payment-link orders
     # reach COMPLETED (closed_at) only when staff mark the shipment done.
     paid_at: datetime.datetime | None = None
+    tenders: tuple[Tender, ...] = ()
+
+
+@dataclass(frozen=True)
+class CheckoutLine:
+    variation_id: str
+    name: str
+    quantity: int
+    unit_cents: int  # the price the buyer pays per ticket
+    discount_cents: int  # the per-line matinee total; 0 for none
+
+
+@dataclass(frozen=True)
+class CheckoutSpec:
+    reference: str
+    showtime_id: int
+    lines: tuple[CheckoutLine, ...]
+    redirect_url: str
+    buyer_email: str
+    buyer_phone: str
+    support_email: str
+    idempotency_key: str
+
+
+@dataclass(frozen=True)
+class CheckoutResult:
+    order_id: str
+    url: str
 
 
 def _call(fn: Callable[..., T], *args: Any, **kwargs: Any) -> T:
@@ -145,6 +179,12 @@ def _paid_at(order: Any) -> datetime.datetime | None:
     return _timestamp(first_tender or order.created_at)
 
 
+def _tender(tender: Any) -> Tender:
+    card_details = getattr(tender, "card_details", None)
+    return Tender(payment_id=tender.id,
+                  status=getattr(card_details, "status", None) or "")
+
+
 def _order_data(order: Any) -> OrderData:
     return OrderData(
         order_id=order.id,
@@ -152,7 +192,69 @@ def _order_data(order: Any) -> OrderData:
         lines=tuple(_order_line(li) for li in (order.line_items or [])),
         recipient=_recipient(order),
         paid_at=_paid_at(order),
+        tenders=tuple(_tender(t) for t in (order.tenders or [])),
     )
+
+
+def _usd(cents: int) -> dict:
+    return {"amount": cents, "currency": "USD"}
+
+
+def _matinee_uid(line: CheckoutLine) -> str:
+    return f"matinee-{line.variation_id}"
+
+
+def _checkout_line_item(line: CheckoutLine) -> dict:
+    # Square prices the line at the catalog variation's price unless told
+    # otherwise; the matinee discount then brings it down to unit_cents.
+    if line.discount_cents % line.quantity:
+        raise ValueError(
+            f"Discount {line.discount_cents} is not a whole number of cents per "
+            f"ticket for quantity {line.quantity}")
+    item: dict[str, Any] = {
+        "catalog_object_id": line.variation_id,
+        "quantity": str(line.quantity),
+        "base_price_money": _usd(
+            line.unit_cents + line.discount_cents // line.quantity),
+    }
+    if line.discount_cents:
+        item["applied_discounts"] = [{"discount_uid": _matinee_uid(line)}]
+    return item
+
+
+def payment_link_body(spec: CheckoutSpec, location_id: str) -> dict:
+    """The keyword arguments for checkout.payment_links.create."""
+    order: dict[str, Any] = {
+        "location_id": location_id,
+        "reference_id": spec.reference,
+        "metadata": {"showtime": str(spec.showtime_id)},
+        "line_items": [_checkout_line_item(line) for line in spec.lines],
+    }
+    discounts = [
+        {"uid": _matinee_uid(line), "name": "Matinee", "type": "FIXED_AMOUNT",
+         "scope": "LINE_ITEM", "amount_money": _usd(line.discount_cents)}
+        for line in spec.lines if line.discount_cents
+    ]
+    if discounts:
+        order["discounts"] = discounts
+    options: dict[str, Any] = {
+        "redirect_url": spec.redirect_url,
+        "ask_for_shipping_address": False,
+        "allow_tipping": False,
+        "accepted_payment_methods": {"apple_pay": True, "google_pay": True},
+    }
+    # Leave out a blank support email or phone rather than send Square "".
+    if spec.support_email:
+        options["merchant_support_email"] = spec.support_email
+    prefill = {"buyer_email": spec.buyer_email}
+    if spec.buyer_phone:
+        prefill["buyer_phone_number"] = spec.buyer_phone
+    return {
+        "idempotency_key": spec.idempotency_key,
+        "order": order,
+        "checkout_options": options,
+        "pre_populated_data": prefill,
+    }
 
 
 class SquareGateway:
@@ -212,6 +314,19 @@ class SquareGateway:
     def retrieve_order(self, order_id: str) -> OrderData:
         response = _call(self.client.orders.get, order_id)
         return _order_data(response.order)
+
+    def create_payment_link(self, spec: CheckoutSpec) -> CheckoutResult:
+        response = _call(self.client.checkout.payment_links.create,
+                         **payment_link_body(spec, self.location_id))
+        link = response.payment_link
+        return CheckoutResult(order_id=link.order_id, url=link.url)
+
+    def refund_payment(self, *, payment_id: str, amount_cents: int,
+                       idempotency_key: str, reason: str) -> str:
+        response = _call(self.client.refunds.refund_payment,
+                         idempotency_key=idempotency_key, payment_id=payment_id,
+                         amount_money=_usd(amount_cents), reason=reason)
+        return response.refund.id
 
     def list_ticket_items(self) -> list[RemoteItem]:
         objects = _call(lambda: list(self.client.catalog.list(types="ITEM")))

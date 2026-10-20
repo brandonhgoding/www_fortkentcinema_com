@@ -1,0 +1,14 @@
+<div id="online-count" class="onlineCount">
+  <p class="page-subtitle"><strong>{{ sold }} / {{ allowance }}</strong> online tickets taken</p>
+  <form method="post" action="{% url 'dashboard:showtime_allowance' showtime.pk %}"
+        hx-post="{% url 'dashboard:showtime_allowance' showtime.pk %}"
+        hx-target="#online-count" hx-swap="outerHTML" class="actions">
+    {% csrf_token %}
+    <label for="online-allowance-input" class="fieldHint">Online allowance</label>
+    <input type="text" inputmode="numeric" class="input inputCompact" id="online-allowance-input"
+           name="online_allowance" value="{{ allowance_value }}" placeholder="Default"
+           size="5"{% if error %} aria-invalid="true" aria-describedby="online-allowance-error"{% endif %} />
+    <button class="btn btn-secondary btn-sm">Save</button>
+  </form>
+  {% if error %}<p class="fieldHint" id="online-allowance-error" role="alert">{{ error }}</p>{% endif %}
+</div>

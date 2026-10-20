@@ -245,3 +245,16 @@ class NowShowingIsoTests(TestCase):
         (slot,) = m["showtimes"].values()
         self.assertEqual(slot[0]["iso"], st.starts_at.astimezone(CINEMA_TZ).isoformat())
         self.assertRegex(slot[0]["iso"], r"[+-]\d\d:\d\d$")
+
+    def test_time_dict_carries_showtime_id(self) -> None:
+        """The home view looks up online availability by showtime pk."""
+        screen = make_screen()
+        film = make_film("Dune")
+        today = timezone.localdate()
+        eng = make_engagement(screen, [film], start=today, end=today)
+        st = Showtime.objects.create(
+            engagement=eng, starts_at=aware(today.year, today.month, today.day, 19, 30)
+        )
+        (m,) = get_now_showing()
+        (slot,) = m["showtimes"].values()
+        self.assertEqual(slot[0]["showtime_id"], st.pk)

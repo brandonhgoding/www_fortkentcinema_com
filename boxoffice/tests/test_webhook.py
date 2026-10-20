@@ -12,6 +12,7 @@ from boxoffice.tests.fakes import FakeGateway
 from django.http import HttpResponse
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from tickets.tests.factories import make_order, make_showtime
 
 KEY = "test-signature-key"
 URL = "https://www.fortkentcinema.com/boxoffice/square/webhook/"
@@ -129,6 +130,23 @@ class DispatchTests(WebhookTestCase):
         resp = post(self.client, event("O9", type="payment.created"))
         self.assertEqual(resp.status_code, 200)
         self.process.assert_called_once_with("O9")
+
+    def test_completed_payment_reaches_tickets(self):
+        with mock.patch("boxoffice.views.confirm_payment") as cp:
+            post(self.client, event(order_id="SQ1"))
+        cp.assert_called_once()
+        self.assertEqual(cp.call_args.args[:2], ("SQ1", "P1"))
+        self.assertEqual(cp.call_args.kwargs, {"paid_at": PAID_AT})
+
+    def test_ticket_order_skips_the_membership_handler(self):
+        st = make_showtime()
+        make_order(st, square_order_id="SQ1")
+        with mock.patch("boxoffice.views.confirm_payment") as cp:
+            resp = post(self.client, event(order_id="SQ1"))
+        self.assertEqual(resp.status_code, 200)
+        self.process.assert_not_called()
+        cp.assert_called_once()
+        self.assertEqual(cp.call_args.args[:2], ("SQ1", "P1"))
 
     def test_approved_payment_is_ignored(self):
         self.assertIgnored(post(self.client, event(status="APPROVED")))

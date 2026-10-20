@@ -62,6 +62,7 @@ def get_now_showing():
             local_date = _local_date(st.starts_at).isoformat()
             showtimes_by_date.setdefault(local_date, []).append(
                 {
+                    "showtime_id": st.pk,
                     "time": _format_showtime(st.starts_at),
                     # Offset-aware ISO-8601 for the home page's schema.org
                     # ScreeningEvent.startDate (partials/home_jsonld.html).

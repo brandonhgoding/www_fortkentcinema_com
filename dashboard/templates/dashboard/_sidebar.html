@@ -17,6 +17,9 @@
       <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="5" width="16" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M2 9h16" stroke="currentColor" stroke-width="1.5"/><path d="M5 13h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Members</a>
     <a href="{% url 'dashboard:tiers' %}" class="sidebarLink {% nav_active request 'dashboard:tiers' %}" @click="sidebarOpen = false">
       <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2.5l2.3 4.7 5.2.8-3.75 3.65.9 5.15L10 14.35 5.35 16.8l.9-5.15L2.5 8l5.2-.8L10 2.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>Memberships</a>
+    {% nav_active request 'dashboard:tickets' as tickets_active %}{% nav_active request 'dashboard:ticket_orders' as ticket_orders_active %}
+    <a href="{% url 'dashboard:tickets' %}" class="sidebarLink {{ tickets_active|default:ticket_orders_active }}" @click="sidebarOpen = false">
+      <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 6.5A1.5 1.5 0 014.5 5h11A1.5 1.5 0 0117 6.5V8a2 2 0 000 4v1.5a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 013 13.5V12a2 2 0 000-4V6.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M12.5 6.5v7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="1.5 2"/></svg>Online tickets</a>
     <a href="{% url 'dashboard:polls' %}" class="sidebarLink {% nav_active request 'dashboard:polls' %}" @click="sidebarOpen = false">
       <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 15V9M10 15V5M15 15v-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Polls</a>
     <a href="{% url 'dashboard:rental_inquiries' %}" class="sidebarLink {% nav_active request 'dashboard:rental_inquiries' %}" @click="sidebarOpen = false">

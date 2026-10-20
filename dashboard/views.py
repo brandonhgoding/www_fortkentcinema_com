@@ -2,7 +2,7 @@ import datetime
 import json
 from zoneinfo import ZoneInfo
 
-from boxoffice.gateway import GatewayError
+from boxoffice.gateway import GatewayError, disabled_reason
 from boxoffice.models import MembershipSale, SquareItem
 from boxoffice.reports import pull_status, sales_panel
 from boxoffice.sync import delete, live_item, schedule, sync
@@ -45,6 +45,9 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.generic import TemplateView, View
 from phone.models import Voicemail, VoicemailStatus
+from tickets import alerts as ticket_alerts
+from tickets.availability import for_showtimes
+from tickets.models import TicketOrder
 
 from .forms import EngagementForm, ScreenForm
 from .mixins import StaffRequiredMixin
@@ -68,12 +71,17 @@ class HomeView(StaffRequiredMixin, TemplateView):
         today_start, today_end = day_range(today, tomorrow)
         tomo_start, tomo_end = day_range(tomorrow, day_after)
 
-        today_showtimes = (
+        today_showtimes = list(
             Showtime.objects.filter(starts_at__gte=today_start, starts_at__lt=today_end)
             .select_related("screen")
             .prefetch_related("engagement__engagement_films__film")
             .order_by("starts_at")
         )
+        now = timezone.now()
+        availability = for_showtimes(
+            today_showtimes, now, square_enabled=disabled_reason() is None)
+        for st in today_showtimes:
+            st.online_sold = availability[st.pk].sold
         tomorrow_count = Showtime.objects.filter(
             starts_at__gte=tomo_start, starts_at__lt=tomo_end, is_cancelled=False).count()
 
@@ -109,6 +117,9 @@ class HomeView(StaffRequiredMixin, TemplateView):
                     deleted_at__isnull=True).exclude(last_error="").count(),
                 square_membership_failures=MembershipSale.objects.filter(
                     status=MembershipSale.Status.FAILED).count(),
+                ticket_failures=ticket_alerts.failures_count(),
+                nearly_sold_out=ticket_alerts.nearly_sold_out(now),
+                cancelled_with_orders=ticket_alerts.cancelled_with_orders(),
             ),
             "sales_panel": sales_panel(today),
             "display_name": user.get_short_name() or user.get_username(),
@@ -316,7 +327,7 @@ class EngagementDetailView(StaffRequiredMixin, TemplateView):
         )
         ctx["engagement"] = engagement
         ctx["films"] = [ef.film for ef in engagement.engagement_films.all()]
-        ctx["showtimes"] = engagement.showtimes.select_related("screen")
+        ctx["showtime_rows"] = showtime_rows(engagement, timezone.now())
         ctx["KIND_LABELS"] = KIND_LABELS
         ctx["social_default_badge"] = PARAM_BY_BADGE[default_badge(engagement)]
         ctx["social_facebook_url"] = reverse(
@@ -464,10 +475,28 @@ class EngagementStatusView(StaffRequiredMixin, View):
         return _engagement_list_response(request, tab, toast=_save_toast(engagement, "Status updated"))
 
 
+HAS_ONLINE_ORDERS = "Has online orders. Cancel it instead."
+
+
+def _clear_dead_orders(orders):
+    """Delete expired, stale and unpaid-failed orders; False if any order is live."""
+    now = timezone.now()
+    orders = list(orders)
+    if any(o.counts_as_sold or o.status == TicketOrder.Status.REFUNDED
+           or o.is_holding(now) for o in orders):
+        return False
+    TicketOrder.objects.filter(pk__in=[o.pk for o in orders]).delete()
+    return True
+
+
 class EngagementDeleteView(StaffRequiredMixin, View):
     def post(self, request, pk):
         engagement = get_object_or_404(Engagement, pk=pk)
         tab = request.GET.get("tab") or "CURRENT"
+        orders = TicketOrder.objects.filter(showtime__engagement=engagement)
+        if not _clear_dead_orders(orders):
+            return _engagement_list_response(request, tab, toast={
+                "kind": "error", "message": HAS_ONLINE_ORDERS})
         try:
             delete(engagement)
         except GatewayError as exc:
@@ -489,8 +518,18 @@ class EngagementSquareRetryView(StaffRequiredMixin, View):
 CINEMA_TZ = ZoneInfo("America/New_York")
 
 
+def showtime_rows(engagement, now):
+    """Each showtime with its online tickets taken and its allowance, for the list."""
+    showtimes = list(engagement.showtimes.select_related("screen", "engagement"))
+    availability = for_showtimes(
+        showtimes, now, square_enabled=bool(settings.SQUARE_ACCESS_TOKEN))
+    return [{"st": st, "sold": availability[st.pk].sold,
+             "allowance": availability[st.pk].allowance} for st in showtimes]
+
+
 def _showtime_list_response(request, engagement, toast, close_drawer=False):
-    ctx = {"engagement": engagement, "showtimes": engagement.showtimes.select_related("screen")}
+    rows = showtime_rows(engagement, timezone.now())
+    ctx = {"engagement": engagement, "showtime_rows": rows}
     html = render(request, "dashboard/_showtime_list.html", ctx).content.decode()
     html = html.replace('<div id="showtime-list">', '<div id="showtime-list" hx-swap-oob="true">', 1)
     resp = HttpResponse(html)
@@ -512,15 +551,45 @@ def _parse_starts_at(date_str, time_str):
 
 
 INVALID_DATE_TIME = "Enter a valid date and time."
+INVALID_ALLOWANCE = "Online allowance must be a whole number."
+MAX_ALLOWANCE = 10000
 CANCELLED_ENGAGEMENT = "This engagement is cancelled. Confirm it before adding showtimes."
 
 
+def _parse_allowance(value):
+    """(allowance, ok): blank is (None, True), meaning the default share of seats."""
+    value = value.strip()
+    if not value:
+        return None, True
+    try:
+        allowance = int(value)
+    except ValueError:
+        return None, False
+    return allowance, 0 <= allowance <= MAX_ALLOWANCE
+
+
+def _showtime_updated_toast(st, moved):
+    """The saved toast; a warning if a move means buyers were emailed the old time."""
+    orders = st.ticket_orders.all() if moved else []
+    emailed = sum(order.counts_as_sold for order in orders)
+    if not emailed:
+        return {"kind": "success", "message": "Showtime updated"}
+    orders_were = "online order was" if emailed == 1 else "online orders were"
+    return {"kind": "warning", "message": f"Showtime updated. {emailed} {orders_were} "
+            "emailed the old time. Let them know."}
+
+
 def _render_showtime_form(request, engagement, action_url, submit_label, mode,
-                          date="", time="", captions="", is_cancelled=False, errors=None):
+                          date="", time="", captions="", is_cancelled=False,
+                          errors=None, online_allowance="", screen=None):
+    # The edited showtime's own screen can differ from the engagement's.
+    screen = screen or engagement.screen
+    default_allowance = Showtime(screen=screen).effective_online_allowance
     return render(request, "dashboard/_showtime_form.html", {
         "engagement": engagement, "form_action": action_url, "submit_label": submit_label,
         "mode": mode, "date": date, "time": time, "captions": captions or "",
         "is_cancelled": is_cancelled, "errors": errors or [],
+        "online_allowance": online_allowance, "default_allowance": default_allowance,
     })
 
 
@@ -535,12 +604,13 @@ class ShowtimeCreateView(StaffRequiredMixin, View):
         engagement = get_object_or_404(Engagement, pk=eng_pk)
         date_str, time_str = request.POST.get("date", ""), request.POST.get("time", "")
         captions = request.POST.get("captions") or None
+        allowance_str = request.POST.get("online_allowance", "")
         action = reverse("dashboard:showtime_create", args=[eng_pk])
 
         def again(errors):
             return _render_showtime_form(request, engagement, action, "Create Showtime", "create",
                                          date=date_str, time=time_str, captions=captions,
-                                         errors=errors)
+                                         errors=errors, online_allowance=allowance_str)
 
         if engagement.status == EngagementStatus.CANCELLED:
             return again([CANCELLED_ENGAGEMENT])
@@ -549,6 +619,9 @@ class ShowtimeCreateView(StaffRequiredMixin, View):
         starts_at = _parse_starts_at(date_str, time_str)
         if starts_at is None:
             return again([INVALID_DATE_TIME])
+        online_allowance, allowance_ok = _parse_allowance(allowance_str)
+        if not allowance_ok:
+            return again([INVALID_ALLOWANCE])
         with transaction.atomic():
             # Same lock as the bulk view, so two quick submits for one slot
             # can't both pass the overlap check.
@@ -558,19 +631,25 @@ class ShowtimeCreateView(StaffRequiredMixin, View):
                 engagement.title)
             if conflicts:
                 return again([format_overlap_error(c) for c in conflicts])
-            Showtime.objects.create(engagement=engagement, starts_at=starts_at, captions=captions)
+            Showtime.objects.create(engagement=engagement, starts_at=starts_at,
+                                    captions=captions,
+                                    online_allowance=online_allowance)
         return _showtime_list_response(request, engagement,
                                        {"kind": "success", "message": "Showtime created"}, close_drawer=True)
 
 
 class ShowtimeEditView(StaffRequiredMixin, View):
     def get(self, request, pk):
-        st = get_object_or_404(Showtime.objects.select_related("engagement"), pk=pk)
+        st = get_object_or_404(
+            Showtime.objects.select_related("engagement", "screen"), pk=pk)
         local = st.starts_at.astimezone(CINEMA_TZ)
         return _render_showtime_form(
             request, st.engagement, reverse("dashboard:showtime_edit", args=[pk]),
             "Save Changes", "edit", date=local.date().isoformat(),
-            time=local.strftime("%H:%M"), captions=st.captions or "", is_cancelled=st.is_cancelled)
+            time=local.strftime("%H:%M"), captions=st.captions or "",
+            is_cancelled=st.is_cancelled,
+            online_allowance="" if st.online_allowance is None else st.online_allowance,
+            screen=st.screen)
 
     def post(self, request, pk):
         st = get_object_or_404(Showtime.objects.select_related("engagement", "screen"), pk=pk)
@@ -578,18 +657,24 @@ class ShowtimeEditView(StaffRequiredMixin, View):
         date_str, time_str = request.POST.get("date", ""), request.POST.get("time", "")
         captions = request.POST.get("captions") or None
         is_cancelled = request.POST.get("is_cancelled") == "on"
+        allowance_str = request.POST.get("online_allowance", "")
         action = reverse("dashboard:showtime_edit", args=[pk])
 
         def again(errors):
             return _render_showtime_form(request, engagement, action, "Save Changes", "edit",
                                          date=date_str, time=time_str, captions=captions,
-                                         is_cancelled=is_cancelled, errors=errors)
+                                         is_cancelled=is_cancelled, errors=errors,
+                                         online_allowance=allowance_str,
+                                         screen=st.screen)
 
         if not date_str or not time_str:
             return again(["Date and time are required."])
         starts_at = _parse_starts_at(date_str, time_str)
         if starts_at is None:
             return again([INVALID_DATE_TIME])
+        online_allowance, allowance_ok = _parse_allowance(allowance_str)
+        if not allowance_ok:
+            return again([INVALID_ALLOWANCE])
         with transaction.atomic():
             # The showtime's own screen, which can differ from the
             # engagement's after the engagement is moved to another screen.
@@ -600,18 +685,23 @@ class ShowtimeEditView(StaffRequiredMixin, View):
                     engagement.title, exclude_showtime_id=st.pk)
                 if conflicts:
                     return again([format_overlap_error(c) for c in conflicts])
+            moved = st.starts_at != starts_at
             st.starts_at = starts_at
             st.captions = captions
             st.is_cancelled = is_cancelled
+            st.online_allowance = online_allowance
             st.save()
-        return _showtime_list_response(request, engagement,
-                                       {"kind": "success", "message": "Showtime updated"}, close_drawer=True)
+        toast = _showtime_updated_toast(st, moved)
+        return _showtime_list_response(request, engagement, toast, close_drawer=True)
 
 
 class ShowtimeDeleteView(StaffRequiredMixin, View):
     def post(self, request, pk):
         st = get_object_or_404(Showtime.objects.select_related("engagement"), pk=pk)
         engagement = st.engagement
+        if not _clear_dead_orders(st.ticket_orders.all()):
+            refused = {"kind": "error", "message": HAS_ONLINE_ORDERS}
+            return _showtime_list_response(request, engagement, refused)
         st.delete()
         return _showtime_list_response(request, engagement,
                                        {"kind": "success", "message": "Showtime deleted"})
