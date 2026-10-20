@@ -35,4 +35,5 @@ def import_film_from_tmdb(tmdb_id: int, service: TMDBService | None = None) -> F
         backdrop_url=details.get("backdrop_path") or "",
         overview=details.get("overview") or "",
         runtime_minutes=details.get("runtime"),
+        rating=details.get("certification") or "",
     )

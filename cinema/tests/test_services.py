@@ -21,6 +21,13 @@ class ImportFilmFromTMDBTests(TestCase):
         self.assertEqual(film.runtime_minutes, 108)
         self.assertEqual(film.imdb_id, "tt42")
         self.assertEqual(film.poster_url, "https://img/x.jpg")
+        self.assertEqual(film.rating, "")  # no certification in DETAILS
+
+    def test_stores_the_certification_as_the_rating(self) -> None:
+        svc = mock.Mock()
+        svc.get_film_details.return_value = {**DETAILS, "certification": "PG-13"}
+        film = import_film_from_tmdb(42, service=svc)
+        self.assertEqual(film.rating, "PG-13")
 
     def test_reuses_existing_by_tmdb_id(self) -> None:
         existing = Film.objects.create(title="Old", tmdb_id="42")

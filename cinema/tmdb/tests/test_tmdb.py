@@ -73,3 +73,46 @@ class TMDBServiceTests(TestCase):
         self.assertEqual(d["runtime"], 130)
         self.assertEqual(d["genres"], ["Horror"])
         self.assertEqual(d["imdb_id"], "tt1")
+        # The MPA rating lives in the release-dates block, asked for on the
+        # same request rather than a second one.
+        self.assertEqual(mget.call_args.kwargs["params"]["append_to_response"],
+                         "release_dates")
+        self.assertEqual(d["certification"], "")  # none in this payload
+
+    def _details(self, mget, results) -> dict:
+        payload = {"id": 7, "title": "Nope",
+                   "release_dates": {"results": results}}
+        m = mock.Mock(json=lambda: payload)
+        m.raise_for_status = lambda: None
+        mget.return_value = m
+        return TMDBService().get_film_details(7)
+
+    @mock.patch("cinema.tmdb.client.requests.get")
+    def test_certification_prefers_the_us_theatrical_release(self, mget) -> None:
+        d = self._details(mget, [
+            {"iso_3166_1": "GB", "release_dates": [
+                {"type": 3, "certification": "15"}]},
+            {"iso_3166_1": "US", "release_dates": [
+                {"type": 2, "certification": ""},
+                {"type": 4, "certification": "PG-13"},
+                {"type": 3, "certification": "R"},
+                {"type": 3, "certification": "PG-13"}]},
+        ])
+        self.assertEqual(d["certification"], "R")
+
+    @mock.patch("cinema.tmdb.client.requests.get")
+    def test_certification_falls_back_to_any_us_release(self, mget) -> None:
+        d = self._details(mget, [
+            {"iso_3166_1": "US", "release_dates": [
+                {"type": 3, "certification": ""},
+                {"type": 4, "certification": "PG"}]},
+        ])
+        self.assertEqual(d["certification"], "PG")
+
+    @mock.patch("cinema.tmdb.client.requests.get")
+    def test_certification_blank_without_a_us_release(self, mget) -> None:
+        d = self._details(mget, [
+            {"iso_3166_1": "FR", "release_dates": [
+                {"type": 3, "certification": "TP"}]},
+        ])
+        self.assertEqual(d["certification"], "")
