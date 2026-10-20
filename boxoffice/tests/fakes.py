@@ -25,6 +25,8 @@ class FakeGateway:
         self.orders: list[OrderData] = []
         self.categories: dict[str, str] = {}
         self.images: dict[str, tuple[str, bytes]] = {}
+        # Customer id -> the fields it was created with (email, given_name, ...).
+        self.customers: dict[str, dict] = {}
         self.calls: list[tuple[str, dict]] = []
         self.fail_with = fail_with
         # Payment IDs whose refund_payment raises GatewayError("boom").
@@ -36,6 +38,7 @@ class FakeGateway:
         self._image_ids = itertools.count(1)
         self._link_ids = itertools.count(1)
         self._refund_ids = itertools.count(1)
+        self._customer_ids = itertools.count(1)
 
     def _record(self, method: str, **kwargs) -> None:
         self.calls.append((method, kwargs))
@@ -117,6 +120,26 @@ class FakeGateway:
         if payment_id in self.fail_on:
             raise GatewayError("boom")
         return f"R-{next(self._refund_ids)}"
+
+    def find_customer(self, email: str) -> str | None:
+        self._record("find_customer", email=email)
+        for customer_id, fields in self.customers.items():
+            if fields["email"] == email:
+                return customer_id
+        return None
+
+    def create_customer(self, *, given_name: str, family_name: str, email: str,
+                        phone: str, idempotency_key: str) -> str:
+        self._record("create_customer", given_name=given_name,
+                     family_name=family_name, email=email, phone=phone,
+                     idempotency_key=idempotency_key)
+        if self.reject_phone and phone:
+            raise InvalidPhone("INVALID_PHONE_NUMBER")
+        customer_id = f"C-{next(self._customer_ids)}"
+        self.customers[customer_id] = {
+            "given_name": given_name, "family_name": family_name,
+            "email": email, "phone": phone}
+        return customer_id
 
     def pay(self, order_id: str, payment_id: str = "P1") -> None:
         """Test helper: the buyer completes the payment link's checkout."""

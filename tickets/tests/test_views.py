@@ -14,7 +14,7 @@ from tickets.models import TicketOrder
 from tickets.orders import start
 from tickets.tests.factories import age, make_live_item, make_order, make_showtime
 
-BUYER = {"name": "Ann Lee", "email": "ann@example.com", "phone": "207-555-0100"}
+BUYER = {"first_name": "Ann", "last_name": "Lee", "email": "ann@example.com", "phone": "207-555-0100"}
 
 
 def matinee_start() -> datetime.datetime:
@@ -55,6 +55,17 @@ class BuyFormTests(TestCase):
         data.update(over)
         return BuyForm(data)
 
+    def test_both_names_required(self):
+        self.assertTrue(self.form().is_valid())
+        self.assertIn("first_name", self.form(first_name=" ").errors)
+        self.assertIn("last_name", self.form(last_name="").errors)
+        form = self.form(first_name=" Ann ", last_name=" Lee ")
+        self.assertTrue(form.is_valid())
+        self.assertEqual(
+            (form.cleaned_data["first_name"], form.cleaned_data["last_name"]),
+            ("Ann", "Lee"),
+        )
+
     def test_quantities(self):
         form = self.form(adult=2, child=1)
         self.assertTrue(form.is_valid(), form.errors)
@@ -94,6 +105,14 @@ class BuyPageTests(ViewTestCase):
             self.assertEqual(self.client.get(url).status_code, 404)
             self.get_gateway.return_value = self.gw
         self.assertFalse(TicketOrder.objects.exists())
+
+    def test_buy_page_asks_first_and_last_name(self):
+        html = self.get(self.st)
+        self.assertIn("First name", html)
+        self.assertIn("Last name", html)
+        self.assertIn('autocomplete="given-name"', html)
+        self.assertIn('autocomplete="family-name"', html)
+        self.assertNotIn("Your name", html)
 
     def test_buy_page_lists_prices_and_matinee(self):
         matinee_st = make_showtime(starts_at=matinee_start())
@@ -200,7 +219,10 @@ class BuyPostTests(ViewTestCase):
         self.assertTrue(r["Location"].startswith("https://square.link/"))
         order = TicketOrder.objects.get()
         self.assertEqual(order.total_cents, 2200)
-        self.assertEqual((order.name, order.phone), ("Ann Lee", "207-555-0100"))
+        self.assertEqual(
+            (order.first_name, order.last_name, order.phone),
+            ("Ann", "Lee", "207-555-0100"),
+        )
 
     def test_post_gateway_failure_message(self):
         self.get_gateway.return_value = FakeGateway(fail_with=GatewayError("x"))

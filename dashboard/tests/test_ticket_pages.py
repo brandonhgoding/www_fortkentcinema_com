@@ -182,7 +182,8 @@ class OrderLogTests(StaffTestCase):
                 "film",
                 "showtime",
                 "number",
-                "name",
+                "first name",
+                "last name",
                 "email",
                 "phone",
                 "adult",
@@ -199,8 +200,9 @@ class OrderLogTests(StaffTestCase):
         self.assertEqual(
             by_number["FKC-1"][:3], ["Dune", f"{local:%Y-%m-%d %H:%M}", "FKC-1"]
         )
-        self.assertEqual(by_number["FKC-1"][6:10], ["2", "0", "1", "22.00"])
-        self.assertEqual(by_number["FKC-2"][10], "Expired")
+        self.assertEqual(by_number["FKC-1"][3:5], ["Ann", "Lee"])
+        self.assertEqual(by_number["FKC-1"][7:11], ["2", "0", "1", "22.00"])
+        self.assertEqual(by_number["FKC-2"][11], "Expired")
 
         filtered = self.client.get(
             reverse("dashboard:ticket_orders_export"), {"status": "PAID"}

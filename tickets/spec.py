@@ -53,6 +53,7 @@ def support_email() -> str:
 
 
 def checkout_spec(order: TicketOrder, variation_ids: dict[str, str]) -> CheckoutSpec:
+    """The payment-link request for ``order``; its Square customer rides along."""
     starts_at = order.showtime.starts_at
     quantities = {line.tier: line.quantity for line in order.lines.all()}
     lines = tuple(
@@ -76,4 +77,5 @@ def checkout_spec(order: TicketOrder, variation_ids: dict[str, str]) -> Checkout
         # SITE_CONFIG["cinema"] has no email address.
         support_email=support_email(),
         idempotency_key=order.token,
+        customer_id=order.square_customer_id,
     )

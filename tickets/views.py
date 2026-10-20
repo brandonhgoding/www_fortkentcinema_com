@@ -74,7 +74,8 @@ class BuyView(View):
         try:
             order = orders.start(
                 showtime,
-                name=form.cleaned_data["name"],
+                first_name=form.cleaned_data["first_name"],
+                last_name=form.cleaned_data["last_name"],
                 email=form.cleaned_data["email"],
                 phone=form.cleaned_data["phone"],
                 quantities=form.quantities(),
@@ -131,7 +132,12 @@ class BuyView(View):
             "closed_sentence": CLOSED_SENTENCES.get(result.reason, ""),
             "few_left": result.remaining < FEW_LEFT,
             "form": form,
-            "contact_fields": [form["name"], form["email"], form["phone"]],
+            "contact_fields": [
+                form["first_name"],
+                form["last_name"],
+                form["email"],
+                form["phone"],
+            ],
             "error": error,
         }
         return render(request, "tickets/buy.html", context)

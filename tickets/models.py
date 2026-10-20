@@ -21,6 +21,12 @@ def new_token() -> str:
     return secrets.token_urlsafe(32)
 
 
+def split_name(name: str) -> tuple[str, str]:
+    """A typed full name as (first, last): the first word, then the rest."""
+    first, _, last = name.strip().partition(" ")
+    return first, last.strip()
+
+
 class TicketOrder(models.Model):
     """One online checkout attempt for a showtime."""
 
@@ -40,7 +46,8 @@ class TicketOrder(models.Model):
         on_delete=models.PROTECT,
         related_name="ticket_orders",
     )
-    name = models.CharField(max_length=200)
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100, blank=True)
     email = models.EmailField()
     phone = models.CharField(max_length=40)
     status = models.CharField(
@@ -49,6 +56,9 @@ class TicketOrder(models.Model):
     square_order_id = models.CharField(max_length=64, blank=True, default="")
     square_payment_id = models.CharField(max_length=64, blank=True, default="")
     square_checkout_url = models.URLField(blank=True)
+    # The buyer's Square customer profile, found or made at checkout; "" when
+    # the directory call failed (the sale still goes ahead).
+    square_customer_id = models.CharField(max_length=64, blank=True, default="")
     total_cents = models.PositiveIntegerField()
     error = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -83,6 +93,10 @@ class TicketOrder(models.Model):
     def save(self, *args, **kwargs):
         self.email = self.email.strip().lower()
         super().save(*args, **kwargs)
+
+    @property
+    def name(self) -> str:
+        return f"{self.first_name} {self.last_name}".strip()
 
     def is_holding(self, now: datetime.datetime) -> bool:
         """PENDING and still inside the hold window: the seats are spoken for."""

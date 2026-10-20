@@ -9,7 +9,7 @@ from tickets.models import TicketOrder
 from tickets.orders import Refused, start
 from tickets.tests.factories import make_live_item, make_showtime
 
-BUYER = {"name": "Ann Lee", "email": " Ann@Example.com", "phone": "207-555-0100"}
+BUYER = {"first_name": "Ann", "last_name": "Lee", "email": " Ann@Example.com", "phone": "207-555-0100"}
 
 
 class StartTests(TestCase):
@@ -41,12 +41,59 @@ class StartTests(TestCase):
         )
         self.assertEqual(order.square_order_id, "SQ-1")
         self.assertEqual(order.square_checkout_url, "https://square.link/u/1")
-        self.assertEqual(gw.calls[0][0], "create_payment_link")
-        spec = gw.calls[0][1]["spec"]
+        # The customer is looked up first, then the link is made.
+        self.assertEqual([c[0] for c in gw.calls],
+                         ["find_customer", "create_customer", "create_payment_link"])
+        spec = gw.calls[-1][1]["spec"]
         self.assertEqual(spec.reference, order.number)
         self.assertEqual(
             [line.variation_id for line in spec.lines], ["var-adult", "var-child"]
         )
+
+    def test_start_makes_a_square_customer_and_puts_it_on_the_order(self):
+        gw = FakeGateway()
+        make_live_item(self.st.engagement)
+        order = self._start({"adult": 1}, gw)
+        order.refresh_from_db()
+        self.assertEqual(order.square_customer_id, "C-1")
+        self.assertEqual(gw.customers["C-1"], {
+            "given_name": "Ann", "family_name": "Lee",
+            "email": "ann@example.com", "phone": "+12075550100"})
+        create = [c for c in gw.calls if c[0] == "create_customer"][0][1]
+        self.assertEqual(create["idempotency_key"], f"customer-{order.token}")
+        spec = [c for c in gw.calls if c[0] == "create_payment_link"][0][1]["spec"]
+        self.assertEqual(spec.customer_id, "C-1")
+
+    def test_start_reuses_the_customer_with_that_email(self):
+        gw = FakeGateway()
+        gw.customers["C-9"] = {"given_name": "Annie", "family_name": "Lee",
+                               "email": "ann@example.com", "phone": ""}
+        make_live_item(self.st.engagement)
+        order = self._start({"adult": 1}, gw)
+        order.refresh_from_db()
+        self.assertEqual(order.square_customer_id, "C-9")
+        self.assertEqual([c[0] for c in gw.calls],
+                         ["find_customer", "create_payment_link"])
+        self.assertEqual(gw.customers["C-9"]["given_name"], "Annie")  # untouched
+
+    def test_customer_failure_does_not_stop_the_sale(self):
+        gw = FakeGateway()
+        make_live_item(self.st.engagement)
+        with mock.patch.object(gw, "find_customer", side_effect=GatewayError("down")):
+            order = self._start({"adult": 1}, gw)
+        order.refresh_from_db()
+        self.assertEqual((order.status, order.square_customer_id), ("PENDING", ""))
+        spec = [c for c in gw.calls if c[0] == "create_payment_link"][0][1]["spec"]
+        self.assertEqual(spec.customer_id, "")
+
+    def test_rejected_phone_makes_the_customer_without_one(self):
+        gw = FakeGateway(reject_phone=True)
+        make_live_item(self.st.engagement)
+        order = self._start({"adult": 1}, gw)
+        order.refresh_from_db()
+        self.assertEqual(order.square_customer_id, "C-1")
+        self.assertEqual(gw.customers["C-1"]["phone"], "")
+        self.assertEqual(order.status, "PENDING")
 
     def test_gateway_error_marks_failed(self):
         gw = FakeGateway(fail_with=GatewayError("down"))

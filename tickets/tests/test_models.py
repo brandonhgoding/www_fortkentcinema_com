@@ -5,7 +5,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import ProtectedError
 from django.test import SimpleTestCase, TestCase
 
-from tickets.models import TicketLine, new_number, new_token
+from tickets.models import TicketLine, new_number, new_token, split_name
 from tickets.tests.factories import make_order, make_showtime
 
 
@@ -18,9 +18,27 @@ class NumberAndTokenTests(SimpleTestCase):
         self.assertRegex(new_token(), r"^[A-Za-z0-9_-]{43}$")
 
 
+class SplitNameTests(SimpleTestCase):
+    def test_first_word_then_the_rest(self):
+        self.assertEqual(split_name("Ann Lee"), ("Ann", "Lee"))
+        self.assertEqual(split_name("Mary Ann Smith"), ("Mary", "Ann Smith"))
+
+    def test_single_word_has_no_family_name(self):
+        self.assertEqual(split_name("Brandon"), ("Brandon", ""))
+        self.assertEqual(split_name("  Brandon  "), ("Brandon", ""))
+        self.assertEqual(split_name(""), ("", ""))
+
+
 class OrderModelTests(TestCase):
     def setUp(self):
         self.st = make_showtime()
+
+    def test_name_joins_first_and_last(self):
+        order = make_order(self.st, first_name="Ann", last_name="Lee")
+        self.assertEqual(order.name, "Ann Lee")
+        self.assertEqual(order.square_customer_id, "")
+        self.assertEqual(make_order(self.st, first_name="Cher", last_name="").name,
+                         "Cher")
 
     def test_defaults_on_create(self):
         order = make_order(self.st)

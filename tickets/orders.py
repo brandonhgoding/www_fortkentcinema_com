@@ -12,6 +12,7 @@ from django.utils import timezone
 from web.constants import TICKET_HOLD_MINUTES
 
 from tickets import availability, pricing
+from tickets.customers import ensure_customer
 from tickets.mail import send_ticket
 from tickets.models import TicketLine, TicketOrder
 from tickets.spec import checkout_spec
@@ -34,7 +35,8 @@ class Refused(Exception):
 def start(
     showtime: Showtime,
     *,
-    name: str,
+    first_name: str,
+    last_name: str,
     email: str,
     phone: str,
     quantities: dict[str, int],
@@ -70,7 +72,8 @@ def start(
         }
         order = TicketOrder.objects.create(
             showtime=showtime,
-            name=name,
+            first_name=first_name,
+            last_name=last_name,
             email=email,
             phone=phone,
             total_cents=sum(prices[t] * q for t, q in quantities.items()),
@@ -86,6 +89,8 @@ def start(
             for tier, quantity in quantities.items()
         )
     # Outside the transaction: never hold the showtime lock across a Square call.
+    order.square_customer_id = ensure_customer(gateway, order)
+    order.save(update_fields=["square_customer_id"])
     try:
         link = _create_link(gateway, checkout_spec(order, variation_ids))
     except GatewayError as exc:

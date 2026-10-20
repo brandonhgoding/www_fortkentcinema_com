@@ -34,7 +34,8 @@ from .views import CINEMA_TZ, INVALID_ALLOWANCE, _parse_allowance
 CSV_TIME = "%Y-%m-%d %H:%M"
 CSV_HEADER = [
     "number",
-    "name",
+    "first name",
+    "last name",
     "email",
     "phone",
     *SQUARE_TIERS,
@@ -65,14 +66,18 @@ def _door_orders(showtime: Showtime):
         )
         .select_related("redeemed_by")
         .prefetch_related("lines")
-        .order_by("name", "pk")
+        .order_by("last_name", "first_name", "pk")
     )
 
 
 def _search(orders, q: str):
     if not q:
         return orders
-    return orders.filter(Q(name__icontains=q) | Q(number__icontains=q))
+    return orders.filter(
+        Q(first_name__icontains=q)
+        | Q(last_name__icontains=q)
+        | Q(number__icontains=q)
+    )
 
 
 def _count_context(showtime: Showtime) -> dict:
@@ -168,7 +173,8 @@ def _csv_row(order: TicketOrder) -> list:
     quantities = {line.tier: line.quantity for line in order.lines.all()}
     return [
         order.number,
-        order.name,
+        order.first_name,
+        order.last_name,
         order.email,
         order.phone,
         *(quantities.get(tier, 0) for tier in SQUARE_TIERS),
