@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo
 
 from boxoffice.gateway import GatewayError, square_enabled
 from boxoffice.models import MembershipSale, SquareItem
+from boxoffice.pull import recompute_show_dates
 from boxoffice.reports import pull_status, sales_panel
 from boxoffice.sync import delete, live_item, schedule, sync
 from cinema.models import (
@@ -690,6 +691,9 @@ class ShowtimeEditView(StaffRequiredMixin, View):
             st.is_cancelled = is_cancelled
             st.online_allowance = online_allowance
             st.save()
+            if moved:
+                # The ticket report counts a sale on its show day.
+                recompute_show_dates(st.pk)
         toast = _showtime_updated_toast(st, moved)
         return _showtime_list_response(request, engagement, toast, close_drawer=True)
 

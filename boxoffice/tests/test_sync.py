@@ -118,6 +118,7 @@ class PushTests(TestCase):
                 tier=tier, name=tier.title(), price_cents=price, ordinal=ordinal)
         line = SaleLine.objects.create(
             order_id="O1", line_uid="L1", business_date=datetime.date(2026, 10, 9),
+            show_date=datetime.date(2026, 10, 9),
             closed_at=timezone.now(), item_name="Dune", variation_name="Matinee",
             quantity=1, gross_cents=600, engagement=self.eng,
             variation=item.variations.get(tier="matinee"))

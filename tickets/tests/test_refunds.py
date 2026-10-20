@@ -16,6 +16,7 @@ def ledger_line(showtime, order_id: str, quantity: int, gross_cents: int) -> Sal
     Engagement.objects.filter(pk=showtime.engagement_id).update(admissions=quantity)
     return SaleLine.objects.create(
         order_id=order_id, line_uid="L1", business_date=timezone.localdate(),
+        show_date=timezone.localdate(),
         item_name="Dune", quantity=quantity, gross_cents=gross_cents,
         engagement=showtime.engagement, showtime=showtime)
 

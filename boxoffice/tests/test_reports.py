@@ -32,6 +32,8 @@ def make_line(item_name, gross_cents, quantity=1, **over) -> SaleLine:
         gross_cents=gross_cents,
     )
     fields.update(over)
+    # As the pull stores it: a register sale's show day is its sale day.
+    fields.setdefault("show_date", fields["business_date"])
     return SaleLine.objects.create(**fields)
 
 
@@ -91,7 +93,8 @@ class AggregationTests(TestCase):
         # on DAY, the ticket report on the show day.
         show_day = DAY + datetime.timedelta(days=2)
         showtime = make_showtime(starts_at=at_eastern(show_day, 19, 0))
-        make_line("Dune", 800, engagement=showtime.engagement, showtime=showtime)
+        make_line("Dune", 800, engagement=showtime.engagement, showtime=showtime,
+                  show_date=show_day)
         self.assertEqual(owner_summary(DAY), [ItemTotal("Dune", 1, 800)])
         self.assertEqual(ticket_report(DAY), [])
         self.assertEqual(ticket_report(show_day), [ItemTotal("Dune", 1, 800)])
@@ -104,9 +107,19 @@ class AggregationTests(TestCase):
             item=item, square_id="V1", sku="s1", tier="adult", name="Adult",
             price_cents=1000, ordinal=0)
         make_line("Dune", 1000, quantity=2, variation=adult,
-                  engagement=showtime.engagement, showtime=showtime)
+                  engagement=showtime.engagement, showtime=showtime,
+                  show_date=show_day)
         self.assertEqual(tier_totals(DAY)["adult"], 0)
         self.assertEqual(tier_totals(show_day)["adult"], 2)
+
+    def test_a_deleted_showtime_keeps_its_show_day(self) -> None:
+        # The stored day is the record; losing the showtime row must not
+        # flip the line back to its sale day.
+        show_day = DAY + datetime.timedelta(days=2)
+        make_line("Dune", 800, engagement=make_eng(), showtime=None,
+                  show_date=show_day)
+        self.assertEqual(ticket_report(DAY), [])
+        self.assertEqual(ticket_report(show_day), [ItemTotal("Dune", 1, 800)])
 
     def test_tier_totals_cover_the_three_variations(self) -> None:
         eng = make_eng()

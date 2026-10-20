@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 from boxoffice.gateway import GatewayError, OrderData, OrderLine, SquareGateway
 from boxoffice.models import SaleLine, SalesPull, SquareVariation
 from boxoffice.spec import ONLINE_REFERENCE_PREFIX
-from cinema.models import Engagement
+from cinema.models import Engagement, Showtime
 from django.conf import settings
 from django.db import transaction
 from django.db.models import F, Sum
@@ -87,6 +87,7 @@ def pull_day(day: datetime.date, gateway: SquareGateway) -> SalesPull:
         lines = [(o, ln) for o in orders for ln in o.lines]
         variations = _resolve_variations(ln.catalog_object_id for _, ln in lines)
         refunded = _resolve_refunded(o.order_id for o in orders)
+        showtimes = _resolve_showtimes(o.showtime_id for o in orders)
         categories = _resolve_categories(
             gateway,
             {ln.catalog_object_id for _, ln in lines
@@ -98,7 +99,7 @@ def pull_day(day: datetime.date, gateway: SquareGateway) -> SalesPull:
                        if row.engagement_id is not None}
             for o, ln in lines:
                 stored = _store_line(o, ln, variations, categories, refunded,
-                                     existing.get((o.order_id, ln.uid)))
+                                     showtimes, existing.get((o.order_id, ln.uid)))
                 if stored.engagement_id is not None:
                     touched.add(stored.engagement_id)
             recompute_admissions(touched)
@@ -165,6 +166,28 @@ def _resolve_variations(ids: Iterable[str]) -> dict[str, SquareVariation]:
             SquareVariation.objects.filter(square_id__in=wanted).select_related("item")}
 
 
+def _resolve_showtimes(ids: Iterable[int | None]) -> dict[int, datetime.datetime]:
+    """Map showtime pk -> starts_at for the showtimes that still exist.
+
+    The id rides on the order's metadata, written at checkout; the showtime
+    may have been deleted since, and a line must never point at a row that
+    is gone.
+    """
+    wanted = {i for i in ids if i is not None}
+    if not wanted:
+        return {}
+    return dict(Showtime.objects.filter(pk__in=wanted).values_list("pk", "starts_at"))
+
+
+def recompute_show_dates(showtime_pk: int) -> None:
+    """Re-date a moved showtime's lines; the lookback re-pulls only recent ones."""
+    starts_at = Showtime.objects.filter(pk=showtime_pk).values_list(
+        "starts_at", flat=True).first()
+    if starts_at is not None:
+        SaleLine.objects.filter(showtime_id=showtime_pk).update(
+            show_date=business_date(starts_at))
+
+
 def _resolve_refunded(order_ids: Iterable[str]) -> set[str]:
     """The Square ids among ``order_ids`` the website refunded in full."""
     if website is None:
@@ -212,6 +235,7 @@ def _existing_rows(lines: list[tuple[OrderData, OrderLine]]
 
 def _store_line(o: OrderData, ln: OrderLine, variations: dict[str, SquareVariation],
                 categories: dict[str, str], refunded: set[str],
+                showtimes: dict[int, datetime.datetime],
                 existing: SaleLine | None) -> SaleLine:
     variation = variations.get(ln.catalog_object_id) if ln.catalog_object_id else None
     if variation is not None:
@@ -230,11 +254,14 @@ def _store_line(o: OrderData, ln: OrderLine, variations: dict[str, SquareVariati
                             or (existing.category_id if existing else "")),
         }
     given_back = o.order_id in refunded
+    sold = sold_at(o)
+    assert sold is not None  # day_orders keeps only orders with a sale time
+    starts_at = showtimes.get(o.showtime_id) if o.showtime_id is not None else None
     stored, _ = SaleLine.objects.update_or_create(
         order_id=o.order_id, line_uid=ln.uid,
         defaults={
-            # day_orders keeps only orders with a sale time.
-            "business_date": business_date(sold_at(o)),  # type: ignore[arg-type]
+            "business_date": business_date(sold),
+            "show_date": business_date(starts_at if starts_at else sold),
             "closed_at": o.closed_at,
             # Square allows longer names than these columns; Postgres would
             # refuse the row and with it the whole day, so cut them to fit.
@@ -243,7 +270,7 @@ def _store_line(o: OrderData, ln: OrderLine, variations: dict[str, SquareVariati
             "catalog_object_id": ln.catalog_object_id,
             "quantity": ln.quantity,
             "gross_cents": ln.gross_cents,
-            "showtime_id": o.showtime_id,
+            "showtime_id": o.showtime_id if starts_at else None,
             "refunded_quantity": ln.quantity if given_back else 0,
             "refunded_cents": ln.gross_cents if given_back else 0,
             **attribution,

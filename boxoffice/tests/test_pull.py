@@ -5,7 +5,9 @@ from zoneinfo import ZoneInfo
 
 from boxoffice.gateway import GatewayError, OrderData, OrderLine, Tender
 from boxoffice.models import SaleLine, SalesPull, SquareVariation
-from boxoffice.pull import business_date, day_bounds, mark_refunded, pull_day
+from boxoffice.pull import (
+    business_date, day_bounds, mark_refunded, pull_day, recompute_show_dates,
+)
 from boxoffice.sync import live_item, push
 from boxoffice.tests.fakes import FakeGateway
 from cinema.models import Engagement, EngagementFilm, Film, Screen, Showtime
@@ -103,8 +105,38 @@ class PullDayTests(TestCase):
                   line("L2", "Dune", "Adult", self.adult_id, 1, 800)),
         ]
         pull_day(datetime.date(2026, 10, 9), self.gw)
-        self.assertEqual(SaleLine.objects.get(line_uid="L1").showtime, showtime)
-        self.assertIsNone(SaleLine.objects.get(line_uid="L2").showtime)
+        online = SaleLine.objects.get(line_uid="L1")
+        self.assertEqual(online.showtime, showtime)
+        # Sold on the 9th for the 11th: the money is the 9th's, the show the 11th's.
+        self.assertEqual((online.business_date, online.show_date),
+                         (DAY, datetime.date(2026, 10, 11)))
+        register = SaleLine.objects.get(line_uid="L2")
+        self.assertIsNone(register.showtime)
+        self.assertEqual(register.show_date, DAY)
+
+    def test_unknown_showtime_in_metadata_is_stored_without_a_link(self) -> None:
+        # The showtime was deleted after the order carried its id to Square.
+        self.gw.orders = [order("O1", at_eastern(2026, 10, 9, 12, 0),
+                                line("L1", "Dune", "Adult", self.adult_id),
+                                showtime_id=999_999)]
+        pull = pull_day(DAY, self.gw)
+        stored = SaleLine.objects.get(line_uid="L1")
+        self.assertEqual((pull.status, stored.showtime_id, stored.show_date),
+                         ("OK", None, DAY))
+
+    def test_recompute_show_dates_follows_a_moved_showtime(self) -> None:
+        showtime = Showtime.objects.create(
+            engagement=self.eng, screen=self.eng.screen,
+            starts_at=at_eastern(2026, 10, 11, 19, 0))
+        self.gw.orders = [order("O1", at_eastern(2026, 10, 9, 12, 0),
+                                line("L1", "Dune", "Adult", self.adult_id),
+                                showtime_id=showtime.pk)]
+        pull_day(DAY, self.gw)
+        Showtime.objects.filter(pk=showtime.pk).update(
+            starts_at=at_eastern(2026, 10, 12, 14, 0))
+        recompute_show_dates(showtime.pk)
+        self.assertEqual(SaleLine.objects.get(line_uid="L1").show_date,
+                         datetime.date(2026, 10, 12))
 
     def test_unattributed_categories_resolved_in_one_lookup(self) -> None:
         self.gw.categories = {"VPOP": "CAT-SNACKS"}

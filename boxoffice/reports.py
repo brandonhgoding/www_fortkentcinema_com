@@ -10,7 +10,6 @@ from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 
 from .models import EmailReport, SaleLine, SalesPull
-from .pull import day_bounds
 from .spec import priced_tiers
 
 logger = logging.getLogger(__name__)
@@ -55,15 +54,9 @@ def owner_summary(day: datetime.date) -> list[ItemTotal]:
 
 
 def on_show_day(day: datetime.date) -> Q:
-    """Ticket lines for ``day``'s shows.
-
-    An online order is dated by its showtime, so a ticket bought on Tuesday
-    for Friday's show counts on Friday; a register sale (no showtime) rings
-    up on the day of the show, so its sale date stands.
-    """
-    start, end = day_bounds(day)
-    return Q(showtime__isnull=True, business_date=day) | Q(
-        showtime__starts_at__gte=start, showtime__starts_at__lt=end)
+    """Ticket lines for ``day``'s shows: the stored show day, which the pull
+    sets from the order's showtime (else the sale day, for register sales)."""
+    return Q(show_date=day)
 
 
 def ticket_report(day: datetime.date) -> list[ItemTotal]:

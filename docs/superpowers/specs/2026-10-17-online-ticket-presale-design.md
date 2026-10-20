@@ -673,3 +673,10 @@ Flake8 gate: no new findings on changed lines (repo baseline is dirty).
   source (`tickets.ledger.TicketOrders`) only for what Square cannot say:
   which orders were refunded in full, and which were paid in a window, for the
   missing-online guard.
+- (2026-10-20) `SaleLine.show_date` (boxoffice 0012, backfilled) stores the
+  Eastern day of the showtime a line was for, else its sale day. The ticket
+  report and tier totals count by it; the owner summary and the dashboard
+  panel still count by `business_date`. The pull sets it from the showtime
+  named in the order's metadata when that showtime still exists; moving a
+  showtime in the dashboard re-dates its lines (`recompute_show_dates`), and
+  deleting one no longer re-dates them.

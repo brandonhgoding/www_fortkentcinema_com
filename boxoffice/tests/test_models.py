@@ -71,6 +71,7 @@ class SaleLineTests(TestCase):
     def test_order_line_is_unique(self) -> None:
         kwargs = dict(
             order_id="O1", line_uid="L1", business_date=datetime.date(2026, 10, 9),
+            show_date=datetime.date(2026, 10, 9),
             closed_at=timezone.now(), item_name="Dune", quantity=1, gross_cents=800,
         )
         SaleLine.objects.create(**kwargs)

@@ -2,6 +2,7 @@ import datetime
 import json
 from zoneinfo import ZoneInfo
 
+from boxoffice.models import SaleLine
 from cinema.models import Film, Screen, Showtime
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -125,6 +126,15 @@ class ShowtimeAllowanceTests(TestCase):
             self.toast(resp)["message"],
             "Showtime updated. 1 online order was emailed the old time. Let them know.",
         )
+
+    def test_moving_a_showtime_to_another_day_redates_its_ledger_lines(self) -> None:
+        line = SaleLine.objects.create(
+            order_id="SQ1", line_uid="L1", business_date=datetime.date(2026, 7, 1),
+            show_date=datetime.date(2026, 7, 4), item_name="Dune", quantity=1,
+            gross_cents=800, engagement=self.eng, showtime=self.st)
+        self.edit(date="2026-07-05", time="19:00")
+        line.refresh_from_db()
+        self.assertEqual(line.show_date, datetime.date(2026, 7, 5))
 
     def test_editing_without_moving_does_not_warn(self) -> None:
         make_order(self.st, status="PAID")
