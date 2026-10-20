@@ -50,7 +50,7 @@
         {{ form.website }}
 
         <fieldset class="ticket-page__tickets">
-          <legend class="ticket-page__label">Tickets</legend>
+          <legend class="ticket-page__sr">Tickets</legend>
           {% for ticket in tickets %}
             <div class="ticket-page__row" x-data>
               <label class="ticket-page__tier" for="{{ ticket.field.id_for_label }}">
@@ -76,20 +76,29 @@
           {% endif %}
         </fieldset>
 
-        {% for field in contact_fields %}
-          <label class="ticket-page__field">
-            <span class="ticket-page__label">{{ field.label }}</span>
-            {{ field }}
-            {% if field.errors %}
-              <span class="ticket-page__field-error">{{ field.errors|join:" " }}</span>
-            {% endif %}
-          </label>
-        {% endfor %}
+        {% comment %}
+          The tear line: a ticket's stub. Above it, what you are buying;
+          below it, who is coming. Purely visual, so hidden from readers.
+        {% endcomment %}
+        <div class="ticket-page__tear" aria-hidden="true"></div>
 
-        <p class="ticket-page__total" x-cloak>Total <strong x-text="'$' + (total / 100).toFixed(2)">$0.00</strong></p>
+        <div class="ticket-page__contact">
+          {% for field in contact_fields %}
+            <label class="ticket-page__field">
+              <span class="ticket-page__label">{{ field.label }}</span>
+              {{ field }}
+              {% if field.errors %}
+                <span class="ticket-page__field-error">{{ field.errors|join:" " }}</span>
+              {% endif %}
+            </label>
+          {% endfor %}
+          <p class="ticket-page__help">Your tickets go to this email. We only call if a show is cancelled.</p>
+        </div>
+
+        <p class="ticket-page__total" x-cloak><span>Total</span> <strong x-text="'$' + (total / 100).toFixed(2)">$0.00</strong></p>
         <button type="submit" class="btn btn-primary" data-track="ticket_checkout_submit">Continue to payment</button>
-        <p class="ticket-page__small">You'll pay on Square's secure page. Members pay ${{ ticket_prices.member }} at the door.</p>
       </form>
+      <p class="ticket-page__small">You'll pay on Square's secure page. Members pay ${{ ticket_prices.member }} at the door.</p>
     {% else %}
       {% include "tickets/_closed.html" %}
     {% endif %}
