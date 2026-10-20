@@ -469,9 +469,10 @@ CRON_TZ=America/New_York
 30 2  * * *  cd /srv/www_fortkentcinema_com && .venv/bin/python manage.py expire_ticket_orders
 ```
 
-All three go on the `api_fortkentcinema_com` entry only, beside the existing
-cron jobs: the two entries share one database, so a second copy would run
-each job twice.
+All three are enabled on the `www_fortkentcinema_com` entry only, as
+`cron_square_pull`, `cron_square_sync` and `cron_ticket_expire` (the
+`django_app` role writes the lines above): the two entries share one database,
+so a second copy would run each job twice.
 
 Command flags: `pull_square_sales [--date YYYY-MM-DD] [--days N] [--dry-run]
 [--no-email]`, `sync_square_catalog [--date YYYY-MM-DD] [--dry-run]` and
