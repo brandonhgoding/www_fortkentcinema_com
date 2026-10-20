@@ -112,3 +112,35 @@ class LanguageCaptionsTests(TestCase):
         self.assertIn("Amélie", html)
         self.assertNotIn("<abbr class=", html)
         self.assertNotIn("English subtitles", html)
+
+
+class RatingChipTests(TestCase):
+    """The rating chip shows only when the film has a rating.
+
+    Many classics and local films carry none; an empty chip rendered as a
+    bare outlined box beside the runtime.
+    """
+
+    def _home(self, rating: str) -> str:
+        screen = make_screen()
+        film = make_film("Nosferatu", slug="nosferatu", rating=rating)
+        today = timezone.localdate()
+        eng = make_engagement(
+            screen, [film], start=today, end=today + datetime.timedelta(days=3)
+        )
+        tomorrow = today + datetime.timedelta(days=1)
+        Showtime.objects.create(
+            engagement=eng, screen=screen,
+            starts_at=timezone.make_aware(
+                datetime.datetime(tomorrow.year, tomorrow.month, tomorrow.day, 19)
+            ),
+        )
+        return self.client.get(reverse("home")).content.decode()
+
+    def test_rated_film_shows_the_chip(self) -> None:
+        self.assertIn('<span class="movie-rating">PG-13</span>', self._home("PG-13"))
+
+    def test_unrated_film_has_no_empty_chip(self) -> None:
+        html = self._home("")
+        self.assertNotIn('<span class="movie-rating"></span>', html)
+        self.assertNotIn('<span class="schedule-card__rating"></span>', html)

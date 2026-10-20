@@ -46,7 +46,7 @@
   <div class="movie-info">
     <h3 class="movie-title">{{ movie.title }}</h3>
     <div class="movie-meta">
-      <span class="movie-rating">{{ movie.rating }}</span>
+      {% if movie.rating %}<span class="movie-rating">{{ movie.rating }}</span>{% endif %}
       <span class="movie-runtime">{{ movie.runtime }}</span>
       {% if movie.language_label %}<span class="movie-rating">{{ movie.language_label }}</span>{% endif %}
     </div>
