@@ -153,6 +153,17 @@ class PushTests(TestCase):
         self.assertIsNone(item.square_id)
         self.assertEqual(self.gw.calls, [])
 
+    def test_over_long_title_error_row_keeps_a_name_that_fits(self) -> None:
+        # The row exists to show the error; its name column holds 200, so the
+        # very title that is too long must be cut or Postgres refuses the row.
+        second = Film.objects.create(title="X" * 199)
+        EngagementFilm.objects.create(engagement=self.eng, film=second, position=2)
+        with self.assertLogs(LOGGER, "WARNING"):
+            item = push(self.eng, self.gw)
+        self.assertIn("longer than 200", item.last_error)
+        self.assertEqual(len(item.name), 200)
+        self.assertEqual(self.gw.calls, [])
+
     def test_first_push_failure_leaves_row_with_error_and_no_id(self) -> None:
         self.gw.fail_with = GatewayError("boom")
         with self.assertLogs(LOGGER, "WARNING"):

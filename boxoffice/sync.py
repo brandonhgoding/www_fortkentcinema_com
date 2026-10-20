@@ -52,9 +52,10 @@ def _unchanged(item: SquareItem | None, spec: ItemSpec) -> bool:
 def _record_error(engagement: Engagement, message: str) -> SquareItem:
     logger.warning("Square push failed for engagement %s: %s",
                    engagement.pk, message)
+    # Cut to the column: the error may be that the title is too long for it.
     item, _ = SquareItem.objects.get_or_create(
         engagement=engagement, deleted_at__isnull=True,
-        defaults={"name": engagement.title})
+        defaults={"name": engagement.title[:200]})
     item.last_error = message
     item.save(update_fields=["last_error"])
     return item

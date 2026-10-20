@@ -352,3 +352,15 @@ class PullDayTests(TestCase):
         self.gw.pay(order_id, paid_at=at_eastern(2026, 10, 9, 12, 0))
         pull = pull_day(DAY, self.gw)
         self.assertEqual((pull.status, pull.missing_online), ("OK", 0))
+
+    def test_long_register_names_are_cut_to_the_ledger_columns(self) -> None:
+        # Square allows 512-character item and 255-character variation names;
+        # the ledger holds 200 and 80, and Postgres refuses longer (SQLite,
+        # which the tests use, does not), which would fail the whole day.
+        self.gw.orders = [order("O1", at_eastern(2026, 10, 9, 19, 5),
+                                line("L1", "N" * 300, "V" * 100, "VPOP"))]
+        pull = pull_day(DAY, self.gw)
+        self.assertEqual((pull.status, pull.lines), ("OK", 1))
+        stored = SaleLine.objects.get(line_uid="L1")
+        self.assertEqual((len(stored.item_name), len(stored.variation_name)),
+                         (200, 80))

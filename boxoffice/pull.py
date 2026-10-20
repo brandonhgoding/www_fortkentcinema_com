@@ -198,8 +198,10 @@ def _store_line(o: OrderData, ln: OrderLine, variations: dict[str, SquareVariati
             # day_orders keeps only orders with a sale time.
             "business_date": business_date(sold_at(o)),  # type: ignore[arg-type]
             "closed_at": o.closed_at,
-            "item_name": ln.name,
-            "variation_name": ln.variation_name,
+            # Square allows longer names than these columns; Postgres would
+            # refuse the row and with it the whole day, so cut them to fit.
+            "item_name": ln.name[:200],
+            "variation_name": ln.variation_name[:80],
             "catalog_object_id": ln.catalog_object_id,
             "quantity": ln.quantity,
             "gross_cents": ln.gross_cents,
