@@ -467,7 +467,7 @@ CRON_TZ=America/New_York
 ```
 
 Command flags: `pull_square_sales [--date YYYY-MM-DD] [--days N] [--dry-run]
-[--no-email]` and `sync_square_catalog [--dry-run]`.
+[--no-email]` and `sync_square_catalog [--date YYYY-MM-DD] [--dry-run]`.
 
 ### Admin steps
 

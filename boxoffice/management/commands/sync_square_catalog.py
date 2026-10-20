@@ -1,3 +1,5 @@
+import datetime
+
 from boxoffice.gateway import disabled_reason, get_gateway
 from boxoffice.sync import reconcile
 from django.core.management.base import BaseCommand, CommandError
@@ -10,6 +12,9 @@ class Command(BaseCommand):
     def add_arguments(self, parser) -> None:
         parser.add_argument("--dry-run", action="store_true",
                             help="Report what would change without writing.")
+        parser.add_argument("--date", type=datetime.date.fromisoformat,
+                            help="Reconcile as of this day, YYYY-MM-DD "
+                                 "(default: today).")
 
     def handle(self, *args, **options) -> None:
         gateway = get_gateway()
@@ -17,7 +22,8 @@ class Command(BaseCommand):
             self.stdout.write(f"Square sync disabled ({disabled_reason()})")
             return
         dry_run = options["dry_run"]
-        report = reconcile(timezone.localdate(), gateway, dry_run=dry_run)
+        today = options["date"] or timezone.localdate()
+        report = reconcile(today, gateway, dry_run=dry_run)
         self.stdout.write(
             f"{'Would push' if dry_run else 'Pushed'} {len(report.pushed)}")
         self.stdout.write(

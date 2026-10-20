@@ -37,7 +37,8 @@ class SyncSquareCatalogCommandTests(TestCase):
         make_eng()
         out = StringIO()
         with mock.patch(COMMAND_GATEWAY, return_value=FakeGateway()):
-            call_command("sync_square_catalog", "--dry-run", stdout=out)
+            call_command("sync_square_catalog", "--dry-run", "--date", "2026-10-10",
+                         stdout=out)
         self.assertIn("Would push 1", out.getvalue())
 
     def test_dry_run_counts_posters_to_attach(self) -> None:
@@ -60,7 +61,8 @@ class SyncSquareCatalogCommandTests(TestCase):
         out = StringIO()
         with mock.patch(COMMAND_GATEWAY, return_value=gw), \
                 mock.patch("boxoffice.sync.fetch_poster", return_value=None):
-            call_command("sync_square_catalog", stdout=out)  # no CommandError
+            call_command("sync_square_catalog", "--date", "2026-10-10",
+                         stdout=out)  # no CommandError
         self.assertIn("Posters skipped:", out.getvalue())
         self.assertIn("Attached 0 posters", out.getvalue())
 
@@ -68,9 +70,22 @@ class SyncSquareCatalogCommandTests(TestCase):
         make_eng()
         out = StringIO()
         with mock.patch(COMMAND_GATEWAY, return_value=FakeGateway()):
-            call_command("sync_square_catalog", stdout=out)
+            call_command("sync_square_catalog", "--date", "2026-10-10", stdout=out)
         self.assertIn("Pushed 1", out.getvalue())
         self.assertIn("Deleted 0", out.getvalue())
+
+    def test_date_defaults_to_today(self) -> None:
+        # The fixture run ended 2026-10-15; reconciling "today" retires it.
+        eng = make_eng()
+        gw = FakeGateway()
+        push(eng, gw)
+        out = StringIO()
+        with mock.patch(COMMAND_GATEWAY, return_value=gw), \
+                mock.patch("boxoffice.management.commands.sync_square_catalog."
+                           "timezone.localdate",
+                           return_value=datetime.date(2026, 10, 16)):
+            call_command("sync_square_catalog", stdout=out)
+        self.assertIn("Deleted 1", out.getvalue())
 
     def test_errors_print_and_raise(self) -> None:
         gw = FakeGateway()
@@ -176,7 +191,8 @@ class PullSquareSalesCommandTests(TestCase):
 
     def test_disabled_without_token(self) -> None:
         for args in ((), ("--dry-run",)):
-            out = self.run_command(*args, gateway=None)
+            with override_settings(SQUARE_ACCESS_TOKEN=""):
+                out = self.run_command(*args, gateway=None)
             self.assertIn("disabled (no SQUARE_ACCESS_TOKEN)", out)
         self.assertEqual(SalesPull.objects.count(), 0)
 
