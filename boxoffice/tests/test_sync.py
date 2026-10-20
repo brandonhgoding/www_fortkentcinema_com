@@ -233,6 +233,42 @@ class DeleteTests(TestCase):
         item.refresh_from_db()
         self.assertIsNotNone(item.deleted_at)
 
+    @override_settings(SQUARE_ACCESS_TOKEN="")
+    def test_delete_while_disabled_keeps_the_row_and_says_why(self) -> None:
+        # Retiring the row with the item still in Square would orphan it for
+        # good; the row stays live so the nightly reconcile removes it later.
+        item = push(self.eng, self.gw)
+        with self.assertLogs(LOGGER, "WARNING"):
+            delete(self.eng, None)
+        item.refresh_from_db()
+        self.assertIsNone(item.deleted_at)
+        self.assertIn("Square sync disabled", item.last_error)
+        self.assertIn("item-1", self.gw.items)
+
+    @override_settings(SQUARE_ACCESS_TOKEN="")
+    def test_delete_of_never_pushed_row_while_disabled_is_local(self) -> None:
+        self.gw.fail_with = GatewayError("boom")
+        with self.assertLogs(LOGGER, "WARNING"):
+            item = push(self.eng, self.gw)
+        delete(self.eng, None)
+        item.refresh_from_db()
+        self.assertIsNotNone(item.deleted_at)
+
+    def test_delete_deferred_while_disabled_completes_on_reconcile(self) -> None:
+        item = push(self.eng, self.gw)
+        self.eng.status = "CANCELLED"
+        self.eng.save()
+        with override_settings(SQUARE_ACCESS_TOKEN=""), \
+                self.assertLogs(LOGGER, "WARNING"):
+            sync(self.eng, None)
+        self.assertIn("item-1", self.gw.items)
+        report = reconcile(datetime.date(2026, 10, 10), self.gw)
+        self.assertEqual(report.deleted, [self.eng.pk])
+        self.assertNotIn("item-1", self.gw.items)
+        item.refresh_from_db()
+        self.assertIsNotNone(item.deleted_at)
+        self.assertIsNone(live_item(self.eng))
+
 
 class SyncAndScheduleTests(TestCase):
     def setUp(self) -> None:
@@ -345,6 +381,27 @@ class ReconcileTests(TestCase):
         self.assertEqual(
             report.errors, ["Django-made item without a link row: orphan"])
         self.assertIn("orphan", self.gw.items)
+
+    def test_item_left_behind_by_a_retired_row_is_removed(self) -> None:
+        # Before 2026-10-20 a delete made while the sync was off retired the
+        # row and left the item in Square; such an item is provably ours.
+        eng = make_eng()
+        item = push(eng, self.gw)
+        SquareItem.objects.filter(pk=item.pk).update(deleted_at=timezone.now())
+        self.gw.calls.clear()
+        report = reconcile(self.today, self.gw)
+        self.assertNotIn(item.square_id, self.gw.items)
+        self.assertEqual((report.errors, report.unknown_items), ([], []))
+        self.assertEqual(report.deleted, [eng.pk])
+
+    def test_dry_run_leaves_an_item_left_behind_by_a_retired_row(self) -> None:
+        eng = make_eng()
+        item = push(eng, self.gw)
+        SquareItem.objects.filter(pk=item.pk).update(deleted_at=timezone.now())
+        report = reconcile(self.today, self.gw, dry_run=True)
+        self.assertIn(item.square_id, self.gw.items)
+        self.assertEqual(report.deleted, [eng.pk])
+        self.assertEqual((report.errors, report.unknown_items), ([], []))
 
     def test_dry_run_changes_nothing(self) -> None:
         eng = make_eng()

@@ -9,6 +9,7 @@ from boxoffice.gateway import (
     SquareGateway,
     UpsertResult,
     VersionMismatch,
+    disabled_reason,
     get_gateway,
 )
 from boxoffice.models import SquareItem, SquareVariation
@@ -34,7 +35,7 @@ def should_have_item(engagement: Engagement, today: datetime.date) -> bool:
 def _resolve(gateway: SquareGateway | None) -> SquareGateway | None:
     gateway = gateway if gateway is not None else get_gateway()
     if gateway is None:
-        logger.info("Square sync disabled (no SQUARE_ACCESS_TOKEN)")
+        logger.info("Square sync disabled (%s)", disabled_reason())
     return gateway
 
 
@@ -155,6 +156,16 @@ def delete(engagement: Engagement, gateway: SquareGateway | None = None) -> None
     if item is None:
         return
     gateway = _resolve(gateway)
+    if gateway is None and item.square_id is not None:
+        # Retiring the row now would leave the item in Square for good. It
+        # stays live, marked, and the nightly reconcile's delete pass removes
+        # it once the sync is back.
+        item.last_error = (f"Square sync disabled: {disabled_reason()}; "
+                           "the nightly reconcile will remove the item")
+        item.save(update_fields=["last_error"])
+        logger.warning("Square delete deferred for engagement %s: %s",
+                       engagement.pk, item.last_error)
+        return
     if gateway is not None:
         _delete_remote(gateway, item)
     _retire(item)
@@ -219,6 +230,14 @@ def _audit_remote(today: datetime.date, gateway: SquareGateway, dry_run: bool,
     for remote in remote_items:
         if remote.item_id in known:
             continue
+        retired = SquareItem.objects.filter(
+            square_id=remote.item_id, deleted_at__isnull=False).first()
+        if retired is not None:
+            # Written off here but still in Square: a delete made while the
+            # sync was off used to retire the row anyway (before 2026-10-20).
+            # The item is provably ours and unwanted, so finish the job.
+            _remove_left_behind(retired, gateway, dry_run, report)
+            continue
         if any(sku and sku.startswith("fkc-eng-")
                for sku in remote.variation_ids_by_sku):
             report.errors.append(
@@ -227,6 +246,20 @@ def _audit_remote(today: datetime.date, gateway: SquareGateway, dry_run: bool,
             report.unknown_items.append(f"{remote.name} ({remote.item_id})")
     _audit_missing({r.item_id for r in remote_items}, today, gateway, dry_run,
                    report)
+
+
+def _remove_left_behind(retired: SquareItem, gateway: SquareGateway,
+                        dry_run: bool, report: ReconcileReport) -> None:
+    if not dry_run:
+        try:
+            _delete_remote(gateway, retired)
+        except GatewayError as exc:
+            report.errors.append(
+                f"Deleting item {retired.square_id} left behind by a retired "
+                f"row: {exc}")
+            return
+    if retired.engagement_id is not None:
+        report.deleted.append(retired.engagement_id)
 
 
 def _audit_missing(listed: set[str], today: datetime.date, gateway: SquareGateway,
