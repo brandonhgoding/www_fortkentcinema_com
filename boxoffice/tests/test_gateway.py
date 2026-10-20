@@ -11,6 +11,7 @@ from boxoffice.gateway import (
     CheckoutResult,
     CheckoutSpec,
     GatewayError,
+    InvalidPhone,
     OrderData,
     OrderLine,
     Recipient,
@@ -587,6 +588,20 @@ class PaymentCallTests(SimpleTestCase):
         client.checkout.payment_links.create.side_effect = httpx.ConnectError("down")
         with self.assertRaises(GatewayError):
             gw.create_payment_link(MATINEE_SPEC)
+
+    def test_rejected_phone_prefill_is_typed(self) -> None:
+        client = mock.Mock()
+        client.checkout.payment_links.create.side_effect = ApiError(
+            status_code=400,
+            body={"errors": [{"category": "INVALID_REQUEST_ERROR",
+                              "code": "INVALID_PHONE_NUMBER",
+                              "detail": "Invalid phone number.",
+                              "field": "pre_populated_data.buyer_phone_number"}]})
+        gw = SquareGateway(client, "LOC1", "CAT1")
+        with self.assertRaises(InvalidPhone) as ctx:
+            gw.create_payment_link(MATINEE_SPEC)
+        self.assertIsInstance(ctx.exception, GatewayError)
+        self.assertIn("INVALID_PHONE_NUMBER", str(ctx.exception))
 
     def test_refund_payment_sends_amount_and_key(self) -> None:
         client = mock.Mock()

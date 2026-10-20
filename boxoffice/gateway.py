@@ -25,6 +25,10 @@ class VersionMismatch(GatewayError):
     pass
 
 
+class InvalidPhone(GatewayError):
+    """Square could not parse the buyer phone sent as a checkout prefill."""
+
+
 @dataclass(frozen=True)
 class RemoteItem:
     item_id: str
@@ -107,8 +111,11 @@ def _call(fn: Callable[..., T], *args: Any, **kwargs: Any) -> T:
     try:
         return fn(*args, **kwargs)
     except ApiError as exc:
-        if any(getattr(e, "code", None) == "VERSION_MISMATCH" for e in exc.errors):
+        codes = {getattr(e, "code", None) for e in exc.errors}
+        if "VERSION_MISMATCH" in codes:
             raise VersionMismatch(str(exc.body)) from exc
+        if "INVALID_PHONE_NUMBER" in codes:
+            raise InvalidPhone(str(exc.body)) from exc
         raise GatewayError(str(exc.body)) from exc
     except (httpx.HTTPError, pydantic.ValidationError) as exc:
         # The SDK does not wrap transport failures or unparseable responses.
