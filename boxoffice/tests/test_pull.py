@@ -5,11 +5,12 @@ from zoneinfo import ZoneInfo
 
 from boxoffice.gateway import GatewayError, OrderData, OrderLine, Tender
 from boxoffice.models import SaleLine, SalesPull, SquareVariation
-from boxoffice.pull import business_date, day_bounds, pull_day
+from boxoffice.pull import business_date, day_bounds, mark_refunded, pull_day
 from boxoffice.sync import live_item, push
 from boxoffice.tests.fakes import FakeGateway
 from cinema.models import Engagement, EngagementFilm, Film, Screen, Showtime
 from django.test import SimpleTestCase, TestCase, override_settings
+from tickets.models import TicketOrder
 from tickets.spec import checkout_spec
 from tickets.tests.factories import make_order
 
@@ -364,3 +365,33 @@ class PullDayTests(TestCase):
         stored = SaleLine.objects.get(line_uid="L1")
         self.assertEqual((len(stored.item_name), len(stored.variation_name)),
                          (200, 80))
+
+    def test_refunded_online_order_is_marked_on_the_next_pull(self) -> None:
+        # The refund may land after the lookback stopped re-pulling the sale
+        # day; the pull still derives the mark from the order's status so a
+        # re-pull never undoes it.
+        ticket_order, order_id = self.link_order(quantity=2)
+        self.gw.pay(order_id, paid_at=at_eastern(2026, 10, 9, 12, 0))
+        pull_day(DAY, self.gw)
+        TicketOrder.objects.filter(pk=ticket_order.pk).update(status="REFUNDED")
+        pull_day(DAY, self.gw)
+        stored = SaleLine.objects.get(order_id=order_id)
+        self.assertEqual((stored.quantity, stored.gross_cents,
+                          stored.refunded_quantity, stored.refunded_cents),
+                         (2, 1600, 2, 1600))
+        self.eng.refresh_from_db()
+        self.assertEqual(self.eng.admissions, 0)
+
+    def test_mark_refunded_zeroes_the_lines_and_admissions_at_once(self) -> None:
+        ticket_order, order_id = self.link_order(quantity=2)
+        self.gw.pay(order_id, paid_at=at_eastern(2026, 10, 9, 12, 0))
+        pull_day(DAY, self.gw)
+        self.eng.refresh_from_db()
+        self.assertEqual(self.eng.admissions, 2)
+        mark_refunded(order_id)
+        stored = SaleLine.objects.get(order_id=order_id)
+        self.assertEqual((stored.refunded_quantity, stored.refunded_cents),
+                         (2, 1600))
+        self.eng.refresh_from_db()
+        self.assertEqual(self.eng.admissions, 0)
+        mark_refunded("SQ-NOT-PULLED-YET")  # nothing to mark, no error

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from django.conf import settings
 from django.core.mail import EmailMessage
-from django.db.models import Q, QuerySet, Sum
+from django.db.models import F, Q, QuerySet, Sum
 from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 
@@ -35,10 +35,17 @@ class ItemTotal:
         return f"{self.gross_cents / 100:.2f}"
 
 
+# What was kept: a refunded line stays in the ledger with the refund on it.
+KEPT_QUANTITY = F("quantity") - F("refunded_quantity")
+KEPT_CENTS = F("gross_cents") - F("refunded_cents")
+
+
 def _group(lines: QuerySet[SaleLine]) -> list[ItemTotal]:
     rows = lines.values("item_name").annotate(
-        quantity=Sum("quantity"), gross=Sum("gross_cents"))
-    totals = [ItemTotal(r["item_name"], r["quantity"], r["gross"]) for r in rows]
+        quantity=Sum(KEPT_QUANTITY), gross=Sum(KEPT_CENTS))
+    # An item whose every sale was given back has nothing to report.
+    totals = [ItemTotal(r["item_name"], r["quantity"], r["gross"]) for r in rows
+              if r["quantity"] or r["gross"]]
     return sorted(totals, key=lambda t: (-t.gross_cents, t.name))
 
 
@@ -72,7 +79,7 @@ def tier_totals(day: datetime.date) -> dict[str, int]:
         SaleLine.objects.filter(
             on_show_day(day), engagement__isnull=False, variation__isnull=False)
         .values("variation__tier")
-        .annotate(quantity=Sum("quantity"))
+        .annotate(quantity=Sum(KEPT_QUANTITY))
     )
     for r in rows:
         if r["variation__tier"] in totals:
@@ -134,9 +141,9 @@ class DaySales:
 def day_sales(day: datetime.date) -> DaySales:
     tickets = Q(engagement__isnull=False)
     totals = SaleLine.objects.filter(business_date=day).aggregate(
-        gross=Coalesce(Sum("gross_cents"), 0),
-        tickets=Coalesce(Sum("quantity", filter=tickets), 0),
-        concessions=Coalesce(Sum("gross_cents", filter=~tickets), 0),
+        gross=Coalesce(Sum(KEPT_CENTS), 0),
+        tickets=Coalesce(Sum(KEPT_QUANTITY, filter=tickets), 0),
+        concessions=Coalesce(Sum(KEPT_CENTS, filter=~tickets), 0),
     )
     return DaySales(totals["gross"], totals["tickets"], totals["concessions"])
 

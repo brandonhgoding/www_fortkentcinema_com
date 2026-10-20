@@ -4,6 +4,7 @@ import dataclasses
 import logging
 
 from boxoffice.gateway import GatewayError, SquareGateway, disabled_reason, get_gateway
+from boxoffice.pull import mark_refunded
 from cinema.models import Showtime
 from django.utils import timezone
 
@@ -50,6 +51,9 @@ def refund_order(
     order.status = TicketOrder.Status.REFUNDED
     order.refunded_at = timezone.now()
     order.error = ""
+    # The ledger learns now rather than at the next pull of the sale day,
+    # which may already be past the pull's lookback.
+    mark_refunded(order.square_order_id)
     try:
         send_refund(order)
     except Exception as exc:

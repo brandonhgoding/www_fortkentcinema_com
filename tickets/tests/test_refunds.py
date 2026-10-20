@@ -1,16 +1,48 @@
 from unittest import mock
 
+from boxoffice.models import SaleLine
 from boxoffice.tests.fakes import FakeGateway
+from cinema.models import Engagement
 from django.core import mail
 from django.test import TestCase, override_settings
+from django.utils import timezone
 
 from tickets.refunds import RefundSummary, refund_order, refund_showtime
 from tickets.tests.factories import make_order, make_showtime
 
 
+def ledger_line(showtime, order_id: str, quantity: int, gross_cents: int) -> SaleLine:
+    """What the nightly pull stored for the order, with admissions to match."""
+    Engagement.objects.filter(pk=showtime.engagement_id).update(admissions=quantity)
+    return SaleLine.objects.create(
+        order_id=order_id, line_uid="L1", business_date=timezone.localdate(),
+        item_name="Dune", quantity=quantity, gross_cents=gross_cents,
+        engagement=showtime.engagement, showtime=showtime)
+
+
 class RefundOrderTests(TestCase):
     def setUp(self):
         self.st = make_showtime()
+
+    def test_refund_zeroes_the_ledger_lines_and_admissions(self):
+        order = make_order(self.st, status="PAID", square_payment_id="P1",
+                           square_order_id="SQ-9", lines={"adult": 2})
+        line = ledger_line(self.st, "SQ-9", 2, 1600)
+        refund_order(order, reason="Showtime cancelled", gateway=FakeGateway())
+        line.refresh_from_db()
+        self.assertEqual((line.refunded_quantity, line.refunded_cents), (2, 1600))
+        self.st.engagement.refresh_from_db()
+        self.assertEqual(self.st.engagement.admissions, 0)
+
+    def test_failed_refund_leaves_the_ledger_alone(self):
+        order = make_order(self.st, status="PAID", square_payment_id="P1",
+                           square_order_id="SQ-9", lines={"adult": 2})
+        line = ledger_line(self.st, "SQ-9", 2, 1600)
+        refund_order(order, reason="x", gateway=FakeGateway(fail_on={"P1"}))
+        line.refresh_from_db()
+        self.assertEqual((line.refunded_quantity, line.refunded_cents), (0, 0))
+        self.st.engagement.refresh_from_db()
+        self.assertEqual(self.st.engagement.admissions, 2)
 
     def test_refund_order_success(self):
         gw = FakeGateway()

@@ -1,4 +1,5 @@
 """Pull a business day's Square sales into the SaleLine ledger."""
+import dataclasses
 import datetime
 import logging
 from collections.abc import Iterable
@@ -10,7 +11,7 @@ from boxoffice.spec import ONLINE_REFERENCE_PREFIX
 from cinema.models import Engagement
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import F, Sum
 from django.utils import timezone
 from tickets.models import TicketOrder
 
@@ -61,7 +62,7 @@ def pull_day(day: datetime.date, gateway: SquareGateway) -> SalesPull:
         orders = day_orders(day, gateway)
         lines = [(o, ln) for o in orders for ln in o.lines]
         variations = _resolve_variations(ln.catalog_object_id for _, ln in lines)
-        showtimes = _resolve_showtimes(o.order_id for o in orders)
+        online = _resolve_online(o.order_id for o in orders)
         categories = _resolve_categories(
             gateway,
             {ln.catalog_object_id for _, ln in lines
@@ -72,7 +73,7 @@ def pull_day(day: datetime.date, gateway: SquareGateway) -> SalesPull:
             touched = {row.engagement_id for row in existing.values()
                        if row.engagement_id is not None}
             for o, ln in lines:
-                stored = _store_line(o, ln, variations, categories, showtimes,
+                stored = _store_line(o, ln, variations, categories, online,
                                      existing.get((o.order_id, ln.uid)))
                 if stored.engagement_id is not None:
                     touched.add(stored.engagement_id)
@@ -89,11 +90,24 @@ def pull_day(day: datetime.date, gateway: SquareGateway) -> SalesPull:
 
 
 def recompute_admissions(engagement_ids: Iterable[int]) -> None:
-    """Set each engagement's admissions to its all-time ticket quantity."""
+    """Set each engagement's admissions to its all-time tickets kept."""
     for engagement_id in engagement_ids:
         total = SaleLine.objects.filter(engagement_id=engagement_id).aggregate(
-            total=Sum("quantity"))["total"] or 0
+            total=Sum(F("quantity") - F("refunded_quantity")))["total"] or 0
         Engagement.objects.filter(pk=engagement_id).update(admissions=total)
+
+
+def mark_refunded(order_id: str) -> None:
+    """Give back every line of a website order refunded in full, right away.
+
+    The nightly pull derives the same mark from the order's status, but the
+    sale day may be past its lookback by the time the refund happens.
+    """
+    lines = SaleLine.objects.filter(order_id=order_id)
+    engagements = {e for e in lines.values_list("engagement_id", flat=True)
+                   if e is not None}
+    lines.update(refunded_quantity=F("quantity"), refunded_cents=F("gross_cents"))
+    recompute_admissions(engagements)
 
 
 def _datable_orders(orders: list[OrderData]) -> list[OrderData]:
@@ -127,11 +141,21 @@ def _resolve_variations(ids: Iterable[str]) -> dict[str, SquareVariation]:
             SquareVariation.objects.filter(square_id__in=wanted).select_related("item")}
 
 
-def _resolve_showtimes(order_ids: Iterable[str]) -> dict[str, int]:
-    """Map Square order ID -> showtime pk for orders placed through the website."""
-    return dict(
-        TicketOrder.objects.filter(square_order_id__in=set(order_ids))
-        .values_list("square_order_id", "showtime_id"))
+@dataclasses.dataclass(frozen=True)
+class _Online:
+    """What the website knows about one of its orders."""
+    showtime_id: int
+    refunded: bool
+
+
+def _resolve_online(order_ids: Iterable[str]) -> dict[str, _Online]:
+    """Map Square order ID -> the website's order, for orders placed there."""
+    rows = TicketOrder.objects.filter(
+        square_order_id__in=set(order_ids)
+    ).values_list("square_order_id", "showtime_id", "status")
+    return {order_id: _Online(showtime_id,
+                              status == TicketOrder.Status.REFUNDED)
+            for order_id, showtime_id, status in rows}
 
 
 def _resolve_categories(gateway: SquareGateway,
@@ -174,7 +198,7 @@ def _existing_rows(lines: list[tuple[OrderData, OrderLine]]
 
 
 def _store_line(o: OrderData, ln: OrderLine, variations: dict[str, SquareVariation],
-                categories: dict[str, str], showtimes: dict[str, int],
+                categories: dict[str, str], online: dict[str, _Online],
                 existing: SaleLine | None) -> SaleLine:
     variation = variations.get(ln.catalog_object_id) if ln.catalog_object_id else None
     if variation is not None:
@@ -192,6 +216,7 @@ def _store_line(o: OrderData, ln: OrderLine, variations: dict[str, SquareVariati
             "category_id": (categories.get(ln.catalog_object_id, "")
                             or (existing.category_id if existing else "")),
         }
+    web = online.get(o.order_id)
     stored, _ = SaleLine.objects.update_or_create(
         order_id=o.order_id, line_uid=ln.uid,
         defaults={
@@ -205,7 +230,9 @@ def _store_line(o: OrderData, ln: OrderLine, variations: dict[str, SquareVariati
             "catalog_object_id": ln.catalog_object_id,
             "quantity": ln.quantity,
             "gross_cents": ln.gross_cents,
-            "showtime_id": showtimes.get(o.order_id),
+            "showtime_id": web.showtime_id if web else None,
+            "refunded_quantity": ln.quantity if web and web.refunded else 0,
+            "refunded_cents": ln.gross_cents if web and web.refunded else 0,
             **attribution,
         },
     )

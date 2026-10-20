@@ -19,6 +19,12 @@ class SaleLine(models.Model):
     category_id = models.CharField(max_length=64, blank=True)
     quantity = models.PositiveIntegerField()
     gross_cents = models.IntegerField()
+    # What was given back: a refunded ticket stays on its Square order, so
+    # the reports count quantity - refunded_quantity and gross - refunded.
+    # Today only a website order refunded in full from the dashboard sets
+    # these (the whole line); register refunds are not read from Square yet.
+    refunded_quantity = models.PositiveIntegerField(default=0)
+    refunded_cents = models.IntegerField(default=0)
     variation = models.ForeignKey(
         SquareVariation, null=True, blank=True, on_delete=models.SET_NULL
     )

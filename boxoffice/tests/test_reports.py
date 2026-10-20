@@ -46,6 +46,21 @@ class AggregationTests(TestCase):
             [ItemTotal("Dune", 2, 1600), ItemTotal("Popcorn", 2, 500)],
         )
 
+    def test_refunded_lines_are_left_out_of_the_summaries(self) -> None:
+        # A refunded ticket stays on its Square order; the ledger carries
+        # what was given back so the reports count only what was kept.
+        eng = make_eng()
+        make_line("Dune", 1600, quantity=2, engagement=eng)
+        make_line("Dune", 800, engagement=eng, refunded_quantity=1,
+                  refunded_cents=800)
+        make_line("Gone", 800, engagement=eng, refunded_quantity=1,
+                  refunded_cents=800)
+        make_line("Popcorn", 500, quantity=2)
+        with override_settings(SQUARE_TICKET_CATEGORY_ID="CAT-TICKETS"):
+            self.assertEqual(ticket_report(DAY), [ItemTotal("Dune", 2, 1600)])
+        self.assertEqual(owner_summary(DAY),
+                         [ItemTotal("Dune", 2, 1600), ItemTotal("Popcorn", 2, 500)])
+
     def test_ties_sort_by_name(self) -> None:
         make_line("B", 500)
         make_line("A", 500)
@@ -105,6 +120,8 @@ class AggregationTests(TestCase):
         make_line("Dune", 1000, quantity=2, variation=adult, engagement=eng)
         make_line("Dune", 800, variation=matinee, engagement=eng)
         make_line("Popcorn", 500, quantity=4)
+        make_line("Dune", 1000, quantity=3, variation=adult, engagement=eng,
+                  refunded_quantity=3, refunded_cents=3000)
         self.assertEqual(
             tier_totals(DAY),
             {"adult": 2, "senior": 0, "child": 0},
@@ -200,6 +217,10 @@ class SalesPanelTests(TestCase):
         make_line("Dune", 1600, quantity=2, engagement=eng, business_date=oct8)
         make_line("Popcorn", 500, business_date=oct8)
         make_line("Dune", 800, engagement=eng, business_date=oct1)
+        make_line("Dune", 800, engagement=eng, business_date=oct8,
+                  refunded_quantity=1, refunded_cents=800)
+        make_line("Soda", 300, business_date=oct8, refunded_quantity=1,
+                  refunded_cents=300)
         panel = sales_panel(datetime.date(2026, 10, 9))
         self.assertEqual(panel["yesterday"], DaySales(2100, 2, 500))
         self.assertEqual(panel["last_week"], DaySales(800, 1, 0))

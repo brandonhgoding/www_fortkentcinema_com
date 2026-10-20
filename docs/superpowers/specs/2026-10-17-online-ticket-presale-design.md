@@ -653,3 +653,11 @@ Flake8 gate: no new findings on changed lines (repo baseline is dirty).
   tender. Such a line is dated by its payment time (`OrderData.paid_at`),
   so it does not move when staff close the order later, and its `closed_at`
   is null (`SaleLine.closed_at` became nullable, boxoffice 0009).
+- (2026-10-20) Refunds reach the ledger. `SaleLine` gained
+  `refunded_quantity` and `refunded_cents` (boxoffice 0011): a website order
+  refunded in full from the dashboard marks its whole lines, both at once
+  (`boxoffice.pull.mark_refunded`, called by `tickets.refunds.refund_order`)
+  and on every re-pull (derived from `TicketOrder.status`, so a re-pull
+  never undoes it). The ticket report, owner summary, tier totals, the
+  dashboard sales panel and `Engagement.admissions` count what was kept.
+  Register refunds are still not read from Square.
