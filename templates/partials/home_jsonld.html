@@ -53,7 +53,7 @@ since the door still sells it.
         "lowPrice": "{{ ticket_prices.member }}",
         "highPrice": "{{ ticket_prices.adult }}",
         "priceCurrency": "USD",
-        "availability": "https://schema.org/{% if ev.sold_out %}SoldOut{% else %}InStock{% endif %}",
+        "availability": "https://schema.org/{% if ev.sold_out %}SoldOut{% elif ev.in_person %}InStoreOnly{% else %}InStock{% endif %}",
         "url": "{{ request.scheme }}://{{ request.get_host }}{% if ev.ticket_url %}{{ ev.ticket_url }}{% else %}/#now-showing{% endif %}"
       }
     }{% if not forloop.last %},{% endif %}

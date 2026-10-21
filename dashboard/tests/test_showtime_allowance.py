@@ -72,6 +72,7 @@ class ShowtimeAllowanceTests(TestCase):
         self.assertIn('name="online_allowance"', html)
         self.assertIn('value="12"', html)
         self.assertIn('placeholder="50"', html)
+        self.assertIn("0 means in-person purchase only", html)
 
     def test_edit_rejects_negative_or_non_number(self) -> None:
         for bad in ("-1", "lots", "2.5", "10001"):

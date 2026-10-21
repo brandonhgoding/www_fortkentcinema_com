@@ -25,7 +25,7 @@
     <input id="st-allowance" type="number" name="online_allowance" class="input" min="0" step="1"
            inputmode="numeric" value="{{ online_allowance }}" placeholder="{{ default_allowance }}"
            aria-describedby="st-allowance-help" />
-    <p id="st-allowance-help" class="fieldHint">Leave blank to use the default of {{ default_allowance }}.</p>
+    <p id="st-allowance-help" class="fieldHint">Leave blank to use the default of {{ default_allowance }}; 0 means in-person purchase only.</p>
   </div>
   {% if mode == 'edit' %}
   <div class="formGroup">

@@ -165,12 +165,23 @@ class BuyPageTests(ViewTestCase):
             self.get(soon),
         )
 
-        self.st.online_allowance = 0
+        self.st.online_allowance = 1
         self.st.save()
+        make_order(self.st, status="PAID")
         html = self.get(self.st)
         self.assertIn(
             "Sold out online. Tickets may still be available at the door.", html
         )
+        self.assertNotIn("Continue to payment", html)
+
+        self.st.online_allowance = 0
+        self.st.save()
+        html = self.get(self.st)
+        self.assertIn(
+            "In-person purchase only. Tickets for this show are sold at the door.",
+            html,
+        )
+        self.assertNotIn("Sold out online", html)
         self.assertNotIn("Continue to payment", html)
 
         response = self.client.get(reverse("tickets:buy", args=[999]))

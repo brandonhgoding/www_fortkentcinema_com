@@ -7,8 +7,9 @@
     <label for="online-allowance-input" class="fieldHint">Online allowance</label>
     <input type="text" inputmode="numeric" class="input inputCompact" id="online-allowance-input"
            name="online_allowance" value="{{ allowance_value }}" placeholder="Default"
-           size="5"{% if error %} aria-invalid="true" aria-describedby="online-allowance-error"{% endif %} />
+           size="5" aria-describedby="online-allowance-help{% if error %} online-allowance-error{% endif %}"{% if error %} aria-invalid="true"{% endif %} />
     <button class="btn btn-secondary btn-sm">Save</button>
   </form>
+  <p class="fieldHint" id="online-allowance-help">Blank uses the default; 0 means in-person purchase only.</p>
   {% if error %}<p class="fieldHint" id="online-allowance-error" role="alert">{{ error }}</p>{% endif %}
 </div>

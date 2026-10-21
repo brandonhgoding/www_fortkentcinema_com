@@ -74,6 +74,9 @@ def _decide(
         reason = "not_listed"
     elif showtime.is_cancelled:
         reason = "cancelled"
+    elif allowance == 0:
+        # A deliberate 0 from the dashboard: this show sells at the door only.
+        reason = "in_person"
     elif now >= cutoff:
         reason = "cutoff"
     elif not has_item:

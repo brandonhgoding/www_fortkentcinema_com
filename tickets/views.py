@@ -31,6 +31,9 @@ CLOSED_SENTENCES = {
         "Tickets are still available at the door."
     ),
     "sold_out": "Sold out online. Tickets may still be available at the door.",
+    "in_person": (
+        "In-person purchase only. Tickets for this show are sold at the door."
+    ),
     "quantity": "Pick at least one ticket.",
 }
 CHECKOUT_FAILED = "We couldn't start checkout. Please try again, or buy at the door."

@@ -144,6 +144,7 @@ class HomeView(TemplateView):
                 "iso": time["iso"],
                 "ticket_url": time["ticket_url"],
                 "sold_out": time["sold_out"],
+                "in_person": time["in_person"],
             }
             for movie in now_showing
             for slot in movie["upcoming"]
@@ -173,7 +174,8 @@ def _add_ticket_state(times):
 
     `ticket_url` is the buy page when the showing can sell now, and is kept
     when it is sold out online (the JSON-LD offer still names the page);
-    otherwise it is "". `sold_out` is True only for a sold-out showing.
+    otherwise it is "". `sold_out` is True only for a sold-out showing;
+    `in_person` only for a showing whose online allowance is 0 on purpose.
     One for_showtimes() call for every chip: database only, never Square.
     """
     times = list(times)
@@ -192,6 +194,7 @@ def _add_ticket_state(times):
             reverse("tickets:buy", args=[time["showtime_id"]]) if has_page else ""
         )
         time["sold_out"] = sold_out
+        time["in_person"] = state is not None and state.reason == "in_person"
 
 
 def _initial_calendar_month(coming_soon):
