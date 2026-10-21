@@ -9,17 +9,12 @@ import datetime
 
 from django.utils import timezone
 
-from cinema.dates import CINEMA_TZ
+from cinema.dates import CINEMA_TZ, format_showtime
 from cinema.models import Engagement, Showtime
 
 from web.services.titles import listing_title
 
 OPEN_CAPTIONS_NOTE = "This showing will be played with open captions."
-
-
-def _format_showtime(dt):
-    # e.g. "6:00 PM" — strip the leading zero on the hour.
-    return dt.astimezone(CINEMA_TZ).strftime("%I:%M %p").lstrip("0")
 
 
 def _local_date(dt):
@@ -61,7 +56,7 @@ def get_now_showing():
             showtimes_by_date.setdefault(local_date, []).append(
                 {
                     "showtime_id": st.pk,
-                    "time": _format_showtime(st.starts_at),
+                    "time": format_showtime(st.starts_at),
                     # Offset-aware ISO-8601 for the home page's schema.org
                     # ScreeningEvent.startDate (partials/home_jsonld.html).
                     "iso": st.starts_at.astimezone(CINEMA_TZ).isoformat(),
