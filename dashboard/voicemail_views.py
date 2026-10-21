@@ -5,6 +5,7 @@ count on the dashboard home and the sidebar badge is how a message reaches
 a human.
 """
 
+import logging
 from collections.abc import Iterator
 
 from django.contrib import messages
@@ -16,6 +17,8 @@ from phone.models import Voicemail, VoicemailStatus
 from phone.views import TRANSCRIBE
 
 from .mixins import StaffRequiredMixin
+
+logger = logging.getLogger(__name__)
 
 # Response headers worth passing from Twilio to the browser's audio player.
 AUDIO_HEADERS = ("Content-Length", "Content-Range", "Accept-Ranges")
@@ -86,7 +89,14 @@ class VoicemailDeleteView(StaffRequiredMixin, View):
             return redirect("dashboard:voicemails")
         try:
             recordings.delete_recording(voicemail.recording_sid)
-        except recordings.RecordingError:
+        except recordings.RecordingError as exc:
+            # Staff see "try again"; the reason lives here, so a bad token
+            # and a Twilio outage can be told apart afterwards.
+            logger.warning(
+                "Couldn't delete recording %s from Twilio: %s",
+                voicemail.recording_sid,
+                exc,
+            )
             messages.error(
                 request,
                 "Couldn't delete the recording from Twilio, so the voicemail "
@@ -105,7 +115,12 @@ class VoicemailAudioView(StaffRequiredMixin, View):
             upstream = recordings.open_recording(
                 voicemail.recording_sid, request.headers.get("Range", "")
             )
-        except recordings.RecordingError:
+        except recordings.RecordingError as exc:
+            logger.warning(
+                "Couldn't fetch recording %s from Twilio: %s",
+                voicemail.recording_sid,
+                exc,
+            )
             return HttpResponse("Recording unavailable", status=502)
 
         if upstream.status_code == 404:
@@ -113,6 +128,11 @@ class VoicemailAudioView(StaffRequiredMixin, View):
             raise Http404("Recording not found")
         if upstream.status_code not in (200, 206):
             upstream.close()
+            logger.warning(
+                "Twilio answered %s for recording %s",
+                upstream.status_code,
+                voicemail.recording_sid,
+            )
             return HttpResponse("Recording unavailable", status=502)
 
         def chunks() -> Iterator[bytes]:
