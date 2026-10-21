@@ -1,5 +1,5 @@
 import re
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from xml.sax.saxutils import escape
 
 from django.test import TestCase, override_settings
@@ -130,6 +130,8 @@ class MenuTests(PhoneTestCase):
         self.assertEqual(CallLog.objects.get().choices, ["2"])
 
 
+# A SID of the real shape, for the paths that check it before calling Twilio.
+REAL_SID = "RE" + "b" * 32
 RECORDING = {
     "RecordingSid": "RE456",
     "RecordingUrl": "https://api.twilio.com/2010-04-01/Accounts/AC1/Recordings/RE456",
@@ -256,6 +258,56 @@ class VoicemailTests(PhoneTestCase):
             (voicemail.status, voicemail.notes, voicemail.duration_seconds),
             (VoicemailStatus.HANDLED, "Called back", 43),
         )
+
+    def test_a_recording_too_short_to_hold_a_message_is_not_a_voicemail(
+        self,
+    ) -> None:
+        # A caller who hangs up at the beep leaves Twilio a silent recording
+        # of a second or so; it must not light up the dashboard.
+        for duration in ("0", "1"):
+            with self.subTest(duration):
+                twiml = self.call(
+                    "voicemail_recorded",
+                    {**RECORDING, "RecordingDuration": duration, "Digits": "hangup"},
+                )
+                self.assertFalse(Voicemail.objects.exists())
+                self.assertIn("didn't get a message", twiml)
+                self.assertNotIn("we got your message", twiml)
+
+    def test_a_short_but_real_message_is_kept(self) -> None:
+        self.call("voicemail_recorded", {**RECORDING, "RecordingDuration": "2"})
+        self.assertEqual(Voicemail.objects.get().duration_seconds, 2)
+
+    @override_settings(TWILIO_ACCOUNT_SID="AC1")
+    @patch("phone.recordings.requests.delete")
+    def test_status_callback_deletes_an_empty_recording(self, delete: Mock) -> None:
+        delete.return_value = Mock(status_code=204)
+        self.status_callback(RecordingSid=REAL_SID, RecordingDuration="0")
+        self.assertFalse(Voicemail.objects.exists())
+        self.assertTrue(
+            delete.call_args.args[0].endswith(f"/Recordings/{REAL_SID}.json"),
+            delete.call_args,
+        )
+
+    @override_settings(TWILIO_ACCOUNT_SID="AC1")
+    @patch("phone.recordings.requests.delete")
+    def test_failing_to_delete_an_empty_recording_is_logged_not_fatal(
+        self, delete: Mock
+    ) -> None:
+        delete.return_value = Mock(status_code=500)
+        with self.assertLogs("phone.views", "WARNING") as logs:
+            self.status_callback(RecordingSid=REAL_SID, RecordingDuration="0")
+        self.assertIn("Twilio answered 500", logs.output[0])
+        self.assertFalse(Voicemail.objects.exists())
+
+    @patch("phone.recordings.requests.delete")
+    def test_empty_recording_is_left_alone_without_an_account_sid(
+        self, delete: Mock
+    ) -> None:
+        with self.assertLogs("phone.views", "WARNING"):
+            self.status_callback(RecordingDuration="0")
+        delete.assert_not_called()
+        self.assertFalse(Voicemail.objects.exists())
 
     def test_status_callback_ignores_a_recording_that_is_not_complete(self) -> None:
         for status in ("in-progress", "absent", "failed"):
