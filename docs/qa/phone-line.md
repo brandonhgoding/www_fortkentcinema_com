@@ -38,17 +38,18 @@ code change.
       and 7:15 PM." Listen to how "4:00 PM" is read, where "free for members"
       lands, and titles with numbers in them.
 - [ ] With a double feature (two films in one engagement, no display title).
-      Expected today: "A plus B at …" (review item M4). **Decides** the wording.
-- [ ] After today's last show has started. Expected: "There are no more shows
-      today. Our next showtimes are tomorrow: …" (or the weekday and date when
-      the next day is not tomorrow).
+      Expected: "A and B at …" (three films: "A, B, and C").
+- [ ] Fifteen minutes or more after today's last show started. Expected:
+      "There are no more shows today. Our next showtimes are tomorrow: …" (or
+      the weekday and date when the next day is not tomorrow).
 - [ ] With nothing scheduled at all. Expected: "…check fort kent cinema dot
       com for updates", spoken as five words, not "fortkentcinema.com".
 - [ ] At 11:58 PM Eastern with an 11:59 PM show and a 12:30 AM show. Expected:
-      "Today's showtimes: X at 11:59 PM." At 12:01 AM: "X at 12:30 AM." A
-      12:00 AM show is read as "tomorrow". **Decides** review item L3.
-- [ ] A minute after a show started. Expected: that show is gone from the
-      list. **Decides** whether a grace window is wanted (review item L3).
+      "Today's showtimes: X at 11:59 PM and 12:30 AM." At 12:01 AM: "X at
+      12:30 AM." A show that starts after midnight and before 5 AM belongs
+      to the evening before it (`LATE_SHOWS_UNTIL` in phone/speech.py).
+- [ ] Ten minutes after a show started. Expected: that show is still read;
+      sixteen minutes after, it is gone (`STARTED_GRACE`, 15 minutes).
 - [ ] On a DST day (2026-11-01 during the repeated 1 AM hour, 2026-03-08 after
       3 AM). Expected: no error, Eastern times, the right "tomorrow".
 

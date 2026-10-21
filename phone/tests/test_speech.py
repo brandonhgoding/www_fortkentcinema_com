@@ -82,15 +82,47 @@ class ShowtimesSpeechTests(TestCase):
             "Today's showtimes: Hamnet at 7:15 PM.",
         )
 
-    def test_a_midnight_show_belongs_to_tomorrow(self) -> None:
-        # 12:00 AM is the first minute of the next Eastern day, so at 11:50
-        # PM it is read as tomorrow's. A late-night caller may mean
-        # "tonight"; this pins today's rule so a change is deliberate.
+    def test_a_show_that_started_a_few_minutes_ago_is_still_read(self) -> None:
+        # Doors are open and trailers rolling: a 7:10 caller for the 7:00
+        # should not hear "no more shows today".
+        add_showtime(self.hamnet, at(2026, 10, 4, 19))
+        self.assertEqual(
+            showtimes_speech(now=at(2026, 10, 4, 19, 10)),
+            "Today's showtimes: Hamnet at 7:00 PM.",
+        )
+
+    def test_the_grace_window_ends_after_fifteen_minutes(self) -> None:
+        add_showtime(self.hamnet, at(2026, 10, 4, 19))
+        self.assertTrue(
+            showtimes_speech(now=at(2026, 10, 4, 19, 16)).startswith(
+                "There are no more shows today."
+            )
+        )
+
+    def test_a_midnight_show_is_tonight(self) -> None:
+        # The owner's call: a 12:00 AM screening is part of the evening
+        # before it, so an 11:50 PM caller hears it as today's.
         add_showtime(self.hamnet, at(2026, 10, 5, 0, 0))
         self.assertEqual(
             showtimes_speech(now=at(2026, 10, 4, 23, 50)),
+            "Today's showtimes: Hamnet at 12:00 AM.",
+        )
+
+    def test_a_late_show_is_read_with_the_evening_before_it(self) -> None:
+        # Tomorrow's programme includes its own after-midnight show.
+        add_showtime(self.hamnet, at(2026, 10, 5, 19))
+        add_showtime(self.hamnet, at(2026, 10, 6, 0, 30))
+        self.assertEqual(
+            showtimes_speech(now=at(2026, 10, 4, 12)),
             "There are no shows today. Our next showtimes are tomorrow: "
-            "Hamnet at 12:00 AM.",
+            "Hamnet at 7:00 PM and 12:30 AM.",
+        )
+
+    def test_just_after_midnight_the_rest_of_the_night_is_today(self) -> None:
+        add_showtime(self.hamnet, at(2026, 10, 5, 1, 0))
+        self.assertEqual(
+            showtimes_speech(now=at(2026, 10, 5, 0, 30)),
+            "Today's showtimes: Hamnet at 1:00 AM.",
         )
 
     def test_no_shows_today_reads_the_next_day_with_showtimes(self) -> None:
