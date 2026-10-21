@@ -43,6 +43,21 @@ class VoicemailListTests(VoicemailTestCase):
         self.assertContains(response, "Are you showing Hamnet on Friday?")
         self.assertEqual(response.context["new_count"], 1)
 
+    def test_a_real_number_gets_a_tel_link(self):
+        self.login()
+        response = self.client.get(reverse("dashboard:voicemails"))
+        self.assertContains(response, 'href="tel:+12075550100"')
+
+    def test_a_withheld_caller_id_is_shown_but_not_linked(self):
+        # Twilio sends "anonymous" (or +266696687) when the caller blocks
+        # their number; wrapping that in tel: gives staff a dead link.
+        self.voicemail.caller = "anonymous"
+        self.voicemail.save()
+        self.login()
+        response = self.client.get(reverse("dashboard:voicemails"))
+        self.assertContains(response, "anonymous")
+        self.assertNotContains(response, "tel:")
+
     @CONFIGURED
     def test_audio_streams_through_the_dashboard_without_exposing_twilio(self):
         self.login()

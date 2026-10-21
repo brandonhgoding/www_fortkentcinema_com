@@ -2,6 +2,7 @@ from typing import ClassVar
 
 from django.db import models
 from django.db.models import Manager
+from django.utils import timezone
 
 
 class CallLog(models.Model):
@@ -31,7 +32,8 @@ class CallLog(models.Model):
         ordering = ["-started_at"]
 
     def __str__(self) -> str:
-        return f"{self.caller or 'Unknown caller'} @ {self.started_at:%Y-%m-%d %H:%M}"
+        started = timezone.localtime(self.started_at)
+        return f"{self.caller or 'Unknown caller'} @ {started:%Y-%m-%d %H:%M}"
 
     def add_choice(self, choice: str) -> None:
         self.choices = [*self.choices, choice]

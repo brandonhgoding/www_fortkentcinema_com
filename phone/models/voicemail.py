@@ -5,6 +5,10 @@ from django.db.models import Manager
 
 from .call_log import CallLog
 
+# What Twilio sends as the caller when the caller ID is withheld: ANONYMOUS
+# spelled on a keypad. Otherwise it sends "anonymous" or a SIP URI.
+WITHHELD_CALLER = "+266696687"
+
 
 class VoicemailStatus(models.TextChoices):
     NEW = "NEW", "New"
@@ -53,3 +57,10 @@ class Voicemail(models.Model):
 
     def __str__(self) -> str:
         return f"{self.caller or 'Unknown caller'} ({self.get_status_display()})"
+
+    @property
+    def callback_number(self) -> str:
+        """The caller's number when there is one to dial, else ""."""
+        if self.caller.startswith("+") and self.caller != WITHHELD_CALLER:
+            return self.caller
+        return ""

@@ -42,7 +42,7 @@
         {% for voicemail in voicemails %}
           <tr>
             <td>
-              {% if voicemail.caller %}<a href="tel:{{ voicemail.caller }}">{{ voicemail.caller }}</a>{% else %}Unknown{% endif %}
+              {% if voicemail.callback_number %}<a href="tel:{{ voicemail.callback_number }}">{{ voicemail.caller }}</a>{% elif voicemail.caller %}{{ voicemail.caller }}{% else %}Unknown{% endif %}
             </td>
             <td>{{ voicemail.created_at|date:"M j, Y g:i A" }}</td>
             <td>{% if voicemail.duration_seconds is not None %}{{ voicemail.duration_seconds }}s{% else %}—{% endif %}</td>
