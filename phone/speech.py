@@ -52,7 +52,11 @@ def _describe(showtimes: Iterable[Showtime]) -> str:
     sentences = []
     for group in by_engagement.values():
         engagement = group[0].engagement
-        title = engagement.title
+        # Engagement.title joins a double feature with " + ", which is
+        # for reading, not listening: say "and" instead.
+        title = engagement.display_title or _spoken_list(
+            [film.title for film in engagement.ordered_films]
+        )
         if engagement.is_free_for_members:
             title += ", free for members,"
         times = _spoken_list([_format_showtime(s.starts_at) for s in group])

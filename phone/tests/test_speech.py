@@ -1,7 +1,7 @@
 import datetime
 from unittest.mock import patch
 
-from cinema.models import Screen
+from cinema.models import EngagementFilm, Film, Screen
 from django.test import TestCase
 from phone.speech import hours_and_prices_speech, showtimes_speech
 from web.constants import SITE_CONFIG, TICKET_PRICES
@@ -34,6 +34,35 @@ class ShowtimesSpeechTests(TestCase):
             showtimes_speech(now=at(2026, 10, 4, 12)),
             "Today's showtimes: Hamnet at 4:00 PM and 7:15 PM. "
             "Weapons, free for members, at 7:15 PM.",
+        )
+
+    def test_a_double_feature_is_read_with_and_not_plus(self) -> None:
+        # Engagement.title joins films with " + " for the listings; Polly
+        # would read that as "plus" or drop it.
+        for position, title in ((2, "Weapons"), (3, "Sinners")):
+            EngagementFilm.objects.create(
+                engagement=self.hamnet,
+                film=Film.objects.create(title=title),
+                position=position,
+            )
+        add_showtime(self.hamnet, at(2026, 10, 4, 19))
+        self.assertEqual(
+            showtimes_speech(now=at(2026, 10, 4, 12)),
+            "Today's showtimes: Hamnet, Weapons, and Sinners at 7:00 PM.",
+        )
+
+    def test_a_display_title_is_read_as_written(self) -> None:
+        self.hamnet.display_title = "Halloween Double Feature"
+        self.hamnet.save()
+        EngagementFilm.objects.create(
+            engagement=self.hamnet,
+            film=Film.objects.create(title="Weapons"),
+            position=2,
+        )
+        add_showtime(self.hamnet, at(2026, 10, 4, 19))
+        self.assertEqual(
+            showtimes_speech(now=at(2026, 10, 4, 12)),
+            "Today's showtimes: Halloween Double Feature at 7:00 PM.",
         )
 
     def test_leaves_out_shows_that_already_started(self) -> None:

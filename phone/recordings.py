@@ -2,9 +2,9 @@
 
 Playback goes through the dashboard rather than linking to Twilio, so it
 works when the account requires HTTP auth on media and recording URLs never
-reach any page (the dashboard and the admin both link here). URLs are built from our own account SID and a validated
-recording SID — never from the stored recording_url — so credentials can
-only ever be sent to api.twilio.com.
+reach any page: the dashboard and the admin both link here. URLs are built
+from our own account SID and a validated recording SID — never from the
+stored recording_url — so credentials can only ever be sent to api.twilio.com.
 """
 
 import re
