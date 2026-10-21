@@ -28,3 +28,53 @@ pending for the next run). Set `TICKETS_BASE_URL` (for example
 site; when it is empty the scheme and host of `SQUARE_WEBHOOK_URL` are used. The
 confirmation page and ticket email draw a QR code with the `qrcode` package,
 which is in `requirements.txt`.
+
+## Phone line
+
+The cinema's number is a Twilio number (the `phone` app). Twilio POSTs to
+`/phone/voice/` when a call comes in and the app answers with TwiML: a greeting
+and a three-key menu (today's showtimes, hours and prices, leave a message).
+Showtimes come from the same rule as Now Showing, prices from `TICKET_PRICES` in
+`web/constants.py`. Voicemails are recorded at Twilio and reach staff through
+the dashboard's Voicemails page and its badge; nothing is emailed. Two toggles
+live at the top of `phone/views.py`: `TRANSCRIBE` (off, it was most of a
+voicemail's cost) and `VOICE`. A recording under `MIN_VOICEMAIL_SECONDS` is a
+hang-up at the beep, not a message, and is discarded.
+
+Every webhook is checked against `X-Twilio-Signature`, which Twilio computes
+over the exact public URL it called, query string included. Three settings:
+
+- `TWILIO_AUTH_TOKEN`: the signing token. Empty means every webhook answers
+  403, so a missing variable fails closed.
+- `TWILIO_ACCOUNT_SID`: only for calls *to* Twilio. Empty means the dashboard
+  can't stream or delete recordings (it falls back to linking Twilio directly).
+- `TWILIO_WEBHOOK_BASE_URL`: the scheme and host signatures are checked
+  against (`https://www.fortkentcinema.com` in production). Leave it empty only
+  where Django can rebuild the public URL itself, which behind nginx needs
+  `USE_PROXY_HEADERS=True`.
+
+**Twilio console.** The number's Voice URL must be exactly
+`https://www.fortkentcinema.com/phone/voice/` with HTTP POST. Any other form
+(`http://`, no `www`, no trailing slash) is answered by this site but fails the
+signature. Set the Voice *Fallback URL* to a TwiML Bin with a static message
+("We can't take your call right now. Showtimes and tickets are at
+fortkentcinema.com"): without one, a deploy restart or a 5xx plays Twilio's
+"an application error has occurred" to the caller. Turn on alert emails under
+Monitor → Alerts so a run of failed webhooks reaches someone; a bad signature is
+logged here only as a WARNING, on purpose, because bots probe the URL.
+
+**Rotating the token.** Rotating in place kills the line until the next deploy.
+Instead create a *secondary* auth token in the console, put it in the Ansible
+vault as `TWILIO_AUTH_TOKEN`, deploy, then promote it to primary.
+
+**Local development.** Run `ngrok http 8000`, set `TWILIO_WEBHOOK_BASE_URL` to
+the ngrok URL, and point a number's Voice URL at `https://<ngrok>/phone/voice/`.
+Use a separate dev number: the URL on the real number is what customers reach.
+
+**When every call gets a 403**, check in this order: the console URL against
+`TWILIO_WEBHOOK_BASE_URL` (scheme, host, trailing slash), the token, then the
+proxy headers. The WARNING log line names the URL the signature was checked
+against. **When a voicemail is missing**, the recording is still at Twilio
+(Monitor → Logs → Recordings); its webhooks are retried, and if they still
+failed the error email to `ADMINS` carries the `RecordingSid` and caller.
+`docs/qa/phone-line.md` is the manual checklist for a real call.
