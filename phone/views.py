@@ -52,15 +52,24 @@ def _twiml(response: VoiceResponse) -> HttpResponse:
     return HttpResponse(str(response), content_type="text/xml")
 
 
-def _call_log(request: HttpRequest) -> CallLog:
-    log, _ = CallLog.objects.get_or_create(
-        call_sid=request.POST.get("CallSid", ""),
-        defaults={
-            "caller": request.POST.get("From", ""),
-            "called": request.POST.get("To", ""),
-        },
-    )
-    return log
+def _log_call(request: HttpRequest, choice: str | None = None) -> None:
+    """Record the call and, at the menu, the key pressed.
+
+    The log is evidence for the Level 2 agent, not the call itself, so a
+    database error here is logged and the caller still hears the line.
+    """
+    try:
+        log, _ = CallLog.objects.get_or_create(
+            call_sid=request.POST.get("CallSid", ""),
+            defaults={
+                "caller": request.POST.get("From", ""),
+                "called": request.POST.get("To", ""),
+            },
+        )
+        if choice is not None:
+            log.add_choice(choice)
+    except Exception:
+        logger.exception("Couldn't log call %s", request.POST.get("CallSid", ""))
 
 
 def _add_menu(response: VoiceResponse, attempt: int) -> None:
@@ -81,7 +90,7 @@ def _attempt(request: HttpRequest) -> int:
 
 @twilio_webhook
 def incoming_call(request: HttpRequest) -> HttpResponse:
-    _call_log(request)
+    _log_call(request)
     response = VoiceResponse()
     _say(response, GREETING)
     _add_menu(response, attempt=1)
@@ -92,7 +101,7 @@ def incoming_call(request: HttpRequest) -> HttpResponse:
 def menu(request: HttpRequest) -> HttpResponse:
     attempt = _attempt(request)
     digit = request.POST.get("Digits", "")
-    _call_log(request).add_choice(digit or "none")
+    _log_call(request, choice=digit or "none")
 
     response = VoiceResponse()
     if digit in ("1", "2"):

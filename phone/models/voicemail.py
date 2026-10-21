@@ -33,7 +33,7 @@ class Voicemail(models.Model):
         related_name="voicemails",
     )
     recording_sid = models.CharField(max_length=64, unique=True)
-    caller = models.CharField(max_length=32, blank=True)
+    caller = models.CharField(max_length=255, blank=True)  # see CallLog
     recording_url = models.URLField(blank=True)
     duration_seconds = models.PositiveIntegerField(null=True, blank=True)
     transcript = models.TextField(blank=True)

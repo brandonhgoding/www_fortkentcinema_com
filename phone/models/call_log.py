@@ -17,8 +17,11 @@ class CallLog(models.Model):
     # Twilio's id for the call. Every webhook in a call carries it, which is
     # how the menu and voicemail webhooks find this row again.
     call_sid = models.CharField(max_length=64, unique=True)
-    caller = models.CharField(max_length=32, blank=True)
-    called = models.CharField(max_length=32, blank=True)
+    # E.164 from the phone network, but a SIP URI or client identifier
+    # from anywhere else, and Postgres rejects a value the column can't
+    # hold: wide enough for whatever Twilio sends.
+    caller = models.CharField(max_length=255, blank=True)
+    called = models.CharField(max_length=255, blank=True)
     started_at = models.DateTimeField(auto_now_add=True)
     # Keys pressed at the menu, in order: "1", "2", "3", an invalid digit as
     # pressed, or "none" when the caller let the menu time out.

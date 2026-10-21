@@ -2,6 +2,8 @@ import re
 from unittest.mock import Mock, patch
 from xml.sax.saxutils import escape
 
+from django.core.exceptions import ValidationError
+from django.db import DatabaseError
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from phone.models import CallLog, Voicemail, VoicemailStatus
@@ -61,6 +63,27 @@ class IncomingCallTests(PhoneTestCase):
             (log.call_sid, log.caller, log.called, log.choices),
             ("CA123", "+12075550100", "+12075550199", []),
         )
+
+    def test_a_sip_or_client_caller_fits_the_log(self) -> None:
+        # Twilio's From is E.164 from the phone network, but a SIP URI or a
+        # client identifier from elsewhere; the column has to hold either.
+        # SQLite ignores max_length, so validate the way Postgres would.
+        caller = "sip:+12075550100@example.sip.us1.twilio.com"
+        self.call("incoming_call", {"From": caller, "To": caller})
+        try:
+            CallLog.objects.get().full_clean()
+        except ValidationError as exc:
+            self.fail(f"{caller!r} does not fit: {exc}")
+
+    def test_a_failed_log_write_does_not_cut_the_greeting(self) -> None:
+        with (
+            patch("phone.views.CallLog.objects.get_or_create") as get_or_create,
+            self.assertLogs("phone.views", "ERROR"),
+        ):
+            get_or_create.side_effect = DatabaseError("connection lost")
+            twiml = self.call("incoming_call")
+        self.assertIn("Thanks for calling Fort Kent Cinema.", twiml)
+        self.assertIn("<Gather", twiml)
 
 
 class MenuTests(PhoneTestCase):
@@ -128,6 +151,15 @@ class MenuTests(PhoneTestCase):
         CallLog.objects.all().delete()
         self.press("2")
         self.assertEqual(CallLog.objects.get().choices, ["2"])
+
+    def test_a_failed_choice_write_still_answers_the_caller(self) -> None:
+        with (
+            patch("phone.views.CallLog.add_choice") as add_choice,
+            self.assertLogs("phone.views", "ERROR"),
+        ):
+            add_choice.side_effect = DatabaseError("connection lost")
+            twiml = self.press("2")
+        self.assertIn("box office opens", twiml)
 
 
 # A SID of the real shape, for the paths that check it before calling Twilio.
@@ -314,6 +346,14 @@ class VoicemailTests(PhoneTestCase):
             with self.subTest(status):
                 self.status_callback(RecordingStatus=status)
                 self.assertFalse(Voicemail.objects.exists())
+
+    def test_a_sip_caller_fits_the_voicemail(self) -> None:
+        caller = "sip:+12075550100@example.sip.us1.twilio.com"
+        self.call("voicemail_recorded", {**RECORDING, "From": caller})
+        try:
+            Voicemail.objects.get().full_clean()
+        except ValidationError as exc:
+            self.fail(f"{caller!r} does not fit: {exc}")
 
     def test_audio_url_is_mp3(self) -> None:
         self.call("voicemail_recorded", RECORDING)
