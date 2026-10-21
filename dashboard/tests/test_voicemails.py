@@ -102,6 +102,35 @@ class VoicemailListTests(VoicemailTestCase):
         self.assertContains(response, "+12075550111")
         self.assertNotContains(response, "+12075550100")
 
+    def test_the_new_count_ignores_the_filter(self):
+        Voicemail.objects.create(
+            recording_sid="RE2", caller="+12075550111", status=VoicemailStatus.HANDLED
+        )
+        self.login()
+        response = self.client.get(
+            reverse("dashboard:voicemails"), {"status": "HANDLED"}
+        )
+        self.assertEqual(response.context["new_count"], 1)
+
+    def test_the_home_alert_link_lists_only_new_voicemails(self):
+        Voicemail.objects.create(
+            recording_sid="RE2", caller="+12075550111", status=VoicemailStatus.HANDLED
+        )
+        self.login()
+        response = self.client.get(reverse("dashboard:voicemails") + "?status=NEW")
+        self.assertContains(response, "+12075550100")
+        self.assertNotContains(response, "+12075550111")
+
+    def test_an_unknown_status_filter_lists_everything(self):
+        Voicemail.objects.create(
+            recording_sid="RE2", caller="+12075550111", status=VoicemailStatus.HANDLED
+        )
+        self.login()
+        response = self.client.get(reverse("dashboard:voicemails"), {"status": "BOGUS"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "+12075550100")
+        self.assertContains(response, "+12075550111")
+
     def test_mark_handled(self):
         self.login()
         self.client.post(
@@ -249,10 +278,52 @@ class VoicemailAudioTests(VoicemailTestCase):
         self.assertEqual(response["Content-Range"], "bytes 4-7/8")
 
     @patch("dashboard.voicemail_views.recordings.open_recording")
+    def test_without_a_range_the_whole_file_is_asked_for(self, open_recording: Mock):
+        open_recording.return_value = upstream(200)
+        self.login()
+        self.client.get(self.audio_url())
+        open_recording.assert_called_once_with(SID, "")
+
+    @patch("dashboard.voicemail_views.recordings.open_recording")
+    def test_audio_is_cached_only_by_the_browser_that_fetched_it(
+        self, open_recording: Mock
+    ):
+        open_recording.return_value = upstream(200)
+        self.login()
+        response = self.client.get(self.audio_url())
+        self.assertEqual(response["Cache-Control"], "private, max-age=3600")
+
+    @patch("dashboard.voicemail_views.recordings.open_recording")
     def test_missing_recording_is_404(self, open_recording: Mock):
-        open_recording.return_value = upstream(404)
+        source = upstream(404)
+        open_recording.return_value = source
         self.login()
         self.assertEqual(self.client.get(self.audio_url()).status_code, 404)
+        source.close.assert_called_once()
+
+    @patch("dashboard.voicemail_views.recordings.open_recording")
+    def test_a_twilio_outage_is_502_logged_and_closed(self, open_recording: Mock):
+        source = upstream(503)
+        open_recording.return_value = source
+        self.login()
+        with (
+            self.assertLogs("django.request", "ERROR"),
+            self.assertLogs("dashboard.voicemail_views", "WARNING") as logs,
+        ):
+            response = self.client.get(self.audio_url())
+        self.assertEqual(response.status_code, 502)
+        self.assertIn("503", logs.output[0])
+        source.close.assert_called_once()
+
+    @patch("dashboard.voicemail_views.recordings.open_recording")
+    def test_an_unsatisfiable_range_is_passed_to_the_player(self, open_recording: Mock):
+        # The browser asked past the end of the file; 416 with Content-Range
+        # tells it the real size, where a 502 would just stop playback.
+        open_recording.return_value = upstream(416, **{"Content-Range": "bytes */8"})
+        self.login()
+        response = self.client.get(self.audio_url(), HTTP_RANGE="bytes=99-")
+        self.assertEqual(response.status_code, 416)
+        self.assertEqual(response["Content-Range"], "bytes */8")
 
     @patch("dashboard.voicemail_views.recordings.open_recording")
     def test_a_twilio_error_status_is_502_and_logged(self, open_recording: Mock):

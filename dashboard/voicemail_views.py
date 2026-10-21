@@ -126,7 +126,9 @@ class VoicemailAudioView(StaffRequiredMixin, View):
         if upstream.status_code == 404:
             upstream.close()
             raise Http404("Recording not found")
-        if upstream.status_code not in (200, 206):
+        # 416 goes through too: its Content-Range tells the player the
+        # file's real size, where a 502 would just stop playback.
+        if upstream.status_code not in (200, 206, 416):
             upstream.close()
             logger.warning(
                 "Twilio answered %s for recording %s",

@@ -36,6 +36,29 @@ class ShowtimesSpeechTests(TestCase):
             "Weapons, free for members, at 7:15 PM.",
         )
 
+    def test_three_or_more_showtimes_get_an_oxford_comma(self) -> None:
+        for hour, minute in ((14, 0), (16, 30), (19, 15)):
+            add_showtime(self.hamnet, at(2026, 10, 4, hour, minute))
+        self.assertEqual(
+            showtimes_speech(now=at(2026, 10, 4, 12)),
+            "Today's showtimes: Hamnet at 2:00 PM, 4:30 PM, and 7:15 PM.",
+        )
+
+    def test_titles_are_read_in_order_of_their_first_show(self) -> None:
+        # Hamnet was booked first (lower pk) but plays later.
+        weapons = make_engagement(
+            "Weapons",
+            SUNDAY,
+            SUNDAY,
+            screen=Screen.objects.create(name="Screen 2", capacity=40),
+        )
+        add_showtime(self.hamnet, at(2026, 10, 4, 16))
+        add_showtime(weapons, at(2026, 10, 4, 14))
+        self.assertEqual(
+            showtimes_speech(now=at(2026, 10, 4, 12)),
+            "Today's showtimes: Weapons at 2:00 PM. Hamnet at 4:00 PM.",
+        )
+
     def test_a_double_feature_is_read_with_and_not_plus(self) -> None:
         # Engagement.title joins films with " + " for the listings; Polly
         # would read that as "plus" or drop it.
@@ -158,6 +181,45 @@ class ShowtimesSpeechTests(TestCase):
         self.assertEqual(
             showtimes_speech(now=at(2026, 10, 4, 22)),
             "Today's showtimes: Hamnet at 11:30 PM.",
+        )
+
+    def test_fall_back_night_keeps_its_late_show(self) -> None:
+        # Clocks go back at 2 AM on 2026-11-01; the night's day window
+        # spans the repeated hour without error or a lost show.
+        self.hamnet.end_date = datetime.date(2026, 11, 2)
+        self.hamnet.save()
+        add_showtime(self.hamnet, at(2026, 10, 31, 23, 30))
+        add_showtime(self.hamnet, at(2026, 11, 1, 1, 30))
+        self.assertEqual(
+            showtimes_speech(now=at(2026, 10, 31, 22)),
+            "Today's showtimes: Hamnet at 11:30 PM and 1:30 AM.",
+        )
+
+    def test_the_day_after_fall_back_is_still_tomorrow(self) -> None:
+        self.hamnet.end_date = datetime.date(2026, 11, 2)
+        self.hamnet.save()
+        add_showtime(self.hamnet, at(2026, 11, 1, 19))
+        self.assertEqual(
+            showtimes_speech(now=at(2026, 10, 31, 12)),
+            "There are no shows today. Our next showtimes are tomorrow: "
+            "Hamnet at 7:00 PM.",
+        )
+
+    def test_spring_forward_day_reads_its_own_shows(self) -> None:
+        # Clocks skip 2 AM on 2026-03-08: a caller after the jump still
+        # hears that evening's show as today's, in Eastern time.
+        self.hamnet.start_date = datetime.date(2026, 3, 7)
+        self.hamnet.end_date = datetime.date(2026, 3, 9)
+        self.hamnet.save()
+        add_showtime(self.hamnet, at(2026, 3, 8, 19))
+        self.assertEqual(
+            showtimes_speech(now=at(2026, 3, 8, 3, 30)),
+            "Today's showtimes: Hamnet at 7:00 PM.",
+        )
+        self.assertEqual(
+            showtimes_speech(now=at(2026, 3, 7, 12)),
+            "There are no shows today. Our next showtimes are tomorrow: "
+            "Hamnet at 7:00 PM.",
         )
 
     def test_nothing_scheduled_at_all(self) -> None:
