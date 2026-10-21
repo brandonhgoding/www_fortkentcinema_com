@@ -73,6 +73,26 @@ class ShowtimesSpeechTests(TestCase):
             "Today's showtimes: Hamnet at 7:15 PM.",
         )
 
+    def test_a_show_starting_this_minute_is_still_read(self) -> None:
+        # Doors are open and trailers rolling: a caller at 7:15 for the
+        # 7:15 still wants to hear it. Pins the >= in the query.
+        add_showtime(self.hamnet, at(2026, 10, 4, 19, 15))
+        self.assertEqual(
+            showtimes_speech(now=at(2026, 10, 4, 19, 15)),
+            "Today's showtimes: Hamnet at 7:15 PM.",
+        )
+
+    def test_a_midnight_show_belongs_to_tomorrow(self) -> None:
+        # 12:00 AM is the first minute of the next Eastern day, so at 11:50
+        # PM it is read as tomorrow's. A late-night caller may mean
+        # "tonight"; this pins today's rule so a change is deliberate.
+        add_showtime(self.hamnet, at(2026, 10, 5, 0, 0))
+        self.assertEqual(
+            showtimes_speech(now=at(2026, 10, 4, 23, 50)),
+            "There are no shows today. Our next showtimes are tomorrow: "
+            "Hamnet at 12:00 AM.",
+        )
+
     def test_no_shows_today_reads_the_next_day_with_showtimes(self) -> None:
         add_showtime(self.hamnet, at(2026, 10, 9, 18, 30))
         add_showtime(self.hamnet, at(2026, 10, 9, 21))

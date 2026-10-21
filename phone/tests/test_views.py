@@ -1,4 +1,5 @@
 import re
+import xml.etree.ElementTree as ET
 from unittest.mock import Mock, patch
 from xml.sax.saxutils import escape
 
@@ -100,11 +101,25 @@ class MenuTests(PhoneTestCase):
         self.assertIn(escape(hours_and_prices_speech()), self.press("2"))
 
     def test_3_records_a_voicemail_of_at_most_two_minutes(self) -> None:
-        twiml = self.press("3")
-        self.assertIn("after the beep", twiml)
-        self.assertIn('action="/phone/voicemail/recorded/"', twiml)
-        self.assertIn('maxLength="120"', twiml)
-        self.assertIn("<Hangup />", twiml)
+        # The whole <Record> contract, in order: the prompt, the recording
+        # with every attribute the line depends on, then the fall-through
+        # for a caller who never starts recording, then the hang-up.
+        verbs = list(ET.fromstring(self.press("3")))
+        self.assertEqual([v.tag for v in verbs], ["Say", "Record", "Say", "Hangup"])
+        prompt, record, fallthrough, _ = verbs
+        self.assertIn("after the beep", prompt.text or "")
+        self.assertEqual(
+            record.attrib,
+            {
+                "action": "/phone/voicemail/recorded/",
+                "maxLength": "120",
+                "timeout": "10",
+                "playBeep": "true",
+                "finishOnKey": "#",
+                "recordingStatusCallback": "/phone/voicemail/status/",
+            },
+        )
+        self.assertIn("We didn't get a message", fallthrough.text or "")
 
     def test_3_waits_ten_seconds_of_silence_before_ending_the_recording(
         self,
@@ -287,6 +302,19 @@ class VoicemailTests(PhoneTestCase):
         self.assertEqual(voicemail.recording_url, RECORDING["RecordingUrl"])
         self.assertEqual(voicemail.duration_seconds, 42)
         self.assertEqual(voicemail.status, VoicemailStatus.NEW)
+
+    def test_repeated_action_callback_keeps_staff_changes(self) -> None:
+        # Twilio can send a webhook twice; staff may have handled the
+        # message in between.
+        self.call("voicemail_recorded", RECORDING)
+        Voicemail.objects.update(status=VoicemailStatus.HANDLED, notes="Called back")
+        self.call("voicemail_recorded", RECORDING)
+        voicemail = Voicemail.objects.get()
+        self.assertEqual(Voicemail.objects.count(), 1)
+        self.assertEqual(
+            (voicemail.status, voicemail.notes, voicemail.duration_seconds),
+            (VoicemailStatus.HANDLED, "Called back", 42),
+        )
 
     def test_status_callback_after_the_action_keeps_staff_changes(self) -> None:
         self.call("voicemail_recorded", RECORDING)
