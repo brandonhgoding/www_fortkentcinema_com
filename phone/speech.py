@@ -15,9 +15,33 @@ from web.services.cinema_data import _format_showtime
 
 WEBSITE = "fort kent cinema dot com"
 
+# A show that starts after midnight belongs to the evening before it: a
+# 12:00 AM screening is "tonight" to an 11:50 PM caller (the owner's call),
+# so a day's showtimes run until this time the next morning.
+LATE_SHOWS_UNTIL = datetime.time(5, 0)
+
+# How long after a show starts it is still read out. Doors are open and
+# trailers rolling, so a 7:10 caller for the 7:00 wants to hear it.
+STARTED_GRACE = datetime.timedelta(minutes=15)
+
 
 def _day_start(day: datetime.date) -> datetime.datetime:
     return timezone.make_aware(datetime.datetime.combine(day, datetime.time.min))
+
+
+def _day_end(day: datetime.date) -> datetime.datetime:
+    return timezone.make_aware(
+        datetime.datetime.combine(day + datetime.timedelta(days=1), LATE_SHOWS_UNTIL)
+    )
+
+
+def _show_day(starts_at: datetime.datetime) -> datetime.date:
+    """The day a show is listed under: its Eastern date, or the day before
+    for an after-midnight show."""
+    local = timezone.localtime(starts_at)
+    if local.time() < LATE_SHOWS_UNTIL:
+        return local.date() - datetime.timedelta(days=1)
+    return local.date()
 
 
 def _public_showtimes() -> QuerySet[Showtime]:
@@ -74,16 +98,18 @@ def showtimes_speech(now: datetime.datetime | None = None) -> str:
     """Today's remaining showtimes, or — when there are none left — the next
     day that has any.
 
-    Shows that have already started are left out: someone calling at 8 PM
-    wants the 9:00, not to hear about the 4:00 they missed.
+    Shows that started more than a few minutes ago are left out: someone
+    calling at 8 PM wants the 9:00, not to hear about the 4:00 they missed.
+    "Today" runs past midnight (LATE_SHOWS_UNTIL), so a late show is read
+    with the evening it belongs to.
     """
     now = timezone.localtime(now)
     today = now.date()
     today_start = _day_start(today)
-    tomorrow_start = _day_start(today + datetime.timedelta(days=1))
+    today_end = _day_end(today)
 
-    upcoming = _public_showtimes().filter(starts_at__gte=now)
-    todays = list(upcoming.filter(starts_at__lt=tomorrow_start))
+    upcoming = _public_showtimes().filter(starts_at__gte=now - STARTED_GRACE)
+    todays = list(upcoming.filter(starts_at__lt=today_end))
     if todays:
         return f"Today's showtimes: {_describe(todays)}"
 
@@ -98,17 +124,16 @@ def showtimes_speech(now: datetime.datetime | None = None) -> str:
         else "There are no shows today."
     )
 
-    first_next = upcoming.filter(starts_at__gte=tomorrow_start).first()
+    first_next = upcoming.filter(starts_at__gte=today_end).first()
     if first_next is None:
         return (
             f"{opener} We don't have any upcoming showtimes scheduled yet. "
             f"Please check {WEBSITE} for updates."
         )
 
-    next_day = timezone.localtime(first_next.starts_at).date()
+    next_day = _show_day(first_next.starts_at)
     next_shows = upcoming.filter(
-        starts_at__gte=_day_start(next_day),
-        starts_at__lt=_day_start(next_day + datetime.timedelta(days=1)),
+        starts_at__gte=_day_start(next_day), starts_at__lt=_day_end(next_day)
     )
     return (
         f"{opener} Our next showtimes are {_day_label(next_day, today)}: "
