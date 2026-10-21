@@ -169,10 +169,15 @@ class VoicemailDeleteTests(VoicemailTestCase):
     )
     def test_twilio_failure_keeps_the_voicemail(self, _: Mock):
         self.login()
-        response = self.delete()
+        # Staff see "try again"; the reason goes to the log, so a bad token
+        # and a Twilio outage can be told apart afterwards.
+        with self.assertLogs("dashboard.voicemail_views", "WARNING") as logs:
+            response = self.delete()
         self.assertTrue(Voicemail.objects.exists())
         messages = [str(m) for m in response.wsgi_request._messages]
         self.assertIn("voicemail was kept", messages[0])
+        self.assertIn("Twilio answered 500", logs.output[0])
+        self.assertIn(SID, logs.output[0])
 
     @UNCONFIGURED
     def test_without_an_account_sid_nothing_is_deleted(self):
@@ -235,19 +240,33 @@ class VoicemailAudioTests(VoicemailTestCase):
         self.assertEqual(self.client.get(self.audio_url()).status_code, 404)
 
     @patch("dashboard.voicemail_views.recordings.open_recording")
-    def test_twilio_errors_are_502(self, open_recording: Mock):
+    def test_a_twilio_error_status_is_502_and_logged(self, open_recording: Mock):
         self.login()
-        for outcome in (upstream(401), RecordingError("down")):
-            with self.subTest(outcome=outcome):
-                if isinstance(outcome, Exception):
-                    open_recording.side_effect = outcome
-                else:
-                    open_recording.return_value = outcome
-                # A 502 is logged as an ERROR (and emailed to ADMINS in
-                # production); capture it so the test output stays quiet.
-                with self.assertLogs("django.request", "ERROR"):
-                    response = self.client.get(self.audio_url())
-                self.assertEqual(response.status_code, 502)
+        open_recording.return_value = upstream(401)
+        # A 502 is logged as an ERROR (and emailed to ADMINS in production)
+        # by django.request; the view adds the reason at WARNING.
+        with (
+            self.assertLogs("django.request", "ERROR"),
+            self.assertLogs("dashboard.voicemail_views", "WARNING") as logs,
+        ):
+            response = self.client.get(self.audio_url())
+        self.assertEqual(response.status_code, 502)
+        self.assertIn("401", logs.output[0])
+        self.assertIn(SID, logs.output[0])
+
+    @patch(
+        "dashboard.voicemail_views.recordings.open_recording",
+        side_effect=RecordingError("connection refused"),
+    )
+    def test_a_recording_error_is_502_and_logged(self, _: Mock):
+        self.login()
+        with (
+            self.assertLogs("django.request", "ERROR"),
+            self.assertLogs("dashboard.voicemail_views", "WARNING") as logs,
+        ):
+            response = self.client.get(self.audio_url())
+        self.assertEqual(response.status_code, 502)
+        self.assertIn("connection refused", logs.output[0])
 
 
 class SidebarBadgeTests(VoicemailTestCase):
