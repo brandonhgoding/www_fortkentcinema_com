@@ -73,10 +73,23 @@ class SignatureTests(TestCase):
         response = post_signed(self.client, reverse("phone:incoming_call"), CALL)
         self.assertEqual(response.status_code, 403)
 
-    def test_get_is_not_allowed(self) -> None:
-        self.assertEqual(
-            self.client.get(reverse("phone:incoming_call")).status_code, 405
+    def test_query_order_is_part_of_the_signature(self) -> None:
+        # Twilio signs the URL exactly as it called it; the check must not
+        # normalise the query string.
+        path = reverse("phone:menu")
+        response = post_signed(
+            self.client,
+            path + "?b=2&attempt=1",
+            CALL,
+            url=f"http://testserver{path}?attempt=1&b=2",
         )
+        self.assertEqual(response.status_code, 403)
+
+    def test_every_webhook_refuses_get(self) -> None:
+        for name in WEBHOOKS:
+            with self.subTest(name):
+                response = self.client.get(reverse(f"phone:{name}"))
+                self.assertEqual(response.status_code, 405)
 
     def test_csrf_is_exempt(self) -> None:
         self.client = self.client_class(enforce_csrf_checks=True)
@@ -115,5 +128,11 @@ class ReverseProxyTests(TestCase):
 
     @override_settings(TWILIO_WEBHOOK_BASE_URL="https://www.fortkentcinema.com/")
     def test_base_url_setting_pins_the_signed_url(self) -> None:
+        response = post_signed(self.client, self.path, CALL, url=self.public_url)
+        self.assertEqual(response.status_code, 200)
+
+    @override_settings(TWILIO_WEBHOOK_BASE_URL="https://www.fortkentcinema.com")
+    def test_base_url_without_a_trailing_slash_is_the_same(self) -> None:
+        # What production's env file sets.
         response = post_signed(self.client, self.path, CALL, url=self.public_url)
         self.assertEqual(response.status_code, 200)
