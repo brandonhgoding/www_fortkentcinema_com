@@ -27,6 +27,9 @@ GOODBYE = "Thanks for calling Fort Kent Cinema. Goodbye."
 # repeated once after a miss, then goodbye.
 LAST_ATTEMPT = 2
 VOICEMAIL_MAX_SECONDS = 120
+# Silence that ends a recording. Twilio's default of 5 s cuts off a caller
+# who pauses to look up a date or read a number slowly.
+VOICEMAIL_SILENCE_SECONDS = 10
 # Twilio keeps silent recordings, so a caller who hangs up at the beep
 # leaves one of a second or so. Nothing that short holds a name and a
 # number; it is not a message and must not light up the dashboard.
@@ -119,6 +122,7 @@ def menu(request: HttpRequest) -> HttpResponse:
         )
         response.record(
             max_length=VOICEMAIL_MAX_SECONDS,
+            timeout=VOICEMAIL_SILENCE_SECONDS,
             play_beep=True,
             finish_on_key="#",
             action=reverse("phone:voicemail_recorded"),
