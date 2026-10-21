@@ -8,7 +8,13 @@ from twilio.request_validator import RequestValidator
 from .helpers import TOKEN, post_signed
 
 CALL = {"CallSid": "CA123", "From": "+12075550100"}
-WEBHOOKS = ("incoming_call", "menu", "voicemail_recorded", "voicemail_transcribed")
+WEBHOOKS = (
+    "incoming_call",
+    "menu",
+    "voicemail_recorded",
+    "voicemail_status",
+    "voicemail_transcribed",
+)
 PROXY = override_settings(
     SECURE_PROXY_SSL_HEADER=("HTTP_X_FORWARDED_PROTO", "https"),
     USE_X_FORWARDED_HOST=True,

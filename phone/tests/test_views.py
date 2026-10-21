@@ -36,7 +36,7 @@ class VoiceTests(PhoneTestCase):
             self.call("incoming_call"),
             *(self.press(d) for d in ("1", "2", "3", "9")),
             self.press("", attempt=2),
-            self.call("voicemail_recorded"),
+            self.call("voicemail_recorded", RECORDING),
         ]
         for twiml in twimls:
             says = re.findall(r"<Say[^>]*>", twiml)
@@ -82,6 +82,10 @@ class MenuTests(PhoneTestCase):
         self.assertIn('action="/phone/voicemail/recorded/"', twiml)
         self.assertIn('maxLength="120"', twiml)
         self.assertIn("<Hangup />", twiml)
+
+    def test_3_asks_twilio_to_report_the_recording_when_it_is_ready(self) -> None:
+        twiml = self.press("3")
+        self.assertIn('recordingStatusCallback="/phone/voicemail/status/"', twiml)
 
     def test_3_does_not_pay_for_transcription_by_default(self) -> None:
         twiml = self.press("3")
@@ -189,9 +193,75 @@ class VoicemailTests(PhoneTestCase):
         )
         self.assertEqual(Voicemail.objects.get().transcription_status, "failed")
 
-    def test_no_recording_saves_nothing(self) -> None:
-        self.call("voicemail_recorded")
+    def test_no_recording_saves_nothing_and_says_so(self) -> None:
+        with self.assertLogs("phone.views", "ERROR"):
+            twiml = self.call("voicemail_recorded")
         self.assertFalse(Voicemail.objects.exists())
+        self.assertIn("didn't get your message", twiml)
+        self.assertNotIn("we got your message", twiml)
+
+    def test_action_without_a_sid_takes_it_from_the_recording_url(self) -> None:
+        sid = "RE" + "a" * 32
+        url = f"https://api.twilio.com/2010-04-01/Accounts/AC1/Recordings/{sid}"
+        twiml = self.call(
+            "voicemail_recorded", {"RecordingUrl": url, "RecordingDuration": "7"}
+        )
+        self.assertIn("we got your message", twiml)
+        voicemail = Voicemail.objects.get()
+        self.assertEqual(
+            (voicemail.recording_sid, voicemail.duration_seconds), (sid, 7)
+        )
+
+    def test_a_malformed_sid_in_the_url_is_not_trusted(self) -> None:
+        url = "https://api.twilio.com/2010-04-01/Accounts/AC1/Recordings/not-a-sid"
+        with self.assertLogs("phone.views", "ERROR"):
+            self.call("voicemail_recorded", {"RecordingUrl": url})
+        self.assertFalse(Voicemail.objects.exists())
+
+    def test_repeated_action_without_a_duration_keeps_the_stored_one(self) -> None:
+        self.call("voicemail_recorded", RECORDING)
+        self.call("voicemail_recorded", {**RECORDING, "RecordingDuration": ""})
+        self.assertEqual(Voicemail.objects.get().duration_seconds, 42)
+
+    def status_callback(self, **extra: str) -> None:
+        # Twilio's recordingStatusCallback carries the recording and call
+        # SIDs but not From: the caller has to come from the CallLog.
+        response = post_signed(
+            self.client,
+            reverse("phone:voicemail_status"),
+            {
+                "CallSid": CALL["CallSid"],
+                **RECORDING,
+                "RecordingStatus": "completed",
+                **extra,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_status_callback_saves_a_voicemail_the_action_lost(self) -> None:
+        self.status_callback()
+        voicemail = Voicemail.objects.get()
+        self.assertEqual(voicemail.caller, "+12075550100")
+        self.assertEqual(voicemail.call, CallLog.objects.get())
+        self.assertEqual(voicemail.recording_url, RECORDING["RecordingUrl"])
+        self.assertEqual(voicemail.duration_seconds, 42)
+        self.assertEqual(voicemail.status, VoicemailStatus.NEW)
+
+    def test_status_callback_after_the_action_keeps_staff_changes(self) -> None:
+        self.call("voicemail_recorded", RECORDING)
+        Voicemail.objects.update(status=VoicemailStatus.HANDLED, notes="Called back")
+        self.status_callback(RecordingDuration="43")
+        voicemail = Voicemail.objects.get()
+        self.assertEqual(
+            (voicemail.status, voicemail.notes, voicemail.duration_seconds),
+            (VoicemailStatus.HANDLED, "Called back", 43),
+        )
+
+    def test_status_callback_ignores_a_recording_that_is_not_complete(self) -> None:
+        for status in ("in-progress", "absent", "failed"):
+            with self.subTest(status):
+                self.status_callback(RecordingStatus=status)
+                self.assertFalse(Voicemail.objects.exists())
 
     def test_audio_url_is_mp3(self) -> None:
         self.call("voicemail_recorded", RECORDING)

@@ -5,13 +5,18 @@ relative, so Twilio resolves them against the URL it just called — the same
 host and scheme it signed — and ngrok and production need no config here.
 """
 
+import logging
+
 from django.http import HttpRequest, HttpResponse
 from django.urls import reverse
 from twilio.twiml.voice_response import Gather, VoiceResponse
 
 from .decorators import twilio_webhook
 from .models import CallLog, Voicemail
+from .recordings import RECORDING_SID
 from .speech import hours_and_prices_speech, showtimes_speech
+
+logger = logging.getLogger(__name__)
 
 GREETING = "Thanks for calling Fort Kent Cinema."
 MENU = "Press 1 for today's showtimes, 2 for hours and prices, or 3 to leave a message."
@@ -103,6 +108,11 @@ def menu(request: HttpRequest) -> HttpResponse:
             play_beep=True,
             finish_on_key="#",
             action=reverse("phone:voicemail_recorded"),
+            # The action callback is the caller's path back into the call,
+            # and Twilio sends it exactly once; the status callback fires
+            # when the file is ready and is retried, so a message survives
+            # a restart that swallowed the action. Both upsert the same row.
+            recording_status_callback=reverse("phone:voicemail_status"),
             **(
                 {
                     "transcribe": True,
@@ -128,42 +138,94 @@ def menu(request: HttpRequest) -> HttpResponse:
     return _twiml(response)
 
 
-def _upsert_voicemail(request: HttpRequest, **fields: object) -> Voicemail:
+def _recording_sid(request: HttpRequest) -> str:
+    """The recording's SID, or "" when the request names none.
+
+    Twilio documents RecordingSid for the status callback but not for the
+    <Record> action, where only RecordingUrl is promised; the URL ends in
+    the SID, so fall back to that, but only when it looks like one.
+    """
+    sid = request.POST.get("RecordingSid", "")
+    if sid:
+        return sid
+    tail = request.POST.get("RecordingUrl", "").rstrip("/").rsplit("/", 1)[-1]
+    return tail if RECORDING_SID.match(tail) else ""
+
+
+def _upsert_voicemail(
+    request: HttpRequest, recording_sid: str, **fields: object
+) -> Voicemail:
+    """Create or update the voicemail for a recording.
+
+    Only fields the request actually carries are passed in, so a repeated
+    webhook never blanks what an earlier one stored, and staff edits
+    (status, notes) are never touched.
+    """
+    call = CallLog.objects.filter(call_sid=request.POST.get("CallSid", "")).first()
     voicemail, _ = Voicemail.objects.update_or_create(
-        recording_sid=request.POST.get("RecordingSid", ""),
+        recording_sid=recording_sid,
         defaults=fields,
         create_defaults={
             **fields,
-            "call": CallLog.objects.filter(
-                call_sid=request.POST.get("CallSid", "")
-            ).first(),
-            "caller": request.POST.get("From", ""),
+            "call": call,
+            # The status callback has no From; the call log does.
+            "caller": request.POST.get("From", "") or (call.caller if call else ""),
             "recording_url": request.POST.get("RecordingUrl", ""),
         },
     )
     return voicemail
 
 
+def _recording_fields(request: HttpRequest) -> dict[str, object]:
+    fields: dict[str, object] = {}
+    if request.POST.get("RecordingUrl"):
+        fields["recording_url"] = request.POST["RecordingUrl"]
+    duration = request.POST.get("RecordingDuration", "")
+    if duration.isdigit():
+        fields["duration_seconds"] = int(duration)
+    return fields
+
+
 @twilio_webhook
 def voicemail_recorded(request: HttpRequest) -> HttpResponse:
-    if request.POST.get("RecordingSid"):
-        duration = request.POST.get("RecordingDuration", "")
-        _upsert_voicemail(
-            request,
-            recording_url=request.POST.get("RecordingUrl", ""),
-            duration_seconds=int(duration) if duration.isdigit() else None,
-        )
     response = VoiceResponse()
-    _say(response, f"Thanks, we got your message. {GOODBYE}")
+    sid = _recording_sid(request)
+    if sid:
+        _upsert_voicemail(request, sid, **_recording_fields(request))
+        _say(response, f"Thanks, we got your message. {GOODBYE}")
+    else:
+        # Don't thank a caller for a message nobody will ever hear.
+        logger.error(
+            "Voicemail action callback for call %s named no recording: %s",
+            request.POST.get("CallSid", ""),
+            dict(request.POST.items()),
+        )
+        _say(response, f"Sorry, we didn't get your message. {GOODBYE}")
     response.hangup()
     return _twiml(response)
 
 
 @twilio_webhook
+def voicemail_status(request: HttpRequest) -> HttpResponse:
+    """Twilio's recordingStatusCallback: the recording is ready to fetch.
+
+    This arrives after the action callback (and is retried on failure), so
+    it is the safety net for a message whose action callback was lost.
+    """
+    sid = _recording_sid(request)
+    if sid and request.POST.get("RecordingStatus") == "completed":
+        _upsert_voicemail(request, sid, **_recording_fields(request))
+    # Twilio ignores the body of a status callback; it only needs a 2xx.
+    return _twiml(VoiceResponse())
+
+
+@twilio_webhook
 def voicemail_transcribed(request: HttpRequest) -> HttpResponse:
-    if request.POST.get("RecordingSid"):
+    sid = _recording_sid(request)
+    if sid:
         _upsert_voicemail(
             request,
+            sid,
             transcript=request.POST.get("TranscriptionText", ""),
             transcription_status=request.POST.get("TranscriptionStatus", ""),
         )
