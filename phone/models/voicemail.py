@@ -53,9 +53,3 @@ class Voicemail(models.Model):
 
     def __str__(self) -> str:
         return f"{self.caller or 'Unknown caller'} ({self.get_status_display()})"
-
-    @property
-    def audio_url(self) -> str:
-        """Twilio serves the recording as WAV at the bare URL; MP3 is smaller
-        and plays in every browser."""
-        return f"{self.recording_url}.mp3" if self.recording_url else ""

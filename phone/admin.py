@@ -1,6 +1,8 @@
 from django.contrib import admin
+from django.urls import reverse
 from django.utils.html import format_html
 
+from . import recordings
 from .models import CallLog, Voicemail
 
 
@@ -51,8 +53,12 @@ class VoicemailAdmin(admin.ModelAdmin):
 
     @admin.display(description="Recording")
     def recording_link(self, obj: Voicemail) -> str:
-        if not obj.audio_url:
+        """Through the dashboard proxy, never the raw Twilio URL, which is
+        either open to anyone holding it or prompts for the account
+        credentials (see phone/recordings.py)."""
+        if not recordings.is_configured():
             return "—"
         return format_html(
-            '<a href="{}" target="_blank" rel="noopener">Listen</a>', obj.audio_url
+            '<a href="{}" target="_blank" rel="noopener">Listen</a>',
+            reverse("dashboard:voicemail_audio", args=[obj.pk]),
         )

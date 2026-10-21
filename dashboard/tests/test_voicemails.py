@@ -53,10 +53,13 @@ class VoicemailListTests(VoicemailTestCase):
         self.assertNotContains(response, "api.twilio.com")
 
     @UNCONFIGURED
-    def test_audio_links_twilio_directly_without_an_account_sid(self):
+    def test_without_an_account_sid_the_page_names_the_setting_not_twilio(self):
+        # The raw Twilio URL is never put on a page: it is either open to
+        # anyone holding it or prompts staff for the account credentials.
         self.login()
         response = self.client.get(reverse("dashboard:voicemails"))
-        self.assertContains(response, RECORDING_URL + ".mp3")
+        self.assertNotContains(response, "api.twilio.com")
+        self.assertContains(response, "TWILIO_ACCOUNT_SID")
 
     def test_no_transcript_shows_no_pending_label_while_transcription_is_off(self):
         Voicemail.objects.create(recording_sid="RE2")
