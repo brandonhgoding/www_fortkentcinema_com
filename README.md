@@ -61,7 +61,10 @@ signature. Set the Voice *Fallback URL* to a TwiML Bin with a static message
 fortkentcinema.com"): without one, a deploy restart or a 5xx plays Twilio's
 "an application error has occurred" to the caller. Turn on alert emails under
 Monitor → Alerts so a run of failed webhooks reaches someone; a bad signature is
-logged here only as a WARNING, on purpose, because bots probe the URL.
+logged here only as a WARNING, on purpose, because bots probe the URL. Under
+Account → General settings turn on *Enforce HTTP Auth on Media URLs*: nothing
+on the site links to Twilio media directly, so recordings should not be open to
+anyone who learns a URL.
 
 **Rotating the token.** Rotating in place kills the line until the next deploy.
 Instead create a *secondary* auth token in the console, put it in the Ansible
