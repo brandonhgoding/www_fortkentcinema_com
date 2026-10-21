@@ -7,11 +7,11 @@ today, and the Level 2 voice agent can hand the same text to a model later.
 import datetime
 from collections.abc import Iterable
 
+from cinema.dates import CINEMA_TZ, format_showtime
 from cinema.models import EngagementStatus, Showtime
 from django.db.models import QuerySet
 from django.utils import timezone
 from web.constants import SITE_CONFIG, TICKET_PRICES
-from web.services.cinema_data import _format_showtime
 
 WEBSITE = "fort kent cinema dot com"
 
@@ -26,19 +26,19 @@ STARTED_GRACE = datetime.timedelta(minutes=15)
 
 
 def _day_start(day: datetime.date) -> datetime.datetime:
-    return timezone.make_aware(datetime.datetime.combine(day, datetime.time.min))
+    return datetime.datetime.combine(day, datetime.time.min, tzinfo=CINEMA_TZ)
 
 
 def _day_end(day: datetime.date) -> datetime.datetime:
-    return timezone.make_aware(
-        datetime.datetime.combine(day + datetime.timedelta(days=1), LATE_SHOWS_UNTIL)
+    return datetime.datetime.combine(
+        day + datetime.timedelta(days=1), LATE_SHOWS_UNTIL, tzinfo=CINEMA_TZ
     )
 
 
 def _show_day(starts_at: datetime.datetime) -> datetime.date:
     """The day a show is listed under: its Eastern date, or the day before
     for an after-midnight show."""
-    local = timezone.localtime(starts_at)
+    local = starts_at.astimezone(CINEMA_TZ)
     if local.time() < LATE_SHOWS_UNTIL:
         return local.date() - datetime.timedelta(days=1)
     return local.date()
@@ -83,7 +83,7 @@ def _describe(showtimes: Iterable[Showtime]) -> str:
         )
         if engagement.is_free_for_members:
             title += ", free for members,"
-        times = _spoken_list([_format_showtime(s.starts_at) for s in group])
+        times = _spoken_list([format_showtime(s.starts_at) for s in group])
         sentences.append(f"{title} at {times}.")
     return " ".join(sentences)
 
@@ -103,7 +103,7 @@ def showtimes_speech(now: datetime.datetime | None = None) -> str:
     "Today" runs past midnight (LATE_SHOWS_UNTIL), so a late show is read
     with the evening it belongs to.
     """
-    now = timezone.localtime(now)
+    now = (now or timezone.now()).astimezone(CINEMA_TZ)
     today = now.date()
     today_start = _day_start(today)
     today_end = _day_end(today)

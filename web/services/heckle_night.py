@@ -26,8 +26,9 @@ date or inventing a title.
 import calendar
 import datetime
 
+from cinema.dates import format_showtime
 from web.constants import HECKLE_NIGHT
-from web.services.cinema_data import _format_runtime, _format_showtime
+from web.services.cinema_data import _format_runtime
 from web.services.showtimes import CINEMA_TZ
 from web.services.titles import event_page_title
 
@@ -109,7 +110,7 @@ def get_heckle_nights(count=None, *, today=None):
                 # nothing else matches — formatted from the row rather
                 # than the constant so the two cannot drift apart
                 # unnoticed if the match ever loosens again.
-                "time": _format_showtime(showtime.starts_at),
+                "time": format_showtime(showtime.starts_at),
             }
         rows.append(
             {
