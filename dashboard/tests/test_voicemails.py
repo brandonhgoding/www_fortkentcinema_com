@@ -269,6 +269,50 @@ class VoicemailAudioTests(VoicemailTestCase):
         self.assertIn("connection refused", logs.output[0])
 
 
+class VoicemailPermissionTests(VoicemailTestCase):
+    """Every voicemail route, three ways in: anonymous is sent to log in,
+    a signed-in non-staff user is refused, and the POST-only routes refuse
+    a GET even from staff."""
+
+    def routes(self) -> list[tuple[str, str]]:
+        pk = self.voicemail.pk
+        return [
+            ("get", reverse("dashboard:voicemails")),
+            ("post", reverse("dashboard:voicemail_status", args=[pk])),
+            ("post", reverse("dashboard:voicemail_notes", args=[pk])),
+            ("post", reverse("dashboard:voicemail_delete", args=[pk])),
+            ("get", reverse("dashboard:voicemail_audio", args=[pk])),
+        ]
+
+    @patch("dashboard.voicemail_views.recordings.open_recording")
+    @patch("dashboard.voicemail_views.recordings.delete_recording")
+    def test_anonymous_is_redirected_to_login(self, *_: Mock):
+        for method, url in self.routes():
+            with self.subTest(url):
+                response = getattr(self.client, method)(url)
+                self.assertEqual(response.status_code, 302)
+                self.assertIn(reverse("login"), response["Location"])
+
+    @patch("dashboard.voicemail_views.recordings.open_recording")
+    @patch("dashboard.voicemail_views.recordings.delete_recording")
+    def test_signed_in_non_staff_is_refused(self, *_: Mock):
+        self.client.force_login(
+            get_user_model().objects.create_user(username="member", password="pw")
+        )
+        for method, url in self.routes():
+            with self.subTest(url):
+                self.assertEqual(getattr(self.client, method)(url).status_code, 403)
+        self.voicemail.refresh_from_db()
+        self.assertEqual(self.voicemail.status, VoicemailStatus.NEW)
+
+    def test_post_only_routes_refuse_get_even_from_staff(self):
+        self.login()
+        for method, url in self.routes():
+            if method == "post":
+                with self.subTest(url):
+                    self.assertEqual(self.client.get(url).status_code, 405)
+
+
 class SidebarBadgeTests(VoicemailTestCase):
     def sidebar_link(self) -> str:
         self.login()
