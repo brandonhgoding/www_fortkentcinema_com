@@ -111,6 +111,13 @@ class RentalInquiryAlertTests(TestCase):
     def test_alert_is_plural_for_many(self):
         self.assertEqual(self._message(3), "You have 3 new rental inquiries")
 
+    def test_alert_links_to_the_new_inquiries(self):
+        alerts = build_smart_alerts([], 1, self.today, new_rental_inquiries=1)
+        alert = next(a for a in alerts if a["id"] == "new-rental-inquiries")
+        self.assertEqual(
+            alert["url"], reverse("dashboard:rental_inquiries") + "?status=NEW"
+        )
+
 
 class VoicemailAlertTests(TestCase):
     def setUp(self) -> None:
@@ -128,6 +135,13 @@ class VoicemailAlertTests(TestCase):
 
     def test_alert_is_plural_for_many(self):
         self.assertEqual(self._message(2), "You have 2 new voicemails")
+
+    def test_alert_links_to_the_new_voicemails(self):
+        alerts = build_smart_alerts([], 1, self.today, new_voicemails=1)
+        alert = next(a for a in alerts if a["id"] == "new-voicemails")
+        self.assertEqual(
+            alert["url"], reverse("dashboard:voicemails") + "?status=NEW"
+        )
 
     def _square_ids(self, **kwargs) -> list[str]:
         alerts = build_smart_alerts([], 1, self.today, **kwargs)

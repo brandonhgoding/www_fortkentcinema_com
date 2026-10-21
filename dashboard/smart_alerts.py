@@ -60,6 +60,7 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
         alerts.append({
             "id": "new-rental-inquiries", "type": "info",
             "message": f"You have {new_rental_inquiries} new rental {unit}",
+            "url": reverse("dashboard:rental_inquiries") + "?status=NEW",
         })
 
     if new_ad_inquiries > 0:
@@ -75,6 +76,7 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
         alerts.append({
             "id": "new-voicemails", "type": "info",
             "message": f"You have {new_voicemails} new {unit}",
+            "url": reverse("dashboard:voicemails") + "?status=NEW",
         })
 
     if square_pull_status == "FAILED":
