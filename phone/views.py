@@ -11,6 +11,7 @@ from django.http import HttpRequest, HttpResponse
 from django.urls import reverse
 from twilio.twiml.voice_response import Gather, VoiceResponse
 
+from . import recordings
 from .decorators import twilio_webhook
 from .models import CallLog, Voicemail
 from .recordings import RECORDING_SID
@@ -26,6 +27,10 @@ GOODBYE = "Thanks for calling Fort Kent Cinema. Goodbye."
 # repeated once after a miss, then goodbye.
 LAST_ATTEMPT = 2
 VOICEMAIL_MAX_SECONDS = 120
+# Twilio keeps silent recordings, so a caller who hangs up at the beep
+# leaves one of a second or so. Nothing that short holds a name and a
+# number; it is not a message and must not light up the dashboard.
+MIN_VOICEMAIL_SECONDS = 2
 
 # Twilio transcription costs ~$0.05 a minute — most of a voicemail's cost —
 # so it is off; staff listen in the dashboard instead. Setting this to True
@@ -122,8 +127,10 @@ def menu(request: HttpRequest) -> HttpResponse:
                 else {}
             ),
         )
-        # Twilio skips the action and falls through here when nothing was
-        # recorded (the caller stayed silent).
+        # Twilio's docs say TwiML after <Record> is unreachable; this is
+        # kept for the case they leave open, a caller who never starts a
+        # recording. An empty recording reaches the action callback instead
+        # and is turned away there with the same words.
         _say(response, f"We didn't get a message. {GOODBYE}")
         response.hangup()
     elif attempt < LAST_ATTEMPT:
@@ -186,12 +193,24 @@ def _recording_fields(request: HttpRequest) -> dict[str, object]:
     return fields
 
 
+def _too_short(fields: dict[str, object]) -> bool:
+    """True for a recording that can't hold a message. An unknown length
+    is kept: losing a real message costs more than a stray empty one."""
+    duration = fields.get("duration_seconds")
+    return isinstance(duration, int) and duration < MIN_VOICEMAIL_SECONDS
+
+
 @twilio_webhook
 def voicemail_recorded(request: HttpRequest) -> HttpResponse:
     response = VoiceResponse()
     sid = _recording_sid(request)
-    if sid:
-        _upsert_voicemail(request, sid, **_recording_fields(request))
+    fields = _recording_fields(request)
+    if sid and _too_short(fields):
+        # No row: the status callback deletes the recording once it is
+        # ready, which keeps a call to Twilio out of the caller's wait.
+        _say(response, f"We didn't get a message. {GOODBYE}")
+    elif sid:
+        _upsert_voicemail(request, sid, **fields)
         _say(response, f"Thanks, we got your message. {GOODBYE}")
     else:
         # Don't thank a caller for a message nobody will ever hear.
@@ -213,10 +232,28 @@ def voicemail_status(request: HttpRequest) -> HttpResponse:
     it is the safety net for a message whose action callback was lost.
     """
     sid = _recording_sid(request)
+    fields = _recording_fields(request)
     if sid and request.POST.get("RecordingStatus") == "completed":
-        _upsert_voicemail(request, sid, **_recording_fields(request))
+        if _too_short(fields):
+            _discard_recording(sid)
+        else:
+            _upsert_voicemail(request, sid, **fields)
     # Twilio ignores the body of a status callback; it only needs a 2xx.
     return _twiml(VoiceResponse())
+
+
+def _discard_recording(sid: str) -> None:
+    """Delete an empty recording from Twilio. Best effort: there is no row
+    to retry from, so a failure is logged and the file is left there."""
+    if not recordings.is_configured():
+        logger.warning(
+            "Empty recording %s left at Twilio: TWILIO_ACCOUNT_SID is not set.", sid
+        )
+        return
+    try:
+        recordings.delete_recording(sid)
+    except recordings.RecordingError as exc:
+        logger.warning("Couldn't delete empty recording %s from Twilio: %s", sid, exc)
 
 
 @twilio_webhook
