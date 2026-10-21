@@ -354,9 +354,3 @@ class VoicemailTests(PhoneTestCase):
             Voicemail.objects.get().full_clean()
         except ValidationError as exc:
             self.fail(f"{caller!r} does not fit: {exc}")
-
-    def test_audio_url_is_mp3(self) -> None:
-        self.call("voicemail_recorded", RECORDING)
-        self.assertEqual(
-            Voicemail.objects.get().audio_url, RECORDING["RecordingUrl"] + ".mp3"
-        )

@@ -49,9 +49,9 @@
             <td>
               {% if stream_audio %}
                 <audio controls preload="none" src="{% url 'dashboard:voicemail_audio' voicemail.pk %}"></audio>
-              {% elif voicemail.audio_url %}
-                <audio controls preload="none" src="{{ voicemail.audio_url }}"></audio>
-              {% else %}—{% endif %}
+              {% else %}
+                <span class="text-muted">Set TWILIO_ACCOUNT_SID to play recordings here</span>
+              {% endif %}
             </td>
             <td>
               <form method="post" action="{% url 'dashboard:voicemail_status' voicemail.pk %}">
