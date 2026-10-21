@@ -106,6 +106,13 @@ class MenuTests(PhoneTestCase):
         self.assertIn('maxLength="120"', twiml)
         self.assertIn("<Hangup />", twiml)
 
+    def test_3_waits_ten_seconds_of_silence_before_ending_the_recording(
+        self,
+    ) -> None:
+        # Twilio's default is 5 s, which cuts off a caller who pauses to
+        # look up a date or read a number slowly.
+        self.assertIn('timeout="10"', self.press("3"))
+
     def test_3_asks_twilio_to_report_the_recording_when_it_is_ready(self) -> None:
         twiml = self.press("3")
         self.assertIn('recordingStatusCallback="/phone/voicemail/status/"', twiml)
