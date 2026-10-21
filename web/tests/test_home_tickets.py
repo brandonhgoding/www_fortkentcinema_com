@@ -16,7 +16,7 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
-from tickets.tests.factories import make_live_item, make_showtime
+from tickets.tests.factories import make_live_item, make_order, make_showtime
 
 SQUARE_ON = {
     "SQUARE_ACCESS_TOKEN": "t",
@@ -60,12 +60,24 @@ class HomeTicketChipTests(TestCase):
         self.assertNotIn("Sold out online", html)
 
     def test_sold_out_chip_is_plain_with_note(self):
-        self.st.online_allowance = 0
+        self.st.online_allowance = 1
         self.st.save()
+        make_order(self.st, status="PAID")
         html = self.home()
         # The JSON-LD offer still names the ticket page; the chip must not.
         self.assertNotIn(f'href="{self.buy_url}"', html)
         self.assertIn('<span class="showtime__note">Sold out online</span>', html)
+        self.assertNotIn('class="showtime__buy"', html)
+
+    def test_in_person_only_chip_is_plain_with_note(self):
+        self.st.online_allowance = 0
+        self.st.save()
+        html = self.home()
+        self.assertNotIn(self.buy_url, html)
+        self.assertIn(
+            '<span class="showtime__note">In-person purchase only</span>', html
+        )
+        self.assertNotIn("Sold out online", html)
         self.assertNotIn('class="showtime__buy"', html)
 
     @override_settings(SQUARE_ACCESS_TOKEN="")
@@ -118,11 +130,20 @@ class HomeScreeningOfferTests(TestCase):
 
     def test_sold_out_offer_is_sold_out_and_keeps_the_url(self):
         make_live_item(self.st.engagement)
-        self.st.online_allowance = 0
+        self.st.online_allowance = 1
         self.st.save()
+        make_order(self.st, status="PAID")
         offers = self.offers()
         self.assertEqual(offers["url"], self.buy_url)
         self.assertEqual(offers["availability"], "https://schema.org/SoldOut")
+
+    def test_in_person_only_offer_is_in_store_only(self):
+        make_live_item(self.st.engagement)
+        self.st.online_allowance = 0
+        self.st.save()
+        offers = self.offers()
+        self.assertEqual(offers["url"], "http://testserver/#now-showing")
+        self.assertEqual(offers["availability"], "https://schema.org/InStoreOnly")
 
     def test_closed_offer_keeps_the_now_showing_url(self):
         # No live Square item for the run: sales are closed, not sold out.

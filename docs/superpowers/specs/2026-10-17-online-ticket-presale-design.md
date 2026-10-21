@@ -706,3 +706,14 @@ Flake8 gate: no new findings on changed lines (repo baseline is dirty).
   log row) and an ERROR is logged, so ADMINS get the email. A replay of an
   already-paid order is still answered before the amount is looked at. A
   payment with no amount in the event is confirmed as before.
+- (2026-10-20) An online allowance of 0 is "in-person purchase only", not
+  "sold out". `availability` returns the reason `in_person` for it, decided
+  after not-listed and cancelled but before the cutoff, a missing item and
+  sold-out, so a deliberate 0 wins over incidental reasons. The home chip
+  is plain with the note "In-person purchase only" and no link, the ticket
+  page's closed panel reads "In-person purchase only. Tickets for this show
+  are sold at the door.", and the ScreeningEvent offer's availability is
+  `InStoreOnly` pointing at `/#now-showing`. The allowance inputs on the
+  door list and the showtime form say so in their hint. The owner chose
+  the number over a separate "not for sale online" flag: same meaning, no
+  migration, no second control that can disagree with the first.

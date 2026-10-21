@@ -15,6 +15,7 @@ from tickets.availability import (
     sold_and_gross,
     variation_ids,
 )
+from tickets.models import TicketOrder
 from tickets.tests.factories import age, make_live_item, make_order, make_showtime
 
 
@@ -70,6 +71,17 @@ class AvailabilityTests(TestCase):
         st.is_cancelled = True
         self.assertEqual(check(st, now, square_enabled=True).reason, "cancelled")
         st.is_cancelled = False
+        # allowance 0 is a deliberate "in person only": it beats the cutoff
+        # and a missing item
+        st.online_allowance = 0
+        st.save()
+        self.assertEqual(
+            check(st, st.starts_at - timedelta(minutes=10), square_enabled=True).reason,
+            "in_person",
+        )
+        self.assertEqual(check(st, now, square_enabled=True).reason, "in_person")
+        st.online_allowance = None
+        st.save()
         # 29 minutes before start is closed, 31 is open
         self.assertEqual(
             check(st, st.starts_at - timedelta(minutes=29), square_enabled=True).reason,
@@ -85,9 +97,11 @@ class AvailabilityTests(TestCase):
         )
         # with a live item but a full allowance
         make_live_item(st.engagement)
-        st.online_allowance = 0
+        st.online_allowance = 1
         st.save()
+        make_order(st, status="PAID")
         self.assertEqual(check(st, now, square_enabled=True).reason, "sold_out")
+        TicketOrder.objects.all().delete()
         st.online_allowance = None
         st.save()
         result = check(st, now, square_enabled=True)
