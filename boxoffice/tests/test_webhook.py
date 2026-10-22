@@ -198,7 +198,7 @@ class DispatchTests(WebhookTestCase):
         self.assertIgnored(post(self.client, payload))
 
     def test_other_event_types_are_ignored(self):
-        self.assertIgnored(post(self.client, event(type="refund.updated")))
+        self.assertIgnored(post(self.client, event(type="customer.created")))
 
     def test_payment_without_order_id_is_ignored(self):
         self.assertIgnored(post(self.client, event(order_id=None)))
@@ -298,3 +298,119 @@ class EndToEndTests(TestCase):
         sale = MembershipSale.objects.get(order_id="O1")
         self.assertEqual((sale.status, sale.paid_at), ("OK", PAID_AT))
         self.assertEqual(sale.term.started_on, datetime.date(2026, 10, 2))
+
+
+REFUNDED_AT = datetime.datetime(2026, 10, 4, 15, 0, tzinfo=datetime.timezone.utc)
+
+
+def refund_event(payment_id="P1", status="COMPLETED", type="refund.updated",
+                 amount: int | None = 1600) -> dict:
+    refund = {"id": "R1", "payment_id": payment_id, "order_id": "O1",
+              "status": status, "created_at": "2026-10-04T14:59:00.000Z",
+              "updated_at": "2026-10-04T15:00:00.000Z"}
+    if payment_id is None:
+        del refund["payment_id"]
+    if amount is not None:
+        refund["amount_money"] = {"amount": amount, "currency": "USD"}
+    return {
+        "type": type,
+        "event_id": "E2",
+        "data": {"type": "refund", "id": "R1", "object": {"refund": refund}},
+    }
+
+
+def dispute_event(payment_id="P1", state="EVIDENCE_REQUIRED",
+                  type="dispute.created", reason="FRAUD") -> dict:
+    dispute = {"id": "D1", "state": state, "reason": reason,
+               "amount_money": {"amount": 1600, "currency": "USD"},
+               "disputed_payment": {"payment_id": payment_id}}
+    if payment_id is None:
+        del dispute["disputed_payment"]
+    return {
+        "type": type,
+        "event_id": "E3",
+        "data": {"type": "dispute", "id": "D1", "object": {"dispute": dispute}},
+    }
+
+
+@override_settings(SQUARE_WEBHOOK_SIGNATURE_KEY=KEY, SQUARE_WEBHOOK_URL=URL)
+class ReversalTests(WebhookTestCase):
+    """A refund or chargeback made outside the site must still reach the apps
+    that issued the ticket, or the buyer keeps a ticket nobody paid for."""
+
+    def setUp(self):
+        super().setUp()
+        self.refunds = mock.MagicMock(return_value=True)
+        self.disputes = mock.MagicMock(return_value=True)
+        self.enterContext(mock.patch("boxoffice.payment_events._refund_handlers",
+                                     [self.refunds]))
+        self.enterContext(mock.patch("boxoffice.payment_events._dispute_handlers",
+                                     [self.disputes]))
+
+    def test_completed_refund_reaches_handlers(self):
+        resp = post(self.client, refund_event())
+        self.assertEqual(resp.status_code, 200)
+        self.refunds.assert_called_once_with("P1", "R1", REFUNDED_AT, 1600)
+        self.process.assert_not_called()
+
+    def test_refund_created_already_completed_is_processed_too(self):
+        post(self.client, refund_event(type="refund.created"))
+        self.refunds.assert_called_once()
+
+    def test_pending_refund_is_ignored(self):
+        resp = post(self.client, refund_event(status="PENDING"))
+        self.assertEqual(resp.status_code, 200)
+        self.refunds.assert_not_called()
+
+    def test_refund_without_amount_passes_none(self):
+        post(self.client, refund_event(amount=None))
+        self.assertEqual(self.refunds.call_args.args[3], None)
+
+    def test_refund_without_payment_id_is_400(self):
+        resp = post(self.client, refund_event(payment_id=None))
+        self.assertEqual(resp.status_code, 400)
+        self.refunds.assert_not_called()
+
+    def test_refund_handler_crash_asks_for_retry(self):
+        self.refunds.side_effect = RuntimeError("tickets down")
+        with self.assertLogs("boxoffice.payment_events", "ERROR"), \
+                self.assertLogs("django.request", "ERROR"):
+            resp = post(self.client, refund_event())
+        self.assertEqual(resp.status_code, 503)
+
+    def test_unclaimed_refund_is_200(self):
+        self.refunds.return_value = False
+        self.assertEqual(post(self.client, refund_event()).status_code, 200)
+
+    def test_dispute_created_reaches_handlers(self):
+        resp = post(self.client, dispute_event())
+        self.assertEqual(resp.status_code, 200)
+        self.disputes.assert_called_once_with("P1", "D1", "EVIDENCE_REQUIRED",
+                                              "FRAUD")
+
+    def test_dispute_state_change_reaches_handlers(self):
+        post(self.client, dispute_event(type="dispute.state.updated", state="LOST"))
+        self.disputes.assert_called_once_with("P1", "D1", "LOST", "FRAUD")
+
+    def test_dispute_without_payment_is_400(self):
+        resp = post(self.client, dispute_event(payment_id=None))
+        self.assertEqual(resp.status_code, 400)
+        self.disputes.assert_not_called()
+
+
+@override_settings(SQUARE_WEBHOOK_SIGNATURE_KEY=KEY, SQUARE_WEBHOOK_URL=URL)
+class ReversalEndToEndTests(TestCase):
+    def setUp(self):
+        self.enterContext(patch_logger())
+
+    def test_signed_refund_event_voids_the_ticket_once(self):
+        from django.core import mail
+        order = make_order(make_showtime(), status="PAID", square_order_id="O1",
+                           square_payment_id="P1", lines={"adult": 2})
+        first = post(self.client, refund_event(amount=1600))
+        replay = post(self.client, refund_event(amount=1600))
+        self.assertEqual((first.status_code, replay.status_code), (200, 200))
+        order.refresh_from_db()
+        self.assertEqual((order.status, order.refunded_at), ("REFUNDED", REFUNDED_AT))
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject[:9], "Refunded:")

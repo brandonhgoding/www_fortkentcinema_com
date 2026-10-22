@@ -29,6 +29,15 @@ site; when it is empty the scheme and host of `SQUARE_WEBHOOK_URL` are used. The
 confirmation page and ticket email draw a QR code with the `qrcode` package,
 which is in `requirements.txt`.
 
+The Square webhook subscription (Developer dashboard → Webhooks) must send
+`payment.created` and `payment.updated` (a sale), `refund.created` and
+`refund.updated` (a refund made from the Square dashboard or POS rather than
+the site's Refund button: the ticket is voided and the buyer emailed, exactly as
+the button would have; a partial refund flags the order for staff instead), and
+`dispute.created` and `dispute.state.updated` (a chargeback: the order is
+flagged while the dispute is open, voided if it is lost, and cleared if it is
+won). Do not tick `order.updated`.
+
 ## Phone line
 
 The cinema's number is a Twilio number (the `phone` app). Twilio POSTs to

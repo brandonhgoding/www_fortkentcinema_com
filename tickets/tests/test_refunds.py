@@ -7,7 +7,13 @@ from django.core import mail
 from django.test import TestCase, override_settings
 from django.utils import timezone
 
-from tickets.refunds import RefundSummary, refund_order, refund_showtime
+from tickets.refunds import (
+    RefundSummary,
+    handle_square_dispute,
+    handle_square_refund,
+    refund_order,
+    refund_showtime,
+)
 from tickets.tests.factories import make_order, make_showtime
 
 
@@ -167,3 +173,131 @@ class RefundShowtimeTests(TestCase):
         self.assertEqual(gw.calls[0][1]["reason"], "Projector broke")
         other.refresh_from_db()
         self.assertEqual(other.status, "PAID")
+
+
+class SquareRefundEventTests(TestCase):
+    """A refund issued from the Square dashboard or POS, not the site."""
+
+    def setUp(self):
+        self.st = make_showtime()
+        self.at = timezone.now().replace(microsecond=0)
+
+    def paid(self, **over):
+        return make_order(self.st, status="PAID", square_payment_id="P1",
+                          square_order_id="SQ-9", lines={"adult": 2}, **over)
+
+    def test_full_refund_voids_the_ticket_and_the_ledger(self):
+        order = self.paid()
+        line = ledger_line(self.st, "SQ-9", 2, 1600)
+        self.assertTrue(handle_square_refund("P1", "R1", self.at, 1600))
+        order.refresh_from_db()
+        self.assertEqual((order.status, order.refunded_at), ("REFUNDED", self.at))
+        # The row says it was not the site's doing.
+        self.assertIn("R1", order.error)
+        line.refresh_from_db()
+        self.assertEqual((line.refunded_quantity, line.refunded_cents), (2, 1600))
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject[:9], "Refunded:")
+
+    def test_full_refund_without_a_time_uses_now(self):
+        order = self.paid()
+        handle_square_refund("P1", "R1", None, 1600)
+        order.refresh_from_db()
+        self.assertIsNotNone(order.refunded_at)
+
+    def test_partial_refund_flags_the_order_for_staff(self):
+        order = self.paid()
+        self.assertTrue(handle_square_refund("P1", "R1", self.at, 800))
+        order.refresh_from_db()
+        self.assertEqual(order.status, "FAILED")
+        self.assertTrue(order.counts_as_sold)
+        self.assertIn("800", order.error)
+        self.assertIn("1600", order.error)
+        self.assertEqual(mail.outbox, [])
+
+    def test_refund_of_unknown_amount_is_treated_as_full(self):
+        """Square always says; None means our parsing could not, and a ticket
+        whose money went back must not stay redeemable."""
+        order = self.paid()
+        handle_square_refund("P1", "R1", self.at, None)
+        order.refresh_from_db()
+        self.assertEqual(order.status, "REFUNDED")
+
+    def test_already_refunded_is_claimed_without_a_second_email(self):
+        order = self.paid()
+        handle_square_refund("P1", "R1", self.at, 1600)
+        self.assertTrue(handle_square_refund("P1", "R1", self.at, 1600))
+        order.refresh_from_db()
+        self.assertEqual(order.status, "REFUNDED")
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_unknown_payment_is_not_ours(self):
+        self.paid()
+        self.assertFalse(handle_square_refund("P-other", "R1", self.at, 1600))
+        self.assertEqual(mail.outbox, [])
+
+    def test_empty_payment_id_matches_nothing(self):
+        make_order(self.st, status="PENDING")  # square_payment_id == ""
+        self.assertFalse(handle_square_refund("", "R1", self.at, 1600))
+
+
+class SquareDisputeEventTests(TestCase):
+    """A chargeback: the buyer's bank is contesting the payment."""
+
+    def setUp(self):
+        self.st = make_showtime()
+
+    def paid(self):
+        return make_order(self.st, status="PAID", square_payment_id="P1",
+                          square_order_id="SQ-9", lines={"adult": 2})
+
+    def test_open_dispute_flags_the_order_but_keeps_the_ticket(self):
+        order = self.paid()
+        self.assertTrue(handle_square_dispute("P1", "D1", "EVIDENCE_REQUIRED",
+                                              "FRAUD"))
+        order.refresh_from_db()
+        self.assertEqual(order.status, "FAILED")
+        self.assertTrue(order.counts_as_sold)
+        self.assertIn("D1", order.error)
+        self.assertIn("FRAUD", order.error)
+        self.assertIn("EVIDENCE_REQUIRED", order.error)
+        self.assertEqual(mail.outbox, [])
+
+    def test_lost_dispute_voids_the_ticket(self):
+        order = self.paid()
+        line = ledger_line(self.st, "SQ-9", 2, 1600)
+        handle_square_dispute("P1", "D1", "EVIDENCE_REQUIRED", "FRAUD")
+        self.assertTrue(handle_square_dispute("P1", "D1", "LOST", "FRAUD"))
+        order.refresh_from_db()
+        self.assertEqual(order.status, "REFUNDED")
+        self.assertIsNotNone(order.refunded_at)
+        self.assertIn("D1", order.error)
+        self.assertIn("lost", order.error)
+        line.refresh_from_db()
+        self.assertEqual(line.refunded_quantity, 2)
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_accepted_dispute_voids_the_ticket(self):
+        order = self.paid()
+        handle_square_dispute("P1", "D1", "ACCEPTED", "FRAUD")
+        order.refresh_from_db()
+        self.assertEqual(order.status, "REFUNDED")
+
+    def test_won_dispute_restores_the_flagged_order(self):
+        order = self.paid()
+        handle_square_dispute("P1", "D1", "EVIDENCE_REQUIRED", "FRAUD")
+        self.assertTrue(handle_square_dispute("P1", "D1", "WON", "FRAUD"))
+        order.refresh_from_db()
+        self.assertEqual((order.status, order.error), ("PAID", ""))
+
+    def test_won_dispute_leaves_other_problems_alone(self):
+        order = make_order(self.st, status="FAILED", square_payment_id="P1",
+                           error="Ticket email failed: boom")
+        handle_square_dispute("P1", "D1", "WON", "FRAUD")
+        order.refresh_from_db()
+        self.assertEqual((order.status, order.error),
+                         ("FAILED", "Ticket email failed: boom"))
+
+    def test_unknown_payment_is_not_ours(self):
+        self.paid()
+        self.assertFalse(handle_square_dispute("P-other", "D1", "LOST", "FRAUD"))

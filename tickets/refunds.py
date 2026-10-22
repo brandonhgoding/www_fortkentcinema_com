@@ -1,6 +1,9 @@
-"""Refund paid online ticket orders through Square, one order or a whole showtime."""
+"""Refund paid online ticket orders through Square, one order or a whole
+showtime, and void orders Square tells us were refunded or charged back
+elsewhere."""
 
 import dataclasses
+import datetime
 import logging
 
 from boxoffice.gateway import Gateway, GatewayError, disabled_reason, get_gateway
@@ -48,9 +51,20 @@ def refund_order(
         order.error = str(exc)
         order.save(update_fields=["error"])
         return order
+    return _record_refund(order, timezone.now())
+
+
+def _record_refund(
+    order: TicketOrder, refunded_at: datetime.datetime, note: str = ""
+) -> TicketOrder:
+    """The money went back: void the ticket, the ledger, and tell the buyer.
+
+    ``note`` is kept on the order (where staff read it) when the refund was
+    not the site's own doing, so the row says why.
+    """
     order.status = TicketOrder.Status.REFUNDED
-    order.refunded_at = timezone.now()
-    order.error = ""
+    order.refunded_at = refunded_at
+    order.error = note
     # The ledger learns now rather than at the next pull of the sale day,
     # which may already be past the pull's lookback.
     mark_refunded(order.square_order_id)
@@ -61,6 +75,77 @@ def refund_order(
         order.error = f"Refund email failed: {exc!r}"
     order.save(update_fields=["status", "refunded_at", "error"])
     return order
+
+
+def _sold_order(payment_id: str) -> TicketOrder | None:
+    if not payment_id:
+        return None
+    return TicketOrder.objects.filter(square_payment_id=payment_id).first()
+
+
+def handle_square_refund(
+    payment_id: str, refund_id: str, refunded_at: datetime.datetime | None,
+    amount_cents: int | None,
+) -> bool:
+    """The box office webhook's refund handler: True when the payment was ours.
+
+    A refund made from the Square dashboard or POS, in full, voids the
+    ticket exactly as the site's Refund button would have. A partial refund
+    is staff's call: the order is flagged (the ticket stands until they
+    decide) with both amounts on it. An order already REFUNDED is left
+    alone, so Square's replays send no second email.
+    """
+    order = _sold_order(payment_id)
+    if order is None:
+        return False
+    if order.status == TicketOrder.Status.REFUNDED:
+        return True
+    if amount_cents is not None and amount_cents < order.total_cents:
+        order.status = TicketOrder.Status.FAILED
+        order.error = (f"Square refund {refund_id} gave back {amount_cents} cents "
+                       f"of {order.total_cents}; decide whether the ticket stands")
+        order.save(update_fields=["status", "error"])
+        return True
+    _record_refund(order, refunded_at or timezone.now(),
+                   note=f"Refunded in Square ({refund_id}), not on the site")
+    return True
+
+
+# Square's dispute states that mean the money is gone for good.
+DISPUTE_LOST = {"LOST", "ACCEPTED"}
+DISPUTE_NOTE = "Square dispute"
+
+
+def handle_square_dispute(
+    payment_id: str, dispute_id: str, state: str, reason: str
+) -> bool:
+    """The box office webhook's dispute handler: True when the payment was ours.
+
+    An open chargeback flags the order for staff but leaves the ticket
+    valid, because the cinema may win. A lost (or accepted) one voids it
+    like a refund. A won one clears the flag, but only the dispute's own
+    flag: an order FAILED for another reason keeps that reason.
+    """
+    order = _sold_order(payment_id)
+    if order is None:
+        return False
+    if order.status == TicketOrder.Status.REFUNDED:
+        return True
+    label = f"{DISPUTE_NOTE} {dispute_id} ({reason or 'no reason given'})"
+    if state in DISPUTE_LOST:
+        _record_refund(order, timezone.now(),
+                       note=f"{label} {state.lower()}: the payment was reversed")
+        return True
+    if state == "WON":
+        if order.error.startswith(DISPUTE_NOTE):
+            order.status = TicketOrder.Status.PAID
+            order.error = ""
+            order.save(update_fields=["status", "error"])
+        return True
+    order.status = TicketOrder.Status.FAILED
+    order.error = f"{label} is {state}: the buyer's bank is contesting this payment"
+    order.save(update_fields=["status", "error"])
+    return True
 
 
 def refund_showtime(
