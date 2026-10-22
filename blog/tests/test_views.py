@@ -1,9 +1,10 @@
 """The posts API is read-only. Posts are written in the dashboard."""
 
+import base64
 import datetime
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import Client, TestCase
 
 from blog.models import BlogAuthor, BlogCategory, BlogPost
 
@@ -29,14 +30,28 @@ class ReadOnlyApiTests(TestCase):
         self.assertEqual(self.client.get("/api/posts/").status_code, 200)
         self.assertEqual(self.client.get(f"/api/posts/{self.post.slug}/").status_code, 200)
 
+    def test_credentials_are_ignored_not_checked(self):
+        """The API is public and read-only, so it must not check passwords.
+        DRF's default stack included HTTP Basic auth, which turned a
+        cookie-less GET with a bad Authorization header into a 403 and a
+        good one into a 200: a password-guessing oracle beside the login
+        form, with none of its protection."""
+        guess = "Basic " + base64.b64encode(b"admin:hunter2").decode()
+        anonymous = Client()  # no session, or session auth would win first
+        response = anonymous.get("/api/posts/", HTTP_AUTHORIZATION=guess)
+        self.assertEqual(response.status_code, 200)
+
     def test_writes_are_not_allowed(self):
+        # 403: the API authenticates nobody, so even this staff session is
+        # anonymous here and the permission class refuses before the
+        # read-only viewset would have answered 405.
         detail = f"/api/posts/{self.post.slug}/"
-        self.assertEqual(self.client.post("/api/posts/", {"title": "x"}).status_code, 405)
+        self.assertEqual(self.client.post("/api/posts/", {"title": "x"}).status_code, 403)
         self.assertEqual(
             self.client.patch(detail, {"title": "x"}, content_type="application/json").status_code,
-            405,
+            403,
         )
-        self.assertEqual(self.client.delete(detail).status_code, 405)
+        self.assertEqual(self.client.delete(detail).status_code, 403)
         self.assertTrue(BlogPost.objects.filter(pk=self.post.pk).exists())
 
 

@@ -223,6 +223,11 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ],
+    # The API is public and read-only, so it never needs to know who is
+    # asking. DRF's default stack includes HTTP Basic auth, which checked any
+    # username and password sent with a cookie-less GET: a second place to
+    # guess staff passwords, beside the login form and without its checks.
+    "DEFAULT_AUTHENTICATION_CLASSES": [],
 }
 
 LOGIN_URL = "/login"
