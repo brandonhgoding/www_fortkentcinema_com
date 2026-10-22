@@ -8,6 +8,12 @@
 {% endcomment %}
 {% block robots %}noindex, nofollow{% endblock %}
 
+{% comment %}
+  No analytics either: GA4 would record this URL, token included, as the
+  page_location of every hit, putting live tickets in the analytics property.
+{% endcomment %}
+{% block analytics %}{% endblock %}
+
 {% block extra_head %}
   {% if state == "pending" %}
     {% comment %}

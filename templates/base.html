@@ -153,7 +153,12 @@
     Only renders when GA_MEASUREMENT_ID is set, i.e. production. The ID used to
     be hardcoded here, so every local `runserver` sent hits to production
     analytics.
+
+    A page whose URL carries a secret (tickets/order.html: the token is the
+    ticket) overrides this block to nothing, because GA4 records the full
+    page_location of every hit.
     {% endcomment %}
+    {% block analytics %}
     {% if ga_measurement_id %}
     <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga_measurement_id }}"></script>
     <script>
@@ -163,6 +168,7 @@
       gtag('config', '{{ ga_measurement_id }}');
     </script>
     {% endif %}
+    {% endblock %}
 
     <script defer src="{% static 'js/alpine.min.js' %}"></script>
     <script defer src="{% static 'js/htmx.min.js' %}"></script>
