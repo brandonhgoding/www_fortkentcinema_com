@@ -102,3 +102,5 @@ class DashboardPermissionTests(TestCase):
         user = make_staff()
         self.assertTrue(user.has_perm("cinema.view_screen"))
         self.assertTrue(user.has_perm("phone.delete_voicemail"))
+        self.assertTrue(user.has_perm("boxoffice.view_salespull"))
+        self.assertTrue(user.has_perm("blog.view_blogauthor"))

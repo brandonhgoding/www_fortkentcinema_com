@@ -13,6 +13,7 @@ ALL = object()
 SPEC_PERMISSIONS = frozenset(
     {
         # cinema
+        "cinema.view_showtime",  # template/home gating only, no view declares it
         "cinema.view_screen",
         "cinema.add_screen",
         "cinema.change_screen",
@@ -62,9 +63,12 @@ SPEC_PERMISSIONS = frozenset(
         "audience.view_subscriber",
         # boxoffice
         "boxoffice.view_membershipsale",
+        "boxoffice.view_salespull",  # template/home gating only
         "boxoffice.change_membershipsale",
         # blog
         "blog.view_blogpost",
+        "blog.view_blogauthor",  # template gating only
+        "blog.view_blogcategory",  # template gating only
         "blog.add_blogpost",
         "blog.change_blogpost",
         "blog.delete_blogpost",
