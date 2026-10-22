@@ -5,7 +5,14 @@ import uuid
 from django.test import TestCase
 from django.urls import reverse
 
-from dashboard.tests.helpers import make_staff, permissions_except
+import dashboard.urls
+from dashboard.tests.helpers import (
+    SPEC_PERMISSIONS,
+    _declared_by_views,
+    make_staff,
+    permissions_except,
+)
+from dashboard.views import HomeView
 
 UUID_NONE = uuid.UUID(int=0)
 
@@ -154,3 +161,30 @@ class PermissionMapTests(TestCase):
                 response = getattr(self.client, method)(url)
                 self.assertNotEqual(response.status_code, 403)
                 self.client.logout()
+
+    def test_every_view_but_home_declares_a_permission(self) -> None:
+        for pattern in dashboard.urls.urlpatterns:
+            view_class = pattern.callback.view_class
+            with self.subTest(view=view_class.__name__):
+                if view_class is HomeView:
+                    self.assertEqual(view_class.permission_required, ())
+                else:
+                    self.assertTrue(view_class.permission_required)
+
+    def test_every_url_is_in_the_table(self) -> None:
+        names = {p.name for p in dashboard.urls.urlpatterns} - {"home"}
+        self.assertEqual(names, {row[0] for row in PERMISSION_TABLE})
+
+    def test_declared_permissions_match_the_spec(self) -> None:
+        declared = _declared_by_views()
+        self.assertEqual(declared - SPEC_PERMISSIONS, set())
+        # Only templates and the home page use these four; no view declares them.
+        self.assertEqual(
+            SPEC_PERMISSIONS - declared,
+            {
+                "blog.view_blogauthor",
+                "blog.view_blogcategory",
+                "boxoffice.view_salespull",
+                "cinema.view_showtime",
+            },
+        )

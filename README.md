@@ -81,3 +81,11 @@ against. **When a voicemail is missing**, the recording is still at Twilio
 (Monitor → Logs → Recordings); its webhooks are retried, and if they still
 failed the error email to `ADMINS` carries the `RecordingSid` and caller.
 `docs/qa/phone-line.md` is the manual checklist for a real call.
+
+## Granting dashboard access
+
+A dashboard user needs **Staff status** and the Django permissions for what they
+should see and do. The sidebar shows only the sections the user holds a `view`
+permission for; Edit, Delete, and action buttons appear only with the matching
+`change`, `delete`, or `add` permission. Manage users, groups, and permissions
+in Django admin at `/admin/`. Superusers see everything.
