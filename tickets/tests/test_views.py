@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 
 from boxoffice.gateway import GatewayError
 from boxoffice.tests.fakes import FakeGateway
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -361,3 +361,28 @@ class OrderPageTests(ViewTestCase):
             self.assertEqual(r.status_code, 404)
         r = self.client.get(reverse("tickets:order_qr", args=["nope"]))
         self.assertEqual(r.status_code, 404)
+
+
+@override_settings(GA_MEASUREMENT_ID="G-TESTID123")
+class OrderPageAnalyticsTests(ViewTestCase):
+    """The order URL's token IS the ticket (it unlocks the page and the QR).
+
+    GA4 records page_location for every hit, so if the order page carried the
+    gtag snippet every live ticket token would sit in the analytics property,
+    readable by anyone with viewer access. The page is noindex for the same
+    reason; analytics must be off there too.
+    """
+
+    def test_order_page_sends_nothing_to_analytics(self):
+        paid = make_order(self.st, status="PAID", square_payment_id="P1")
+        html = self.client.get(
+            reverse("tickets:order", args=[paid.token])
+        ).content.decode()
+        self.assertNotIn("googletagmanager.com", html)
+        self.assertNotIn("gtag(", html)
+
+    def test_buy_page_still_tracked(self):
+        """Only the token-bearing page opts out; the public buy page is the
+        funnel step we do want to measure."""
+        html = self.get(self.st)
+        self.assertIn("googletagmanager.com/gtag/js?id=G-TESTID123", html)
