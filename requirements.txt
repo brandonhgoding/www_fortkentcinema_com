@@ -16,6 +16,9 @@ nh3==0.3.1
 # Phone line webhooks (signature validation, TwiML)
 twilio==9.11.2
 
+# Login lockout after repeated wrong passwords (fortkentcinema/settings.py AXES_*)
+django-axes==8.0.0
+
 # Configuration
 python-decouple==3.8
 

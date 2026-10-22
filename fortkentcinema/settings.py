@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import datetime
 import sys
 from pathlib import Path
 
@@ -51,6 +52,7 @@ INSTALLED_APPS = [
     "tickets.apps.TicketsConfig",
     "rest_framework",
     "corsheaders",
+    "axes",
 ]
 
 MIDDLEWARE = [
@@ -63,6 +65,9 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Last, so a locked-out login attempt is answered after everything else
+    # (sessions, auth) has run; see the AXES_* block below.
+    "axes.middleware.AxesMiddleware",
 ]
 
 
@@ -227,6 +232,37 @@ REST_FRAMEWORK = {
 
 LOGIN_URL = "/login"
 LOGIN_REDIRECT_URL = "/dashboard/"
+
+# Login lockout (django-axes). Password guessing against staff accounts was
+# bounded only by the password validators. Five wrong passwords for one
+# username from one address lock that pair out for fifteen minutes; a good
+# login clears the count. Keyed by username AND address, so one address
+# cannot lock the whole dashboard, and behind nginx (where every request
+# shares an address unless X-Forwarded-For is honoured) one address cannot
+# lock every account at once either.
+#
+# The axes backend refuses to authenticate without a request, and the test
+# client's login() passes none, so the suite runs on the plain backend and
+# the lockout tests opt in with override_settings.
+AXES_ENABLED = not TESTING
+AUTHENTICATION_BACKENDS = (
+    ["django.contrib.auth.backends.ModelBackend"]
+    if TESTING
+    else [
+        "axes.backends.AxesStandaloneBackend",
+        "django.contrib.auth.backends.ModelBackend",
+    ]
+)
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = datetime.timedelta(minutes=15)
+AXES_LOCKOUT_PARAMETERS = [["username", "ip_address"]]
+AXES_RESET_ON_SUCCESS = True
+AXES_LOCKOUT_TEMPLATE = "dashboard/locked_out.html"
+if config("USE_PROXY_HEADERS", default=False, cast=bool):
+    # nginx is the only hop, so the last address X-Forwarded-For names is
+    # the real client; without this every visitor is 127.0.0.1.
+    AXES_IPWARE_PROXY_COUNT = 1
+    AXES_IPWARE_META_PRECEDENCE_ORDER = ("HTTP_X_FORWARDED_FOR", "REMOTE_ADDR")
 
 # TMDB (The Movie Database) integration
 TMDB_API_KEY = config("TMDB_API_KEY", default="")
