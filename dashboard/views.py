@@ -144,6 +144,7 @@ def screen_labels() -> dict:
 
 
 class ScreenListView(StaffRequiredMixin, TemplateView):
+    permission_required = "cinema.view_screen"
     template_name = "dashboard/screens.html"
 
     def get_context_data(self, **kwargs):
@@ -183,6 +184,8 @@ def _screen_list_response_error(request, message):
 
 
 class ScreenCreateView(StaffRequiredMixin, View):
+    permission_required = "cinema.add_screen"
+
     def get(self, request):
         return _render_screen_form(request, ScreenForm(),
                                    reverse("dashboard:screen_create"), "Create Screen")
@@ -197,6 +200,8 @@ class ScreenCreateView(StaffRequiredMixin, View):
 
 
 class ScreenEditView(StaffRequiredMixin, View):
+    permission_required = "cinema.change_screen"
+
     def get(self, request, pk):
         screen = get_object_or_404(Screen, pk=pk)
         return _render_screen_form(request, ScreenForm(instance=screen),
@@ -213,6 +218,8 @@ class ScreenEditView(StaffRequiredMixin, View):
 
 
 class ScreenDeleteView(StaffRequiredMixin, View):
+    permission_required = "cinema.delete_screen"
+
     def post(self, request, pk):
         screen = get_object_or_404(Screen, pk=pk)
         name = screen.name
@@ -230,6 +237,8 @@ class ScreenDeleteView(StaffRequiredMixin, View):
 
 
 class FilmSearchView(StaffRequiredMixin, View):
+    permission_required = "cinema.view_film"
+
     def get(self, request):
         q = request.GET.get("q", "").strip()
         films = Film.objects.filter(title__icontains=q)[:8] if q else Film.objects.none()
@@ -237,6 +246,8 @@ class FilmSearchView(StaffRequiredMixin, View):
 
 
 class FilmSearchTMDBView(StaffRequiredMixin, View):
+    permission_required = "cinema.add_film"
+
     def get(self, request):
         q = request.GET.get("q", "").strip()
         ctx = {"q": q, "results": [], "error": False}
@@ -249,6 +260,8 @@ class FilmSearchTMDBView(StaffRequiredMixin, View):
 
 
 class FilmFromTMDBView(StaffRequiredMixin, View):
+    permission_required = "cinema.add_film"
+
     def post(self, request):
         tmdb_id = request.POST.get("tmdb_id")
         resp = HttpResponse(status=204)
