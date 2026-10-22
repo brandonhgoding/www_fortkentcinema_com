@@ -98,6 +98,49 @@ from zoneinfo import ZoneInfo
 TZ = ZoneInfo("America/New_York")
 
 
+class ShowtimeControlPermissionTests(TestCase):
+    def setUp(self) -> None:
+        self.screen = Screen.objects.create(name="Screen 1", capacity=100)
+        self.film = Film.objects.create(title="Dune", runtime_minutes=155)
+        self.eng = make_eng(self.screen, films=[self.film])
+        self.st = Showtime.objects.create(
+            engagement=self.eng,
+            starts_at=timezone.make_aware(_dt.datetime(2026, 7, 4, 19, 0)),
+        )
+        self.urls = {
+            "showtime_create": reverse("dashboard:showtime_create", args=[self.eng.pk]),
+            "showtime_bulk": reverse("dashboard:showtime_bulk", args=[self.eng.pk]),
+            "showtime_edit": reverse("dashboard:showtime_edit", args=[self.st.pk]),
+            "showtime_delete": reverse("dashboard:showtime_delete", args=[self.st.pk]),
+            "showtime_orders": reverse("dashboard:showtime_orders", args=[self.st.pk]),
+        }
+
+    def _get(self, perms):
+        make_staff(username="limited", password="pw12345", perms=perms)
+        self.client.login(username="limited", password="pw12345")
+        url = reverse("dashboard:engagement_detail", args=[self.eng.pk])
+        return self.client.get(url)
+
+    def test_detail_hides_showtime_controls(self) -> None:
+        resp = self._get(("cinema.view_engagement",))
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode()
+        self.assertIn("7:00", html)
+        for name, url in self.urls.items():
+            with self.subTest(name=name):
+                self.assertNotIn(url, html)
+
+    def test_detail_shows_showtime_controls_with_permissions(self) -> None:
+        html = self._get((
+            "cinema.view_engagement", "cinema.add_showtime",
+            "cinema.change_showtime", "cinema.delete_showtime",
+            "tickets.view_ticketorder",
+        )).content.decode()
+        for name, url in self.urls.items():
+            with self.subTest(name=name):
+                self.assertIn(url, html)
+
+
 class ShowtimeCreateEditTests(TestCase):
     def setUp(self) -> None:
         make_staff(username="s", password="pw12345")

@@ -17,6 +17,23 @@ PERMISSION_TABLE: list[tuple[str, dict, str, str | tuple[str, ...]]] = [
     ("film_search", {}, "get", "cinema.view_film"),
     ("film_search_tmdb", {}, "get", "cinema.add_film"),
     ("film_from_tmdb", {}, "post", "cinema.add_film"),
+    ("engagements", {}, "get", "cinema.view_engagement"),
+    ("engagement_detail", {"pk": 999999}, "get", "cinema.view_engagement"),
+    (
+        "engagement_social_card",
+        {"pk": 999999, "platform": "facebook"},
+        "get",
+        "cinema.view_engagement",
+    ),
+    ("engagement_create", {}, "get", "cinema.add_engagement"),
+    ("engagement_edit", {"pk": 999999}, "get", "cinema.change_engagement"),
+    ("engagement_status", {"pk": 999999}, "post", "cinema.change_engagement"),
+    ("engagement_square_retry", {"pk": 999999}, "post", "cinema.change_engagement"),
+    ("engagement_delete", {"pk": 999999}, "post", "cinema.delete_engagement"),
+    ("showtime_create", {"eng_pk": 999999}, "get", "cinema.add_showtime"),
+    ("showtime_bulk", {"eng_pk": 999999}, "get", "cinema.add_showtime"),
+    ("showtime_edit", {"pk": 999999}, "get", "cinema.change_showtime"),
+    ("showtime_delete", {"pk": 999999}, "post", "cinema.delete_showtime"),
 ]
 
 

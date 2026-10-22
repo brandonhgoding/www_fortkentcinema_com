@@ -11,8 +11,10 @@
       <h1 class="page-title">Engagements</h1>
       <p class="page-subtitle">Manage your film engagements and runs.</p>
     </div>
+    {% if perms.cinema.add_engagement %}
     <button class="btn btn-primary" hx-get="{% url 'dashboard:engagement_create' %}"
             hx-target="#drawer-content" @click="$store.drawer.show('New Engagement')">+ New Engagement</button>
+    {% endif %}
   </div>
 
   <div class="filter-tabs" role="tablist" x-data="{ tab: '{{ tab }}' }">

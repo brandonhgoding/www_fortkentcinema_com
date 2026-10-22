@@ -316,6 +316,8 @@ def engagement_list_context(request):
 
 
 class EngagementListView(StaffRequiredMixin, TemplateView):
+    permission_required = "cinema.view_engagement"
+
     def get_template_names(self):
         # A tab click is an HTMX GET that swaps only the #engagement-list region,
         # so return the partial (not the full base-extending page) for HX requests.
@@ -330,6 +332,7 @@ class EngagementListView(StaffRequiredMixin, TemplateView):
 
 
 class EngagementDetailView(StaffRequiredMixin, TemplateView):
+    permission_required = "cinema.view_engagement"
     template_name = "dashboard/engagement_detail.html"
 
     def get_context_data(self, **kwargs):
@@ -418,6 +421,8 @@ def _save_toast(engagement, message):
 
 
 class EngagementCreateView(StaffRequiredMixin, View):
+    permission_required = "cinema.add_engagement"
+
     def get(self, request):
         return _render_engagement_form(request, EngagementForm(),
                                        reverse("dashboard:engagement_create"), "Create Engagement", [])
@@ -446,6 +451,8 @@ class EngagementCreateView(StaffRequiredMixin, View):
 
 
 class EngagementEditView(StaffRequiredMixin, View):
+    permission_required = "cinema.change_engagement"
+
     def get(self, request, pk):
         engagement = get_object_or_404(Engagement, pk=pk)
         film_ids = list(engagement.engagement_films.order_by("position").values_list("film_id", flat=True))
@@ -475,6 +482,8 @@ class EngagementEditView(StaffRequiredMixin, View):
 
 
 class EngagementStatusView(StaffRequiredMixin, View):
+    permission_required = "cinema.change_engagement"
+
     def post(self, request, pk):
         engagement = get_object_or_404(Engagement, pk=pk)
         new_status = request.POST.get("status")
@@ -503,6 +512,8 @@ def _clear_dead_orders(orders):
 
 
 class EngagementDeleteView(StaffRequiredMixin, View):
+    permission_required = "cinema.delete_engagement"
+
     def post(self, request, pk):
         engagement = get_object_or_404(Engagement, pk=pk)
         tab = request.GET.get("tab") or "CURRENT"
@@ -522,6 +533,8 @@ class EngagementDeleteView(StaffRequiredMixin, View):
 
 
 class EngagementSquareRetryView(StaffRequiredMixin, View):
+    permission_required = "cinema.change_engagement"
+
     def post(self, request, pk):
         engagement = get_object_or_404(Engagement, pk=pk)
         sync(engagement)
@@ -604,6 +617,8 @@ def _render_showtime_form(request, engagement, action_url, submit_label, mode,
 
 
 class ShowtimeCreateView(StaffRequiredMixin, View):
+    permission_required = "cinema.add_showtime"
+
     def get(self, request, eng_pk):
         engagement = get_object_or_404(Engagement, pk=eng_pk)
         return _render_showtime_form(
@@ -649,6 +664,8 @@ class ShowtimeCreateView(StaffRequiredMixin, View):
 
 
 class ShowtimeEditView(StaffRequiredMixin, View):
+    permission_required = "cinema.change_showtime"
+
     def get(self, request, pk):
         st = get_object_or_404(
             Showtime.objects.select_related("engagement", "screen"), pk=pk)
@@ -709,6 +726,8 @@ class ShowtimeEditView(StaffRequiredMixin, View):
 
 
 class ShowtimeDeleteView(StaffRequiredMixin, View):
+    permission_required = "cinema.delete_showtime"
+
     def post(self, request, pk):
         st = get_object_or_404(Showtime.objects.select_related("engagement"), pk=pk)
         engagement = st.engagement
@@ -730,6 +749,8 @@ def _render_bulk_form(request, engagement, start_date="", end_date="", captions=
 
 
 class ShowtimeBulkView(StaffRequiredMixin, View):
+    permission_required = "cinema.add_showtime"
+
     def get(self, request, eng_pk):
         engagement = get_object_or_404(Engagement, pk=eng_pk)
         return _render_bulk_form(request, engagement,
@@ -803,6 +824,8 @@ class EngagementSocialCardView(StaffRequiredMixin, View):
     Served inline for the dashboard preview; with ?download=1 as an
     attachment for the download buttons.
     """
+
+    permission_required = "cinema.view_engagement"
 
     def get(
         self, request: HttpRequest, pk: int, platform: str

@@ -94,6 +94,38 @@ class EngagementListTests(TestCase):
         self.assertIn("<!doctype", body.lower())
 
 
+class EngagementPermissionTemplateTests(TestCase):
+    def setUp(self) -> None:
+        make_staff(
+            username="viewer", password="pw12345",
+            perms=("cinema.view_engagement",),
+        )
+        self.client.login(username="viewer", password="pw12345")
+        self.screen = Screen.objects.create(name="Screen 1", capacity=100)
+        self.film = Film.objects.create(title="Jaws")
+        today = timezone.localdate()
+        self.eng = make_engagement(
+            self.screen, start=today, end=today + datetime.timedelta(days=3),
+            films=[self.film],
+        )
+
+    def test_view_only_user_sees_no_controls(self) -> None:
+        html = self.client.get(reverse("dashboard:engagements")).content.decode()
+        self.assertIn("Jaws", html)
+        self.assertNotIn(reverse("dashboard:engagement_create"), html)
+        for name in ("engagement_edit", "engagement_delete"):
+            url = reverse(f"dashboard:{name}", args=[self.eng.pk])
+            self.assertNotIn(url, html)
+
+    def test_status_badge_static_without_change(self) -> None:
+        html = self.client.get(reverse("dashboard:engagements")).content.decode()
+        self.assertNotIn('class="statusMenu"', html)
+        self.assertNotIn('@click="open = !open"', html)
+        status_url = reverse("dashboard:engagement_status", args=[self.eng.pk])
+        self.assertNotIn(status_url, html)
+        self.assertIn("Confirmed", html)
+
+
 class EngagementStatusTests(TestCase):
     def setUp(self) -> None:
         make_staff(username="s", password="pw12345")
