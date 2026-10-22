@@ -17,7 +17,7 @@
     <div class="card"><div class="cardBody">
       <p class="cardLabel">Active Engagements</p>
       <p class="cardValue">{{ active_engagements_count }}</p>
-      <a href="{% url 'dashboard:engagements' %}" class="cardLink">View all &rarr;</a>
+      {% if perms.cinema.view_engagement %}<a href="{% url 'dashboard:engagements' %}" class="cardLink">View all &rarr;</a>{% endif %}
     </div></div>
     <div class="card"><div class="cardBody">
       <p class="cardLabel">Today's Showtimes</p>
@@ -26,7 +26,7 @@
     <div class="card"><div class="cardBody">
       <p class="cardLabel">Screens</p>
       <p class="cardValue">{{ screens_count }}</p>
-      <a href="{% url 'dashboard:screens' %}" class="cardLink">Manage &rarr;</a>
+      {% if perms.cinema.view_screen %}<a href="{% url 'dashboard:screens' %}" class="cardLink">Manage &rarr;</a>{% endif %}
     </div></div>
     {% if sales_panel %}
     <div class="card"><div class="cardBody">
@@ -82,7 +82,7 @@
       <div class="empty-state-icon">🎬</div>
       <h3 class="empty-state-title">No Showtimes Today</h3>
       <p class="empty-state-description">Get started by creating an engagement and scheduling showtimes for your films.</p>
-      <a href="{% url 'dashboard:engagements' %}" class="btn btn-primary">View Engagements</a>
+      {% if perms.cinema.view_engagement %}<a href="{% url 'dashboard:engagements' %}" class="btn btn-primary">View Engagements</a>{% endif %}
     </div>
     {% endif %}
   </section>

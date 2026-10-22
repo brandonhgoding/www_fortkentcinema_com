@@ -33,10 +33,12 @@
           {% endif %}
           {% block content %}{% endblock %}
         </div>
+        {% if perms.cinema.add_engagement %}
         <div class="keyboardHint" title="Press Alt+N to create new engagement">
           <kbd class="kbd">Alt+N</kbd>
           <span class="hintText">New Engagement</span>
         </div>
+        {% endif %}
       </main>
       {% include "dashboard/_confirm.html" %}
       {% include "dashboard/_drawer.html" %}

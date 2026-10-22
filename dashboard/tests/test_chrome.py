@@ -1,5 +1,6 @@
 import re
 
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from dashboard.tests.helpers import make_staff
@@ -65,3 +66,52 @@ class ChromeTests(TestCase):
         html = self.client.get(reverse("dashboard:screens")).content.decode()
         # the Screens link carries the active class on its own page
         self.assertRegex(html, r'href="/dashboard/screens"[^>]*class="[^"]*\bactive\b')
+
+    def test_sidebar_shows_only_viewable_sections(self) -> None:
+        make_staff(username="box", perms=("tickets.view_ticketorder",))
+        self.client.login(username="box", password="pw12345")
+        html = self.client.get(reverse("dashboard:home")).content.decode()
+        self.assertIn(reverse("dashboard:tickets"), html)
+        for name in (
+            "ad_inquiries",
+            "blog",
+            "engagements",
+            "members",
+            "tiers",
+            "polls",
+            "rental_inquiries",
+            "screens",
+            "subscribers",
+            "voicemails",
+        ):
+            self.assertNotIn(f'href="{reverse(f"dashboard:{name}")}"', html)
+        self.assertNotIn("sidebarBadge", html)
+        self.assertNotIn("keyboardHint", html)
+
+    def test_superuser_sees_every_link(self) -> None:
+        get_user_model().objects.create_superuser(
+            username="root", email="r@example.com", password="pw12345"
+        )
+        self.client.login(username="root", password="pw12345")
+        html = self.client.get(reverse("dashboard:home")).content.decode()
+        for name in (
+            "ad_inquiries",
+            "blog",
+            "engagements",
+            "members",
+            "tiers",
+            "tickets",
+            "polls",
+            "rental_inquiries",
+            "screens",
+            "subscribers",
+            "voicemails",
+        ):
+            self.assertIn(f'href="{reverse(f"dashboard:{name}")}"', html)
+        self.assertIn("keyboardHint", html)
+
+    def test_keyboard_hint_needs_add_engagement(self) -> None:
+        make_staff(username="adder", perms=("cinema.add_engagement",))
+        self.client.login(username="adder", password="pw12345")
+        html = self.client.get(reverse("dashboard:home")).content.decode()
+        self.assertIn("keyboardHint", html)
