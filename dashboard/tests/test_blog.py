@@ -483,6 +483,44 @@ class PreviewTests(BlogFixture):
         self.assertEqual(resp.content.decode().strip(), "<p><em>hi</em></p>")
 
 
+class BlogPermissionTests(BlogFixture):
+    def login_with(self, *perms: str) -> None:
+        make_staff(username="limited", password="pw12345", perms=perms)
+        self.client.login(username="limited", password="pw12345")
+
+    def test_markdown_preview_accepts_change_alone(self) -> None:
+        self.login_with("blog.change_blogpost")
+        resp = self.client.post(
+            reverse("dashboard:blog_markdown_preview"), {"content": "*hi*"}
+        )
+        self.assertEqual(resp.status_code, 200)
+
+    def test_view_only_user_sees_posts_without_controls(self) -> None:
+        post = self.make_post()
+        self.login_with("blog.view_blogpost")
+        html = self.client.get(reverse("dashboard:blog")).content.decode()
+        self.assertIn("A Review of Dune", html)
+        for name, args in (
+            ("blog_post_create", []),
+            ("blog_post_edit", [post.pk]),
+            ("blog_post_delete", [post.pk]),
+        ):
+            with self.subTest(url_name=name):
+                self.assertNotIn(reverse(f"dashboard:{name}", args=args), html)
+        self.assertNotIn("Authors", html)
+        self.assertNotIn("Categories</h2>", html)
+        self.assertNotIn('id="author-list"', html)
+        self.assertNotIn('id="category-list"', html)
+
+    def test_author_panel_needs_its_view_permission(self) -> None:
+        self.login_with("blog.view_blogpost", "blog.view_blogauthor")
+        html = self.client.get(reverse("dashboard:blog")).content.decode()
+        self.assertIn("Ada Lovelace", html)
+        self.assertNotIn(reverse("dashboard:blog_author_create"), html)
+        self.assertNotIn(reverse("dashboard:blog_category_create"), html)
+        self.assertNotIn("Categories</h2>", html)
+
+
 class AuthorCategoryTests(BlogFixture):
     def test_create_author_swaps_both_tables(self) -> None:
         resp = self.client.post(

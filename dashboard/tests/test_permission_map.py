@@ -1,9 +1,13 @@
 """Every dashboard view must 403 without its model permission."""
 
+import uuid
+
 from django.test import TestCase
 from django.urls import reverse
 
 from dashboard.tests.helpers import make_staff, permissions_except
+
+UUID_NONE = uuid.UUID(int=0)
 
 # (url_name, kwargs, method, permission). `permission` is one codename, or a
 # tuple of alternatives for an any-of view. Kwargs use non-existent pks: the
@@ -106,6 +110,23 @@ PERMISSION_TABLE: list[tuple[str, dict, str, str | tuple[str, ...]]] = [
     ("square_sale_retry", {"pk": 999999}, "post", "boxoffice.change_membershipsale"),
     ("subscribers", {}, "get", "audience.view_subscriber"),
     ("subscribers_export", {}, "get", "audience.view_subscriber"),
+    ("blog", {}, "get", "blog.view_blogpost"),
+    ("blog_post_preview", {"pk": UUID_NONE}, "get", "blog.view_blogpost"),
+    ("blog_post_create", {}, "get", "blog.add_blogpost"),
+    ("blog_post_edit", {"pk": UUID_NONE}, "get", "blog.change_blogpost"),
+    (
+        "blog_markdown_preview",
+        {},
+        "post",
+        ("blog.add_blogpost", "blog.change_blogpost"),
+    ),
+    ("blog_post_delete", {"pk": UUID_NONE}, "post", "blog.delete_blogpost"),
+    ("blog_author_create", {}, "get", "blog.add_blogauthor"),
+    ("blog_author_edit", {"pk": UUID_NONE}, "get", "blog.change_blogauthor"),
+    ("blog_author_delete", {"pk": UUID_NONE}, "post", "blog.delete_blogauthor"),
+    ("blog_category_create", {}, "get", "blog.add_blogcategory"),
+    ("blog_category_edit", {"pk": UUID_NONE}, "get", "blog.change_blogcategory"),
+    ("blog_category_delete", {"pk": UUID_NONE}, "post", "blog.delete_blogcategory"),
 ]
 
 

@@ -88,6 +88,8 @@ def byline_context() -> dict:
 
 
 class BlogListView(StaffRequiredMixin, View):
+    permission_required = "blog.view_blogpost"
+
     def get(self, request):
         ctx = post_list_context(request.GET)
         ctx.update(byline_context())
@@ -159,6 +161,8 @@ def _save_post(request, post: BlogPost | None):
 
 
 class BlogPostCreateView(StaffRequiredMixin, View):
+    permission_required = "blog.add_blogpost"
+
     def get(self, request):
         return _render_editor(request, BlogPostForm(), None)
 
@@ -167,6 +171,8 @@ class BlogPostCreateView(StaffRequiredMixin, View):
 
 
 class BlogPostEditView(StaffRequiredMixin, View):
+    permission_required = "blog.change_blogpost"
+
     def get(self, request, pk):
         post = get_object_or_404(BlogPost, pk=pk)
         return _render_editor(request, BlogPostForm(instance=post), post)
@@ -177,6 +183,8 @@ class BlogPostEditView(StaffRequiredMixin, View):
 
 class BlogPostDeleteView(StaffRequiredMixin, View):
     """Delete from the list (swap the table) or from the editor (go to the list)."""
+
+    permission_required = "blog.delete_blogpost"
 
     def post(self, request, pk):
         post = get_object_or_404(BlogPost, pk=pk)
@@ -203,6 +211,12 @@ class MarkdownPreviewView(StaffRequiredMixin, View):
     A plain-text post sends body_format=plain, plus use_markdown once staff
     tick Switch to Markdown. Anything else previews as Markdown."""
 
+    permission_required = ("blog.add_blogpost", "blog.change_blogpost")
+
+    def has_dashboard_permission(self) -> bool:
+        # Either right is enough: the editor serves both new and existing posts.
+        return any(self.request.user.has_perm(p) for p in self.permissions_tuple())
+
     def post(self, request):
         body_format = request.POST.get("body_format")
         if request.POST.get("use_markdown") or body_format != BlogPost.BodyFormat.PLAIN:
@@ -217,6 +231,8 @@ class BlogPostPreviewView(StaffRequiredMixin, PostDetailView):
     The page is marked noindex in its head and header, in case the link
     leaks.
     """
+
+    permission_required = "blog.view_blogpost"
 
     slug_url_kwarg = None
 
@@ -263,6 +279,8 @@ def _render_author_form(request, form, action_url, submit_label):
 
 
 class AuthorCreateView(StaffRequiredMixin, View):
+    permission_required = "blog.add_blogauthor"
+
     def get(self, request):
         return _render_author_form(
             request, BlogAuthorForm(), reverse("dashboard:blog_author_create"), "Create Author"
@@ -279,6 +297,8 @@ class AuthorCreateView(StaffRequiredMixin, View):
 
 
 class AuthorEditView(StaffRequiredMixin, View):
+    permission_required = "blog.change_blogauthor"
+
     def get(self, request, pk):
         author = get_object_or_404(BlogAuthor, pk=pk)
         return _render_author_form(
@@ -300,6 +320,8 @@ class AuthorEditView(StaffRequiredMixin, View):
 
 
 class AuthorDeleteView(StaffRequiredMixin, View):
+    permission_required = "blog.delete_blogauthor"
+
     def post(self, request, pk):
         author = get_object_or_404(BlogAuthor, pk=pk)
         try:
@@ -331,6 +353,8 @@ def _render_category_form(request, form, action_url, submit_label):
 
 
 class CategoryCreateView(StaffRequiredMixin, View):
+    permission_required = "blog.add_blogcategory"
+
     def get(self, request):
         return _render_category_form(
             request, BlogCategoryForm(), reverse("dashboard:blog_category_create"), "Create Category"
@@ -347,6 +371,8 @@ class CategoryCreateView(StaffRequiredMixin, View):
 
 
 class CategoryEditView(StaffRequiredMixin, View):
+    permission_required = "blog.change_blogcategory"
+
     def get(self, request, pk):
         category = get_object_or_404(BlogCategory, pk=pk)
         return _render_category_form(
@@ -368,6 +394,8 @@ class CategoryEditView(StaffRequiredMixin, View):
 
 
 class CategoryDeleteView(StaffRequiredMixin, View):
+    permission_required = "blog.delete_blogcategory"
+
     def post(self, request, pk):
         category = get_object_or_404(BlogCategory, pk=pk)
         try:

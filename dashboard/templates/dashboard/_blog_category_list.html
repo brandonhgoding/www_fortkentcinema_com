@@ -10,9 +10,11 @@
           <td>{{ category.post_count }}</td>
           <td>
             <div class="actions">
+              {% if perms.blog.change_blogcategory %}
               <button class="btn btn-secondary btn-sm" hx-get="{% url 'dashboard:blog_category_edit' category.pk %}"
                       hx-target="#drawer-content" @click="$store.drawer.show('Edit Category')">Edit</button>
-              {% if not category.post_count %}
+              {% endif %}
+              {% if not category.post_count and perms.blog.delete_blogcategory %}
               <button class="btn btn-danger btn-sm"
                       hx-post="{% url 'dashboard:blog_category_delete' category.pk %}"
                       hx-target="#category-list" hx-swap="outerHTML"

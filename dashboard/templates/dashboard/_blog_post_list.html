@@ -13,7 +13,11 @@
               {% if post.header_image %}<img class="blogThumb" src="{{ post.header_image.url }}" alt="" loading="lazy" />
               {% else %}<div class="blogThumb blogThumb--empty" title="No header image"></div>{% endif %}
               <div>
+                {% if perms.blog.change_blogpost %}
                 <a class="memberLink blogPostTitle" href="{% url 'dashboard:blog_post_edit' post.pk %}">{{ post.title }}</a>
+                {% else %}
+                <span class="blogPostTitle">{{ post.title }}</span>
+                {% endif %}
                 <span class="blogPostSubtitle">{{ post.subtitle }}</span>
               </div>
             </div>
@@ -24,16 +28,20 @@
           <td><span class="status-badge status-{{ post.status }}">{{ post.get_status_display }}</span></td>
           <td>
             <div class="actions">
+              {% if perms.blog.change_blogpost %}
               <a class="btn btn-secondary btn-sm" href="{% url 'dashboard:blog_post_edit' post.pk %}">Edit</a>
+              {% endif %}
               {% if post.is_published %}
               <a class="btn btn-secondary btn-sm" href="{% url 'blog_detail' post.slug %}" target="_blank" rel="noopener">View</a>
               {% else %}
               <a class="btn btn-secondary btn-sm" href="{% url 'dashboard:blog_post_preview' post.pk %}" target="_blank" rel="noopener">Preview</a>
               {% endif %}
+              {% if perms.blog.delete_blogpost %}
               <button class="btn btn-danger btn-sm"
                       hx-post="{% url 'dashboard:blog_post_delete' post.pk %}"
                       hx-target="#post-list" hx-swap="outerHTML" hx-include=".blogFilters"
                       data-dashboard-confirm='{"title":"Delete Post","message":"Delete \"{{ post.title|escapejs }}\"? This cannot be undone.","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
+              {% endif %}
             </div>
           </td>
         </tr>
@@ -50,7 +58,9 @@
   <div class="empty-state">
     <h3 class="empty-state-title">No posts yet</h3>
     <p class="empty-state-description">Posts start as drafts. Nothing appears on the site until you publish it.</p>
+    {% if perms.blog.add_blogpost %}
     <a class="btn btn-primary" href="{% url 'dashboard:blog_post_create' %}">Write the first post</a>
+    {% endif %}
   </div>
   {% endif %}
 </div>

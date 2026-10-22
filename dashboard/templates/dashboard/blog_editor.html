@@ -18,7 +18,7 @@
       {% if post %}
         {% if post.is_published %}
         <a class="btn btn-secondary" href="{% url 'blog_detail' post.slug %}" target="_blank" rel="noopener">View live</a>
-        {% else %}
+        {% elif perms.blog.view_blogpost %}
         <a class="btn btn-secondary" href="{% url 'dashboard:blog_post_preview' post.pk %}" target="_blank" rel="noopener">Preview</a>
         {% endif %}
       {% endif %}
@@ -163,10 +163,12 @@
                 @click.prevent="confirmUnpublish($el)">Unpublish</button>
         <p class="fieldHint">Takes the post off the site and makes it a draft again. Any edits above are saved with it.</p>
         {% endif %}
+        {% if perms.blog.delete_blogpost %}
         <button type="button" class="btn btn-danger btn-sm"
                 hx-post="{% url 'dashboard:blog_post_delete' post.pk %}" hx-params="none"
                 @htmx:before-request="submitting = true"
                 data-dashboard-confirm='{"title":"Delete Post","message":"Delete \"{{ post.title|escapejs }}\"? This cannot be undone.","confirmLabel":"Delete","variant":"danger"}'>Delete post</button>
+        {% endif %}
       </div>
       {% endif %}
     </aside>
