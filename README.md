@@ -99,6 +99,13 @@ permission for; Edit, Delete, and action buttons appear only with the matching
 `change`, `delete`, or `add` permission. Manage users, groups, and permissions
 in Django admin at `/admin/`. Superusers see everything.
 
+Five wrong passwords for one username from one address lock that pair out of
+`/login` for fifteen minutes (django-axes; the numbers are the `AXES_*` settings).
+A locked-out person sees a wait message, not which username was tried. To clear
+a lockout early, run `python manage.py axes_reset_username <username>` or delete
+the row under **Axes → Access attempts** in Django admin. Deploying this needs
+`pip install -r requirements.txt` and `migrate` (the `axes` tables).
+
 When this change is first deployed, every existing staff account that is not a
 superuser holds no permissions, so it sees only the home header and no sidebar
 links until an administrator assigns permissions or groups in Django admin. Do
