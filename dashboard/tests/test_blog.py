@@ -170,6 +170,19 @@ class CreatePostTests(BlogFixture):
         self.assertEqual(post.status, BlogPost.Status.DRAFT)
         self.assertEqual(post.slug, "we-are-back-for-the-season")
 
+    def test_add_only_user_is_sent_to_the_list_after_saving(self) -> None:
+        self.client.logout()
+        make_staff(
+            username="adder",
+            perms=("blog.add_blogpost", "blog.view_blogpost"),
+        )
+        self.client.login(username="adder", password="pw12345")
+        resp = self.client.post(
+            reverse("dashboard:blog_post_create"), self.payload(status="draft")
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp["Location"], reverse("dashboard:blog"))
+
     def test_submit_without_a_button_saves_a_draft(self) -> None:
         """Enter in a text field submits with no status. A new post must not go
         live by accident."""

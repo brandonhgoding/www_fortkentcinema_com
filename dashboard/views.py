@@ -75,6 +75,8 @@ class HomeView(StaffRequiredMixin, TemplateView):
         now = timezone.now()
 
         today_showtimes = []
+        # Any non-zero value suppresses the no-showtimes alert, which is
+        # filtered out for this user anyway.
         tomorrow_count = 1
         if user.has_perm("cinema.view_showtime"):
             today_showtimes = list(

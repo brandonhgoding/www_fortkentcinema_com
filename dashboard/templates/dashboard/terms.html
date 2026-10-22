@@ -6,7 +6,7 @@
 <div class="page">
   <div class="page-header">
     <div>
-      <a class="backLink" href="{% url 'dashboard:members' %}">← Members</a>
+      {% if perms.audience.view_member %}<a class="backLink" href="{% url 'dashboard:members' %}">← Members</a>{% endif %}
       <h1 class="page-title">Terms sold</h1>
       <p class="page-subtitle">{{ term_count }} term{{ term_count|pluralize }} · ${{ revenue }} collected</p>
     </div>

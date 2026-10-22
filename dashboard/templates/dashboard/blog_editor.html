@@ -6,7 +6,7 @@
 <div class="page" x-data="blogEditor" data-is-new="{% if post %}false{% else %}true{% endif %}">
   <div class="page-header">
     <div>
-      <a href="{% url 'dashboard:blog' %}" class="backLink">&larr; Back to Blog</a>
+      {% if perms.blog.view_blogpost %}<a href="{% url 'dashboard:blog' %}" class="backLink">&larr; Back to Blog</a>{% endif %}
       <h1 class="page-title">{% if post %}Edit Post{% else %}New Post{% endif %}</h1>
       <p class="page-subtitle">
         {% if post %}<span class="status-badge status-{{ post.status }}">{{ post.get_status_display }}</span>{% else %}<span class="status-badge status-draft">Draft</span>{% endif %}
@@ -116,7 +116,7 @@
           {{ form.category }}
           {% if form.category.errors %}<div class="field-error">{{ form.category.errors|striptags }}</div>{% endif %}
         </div>
-        <p class="fieldHint">Missing one? Add authors and categories on the <a class="memberLink" href="{% url 'dashboard:blog' %}">Blog page</a>.</p>
+        <p class="fieldHint">Missing one? Add authors and categories on the {% if perms.blog.view_blogpost %}<a class="memberLink" href="{% url 'dashboard:blog' %}">Blog page</a>{% else %}Blog page{% endif %}.</p>
         <div class="formGroup">
           <label for="{{ form.post_date.id_for_label }}">{{ form.post_date.label }}</label>
           {{ form.post_date }}

@@ -136,6 +136,9 @@ class DoorListTests(DoorListTestCase):
             with self.subTest(name=name):
                 args = [self.st.pk if "showtime" in name else order.pk]
                 self.assertNotIn(reverse(f"dashboard:{name}", args=args), html)
+        self.assertNotIn(
+            reverse("dashboard:engagement_detail", args=[self.st.engagement_id]), html
+        )
 
     def test_search_filters_by_name_or_number(self) -> None:
         ann = self.paid("Ann Lee")

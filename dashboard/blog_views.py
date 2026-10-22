@@ -157,7 +157,9 @@ def _save_post(request, post: BlogPost | None):
     form.instance.status = after
     saved = form.save()
     messages.success(request, SAVE_MESSAGES[(before, after)])
-    return redirect("dashboard:blog_post_edit", pk=saved.pk)
+    if request.user.has_perm("blog.change_blogpost"):
+        return redirect("dashboard:blog_post_edit", pk=saved.pk)
+    return redirect("dashboard:blog")
 
 
 class BlogPostCreateView(StaffRequiredMixin, View):

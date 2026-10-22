@@ -13,6 +13,10 @@
 
   {% include "dashboard/_alerts.html" %}
 
+  {% if not perms.cinema.view_engagement and not perms.cinema.view_showtime and not perms.cinema.view_screen and not perms.boxoffice.view_salespull %}
+  <p class="page-subtitle">You don't have access to any dashboard sections yet. Ask an administrator for access.</p>
+  {% endif %}
+
   <div class="summaryGrid">
     {% if perms.cinema.view_engagement %}
     <div class="card"><div class="cardBody">

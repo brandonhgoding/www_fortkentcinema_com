@@ -206,6 +206,11 @@ class HomePermissionTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode()
         self.assertIn("Welcome back", html)
+        self.assertIn(
+            "You don't have access to any dashboard sections yet. "
+            "Ask an administrator for access.",
+            html.replace("&#x27;", "'"),
+        )
         for label in ("Active Engagements", "Today's Showtimes", "Screens",
                       "Yesterday's Sales"):
             self.assertNotIn(label, html)
@@ -228,6 +233,7 @@ class HomePermissionTests(TestCase):
         self.assertIn("Today's Showtimes", html)
         self.assertIn("1 online ticket order needs attention", html)
         self.assertNotIn("new voicemail", html)
+        self.assertNotIn("don't have access", html.replace("&#x27;", "'"))
         self.assertNotIn("draft", html)
         self.assertNotIn("Active Engagements", html)
         self.assertNotIn("Screens", html)

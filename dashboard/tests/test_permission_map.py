@@ -1,12 +1,16 @@
 """Every dashboard view must 403 without its model permission."""
 
+import re
 import uuid
+from pathlib import Path
 
+from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
 
 import dashboard.urls
 from dashboard.tests.helpers import (
+    DASHBOARD_PERMISSIONS,
     SPEC_PERMISSIONS,
     _declared_by_views,
     make_staff,
@@ -188,3 +192,18 @@ class PermissionMapTests(TestCase):
                 "cinema.view_showtime",
             },
         )
+
+
+class TemplatePermissionStringTests(TestCase):
+    def test_template_permission_strings_exist(self) -> None:
+        base = Path(settings.BASE_DIR)
+        found = set()
+        for rel in ("dashboard/templates/dashboard", "blog/templates/blog"):
+            for path in (base / rel).rglob("*.html"):
+                text = path.read_text(encoding="utf-8")
+                found.update(
+                    f"{app}.{code}"
+                    for app, code in re.findall(r"perms\.(\w+)\.(\w+)", text)
+                )
+        self.assertTrue(found)
+        self.assertEqual(sorted(found - set(DASHBOARD_PERMISSIONS)), [])

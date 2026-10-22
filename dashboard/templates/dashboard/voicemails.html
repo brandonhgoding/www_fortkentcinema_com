@@ -86,7 +86,7 @@
                     <button type="submit" class="btn btn-secondary btn-sm">Save note</button>
                   </form>
                 {% elif voicemail.notes %}
-                  <p class="voicemailNotes">{{ voicemail.notes }}</p>
+                  <p class="voicemailNotes">{{ voicemail.notes|linebreaksbr }}</p>
                 {% endif %}
                 {% if perms.phone.delete_voicemail %}
                   <form method="post" action="{% url 'dashboard:voicemail_delete' voicemail.pk %}" x-data

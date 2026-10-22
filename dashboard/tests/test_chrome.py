@@ -68,6 +68,9 @@ class ChromeTests(TestCase):
         self.assertRegex(html, r'href="/dashboard/screens"[^>]*class="[^"]*\bactive\b')
 
     def test_sidebar_shows_only_viewable_sections(self) -> None:
+        from phone.models import Voicemail
+
+        Voicemail.objects.create(recording_sid="RE-badge")
         make_staff(username="box", perms=("tickets.view_ticketorder",))
         self.client.login(username="box", password="pw12345")
         html = self.client.get(reverse("dashboard:home")).content.decode()
@@ -111,7 +114,15 @@ class ChromeTests(TestCase):
         self.assertIn("keyboardHint", html)
 
     def test_keyboard_hint_needs_add_engagement(self) -> None:
-        make_staff(username="adder", perms=("cinema.add_engagement",))
+        make_staff(
+            username="adder",
+            perms=("cinema.add_engagement", "cinema.view_engagement"),
+        )
         self.client.login(username="adder", password="pw12345")
         html = self.client.get(reverse("dashboard:home")).content.decode()
         self.assertIn("keyboardHint", html)
+        self.client.logout()
+        make_staff(username="addonly", perms=("cinema.add_engagement",))
+        self.client.login(username="addonly", password="pw12345")
+        html = self.client.get(reverse("dashboard:home")).content.decode()
+        self.assertNotIn("keyboardHint", html)

@@ -89,3 +89,22 @@ should see and do. The sidebar shows only the sections the user holds a `view`
 permission for; Edit, Delete, and action buttons appear only with the matching
 `change`, `delete`, or `add` permission. Manage users, groups, and permissions
 in Django admin at `/admin/`. Superusers see everything.
+
+When this change is first deployed, every existing staff account that is not a
+superuser holds no permissions, so it sees only the home header and no sidebar
+links until an administrator assigns permissions or groups in Django admin. Do
+that before or right after deploying.
+
+Permissions that go together:
+
+- Creating or editing an engagement, and adding a poll option, needs
+  `cinema.view_film` for the film search; adding films from TMDB needs
+  `cinema.add_film`.
+- The home page's Today's Showtimes needs `cinema.view_showtime`; Yesterday's
+  Sales needs `boxoffice.view_salespull`.
+- The blog page's Authors and Categories panels need `blog.view_blogauthor` and
+  `blog.view_blogcategory`.
+- Writing blog posts needs `blog.add_blogpost` and `blog.change_blogpost`
+  together (saving opens the editor).
+- Door lists on an engagement's showtimes need `tickets.view_ticketorder`; the
+  back link from a door list needs `cinema.view_engagement`.
