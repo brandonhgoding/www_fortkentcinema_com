@@ -193,3 +193,41 @@ class HomeRenderTests(TestCase):
         self.assertIn("Dune at 7:00 PM is nearly sold out online (9 of 10)", html)
         self.assertIn(
             "Dune at 2:00 PM is cancelled with 1 unrefunded online order", html)
+
+
+class HomePermissionTests(TestCase):
+    def _login(self, perms):
+        make_staff(username="limited", password="pw12345", perms=perms)
+        self.client.login(username="limited", password="pw12345")
+
+    def test_no_permissions_renders_header_only(self) -> None:
+        self._login(())
+        resp = self.client.get(reverse("dashboard:home"))
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode()
+        self.assertIn("Welcome back", html)
+        for label in ("Active Engagements", "Today's Showtimes", "Screens",
+                      "Yesterday's Sales"):
+            self.assertNotIn(label, html)
+        # The home alerts partial; base.html's toast container is always there.
+        self.assertNotIn("x-data=\"{ shown: true }\"", html)
+
+    def test_box_office_user_sees_tickets_only(self) -> None:
+        from phone.models import Voicemail
+        screen = Screen.objects.create(name="Screen 1", capacity=100)
+        film = Film.objects.create(title="Dune", runtime_minutes=155)
+        make_eng(screen, film, status="DRAFT")
+        eng = make_eng(screen, film)
+        Voicemail.objects.create(recording_sid="RE1")
+        start = timezone.make_aware(datetime.datetime.combine(
+            timezone.localdate(), datetime.time(23, 30)))
+        st = Showtime.objects.create(engagement=eng, starts_at=start)
+        make_order(st, status="FAILED")
+        self._login(("tickets.view_ticketorder", "cinema.view_showtime"))
+        html = self.client.get(reverse("dashboard:home")).content.decode()
+        self.assertIn("Today's Showtimes", html)
+        self.assertIn("1 online ticket order needs attention", html)
+        self.assertNotIn("new voicemail", html)
+        self.assertNotIn("draft", html)
+        self.assertNotIn("Active Engagements", html)
+        self.assertNotIn("Screens", html)

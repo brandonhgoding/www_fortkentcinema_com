@@ -14,20 +14,26 @@
   {% include "dashboard/_alerts.html" %}
 
   <div class="summaryGrid">
+    {% if perms.cinema.view_engagement %}
     <div class="card"><div class="cardBody">
       <p class="cardLabel">Active Engagements</p>
       <p class="cardValue">{{ active_engagements_count }}</p>
-      {% if perms.cinema.view_engagement %}<a href="{% url 'dashboard:engagements' %}" class="cardLink">View all &rarr;</a>{% endif %}
+      <a href="{% url 'dashboard:engagements' %}" class="cardLink">View all &rarr;</a>
     </div></div>
+    {% endif %}
+    {% if perms.cinema.view_showtime %}
     <div class="card"><div class="cardBody">
       <p class="cardLabel">Today's Showtimes</p>
       <p class="cardValue">{{ today_showtimes_count }}</p>
     </div></div>
+    {% endif %}
+    {% if perms.cinema.view_screen %}
     <div class="card"><div class="cardBody">
       <p class="cardLabel">Screens</p>
       <p class="cardValue">{{ screens_count }}</p>
-      {% if perms.cinema.view_screen %}<a href="{% url 'dashboard:screens' %}" class="cardLink">Manage &rarr;</a>{% endif %}
+      <a href="{% url 'dashboard:screens' %}" class="cardLink">Manage &rarr;</a>
     </div></div>
+    {% endif %}
     {% if sales_panel %}
     <div class="card"><div class="cardBody">
       <p class="cardLabel">Yesterday's Sales</p>
@@ -43,6 +49,7 @@
     {% endif %}
   </div>
 
+  {% if perms.cinema.view_showtime %}
   <section class="section">
     <h2 class="sectionTitle">Today's Showtimes</h2>
     {% if today_showtimes %}
@@ -86,5 +93,6 @@
     </div>
     {% endif %}
   </section>
+  {% endif %}
 </div>
 {% endblock %}

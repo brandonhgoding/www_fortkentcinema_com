@@ -71,57 +71,76 @@ class HomeView(StaffRequiredMixin, TemplateView):
         today_start, today_end = day_range(today, tomorrow)
         tomo_start, tomo_end = day_range(tomorrow, day_after)
 
-        today_showtimes = list(
-            Showtime.objects.filter(starts_at__gte=today_start, starts_at__lt=today_end)
-            .select_related("screen")
-            .prefetch_related("engagement__engagement_films__film")
-            .order_by("starts_at")
-        )
+        user = self.request.user
         now = timezone.now()
-        availability = for_showtimes(
-            today_showtimes, now, square_enabled=square_enabled())
-        for st in today_showtimes:
-            st.online_sold = availability[st.pk].sold
-        tomorrow_count = Showtime.objects.filter(
-            starts_at__gte=tomo_start, starts_at__lt=tomo_end, is_cancelled=False).count()
+
+        today_showtimes = []
+        tomorrow_count = 1
+        if user.has_perm("cinema.view_showtime"):
+            today_showtimes = list(
+                Showtime.objects.filter(
+                    starts_at__gte=today_start, starts_at__lt=today_end)
+                .select_related("screen")
+                .prefetch_related("engagement__engagement_films__film")
+                .order_by("starts_at")
+            )
+            availability = for_showtimes(
+                today_showtimes, now, square_enabled=square_enabled())
+            for st in today_showtimes:
+                st.online_sold = availability[st.pk].sold
+            tomorrow_count = Showtime.objects.filter(
+                starts_at__gte=tomo_start, starts_at__lt=tomo_end,
+                is_cancelled=False).count()
 
         # Only what the alerts can mention: drafts, and runs not over yet.
         engagements = list(
             Engagement.objects.filter(Q(status=EngagementStatus.DRAFT) | Q(end_date__gte=today))
             .prefetch_related("engagement_films__film"))
 
-        user = self.request.user
+        can_orders = user.has_perm("tickets.view_ticketorder")
+        can_pulls = user.has_perm("boxoffice.view_salespull")
         ctx.update({
             # Same rule as the engagements page's Current tab.
             "active_engagements_count": sum(1 for e in engagements if e.is_active),
-            "screens_count": Screen.objects.count(),
+            "screens_count": (
+                Screen.objects.count() if user.has_perm("cinema.view_screen") else 0),
             "today_showtimes": today_showtimes,
             "today_showtimes_count": sum(1 for st in today_showtimes if not st.is_cancelled),
-            "alerts": build_smart_alerts(
-                engagements,
-                tomorrow_count,
-                today,
-                new_rental_inquiries=RentalInquiry.objects.filter(
-                    status=InquiryStatus.NEW
-                ).count(),
-                new_ad_inquiries=AdInquiry.objects.filter(
-                    status=InquiryStatus.NEW
-                ).count(),
-                new_voicemails=Voicemail.objects.filter(
-                    status=VoicemailStatus.NEW
-                ).count(),
-                square_pull_status=(
-                    pull_status(today - datetime.timedelta(days=1))
-                    if square_enabled() else None),
-                square_sync_failures=SquareItem.objects.filter(
-                    deleted_at__isnull=True).exclude(last_error="").count(),
-                square_membership_failures=MembershipSale.objects.filter(
-                    status=MembershipSale.Status.FAILED).count(),
-                ticket_failures=ticket_alerts.failures_count(),
-                nearly_sold_out=ticket_alerts.nearly_sold_out(now),
-                cancelled_with_orders=ticket_alerts.cancelled_with_orders(),
-            ),
-            "sales_panel": sales_panel(today),
+            "alerts": [
+                alert for alert in build_smart_alerts(
+                    engagements,
+                    tomorrow_count,
+                    today,
+                    new_rental_inquiries=(
+                        RentalInquiry.objects.filter(status=InquiryStatus.NEW).count()
+                        if user.has_perm("cinema.view_rentalinquiry") else 0),
+                    new_ad_inquiries=(
+                        AdInquiry.objects.filter(status=InquiryStatus.NEW).count()
+                        if user.has_perm("cinema.view_adinquiry") else 0),
+                    new_voicemails=(
+                        Voicemail.objects.filter(status=VoicemailStatus.NEW).count()
+                        if user.has_perm("phone.view_voicemail") else 0),
+                    square_pull_status=(
+                        pull_status(today - datetime.timedelta(days=1))
+                        if can_pulls and square_enabled() else None),
+                    square_sync_failures=(
+                        SquareItem.objects.filter(
+                            deleted_at__isnull=True).exclude(last_error="").count()
+                        if user.has_perm("cinema.view_engagement") else 0),
+                    square_membership_failures=(
+                        MembershipSale.objects.filter(
+                            status=MembershipSale.Status.FAILED).count()
+                        if user.has_perm("boxoffice.view_membershipsale") else 0),
+                    ticket_failures=(
+                        ticket_alerts.failures_count() if can_orders else 0),
+                    nearly_sold_out=(
+                        ticket_alerts.nearly_sold_out(now) if can_orders else ()),
+                    cancelled_with_orders=(
+                        ticket_alerts.cancelled_with_orders() if can_orders else ()),
+                )
+                if user.has_perm(alert["perm"])
+            ],
+            "sales_panel": sales_panel(today) if can_pulls else None,
             "display_name": user.get_short_name() or user.get_username(),
         })
         return ctx
