@@ -129,6 +129,8 @@ def term_ledger(request) -> dict:
 
 
 class TermLedgerView(StaffRequiredMixin, View):
+    permission_required = "audience.view_membershipterm"
+
     def get(self, request):
         return render(request, "dashboard/terms.html", term_ledger(request))
 
@@ -140,6 +142,8 @@ class TermExportView(StaffRequiredMixin, View):
     answers "who are my members". This one answers "what did we sell", so
     a member who has renewed four times appears four times.
     """
+
+    permission_required = "audience.view_membershipterm"
 
     def get(self, request):
         ledger = term_ledger(request)

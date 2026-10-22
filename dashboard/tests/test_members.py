@@ -464,6 +464,41 @@ class MemberRosterQueryCountTests(TestCase):
             if i % 2 == 0:
                 FreeAdmission.objects.create(member=member)
 
-        # 8 includes the sidebar's new-voicemail badge count.
-        with self.assertNumQueries(8):
+        # 10: the sidebar's new-voicemail badge count, plus two for the
+        # staff user's permission lookup (user and group grants).
+        with self.assertNumQueries(10):
             self.client.get(reverse("dashboard:members"))
+
+
+class MemberViewOnlyTests(TestCase):
+    def test_view_only_user_sees_member_without_controls(self) -> None:
+        member = make_member()
+        term = give_term(member, tier=a_tier("cinema-supporter"))
+        admission = FreeAdmission.objects.create(member=member)
+        make_staff(
+            username="viewer", password="pw12345", perms=("audience.view_member",)
+        )
+        self.client.login(username="viewer", password="pw12345")
+
+        listing = self.client.get(reverse("dashboard:members"))
+        self.assertContains(listing, "Lovelace")
+        for name, args in (
+            ("member_create", []),
+            ("member_edit", [member.pk]),
+            ("member_delete", [member.pk]),
+            ("free_admission_redeem", [member.pk]),
+            ("terms", []),
+        ):
+            with self.subTest(name):
+                self.assertNotContains(listing, reverse(f"dashboard:{name}", args=args))
+
+        detail = self.client.get(reverse("dashboard:member_detail", args=[member.pk]))
+        self.assertContains(detail, "$60.00")
+        for name, args in (
+            ("term_create", [member.pk]),
+            ("term_edit", [term.pk]),
+            ("term_delete", [term.pk]),
+            ("free_admission_delete", [admission.pk]),
+        ):
+            with self.subTest(name):
+                self.assertNotContains(detail, reverse(f"dashboard:{name}", args=args))

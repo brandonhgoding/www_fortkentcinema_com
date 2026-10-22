@@ -14,10 +14,12 @@
           <td>{{ admission.recorded_by|default:"—" }}</td>
           <td>
             <div class="actions">
+              {% if perms.audience.delete_freeadmission %}
               <button class="btn btn-danger btn-sm"
                       hx-post="{% url 'dashboard:free_admission_delete' admission.pk %}"
                       hx-target="#free-admission-list" hx-swap="outerHTML"
                       data-dashboard-confirm='{"title":"Remove Free Admission","message":"Remove the free admission dated {{ admission.redeemed_on|date:"M j, Y" }}? This cannot be undone.","confirmLabel":"Remove","variant":"danger"}'>Remove</button>
+              {% endif %}
             </div>
           </td>
         </tr>

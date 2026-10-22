@@ -12,7 +12,9 @@
     </div>
     <div class="actions">
       <a class="btn btn-secondary" href="{% url 'dashboard:terms_export' %}?{{ request.GET.urlencode }}">Export CSV</a>
+      {% if perms.audience.view_membershiptier %}
       <a class="btn btn-secondary" href="{% url 'dashboard:tiers' %}">Tiers</a>
+      {% endif %}
     </div>
   </div>
 
@@ -46,7 +48,7 @@
       <tbody>
         {% for term in terms %}
         <tr>
-          <td><a class="memberLink" href="{% url 'dashboard:member_detail' term.member.pk %}">{{ term.member.full_name }}</a></td>
+          <td>{% if perms.audience.view_member %}<a class="memberLink" href="{% url 'dashboard:member_detail' term.member.pk %}">{{ term.member.full_name }}</a>{% else %}{{ term.member.full_name }}{% endif %}</td>
           <td>{{ term.tier.name }}</td>
           <td>{{ term.started_on|date:"M j, Y" }}</td>
           <td>
