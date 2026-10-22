@@ -156,9 +156,11 @@ def resolve_vote_page(poll: Poll | None = None, vote: Vote | None = None) -> dic
 
     if poll.status != PollStatus.OPEN or not poll.has_started():
         # A draft round, or one whose window has not opened, is not public.
-        # Treat it as no poll at all.
+        # Treat it as no poll at all: no options, and no hero posters either,
+        # which would otherwise show the shortlist.
         ctx["poll"] = None
         ctx["options"] = []
+        ctx["hero_films"] = []
         return ctx
 
     if vote is None or vote.poll_id != poll.pk:

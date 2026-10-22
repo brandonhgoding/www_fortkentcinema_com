@@ -141,6 +141,43 @@ class CastVoteViewTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(Vote.objects.count(), 0)
 
+    def test_a_scheduled_poll_cannot_be_voted_in_or_seen_by_naming_it(self) -> None:
+        """OPEN but before opens_at is not public yet; /vote/<slug> 404s it.
+        Naming it on /vote/cast must give the same nothing: not a vote, and
+        not the shortlist either (the page used to render the ballot's
+        posters even as it refused the vote, and option pks are guessable)."""
+        soon = Poll.objects.create(
+            title="Soon",
+            status=PollStatus.OPEN,
+            opens_at=timezone.now() + datetime.timedelta(hours=1),
+        )
+        option = PollOption.objects.create(
+            poll=soon,
+            film=Film.objects.create(
+                title="Secret Film", poster_url="https://img.example/secret.jpg"
+            ),
+        )
+        for data in (_ballot(option), {"poll": soon.pk, "option": 999999,
+                                       "email": "fan@example.com"}):
+            response = self.client.post(
+                reverse("vote_cast"), data, HTTP_HX_REQUEST="true"
+            )
+            self.assertEqual(response.status_code, 400)
+            html = response.content.decode()
+            self.assertNotIn("Secret Film", html)
+            self.assertNotIn("secret.jpg", html)
+        self.assertEqual(Vote.objects.count(), 0)
+
+    def test_junk_option_id_is_a_bad_request_not_a_crash(self) -> None:
+        for option in ("abc", "1.5", "9" * 30):
+            response = self.client.post(
+                reverse("vote_cast"),
+                {"poll": self.poll.pk, "option": option, "email": "fan@example.com"},
+                HTTP_HX_REQUEST="true",
+            )
+            self.assertEqual(response.status_code, 400, option)
+        self.assertEqual(Vote.objects.count(), 0)
+
     def test_two_open_rounds_each_take_their_own_votes(self) -> None:
         second = Poll.objects.create(title="Round Two", status=PollStatus.OPEN)
         option_two = PollOption.objects.create(

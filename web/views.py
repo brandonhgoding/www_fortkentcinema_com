@@ -682,7 +682,10 @@ class VoteCastView(View):
     def post(self, request):
         # The ballot names its round: several can be open at once.
         poll = Poll.objects.filter(pk=_pk_or_none(request.POST.get("poll"))).first()
-        if poll is None or poll.status == PollStatus.DRAFT:
+        # A draft, or a round scheduled but not yet open, is not public: the
+        # same nothing /vote/<slug> gives, so naming it here reveals nothing
+        # (not even "wrong option" versus "right option").
+        if poll is None or poll.status == PollStatus.DRAFT or not poll.has_started():
             return HttpResponseBadRequest("Unknown poll.")
         option_id = request.POST.get("option")
         if not option_id:
