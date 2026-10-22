@@ -682,10 +682,15 @@ class VoteCastView(View):
     def post(self, request):
         # The ballot names its round: several can be open at once.
         poll = Poll.objects.filter(pk=_pk_or_none(request.POST.get("poll"))).first()
-        if poll is None or poll.status == PollStatus.DRAFT:
+        # A draft, or a round scheduled but not yet open, is not public: the
+        # same nothing /vote/<slug> gives, so naming it here reveals nothing
+        # (not even "wrong option" versus "right option").
+        if poll is None or poll.status == PollStatus.DRAFT or not poll.has_started():
             return HttpResponseBadRequest("Unknown poll.")
-        option_id = request.POST.get("option")
-        if not option_id:
+        # Parsed like the poll id: junk is a 400, not a ValueError from the
+        # ORM (a 500, and an error email, for anyone who posts "abc").
+        option_id = _pk_or_none(request.POST.get("option"))
+        if option_id is None:
             return HttpResponseBadRequest("No option selected.")
 
         # Honeypot. A real person never fills this in; bots fill everything.
