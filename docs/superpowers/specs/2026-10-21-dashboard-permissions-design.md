@@ -38,8 +38,11 @@ class StaffRequiredMixin(AccessMixin):
     permission_required: str | tuple[str, ...] = ()
 ```
 
-`dispatch` runs the staff check, then `request.user.has_perms(...)` over
-the declared permissions. A missing permission raises `PermissionDenied`,
+`dispatch` runs the staff check, then calls `has_dashboard_permission()`.
+The default implementation returns `request.user.has_perms(...)` over the
+declared permissions; a view may override it when the rule is not "all of
+these" (the markdown preview accepts either of two). A failed check raises
+`PermissionDenied`,
 so the response is the same 403 non-staff already get. Superusers pass
 through Django's own `has_perm` short-circuit; nothing in the dashboard
 special-cases them.
