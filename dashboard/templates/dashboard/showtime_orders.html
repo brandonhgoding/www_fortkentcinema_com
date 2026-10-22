@@ -19,7 +19,7 @@
     <div class="alert alertWarning" role="alert">
       <div class="alertIcon">⚠</div>
       <p class="alertMessage">This showtime is cancelled. {{ refundable_count }} online order{{ refundable_count|pluralize }} still need{{ refundable_count|pluralize:"s," }} refunding.</p>
-      {% if perms.tickets.change_ticketorder %}
+      {% if perms.tickets.refund_ticketorder %}
       <form method="post" action="{% url 'dashboard:showtime_refund_all' showtime.pk %}"
             hx-post="{% url 'dashboard:showtime_refund_all' showtime.pk %}"
             hx-target="#door-list" hx-select="#door-list" hx-swap="outerHTML"

@@ -111,7 +111,8 @@ the template decides what to render.
 |---|---|
 | ShowtimeOrdersView, ShowtimeOrdersExportView, TicketSummaryView, TicketOrderListView, TicketOrderLogExportView | `tickets.view_ticketorder` |
 | ShowtimeAllowanceView | `cinema.change_showtime` |
-| ShowtimeRefundAllView, TicketOrderArriveView, TicketOrderUnarriveView, TicketOrderRetryView, TicketOrderRefundView | `tickets.change_ticketorder` |
+| TicketOrderArriveView, TicketOrderUnarriveView, TicketOrderRetryView | `tickets.change_ticketorder` |
+| ShowtimeRefundAllView, TicketOrderRefundView | `tickets.refund_ticketorder` (custom, declared in `TicketOrder.Meta.permissions`; added 2026-10-22) |
 
 ### audience
 

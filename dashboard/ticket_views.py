@@ -234,7 +234,7 @@ class ShowtimeAllowanceView(StaffRequiredMixin, View):
 class ShowtimeRefundAllView(StaffRequiredMixin, View):
     """Refund every sold order on the showtime, then show the list again."""
 
-    permission_required = "tickets.change_ticketorder"
+    permission_required = "tickets.refund_ticketorder"
 
     def post(self, request, pk):
         showtime = _get_showtime(pk)
@@ -299,7 +299,7 @@ class TicketOrderRetryView(StaffRequiredMixin, View):
 
 
 class TicketOrderRefundView(StaffRequiredMixin, View):
-    permission_required = "tickets.change_ticketorder"
+    permission_required = "tickets.refund_ticketorder"
 
     def post(self, request, pk):
         order = get_object_or_404(TicketOrder, pk=pk)

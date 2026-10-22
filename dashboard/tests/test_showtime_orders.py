@@ -140,6 +140,25 @@ class DoorListTests(DoorListTestCase):
             reverse("dashboard:engagement_detail", args=[self.st.engagement_id]), html
         )
 
+    def test_change_without_refund_permission_hides_refund_buttons(self) -> None:
+        order = self.paid(lines={"adult": 1})
+        self.st.is_cancelled = True
+        self.st.save()
+        make_staff(
+            username="clerk",
+            perms=("tickets.view_ticketorder", "tickets.change_ticketorder"),
+        )
+        self.client.login(username="clerk", password="pw12345")
+        html = self.client.get(self.url).content.decode()
+        self.assertIn(reverse("dashboard:ticket_order_arrive", args=[order.pk]), html)
+        self.assertIn("still needs refunding", html)
+        self.assertNotIn(
+            reverse("dashboard:ticket_order_refund", args=[order.pk]), html
+        )
+        self.assertNotIn(
+            reverse("dashboard:showtime_refund_all", args=[self.st.pk]), html
+        )
+
     def test_search_filters_by_name_or_number(self) -> None:
         ann = self.paid("Ann Lee")
         zed = self.paid("Zed Moss")

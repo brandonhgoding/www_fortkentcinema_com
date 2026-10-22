@@ -32,7 +32,7 @@
             hx-target="#ticket-order-{{ order.pk }}" hx-swap="outerHTML">{% csrf_token %}<button class="btn btn-primary btn-sm">Arrive</button></form>
       {% endif %}
       {% endif %}
-      {% if perms.tickets.change_ticketorder %}
+      {% if perms.tickets.refund_ticketorder %}
       <form method="post" action="{% url 'dashboard:ticket_order_refund' order.pk %}"
             hx-post="{% url 'dashboard:ticket_order_refund' order.pk %}"
             hx-target="#ticket-order-{{ order.pk }}" hx-swap="outerHTML"

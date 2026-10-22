@@ -141,6 +141,24 @@ class OrderLogTests(StaffTestCase):
         self.assertEqual(len(page1.context["page_obj"]), 50)
         self.assertEqual(list(page2.context["page_obj"]), [failed])
 
+    def test_refund_button_needs_the_refund_permission(self) -> None:
+        paid = make_order(self.st, status="PAID", square_payment_id="P2")
+        failed = make_order(
+            self.st, status="FAILED", square_payment_id="P1", error="Email bounced"
+        )
+        make_staff(
+            username="clerk",
+            perms=("tickets.view_ticketorder", "tickets.change_ticketorder"),
+        )
+        self.client.login(username="clerk", password="pw12345")
+        resp = self.client.get(self.url)
+        self.assertContains(
+            resp, reverse("dashboard:ticket_order_retry", args=[failed.pk])
+        )
+        self.assertNotContains(
+            resp, reverse("dashboard:ticket_order_refund", args=[paid.pk])
+        )
+
     def test_never_started_checkouts_are_listed_quietly(self) -> None:
         order = make_order(self.st, status="ABANDONED", error="Square: down")
 

@@ -81,6 +81,7 @@ class TicketOrder(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        permissions = [("refund_ticketorder", "Can refund ticket orders")]
         constraints = [
             models.UniqueConstraint(
                 fields=["square_order_id"],
