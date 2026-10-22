@@ -133,6 +133,17 @@ class SquarePillTests(StaffTestCase):
         self.assertIn("Retry", html)
         self.assertIn(retry_url(eng.pk), html)
 
+    def test_failed_hides_retry_without_change_permission(self) -> None:
+        eng = make_eng(self.screen, films=[self.film])
+        SquareItem.objects.create(engagement=eng, name="Dune",
+                                  last_error="Square said no")
+        make_staff(username="viewer", password="pw12345",
+                   perms=("cinema.view_engagement",))
+        self.client.login(username="viewer", password="pw12345")
+        html = self._detail(eng)
+        self.assertIn("Square sync failed", html)
+        self.assertNotIn(retry_url(eng.pk), html)
+
     def test_live_row_without_square_id_or_error_shows_failed(self) -> None:
         eng = make_eng(self.screen, films=[self.film])
         SquareItem.objects.create(engagement=eng, name="Dune")
