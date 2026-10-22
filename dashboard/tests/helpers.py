@@ -42,6 +42,7 @@ SPEC_PERMISSIONS = frozenset(
         # tickets
         "tickets.view_ticketorder",
         "tickets.change_ticketorder",
+        "tickets.refund_ticketorder",  # custom: Meta.permissions on TicketOrder
         # audience
         "audience.view_member",
         "audience.add_member",

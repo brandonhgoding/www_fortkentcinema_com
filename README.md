@@ -87,8 +87,12 @@ failed the error email to `ADMINS` carries the `RecordingSid` and caller.
 A dashboard user needs **Staff status** and the Django permissions for what they
 should see and do. The sidebar shows only the sections the user holds a `view`
 permission for; Edit, Delete, and action buttons appear only with the matching
-`change`, `delete`, or `add` permission. Manage users, groups, and permissions
-in Django admin at `/admin/`. Superusers see everything.
+`change`, `delete`, or `add` permission. Refunding online ticket orders (one
+order, or every order on a cancelled showtime) needs the custom
+**tickets | ticket order | Can refund ticket orders** permission, not the
+generic change permission, so arriving buyers and refunding them can be
+granted separately. Manage users, groups, and permissions in Django admin at
+`/admin/`. Superusers see everything.
 
 When this change is first deployed, every existing staff account that is not a
 superuser holds no permissions, so it sees only the home header and no sidebar
