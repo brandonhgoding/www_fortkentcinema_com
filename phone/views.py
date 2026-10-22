@@ -226,11 +226,15 @@ def voicemail_recorded(request: HttpRequest) -> HttpResponse:
         _upsert_voicemail(request, sid, **fields)
         _say(response, f"Thanks, we got your message. {GOODBYE}")
     else:
-        # Don't thank a caller for a message nobody will ever hear.
+        # Don't thank a caller for a message nobody will ever hear. ERROR
+        # reaches ADMINS by email, so log which fields came, not their
+        # values: the caller's number stays out of mailboxes, and the
+        # CallSid finds the call in the Twilio console.
         logger.error(
-            "Voicemail action callback for call %s named no recording: %s",
+            "Voicemail action callback for call %s named no recording; "
+            "fields posted: %s",
             request.POST.get("CallSid", ""),
-            dict(request.POST.items()),
+            ", ".join(sorted(request.POST)),
         )
         _say(response, f"Sorry, we didn't get your message. {GOODBYE}")
     response.hangup()
