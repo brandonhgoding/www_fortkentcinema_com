@@ -20,9 +20,9 @@
             {% for benefit in tier.benefits.all %}{{ benefit.name }}{% if not forloop.last %} · {% endif %}{% empty %}—{% endfor %}
           </td>
           <td>
-            {% if tier.term_count %}
+            {% if tier.term_count and perms.audience.view_membershipterm %}
             <a class="memberLink" href="{% url 'dashboard:terms' %}?tier={{ tier.slug }}">{{ tier.term_count }}</a>
-            {% else %}0{% endif %}
+            {% else %}{{ tier.term_count|default:0 }}{% endif %}
           </td>
           <td>
             {% if tier.show_on_membership_page %}
@@ -33,6 +33,7 @@
           </td>
           <td>
             <div class="actions">
+              {% if perms.audience.change_membershiptier %}
               <button class="btn btn-secondary btn-sm" hx-get="{% url 'dashboard:tier_edit' tier.pk %}"
                       hx-target="#drawer-content" @click="$store.drawer.show('Edit Tier')">Edit</button>
               {% if tier.show_on_membership_page %}
@@ -45,7 +46,8 @@
                       hx-post="{% url 'dashboard:tier_listing' tier.pk %}"
                       hx-target="#tier-list" hx-swap="outerHTML">Restore</button>
               {% endif %}
-              {% if not tier.term_count %}
+              {% endif %}
+              {% if not tier.term_count and perms.audience.delete_membershiptier %}
               <button class="btn btn-danger btn-sm"
                       hx-post="{% url 'dashboard:tier_delete' tier.pk %}"
                       hx-target="#tier-list" hx-swap="outerHTML"

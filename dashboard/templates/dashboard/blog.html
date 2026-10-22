@@ -11,7 +11,9 @@
     </div>
     <div class="actions">
       <a class="btn btn-secondary" href="{% url 'blog_list' %}" target="_blank" rel="noopener">View blog</a>
+      {% if perms.blog.add_blogpost %}
       <a class="btn btn-primary" href="{% url 'dashboard:blog_post_create' %}">+ New Post</a>
+      {% endif %}
     </div>
   </div>
 
@@ -34,22 +36,30 @@
   {% include "dashboard/_blog_post_list.html" %}
 
   <div class="blogBylines">
+    {% if perms.blog.view_blogauthor %}
     <section>
       <div class="panelHeader">
         <h2 class="panelTitle">Authors</h2>
+        {% if perms.blog.add_blogauthor %}
         <button class="btn btn-secondary btn-sm" hx-get="{% url 'dashboard:blog_author_create' %}"
                 hx-target="#drawer-content" @click="$store.drawer.show('New Author')">+ New Author</button>
+        {% endif %}
       </div>
       {% include "dashboard/_blog_author_list.html" %}
     </section>
+    {% endif %}
+    {% if perms.blog.view_blogcategory %}
     <section>
       <div class="panelHeader">
         <h2 class="panelTitle">Categories</h2>
+        {% if perms.blog.add_blogcategory %}
         <button class="btn btn-secondary btn-sm" hx-get="{% url 'dashboard:blog_category_create' %}"
                 hx-target="#drawer-content" @click="$store.drawer.show('New Category')">+ New Category</button>
+        {% endif %}
       </div>
       {% include "dashboard/_blog_category_list.html" %}
     </section>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

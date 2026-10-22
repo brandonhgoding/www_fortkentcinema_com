@@ -54,14 +54,18 @@
               {% endif %}
             </td>
             <td>
-              <form method="post" action="{% url 'dashboard:voicemail_status' voicemail.pk %}">
-                {% csrf_token %}
-                <select class="input inputCompact" name="status" onchange="this.form.submit()">
-                  {% for value, label in statuses %}
-                    <option value="{{ value }}" {% if value == voicemail.status %}selected{% endif %}>{{ label }}</option>
-                  {% endfor %}
-                </select>
-              </form>
+              {% if perms.phone.change_voicemail %}
+                <form method="post" action="{% url 'dashboard:voicemail_status' voicemail.pk %}">
+                  {% csrf_token %}
+                  <select class="input inputCompact" name="status" onchange="this.form.submit()">
+                    {% for value, label in statuses %}
+                      <option value="{{ value }}" {% if value == voicemail.status %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </form>
+              {% else %}
+                {{ voicemail.get_status_display }}
+              {% endif %}
             </td>
           </tr>
           <tr>
@@ -74,17 +78,23 @@
                 <p class="text-muted">Transcript pending…</p>
               {% endif %}
               <div class="voicemailActions">
-                <form method="post" action="{% url 'dashboard:voicemail_notes' voicemail.pk %}" class="voicemailNotes">
-                  {% csrf_token %}
-                  <textarea class="input" name="notes" rows="2" aria-label="Notes"
-                            placeholder="Add a note, e.g. called back Tue">{{ voicemail.notes }}</textarea>
-                  <button type="submit" class="btn btn-secondary btn-sm">Save note</button>
-                </form>
-                <form method="post" action="{% url 'dashboard:voicemail_delete' voicemail.pk %}" x-data
-                      @submit.prevent="dashboardConfirm({ title: 'Delete Voicemail', message: 'Delete this voicemail and its recording? This can\'t be undone.', confirmLabel: 'Delete', variant: 'danger' }).then(ok => ok && $el.submit())">
-                  {% csrf_token %}
-                  <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                </form>
+                {% if perms.phone.change_voicemail %}
+                  <form method="post" action="{% url 'dashboard:voicemail_notes' voicemail.pk %}" class="voicemailNotes">
+                    {% csrf_token %}
+                    <textarea class="input" name="notes" rows="2" aria-label="Notes"
+                              placeholder="Add a note, e.g. called back Tue">{{ voicemail.notes }}</textarea>
+                    <button type="submit" class="btn btn-secondary btn-sm">Save note</button>
+                  </form>
+                {% elif voicemail.notes %}
+                  <p class="voicemailNotes">{{ voicemail.notes|linebreaksbr }}</p>
+                {% endif %}
+                {% if perms.phone.delete_voicemail %}
+                  <form method="post" action="{% url 'dashboard:voicemail_delete' voicemail.pk %}" x-data
+                        @submit.prevent="dashboardConfirm({ title: 'Delete Voicemail', message: 'Delete this voicemail and its recording? This can\'t be undone.', confirmLabel: 'Delete', variant: 'danger' }).then(ok => ok && $el.submit())">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                  </form>
+                {% endif %}
               </div>
             </td>
           </tr>

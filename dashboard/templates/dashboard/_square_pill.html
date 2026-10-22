@@ -4,7 +4,7 @@
 {% elif square_item.last_error or not square_item.square_id %}
 <span class="status-badge status-cancelled">Square sync failed</span>
 <span class="fieldHint">{% if square_item.last_error %}{{ square_item.last_error }}{% else %}The item was never created in Square.{% endif %}</span>
-<form method="post" action="{% url 'dashboard:engagement_square_retry' engagement.pk %}">{% csrf_token %}<button class="btn btn-secondary btn-sm">Retry</button></form>
+{% if perms.cinema.change_engagement %}<form method="post" action="{% url 'dashboard:engagement_square_retry' engagement.pk %}">{% csrf_token %}<button class="btn btn-secondary btn-sm">Retry</button></form>{% endif %}
 {% else %}
 <span class="status-badge status-active">In Square · {{ square_item.variations.count }} variations · synced {{ square_item.synced_at|timesince }} ago</span>
 {% endif %}

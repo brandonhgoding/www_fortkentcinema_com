@@ -23,9 +23,13 @@
           <td>
             <div class="actions">
               <a href="{% url 'dashboard:engagement_detail' e.pk %}" class="btn btn-secondary btn-sm">Details</a>
+              {% if perms.cinema.change_engagement %}
               <button class="btn btn-secondary btn-sm" hx-get="{% url 'dashboard:engagement_edit' e.pk %}" hx-target="#drawer-content" @click="$store.drawer.show('Edit Engagement')">Edit</button>
+              {% endif %}
+              {% if perms.cinema.delete_engagement %}
               <button class="btn btn-danger btn-sm" hx-post="{% url 'dashboard:engagement_delete' e.pk %}?tab={{ tab }}" hx-swap="none"
                       data-dashboard-confirm='{"title":"Delete Engagement","message":"Are you sure you want to delete the engagement for \"{{ e.title|escapejs }}\"?","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
+              {% endif %}
             </div>
           </td>
         </tr>
@@ -56,9 +60,13 @@
       </div>
       <div class="cardActions">
         <a href="{% url 'dashboard:engagement_detail' e.pk %}" class="btn btn-secondary btn-sm">Details</a>
+        {% if perms.cinema.change_engagement %}
         <button class="btn btn-secondary btn-sm" hx-get="{% url 'dashboard:engagement_edit' e.pk %}" hx-target="#drawer-content" @click="$store.drawer.show('Edit Engagement')">Edit</button>
+        {% endif %}
+        {% if perms.cinema.delete_engagement %}
         <button class="btn btn-danger btn-sm" hx-post="{% url 'dashboard:engagement_delete' e.pk %}?tab={{ tab }}" hx-target="#engagement-list" hx-swap="outerHTML"
                 data-dashboard-confirm='{"title":"Delete Engagement","message":"Are you sure you want to delete the engagement for \"{{ e.title|escapejs }}\"?","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
+        {% endif %}
       </div>
     </div>
     {% endfor %}

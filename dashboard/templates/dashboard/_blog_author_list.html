@@ -10,9 +10,11 @@
           <td>{{ author.post_count }}</td>
           <td>
             <div class="actions">
+              {% if perms.blog.change_blogauthor %}
               <button class="btn btn-secondary btn-sm" hx-get="{% url 'dashboard:blog_author_edit' author.pk %}"
                       hx-target="#drawer-content" @click="$store.drawer.show('Edit Author')">Edit</button>
-              {% if not author.post_count %}
+              {% endif %}
+              {% if not author.post_count and perms.blog.delete_blogauthor %}
               <button class="btn btn-danger btn-sm"
                       hx-post="{% url 'dashboard:blog_author_delete' author.pk %}"
                       hx-target="#author-list" hx-swap="outerHTML"

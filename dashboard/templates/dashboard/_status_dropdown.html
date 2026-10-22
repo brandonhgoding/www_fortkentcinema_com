@@ -1,13 +1,13 @@
 {% load dashboard_extras %}
 <div class="statusDropdown" x-data="statusDropdown">
   <button type="button" class="status-badge status-{{ engagement.status|lower }} statusButton"
-          @click="open = !open"
-          {% if engagement.status == 'ENDED' or engagement.end_date < today %}disabled{% endif %}
+          {% if perms.cinema.change_engagement %}@click="open = !open"{% endif %}
+          {% if not perms.cinema.change_engagement or engagement.status == 'ENDED' or engagement.end_date < today %}disabled{% endif %}
           aria-haspopup="listbox" :aria-expanded="open">
     {{ engagement.get_status_display }}
-    {% if engagement.status != 'ENDED' and engagement.end_date >= today %}<span class="chevron" aria-hidden="true">▼</span>{% endif %}
+    {% if perms.cinema.change_engagement and engagement.status != 'ENDED' and engagement.end_date >= today %}<span class="chevron" aria-hidden="true">▼</span>{% endif %}
   </button>
-  {% if engagement.status != 'ENDED' and engagement.end_date >= today %}
+  {% if perms.cinema.change_engagement and engagement.status != 'ENDED' and engagement.end_date >= today %}
   <div class="statusMenu" role="listbox" x-show="open" x-cloak @click.outside="open = false" @keydown.escape.window="open = false">
     {% for value, label in status_options %}
     <button type="button" role="option" class="dropdownItem {% if value == engagement.status %}currentItem{% endif %}"

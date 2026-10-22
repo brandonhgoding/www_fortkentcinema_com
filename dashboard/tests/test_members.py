@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from audience.models import FreeAdmission, Member, MembershipTerm, MembershipTier
+from dashboard.tests.helpers import make_staff
 
 User = get_user_model()
 
@@ -35,7 +36,7 @@ def give_term(member, days_left=100, tier=None):
 
 class MemberListTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
 
     def test_empty_state(self) -> None:
@@ -194,7 +195,7 @@ class MemberListTests(TestCase):
 
 class MemberCreateEditTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
 
     def test_get_create_form(self) -> None:
@@ -256,7 +257,7 @@ class MemberCreateEditTests(TestCase):
 
 class MemberDeleteTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
 
     def test_delete_removes_the_member_and_their_terms(self) -> None:
@@ -282,7 +283,7 @@ class MemberDeleteTests(TestCase):
 
 class MemberExportTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
 
     def test_export_is_a_csv_attachment(self) -> None:
@@ -400,7 +401,7 @@ class RosterOrderTests(TestCase):
     """
 
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         # Created out of order, so insertion (pk) order is not the answer.
         make_member("Ann", "Young", "ann@example.com")
@@ -451,7 +452,7 @@ class MemberRosterQueryCountTests(TestCase):
     """
 
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
 
     def test_roster_query_count_does_not_scale_with_member_count(self) -> None:
@@ -463,6 +464,41 @@ class MemberRosterQueryCountTests(TestCase):
             if i % 2 == 0:
                 FreeAdmission.objects.create(member=member)
 
-        # 8 includes the sidebar's new-voicemail badge count.
-        with self.assertNumQueries(8):
+        # 10: the sidebar's new-voicemail badge count, plus two for the
+        # staff user's permission lookup (user and group grants).
+        with self.assertNumQueries(10):
             self.client.get(reverse("dashboard:members"))
+
+
+class MemberViewOnlyTests(TestCase):
+    def test_view_only_user_sees_member_without_controls(self) -> None:
+        member = make_member()
+        term = give_term(member, tier=a_tier("cinema-supporter"))
+        admission = FreeAdmission.objects.create(member=member)
+        make_staff(
+            username="viewer", password="pw12345", perms=("audience.view_member",)
+        )
+        self.client.login(username="viewer", password="pw12345")
+
+        listing = self.client.get(reverse("dashboard:members"))
+        self.assertContains(listing, "Lovelace")
+        for name, args in (
+            ("member_create", []),
+            ("member_edit", [member.pk]),
+            ("member_delete", [member.pk]),
+            ("free_admission_redeem", [member.pk]),
+            ("terms", []),
+        ):
+            with self.subTest(name):
+                self.assertNotContains(listing, reverse(f"dashboard:{name}", args=args))
+
+        detail = self.client.get(reverse("dashboard:member_detail", args=[member.pk]))
+        self.assertContains(detail, "$60.00")
+        for name, args in (
+            ("term_create", [member.pk]),
+            ("term_edit", [term.pk]),
+            ("term_delete", [term.pk]),
+            ("free_admission_delete", [admission.pk]),
+        ):
+            with self.subTest(name):
+                self.assertNotContains(detail, reverse(f"dashboard:{name}", args=args))

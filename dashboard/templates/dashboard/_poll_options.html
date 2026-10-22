@@ -13,6 +13,7 @@
       <div>
         <span>{{ row.count }} vote{{ row.count|pluralize }}</span>
         {% if poll.status == "DRAFT" %}
+          {% if perms.cinema.change_polloption %}
           <button class="btn btn-secondary btn-sm btn-icon" aria-label="Move up"
                   hx-post="{% url 'dashboard:poll_option_move' poll.pk row.option.pk %}"
                   hx-vals='{"direction": "up"}'
@@ -21,9 +22,12 @@
                   hx-post="{% url 'dashboard:poll_option_move' poll.pk row.option.pk %}"
                   hx-vals='{"direction": "down"}'
                   hx-target="#poll-options" hx-swap="outerHTML">&darr;</button>
+          {% endif %}
+          {% if perms.cinema.delete_polloption %}
           <button class="btn btn-danger btn-sm"
                   hx-post="{% url 'dashboard:poll_option_remove' poll.pk row.option.pk %}"
                   hx-target="#poll-options" hx-swap="outerHTML">Remove</button>
+          {% endif %}
         {% endif %}
       </div>
     </div>

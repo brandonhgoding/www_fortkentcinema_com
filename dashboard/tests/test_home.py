@@ -7,6 +7,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from tickets.tests.factories import make_order
+from dashboard.tests.helpers import make_staff
 
 User = get_user_model()
 
@@ -23,8 +24,7 @@ def make_eng(screen, film, *, status="CONFIRMED", start=None, end=None):
 
 class HomeViewTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="staffer", password="pw12345", is_staff=True,
-                                 first_name="Bran")
+        make_staff(username="staffer", password="pw12345", first_name="Bran")
         self.client.login(username="staffer", password="pw12345")
         self.screen = Screen.objects.create(name="Screen 1", capacity=100)
         self.film = Film.objects.create(title="Dune", runtime_minutes=155)
@@ -87,7 +87,7 @@ class HomeViewTests(TestCase):
 
 class HomeRenderTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.screen = Screen.objects.create(name="Screen 1", capacity=100)
         self.film = Film.objects.create(title="Dune", runtime_minutes=155)
@@ -193,3 +193,47 @@ class HomeRenderTests(TestCase):
         self.assertIn("Dune at 7:00 PM is nearly sold out online (9 of 10)", html)
         self.assertIn(
             "Dune at 2:00 PM is cancelled with 1 unrefunded online order", html)
+
+
+class HomePermissionTests(TestCase):
+    def _login(self, perms):
+        make_staff(username="limited", password="pw12345", perms=perms)
+        self.client.login(username="limited", password="pw12345")
+
+    def test_no_permissions_renders_header_only(self) -> None:
+        self._login(())
+        resp = self.client.get(reverse("dashboard:home"))
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode()
+        self.assertIn("Welcome back", html)
+        self.assertIn(
+            "You don't have access to any dashboard sections yet. "
+            "Ask an administrator for access.",
+            html.replace("&#x27;", "'"),
+        )
+        for label in ("Active Engagements", "Today's Showtimes", "Screens",
+                      "Yesterday's Sales"):
+            self.assertNotIn(label, html)
+        # The home alerts partial; base.html's toast container is always there.
+        self.assertNotIn("x-data=\"{ shown: true }\"", html)
+
+    def test_box_office_user_sees_tickets_only(self) -> None:
+        from phone.models import Voicemail
+        screen = Screen.objects.create(name="Screen 1", capacity=100)
+        film = Film.objects.create(title="Dune", runtime_minutes=155)
+        make_eng(screen, film, status="DRAFT")
+        eng = make_eng(screen, film)
+        Voicemail.objects.create(recording_sid="RE1")
+        start = timezone.make_aware(datetime.datetime.combine(
+            timezone.localdate(), datetime.time(23, 30)))
+        st = Showtime.objects.create(engagement=eng, starts_at=start)
+        make_order(st, status="FAILED")
+        self._login(("tickets.view_ticketorder", "cinema.view_showtime"))
+        html = self.client.get(reverse("dashboard:home")).content.decode()
+        self.assertIn("Today's Showtimes", html)
+        self.assertIn("1 online ticket order needs attention", html)
+        self.assertNotIn("new voicemail", html)
+        self.assertNotIn("don't have access", html.replace("&#x27;", "'"))
+        self.assertNotIn("draft", html)
+        self.assertNotIn("Active Engagements", html)
+        self.assertNotIn("Screens", html)

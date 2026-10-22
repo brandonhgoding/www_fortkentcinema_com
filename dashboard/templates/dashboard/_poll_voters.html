@@ -27,10 +27,12 @@
               <td>{{ vote.option.film.title }}</td>
               <td>{{ vote.created_at|date:"M j, Y g:i A" }}</td>
               <td class="pollVoterActions">
+                {% if perms.cinema.delete_vote %}
                 <button class="btn btn-danger btn-sm"
                         hx-post="{% url 'dashboard:poll_vote_remove' poll.pk vote.pk %}"
                         hx-target="#poll-voters" hx-swap="outerHTML"
                         data-dashboard-confirm='{"title": "Remove Vote", "message": "Remove the vote {% if vote.email %}from {{ vote.email|escapejs }} {% endif %}for {{ vote.option.film.title|escapejs }}? They can vote again in this round.", "confirmLabel": "Remove", "variant": "danger"}'>Remove</button>
+                {% endif %}
               </td>
             </tr>
           {% endfor %}

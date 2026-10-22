@@ -1,12 +1,10 @@
 import datetime
 
 from cinema.models import Engagement, EngagementFilm, Film, Screen, Showtime
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
-
-User = get_user_model()
+from dashboard.tests.helpers import make_staff
 
 
 def make_engagement(screen, *, start, end, status="CONFIRMED", kind="REGULAR",
@@ -22,7 +20,7 @@ def make_engagement(screen, *, start, end, status="CONFIRMED", kind="REGULAR",
 
 class EngagementListTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.screen = Screen.objects.create(name="Screen 1", capacity=100)
         self.film = Film.objects.create(title="Jaws", poster_url="https://img/j.jpg")
@@ -96,9 +94,41 @@ class EngagementListTests(TestCase):
         self.assertIn("<!doctype", body.lower())
 
 
+class EngagementPermissionTemplateTests(TestCase):
+    def setUp(self) -> None:
+        make_staff(
+            username="viewer", password="pw12345",
+            perms=("cinema.view_engagement",),
+        )
+        self.client.login(username="viewer", password="pw12345")
+        self.screen = Screen.objects.create(name="Screen 1", capacity=100)
+        self.film = Film.objects.create(title="Jaws")
+        today = timezone.localdate()
+        self.eng = make_engagement(
+            self.screen, start=today, end=today + datetime.timedelta(days=3),
+            films=[self.film],
+        )
+
+    def test_view_only_user_sees_no_controls(self) -> None:
+        html = self.client.get(reverse("dashboard:engagements")).content.decode()
+        self.assertIn("Jaws", html)
+        self.assertNotIn(reverse("dashboard:engagement_create"), html)
+        for name in ("engagement_edit", "engagement_delete"):
+            url = reverse(f"dashboard:{name}", args=[self.eng.pk])
+            self.assertNotIn(url, html)
+
+    def test_status_badge_static_without_change(self) -> None:
+        html = self.client.get(reverse("dashboard:engagements")).content.decode()
+        self.assertNotIn('class="statusMenu"', html)
+        self.assertNotIn('@click="open = !open"', html)
+        status_url = reverse("dashboard:engagement_status", args=[self.eng.pk])
+        self.assertNotIn(status_url, html)
+        self.assertIn("Confirmed", html)
+
+
 class EngagementStatusTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.screen = Screen.objects.create(name="S1", capacity=50)
         self.today = timezone.localdate()
@@ -140,7 +170,7 @@ class EngagementStatusTests(TestCase):
 
 class EngagementDeleteTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.screen = Screen.objects.create(name="S1", capacity=50)
         self.today = timezone.localdate()
@@ -157,7 +187,7 @@ class EngagementDeleteTests(TestCase):
 
 class EngagementCreateTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.screen = Screen.objects.create(name="S1", capacity=50)
         self.f1 = Film.objects.create(title="A")
@@ -273,7 +303,7 @@ class EngagementCreateTests(TestCase):
 
 class EngagementEditTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.screen = Screen.objects.create(name="S1", capacity=50)
         self.f1 = Film.objects.create(title="A")

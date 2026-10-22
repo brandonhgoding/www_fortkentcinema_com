@@ -6,11 +6,11 @@
   <td>
     <span class="status-badge {% if sale.status == 'OK' %}status-active{% elif sale.status == 'SKIPPED' %}status-draft{% else %}status-cancelled{% endif %}">{{ sale.get_status_display }}</span>
     {% if sale.error %}<span class="fieldHint">{{ sale.error }}</span>{% endif %}
-    {% if sale.status == 'FAILED' %}
+    {% if sale.status == 'FAILED' and perms.boxoffice.change_membershipsale %}
     <form method="post" action="{% url 'dashboard:square_sale_retry' sale.pk %}"
           hx-post="{% url 'dashboard:square_sale_retry' sale.pk %}"
           hx-target="#square-sale-{{ sale.pk }}" hx-swap="outerHTML">{% csrf_token %}<button class="btn btn-secondary btn-sm">Retry</button></form>
     {% endif %}
   </td>
-  <td>{% if sale.term %}<a href="{% url 'dashboard:member_detail' sale.term.member.pk %}">{{ sale.term.member }}</a>{% elif sale.status == 'OK' %}term removed{% else %}—{% endif %}</td>
+  <td>{% if sale.term %}{% if perms.audience.view_member %}<a href="{% url 'dashboard:member_detail' sale.term.member.pk %}">{{ sale.term.member }}</a>{% else %}{{ sale.term.member }}{% endif %}{% elif sale.status == 'OK' %}term removed{% else %}—{% endif %}</td>
 </tr>

@@ -9,6 +9,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 from tickets.tests.factories import make_order, make_showtime
+from dashboard.tests.helpers import make_staff
 
 User = get_user_model()
 TZ = ZoneInfo("America/New_York")
@@ -20,7 +21,7 @@ def at(day: datetime.date, hour: int, minute: int = 0) -> datetime.datetime:
 
 class StaffTestCase(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="sam", password="pw12345", is_staff=True)
+        make_staff(username="sam", password="pw12345")
         self.client.login(username="sam", password="pw12345")
         self.today = timezone.localdate()
 
@@ -240,7 +241,7 @@ class SidebarAndStaffTests(TestCase):
         for url in urls:
             self.assertEqual(self.client.get(url).status_code, 403, url)
 
-        User.objects.create_user(username="sam", password="pw12345", is_staff=True)
+        make_staff(username="sam", password="pw12345")
         self.client.login(username="sam", password="pw12345")
         for url in urls[:2]:
             resp = self.client.get(url)

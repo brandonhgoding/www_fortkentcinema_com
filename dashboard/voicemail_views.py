@@ -25,6 +25,8 @@ AUDIO_HEADERS = ("Content-Length", "Content-Range", "Accept-Ranges")
 
 
 class VoicemailListView(StaffRequiredMixin, View):
+    permission_required = "phone.view_voicemail"
+
     def get(self, request):
         voicemails = Voicemail.objects.all()
 
@@ -51,6 +53,8 @@ class VoicemailListView(StaffRequiredMixin, View):
 
 
 class VoicemailStatusView(StaffRequiredMixin, View):
+    permission_required = "phone.change_voicemail"
+
     def post(self, request, pk: int):
         voicemail = get_object_or_404(Voicemail, pk=pk)
         status = (request.POST.get("status") or "").strip()
@@ -61,6 +65,8 @@ class VoicemailStatusView(StaffRequiredMixin, View):
 
 
 class VoicemailNotesView(StaffRequiredMixin, View):
+    permission_required = "phone.change_voicemail"
+
     def post(self, request, pk: int):
         voicemail = get_object_or_404(Voicemail, pk=pk)
         voicemail.notes = (request.POST.get("notes") or "").strip()
@@ -76,6 +82,8 @@ class VoicemailDeleteView(StaffRequiredMixin, View):
     delete can be retried. Deleting the row first would orphan a recording
     we'd keep paying to store with no way left to find it.
     """
+
+    permission_required = "phone.delete_voicemail"
 
     def post(self, request, pk: int):
         voicemail = get_object_or_404(Voicemail, pk=pk)
@@ -109,6 +117,8 @@ class VoicemailDeleteView(StaffRequiredMixin, View):
 
 
 class VoicemailAudioView(StaffRequiredMixin, View):
+    permission_required = "phone.view_voicemail"
+
     def get(self, request, pk: int) -> HttpResponse:
         voicemail = get_object_or_404(Voicemail, pk=pk)
         try:

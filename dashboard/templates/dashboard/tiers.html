@@ -10,10 +10,16 @@
       <p class="page-subtitle">The tiers sold on the membership page, and the perks they list.</p>
     </div>
     <div class="actions">
+      {% if perms.boxoffice.view_membershipsale %}
       <a class="btn btn-secondary" href="{% url 'dashboard:square_sales' %}">Square sales</a>
+      {% endif %}
+      {% if perms.audience.view_membershipterm %}
       <a class="btn btn-secondary" href="{% url 'dashboard:terms' %}">Terms sold</a>
+      {% endif %}
+      {% if perms.audience.add_membershiptier %}
       <button class="btn btn-primary" hx-get="{% url 'dashboard:tier_create' %}"
               hx-target="#drawer-content" @click="$store.drawer.show('New Tier')">+ New Tier</button>
+      {% endif %}
     </div>
   </div>
 
@@ -21,8 +27,10 @@
 
   <div class="panelHeader">
     <h2 class="panelTitle">Perks</h2>
+    {% if perms.audience.add_membershipbenefit %}
     <button class="btn btn-secondary btn-sm" hx-get="{% url 'dashboard:benefit_create' %}"
             hx-target="#drawer-content" @click="$store.drawer.show('New Perk')">+ New Perk</button>
+    {% endif %}
   </div>
 
   {% include "dashboard/_benefit_list.html" %}

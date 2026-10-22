@@ -89,6 +89,8 @@ def member_roster(request):
 
 
 class MemberListView(StaffRequiredMixin, View):
+    permission_required = "audience.view_member"
+
     def get(self, request):
         members, q, status = member_roster(request)
 
@@ -142,6 +144,8 @@ def _member_list_response(request, toast_message):
 
 
 class MemberCreateView(StaffRequiredMixin, View):
+    permission_required = "audience.add_member"
+
     def get(self, request):
         return _render_member_form(
             request, MemberForm(), reverse("dashboard:member_create"), "Create Member"
@@ -158,6 +162,8 @@ class MemberCreateView(StaffRequiredMixin, View):
 
 
 class MemberEditView(StaffRequiredMixin, View):
+    permission_required = "audience.change_member"
+
     def get(self, request, pk):
         member = get_object_or_404(Member, pk=pk)
         return _render_member_form(
@@ -182,6 +188,8 @@ class MemberEditView(StaffRequiredMixin, View):
 
 
 class MemberDeleteView(StaffRequiredMixin, View):
+    permission_required = "audience.delete_member"
+
     def post(self, request, pk):
         # No ProtectedError guard, unlike Screens: a person entered by
         # mistake should be removable, and their terms only describe them.
@@ -266,6 +274,8 @@ def _term_list_response(request, member, toast_message):
 
 
 class MemberDetailView(StaffRequiredMixin, View):
+    permission_required = "audience.view_member"
+
     def get(self, request, pk):
         # Terms are read once, by _term_list_context below.
         member = get_object_or_404(
@@ -295,6 +305,8 @@ def _term_create_action(request, pk) -> tuple[str, str]:
 
 
 class TermCreateView(StaffRequiredMixin, View):
+    permission_required = "audience.add_membershipterm"
+
     def get(self, request, pk):
         member = get_object_or_404(Member, pk=pk)
         return _render_term_form(
@@ -319,6 +331,8 @@ class TermCreateView(StaffRequiredMixin, View):
 
 
 class TermEditView(StaffRequiredMixin, View):
+    permission_required = "audience.change_membershipterm"
+
     def get(self, request, pk):
         term = get_object_or_404(MembershipTerm, pk=pk)
         return _render_term_form(
@@ -344,6 +358,8 @@ class TermEditView(StaffRequiredMixin, View):
 
 
 class TermDeleteView(StaffRequiredMixin, View):
+    permission_required = "audience.delete_membershipterm"
+
     def post(self, request, pk):
         term = get_object_or_404(MembershipTerm, pk=pk)
         member = term.member
@@ -362,6 +378,8 @@ class MemberExportView(StaffRequiredMixin, View):
     for revenue analysis would be a second view; this one answers "who are
     my members".
     """
+
+    permission_required = "audience.view_member"
 
     def get(self, request):
         members, _q, _status = member_roster(request)
@@ -399,6 +417,8 @@ class FreeAdmissionRedeemView(StaffRequiredMixin, View):
     the counter, and a server-side refusal would make the one legitimate
     override impossible.
     """
+
+    permission_required = "audience.add_freeadmission"
 
     def post(self, request, pk):
         member = get_object_or_404(Member, pk=pk)
@@ -467,6 +487,8 @@ def _free_admission_list_response(request, member, toast_message):
 
 
 class FreeAdmissionDeleteView(StaffRequiredMixin, View):
+    permission_required = "audience.delete_freeadmission"
+
     def post(self, request, pk):
         admission = get_object_or_404(FreeAdmission, pk=pk)
         member = admission.member

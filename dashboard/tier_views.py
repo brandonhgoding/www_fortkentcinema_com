@@ -41,6 +41,8 @@ def catalogue_context() -> dict:
 
 
 class TierListView(StaffRequiredMixin, View):
+    permission_required = "audience.view_membershiptier"
+
     def get(self, request):
         return render(request, "dashboard/tiers.html", catalogue_context())
 
@@ -85,6 +87,8 @@ def _render_tier_form(request, form, action_url, submit_label):
 
 
 class TierCreateView(StaffRequiredMixin, View):
+    permission_required = "audience.add_membershiptier"
+
     def get(self, request):
         return _render_tier_form(
             request,
@@ -104,6 +108,8 @@ class TierCreateView(StaffRequiredMixin, View):
 
 
 class TierEditView(StaffRequiredMixin, View):
+    permission_required = "audience.change_membershiptier"
+
     def get(self, request, pk):
         tier = get_object_or_404(MembershipTier, pk=pk)
         return _render_tier_form(
@@ -132,6 +138,8 @@ class TierListingView(StaffRequiredMixin, View):
     working and keeps its price history.
     """
 
+    permission_required = "audience.change_membershiptier"
+
     def post(self, request, pk):
         tier = get_object_or_404(MembershipTier, pk=pk)
         if not tier.show_on_membership_page and not tier.checkout_url:
@@ -152,6 +160,8 @@ class TierListingView(StaffRequiredMixin, View):
 
 
 class TierDeleteView(StaffRequiredMixin, View):
+    permission_required = "audience.delete_membershiptier"
+
     def post(self, request, pk):
         tier = get_object_or_404(MembershipTier, pk=pk)
         name = tier.name
@@ -180,6 +190,8 @@ def _render_benefit_form(request, form, action_url, submit_label):
 
 
 class BenefitCreateView(StaffRequiredMixin, View):
+    permission_required = "audience.add_membershipbenefit"
+
     def get(self, request):
         return _render_benefit_form(
             request,
@@ -199,6 +211,8 @@ class BenefitCreateView(StaffRequiredMixin, View):
 
 
 class BenefitEditView(StaffRequiredMixin, View):
+    permission_required = "audience.change_membershipbenefit"
+
     def get(self, request, pk):
         benefit = get_object_or_404(MembershipBenefit, pk=pk)
         return _render_benefit_form(
@@ -223,6 +237,8 @@ class BenefitEditView(StaffRequiredMixin, View):
 
 
 class BenefitDeleteView(StaffRequiredMixin, View):
+    permission_required = "audience.delete_membershipbenefit"
+
     def post(self, request, pk):
         # benefits is a ManyToMany, so this cannot raise ProtectedError —
         # deleting a perk just drops it from the tiers that listed it. The

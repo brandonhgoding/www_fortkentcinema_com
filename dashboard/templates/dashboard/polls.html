@@ -9,9 +9,11 @@
       <h1 class="page-title">Polls</h1>
       <p class="page-subtitle">Let the audience pick what plays next.</p>
     </div>
+    {% if perms.cinema.add_poll %}
     <button class="btn btn-primary" hx-get="{% url 'dashboard:poll_create' %}"
             hx-target="#drawer-content" hx-swap="innerHTML"
             @click="$store.drawer.show('New Poll')">+ New Poll</button>
+    {% endif %}
   </div>
   {% include "dashboard/_poll_list.html" %}
 </div>

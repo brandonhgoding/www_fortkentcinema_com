@@ -13,12 +13,12 @@
   </td>
   <td>
     <div class="actions">
-      {% if order.status == 'FAILED' and order.square_payment_id %}
+      {% if order.status == 'FAILED' and order.square_payment_id and perms.tickets.change_ticketorder %}
       <form method="post" action="{% url 'dashboard:ticket_order_retry' order.pk %}"
             hx-post="{% url 'dashboard:ticket_order_retry' order.pk %}"
             hx-target="#ticket-log-{{ order.pk }}" hx-swap="outerHTML">{% csrf_token %}<input type="hidden" name="row" value="log" /><button class="btn btn-secondary btn-sm">Retry</button></form>
       {% endif %}
-      {% if order.counts_as_sold %}
+      {% if order.counts_as_sold and perms.tickets.change_ticketorder %}
       <form method="post" action="{% url 'dashboard:ticket_order_refund' order.pk %}"
             hx-post="{% url 'dashboard:ticket_order_refund' order.pk %}"
             hx-target="#ticket-log-{{ order.pk }}" hx-swap="outerHTML"

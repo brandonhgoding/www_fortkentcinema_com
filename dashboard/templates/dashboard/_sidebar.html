@@ -7,29 +7,51 @@
   <nav class="sidebarNav" data-cy="sidebar-nav">
     <a href="{% url 'dashboard:home' %}" class="sidebarLink {% nav_active request 'dashboard:home' %}" @click="sidebarOpen = false">
       <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 10.5L10 4l7 6.5V17a1 1 0 01-1 1h-4v-5H8v5H4a1 1 0 01-1-1v-6.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Home</a>
+    {% if perms.cinema.view_adinquiry %}
     <a href="{% url 'dashboard:ad_inquiries' %}" class="sidebarLink {% nav_active request 'dashboard:ad_inquiries' %}" @click="sidebarOpen = false">
       <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 8v4h3l6 4V4L6 8H3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M14.5 7.5a3.5 3.5 0 010 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Ad Inquiries</a>
+    {% endif %}
+    {% if perms.blog.view_blogpost %}
     <a href="{% url 'dashboard:blog' %}" class="sidebarLink {% nav_active request 'dashboard:blog' %}" @click="sidebarOpen = false">
       <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 16.5l.8-3.2L13.6 4.5a1.4 1.4 0 012 0l.4.4a1.4 1.4 0 010 2l-8.8 8.8-3.2.8z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M12.2 5.9l2.4 2.4" stroke="currentColor" stroke-width="1.5"/></svg>Blog</a>
+    {% endif %}
+    {% if perms.cinema.view_engagement %}
     <a href="{% url 'dashboard:engagements' %}" class="sidebarLink {% nav_active request 'dashboard:engagements' %}" @click="sidebarOpen = false">
       <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="4" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 8h6M7 12h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Engagements</a>
+    {% endif %}
+    {% if perms.audience.view_member %}
     <a href="{% url 'dashboard:members' %}" class="sidebarLink {% nav_active request 'dashboard:members' %}" @click="sidebarOpen = false">
       <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="5" width="16" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M2 9h16" stroke="currentColor" stroke-width="1.5"/><path d="M5 13h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Members</a>
+    {% endif %}
+    {% if perms.audience.view_membershiptier %}
     <a href="{% url 'dashboard:tiers' %}" class="sidebarLink {% nav_active request 'dashboard:tiers' %}" @click="sidebarOpen = false">
       <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2.5l2.3 4.7 5.2.8-3.75 3.65.9 5.15L10 14.35 5.35 16.8l.9-5.15L2.5 8l5.2-.8L10 2.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>Memberships</a>
+    {% endif %}
+    {% if perms.tickets.view_ticketorder %}
     {% nav_active request 'dashboard:tickets' as tickets_active %}{% nav_active request 'dashboard:ticket_orders' as ticket_orders_active %}
     <a href="{% url 'dashboard:tickets' %}" class="sidebarLink {{ tickets_active|default:ticket_orders_active }}" @click="sidebarOpen = false">
       <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 6.5A1.5 1.5 0 014.5 5h11A1.5 1.5 0 0117 6.5V8a2 2 0 000 4v1.5a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 013 13.5V12a2 2 0 000-4V6.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M12.5 6.5v7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="1.5 2"/></svg>Online tickets</a>
+    {% endif %}
+    {% if perms.cinema.view_poll %}
     <a href="{% url 'dashboard:polls' %}" class="sidebarLink {% nav_active request 'dashboard:polls' %}" @click="sidebarOpen = false">
       <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 15V9M10 15V5M15 15v-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Polls</a>
+    {% endif %}
+    {% if perms.cinema.view_rentalinquiry %}
     <a href="{% url 'dashboard:rental_inquiries' %}" class="sidebarLink {% nav_active request 'dashboard:rental_inquiries' %}" @click="sidebarOpen = false">
       <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="4.5" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M3 8.5h14M7 3v3M13 3v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Rental Inquiries</a>
+    {% endif %}
+    {% if perms.cinema.view_screen %}
     <a href="{% url 'dashboard:screens' %}" class="sidebarLink {% nav_active request 'dashboard:screens' %}" @click="sidebarOpen = false">
       <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="3" width="16" height="11" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M7 17h6M10 14v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Screens</a>
+    {% endif %}
+    {% if perms.audience.view_subscriber %}
     <a href="{% url 'dashboard:subscribers' %}" class="sidebarLink {% nav_active request 'dashboard:subscribers' %}" @click="sidebarOpen = false">
       <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="5" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 6l6.5 5 6.5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Subscribers</a>
+    {% endif %}
+    {% if perms.phone.view_voicemail %}
     <a href="{% url 'dashboard:voicemails' %}" class="sidebarLink {% nav_active request 'dashboard:voicemails' %}" @click="sidebarOpen = false">
       <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 3.5h2.2l1.3 3.4-1.7 1.1a8.5 8.5 0 004.2 4.2l1.1-1.7 3.4 1.3V15a1.5 1.5 0 01-1.5 1.5A11.5 11.5 0 013.5 5 1.5 1.5 0 015 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>Voicemails{% new_voicemail_count as voicemails_new %}{% if voicemails_new %}<span class="sidebarBadge" aria-label="{{ voicemails_new }} new">{{ voicemails_new }}</span>{% endif %}</a>
+    {% endif %}
   </nav>
   <div class="sidebarUser" data-cy="sidebar-user">
     <div class="sidebarUserInfo">

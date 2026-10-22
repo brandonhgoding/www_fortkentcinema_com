@@ -5,13 +5,14 @@ from django.test import TestCase
 from django.urls import reverse
 
 from cinema.models import Film, Poll, PollOption, PollStatus, Vote
+from dashboard.tests.helpers import make_staff
 
 User = get_user_model()
 
 
 class PollListTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
 
     def test_empty_state(self) -> None:
@@ -43,7 +44,7 @@ class PollListTests(TestCase):
 
 class PollCreateEditTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
 
     def test_create_form_renders(self) -> None:
@@ -104,7 +105,7 @@ class PollCreateEditTests(TestCase):
 
 class PollDeleteTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.poll = Poll.objects.create(title="Round One", status=PollStatus.OPEN)
         self.film = Film.objects.create(title="Casablanca")
@@ -193,7 +194,7 @@ class PollDeleteTests(TestCase):
 
 class PollVotersTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.poll = Poll.objects.create(title="Round One", status=PollStatus.OPEN)
         option = PollOption.objects.create(
@@ -250,7 +251,7 @@ class PollVoteRemoveTests(TestCase):
     """
 
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.poll = Poll.objects.create(title="Round One", status=PollStatus.OPEN)
         self.option = PollOption.objects.create(
@@ -365,3 +366,43 @@ class PollVoteRemoveTests(TestCase):
         self.client.login(username="p", password="pw12345")
         self.assertEqual(self.remove(self.test_vote).status_code, 403)
         self.assertTrue(Vote.objects.filter(pk=self.test_vote.pk).exists())
+
+
+class PollPermissionControlsTests(TestCase):
+    def test_view_only_user_sees_detail_without_controls(self) -> None:
+        poll = Poll.objects.create(title="Round One")
+        option = PollOption.objects.create(
+            poll=poll, film=Film.objects.create(title="Casablanca")
+        )
+        vote = Vote.objects.create(poll=poll, option=option, email="v@example.com")
+        make_staff(username="viewer", perms=("cinema.view_poll",))
+        self.client.login(username="viewer", password="pw12345")
+
+        response = self.client.get(reverse("dashboard:poll_detail", args=[poll.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        self.assertIn("Round One", html)
+        for name, args in (
+            ("poll_delete", [poll.pk]),
+            ("poll_status", [poll.pk]),
+            ("poll_announce", [poll.pk]),
+            ("poll_option_move", [poll.pk, option.pk]),
+            ("poll_option_remove", [poll.pk, option.pk]),
+            ("poll_vote_remove", [poll.pk, vote.pk]),
+        ):
+            with self.subTest(url_name=name):
+                self.assertNotIn(reverse(f"dashboard:{name}", args=args), html)
+        self.assertNotIn("data-add-url", html)
+
+    def test_view_only_user_sees_list_without_controls(self) -> None:
+        poll = Poll.objects.create(title="Round One")
+        make_staff(username="viewer", perms=("cinema.view_poll",))
+        self.client.login(username="viewer", password="pw12345")
+
+        html = self.client.get(reverse("dashboard:polls")).content.decode()
+
+        self.assertIn("Round One", html)
+        self.assertNotIn(reverse("dashboard:poll_create"), html)
+        self.assertNotIn(reverse("dashboard:poll_edit", args=[poll.pk]), html)
+        self.assertNotIn(reverse("dashboard:poll_delete", args=[poll.pk]), html)

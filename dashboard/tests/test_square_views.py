@@ -7,14 +7,12 @@ from boxoffice.models import SquareItem, SquareVariation
 from boxoffice.sync import live_item
 from boxoffice.tests.fakes import FakeGateway
 from cinema.models import Engagement, Film, Screen, Showtime
-from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
 from .test_engagement_detail import make_eng
-
-User = get_user_model()
+from dashboard.tests.helpers import make_staff
 
 
 def retry_url(pk: int) -> str:
@@ -27,7 +25,7 @@ def delete_url(eng: Engagement) -> str:
 
 class StaffTestCase(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.screen = Screen.objects.create(name="S1", capacity=50)
         self.film = Film.objects.create(title="Dune", runtime_minutes=155)
@@ -134,6 +132,17 @@ class SquarePillTests(StaffTestCase):
         self.assertIn("Square said no", html)
         self.assertIn("Retry", html)
         self.assertIn(retry_url(eng.pk), html)
+
+    def test_failed_hides_retry_without_change_permission(self) -> None:
+        eng = make_eng(self.screen, films=[self.film])
+        SquareItem.objects.create(engagement=eng, name="Dune",
+                                  last_error="Square said no")
+        make_staff(username="viewer", password="pw12345",
+                   perms=("cinema.view_engagement",))
+        self.client.login(username="viewer", password="pw12345")
+        html = self._detail(eng)
+        self.assertIn("Square sync failed", html)
+        self.assertNotIn(retry_url(eng.pk), html)
 
     def test_live_row_without_square_id_or_error_shows_failed(self) -> None:
         eng = make_eng(self.screen, films=[self.film])

@@ -1,10 +1,14 @@
 <div class="panelHeader">
   <h2 class="panelTitle">Showtimes</h2>
   <div class="actions">
+    {% if perms.cinema.add_showtime %}
     <button class="btn btn-primary btn-sm" hx-get="{% url 'dashboard:showtime_create' engagement.pk %}"
             hx-target="#drawer-content" @click="$store.drawer.show('New Showtime')">+ New Showtime</button>
+    {% endif %}
+    {% if perms.cinema.add_showtime %}
     <button class="btn btn-secondary btn-sm" hx-get="{% url 'dashboard:showtime_bulk' engagement.pk %}"
             hx-target="#drawer-content" @click="$store.drawer.show('Bulk Add Showtimes')">Bulk Add</button>
+    {% endif %}
   </div>
 </div>
 {% include "dashboard/_showtime_list.html" %}

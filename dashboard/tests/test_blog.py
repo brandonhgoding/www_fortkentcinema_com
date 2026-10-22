@@ -10,6 +10,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
+from dashboard.tests.helpers import make_staff
 
 User = get_user_model()
 
@@ -22,7 +23,7 @@ class BlogFixture(TestCase):
         cls.film = Film.objects.create(title="Dune", runtime_minutes=155)
 
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
 
     def make_post(self, **overrides) -> BlogPost:
@@ -168,6 +169,19 @@ class CreatePostTests(BlogFixture):
         self.assertRedirects(resp, reverse("dashboard:blog_post_edit", args=[post.pk]))
         self.assertEqual(post.status, BlogPost.Status.DRAFT)
         self.assertEqual(post.slug, "we-are-back-for-the-season")
+
+    def test_add_only_user_is_sent_to_the_list_after_saving(self) -> None:
+        self.client.logout()
+        make_staff(
+            username="adder",
+            perms=("blog.add_blogpost", "blog.view_blogpost"),
+        )
+        self.client.login(username="adder", password="pw12345")
+        resp = self.client.post(
+            reverse("dashboard:blog_post_create"), self.payload(status="draft")
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp["Location"], reverse("dashboard:blog"))
 
     def test_submit_without_a_button_saves_a_draft(self) -> None:
         """Enter in a text field submits with no status. A new post must not go
@@ -480,6 +494,44 @@ class PreviewTests(BlogFixture):
             {"content": "*hi*\n\n<script>x</script>"},
         )
         self.assertEqual(resp.content.decode().strip(), "<p><em>hi</em></p>")
+
+
+class BlogPermissionTests(BlogFixture):
+    def login_with(self, *perms: str) -> None:
+        make_staff(username="limited", password="pw12345", perms=perms)
+        self.client.login(username="limited", password="pw12345")
+
+    def test_markdown_preview_accepts_change_alone(self) -> None:
+        self.login_with("blog.change_blogpost")
+        resp = self.client.post(
+            reverse("dashboard:blog_markdown_preview"), {"content": "*hi*"}
+        )
+        self.assertEqual(resp.status_code, 200)
+
+    def test_view_only_user_sees_posts_without_controls(self) -> None:
+        post = self.make_post()
+        self.login_with("blog.view_blogpost")
+        html = self.client.get(reverse("dashboard:blog")).content.decode()
+        self.assertIn("A Review of Dune", html)
+        for name, args in (
+            ("blog_post_create", []),
+            ("blog_post_edit", [post.pk]),
+            ("blog_post_delete", [post.pk]),
+        ):
+            with self.subTest(url_name=name):
+                self.assertNotIn(reverse(f"dashboard:{name}", args=args), html)
+        self.assertNotIn("Authors", html)
+        self.assertNotIn("Categories</h2>", html)
+        self.assertNotIn('id="author-list"', html)
+        self.assertNotIn('id="category-list"', html)
+
+    def test_author_panel_needs_its_view_permission(self) -> None:
+        self.login_with("blog.view_blogpost", "blog.view_blogauthor")
+        html = self.client.get(reverse("dashboard:blog")).content.decode()
+        self.assertIn("Ada Lovelace", html)
+        self.assertNotIn(reverse("dashboard:blog_author_create"), html)
+        self.assertNotIn(reverse("dashboard:blog_category_create"), html)
+        self.assertNotIn("Categories</h2>", html)
 
 
 class AuthorCategoryTests(BlogFixture):

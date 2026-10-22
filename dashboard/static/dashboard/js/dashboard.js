@@ -67,6 +67,8 @@ document.addEventListener('keydown', (e) => {
     el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.hasAttribute('contenteditable'));
   if (typing) return;
   if (e.altKey && (e.key === 'n' || e.key === 'N')) {
+    // The hint is only rendered for staff who may add engagements.
+    if (!document.querySelector('.keyboardHint')) return;
     e.preventDefault();
     window.location.href = '/dashboard/engagements';
   }

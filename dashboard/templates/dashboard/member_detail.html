@@ -14,15 +14,17 @@
       </p>
     </div>
     <div class="actions">
-      {% if terms %}
+      {% if terms and perms.audience.add_membershipterm %}
       {# Renew prefills the tier and a start date that continues from the
          latest term; Add Term stays blank for anything that isn't a
          like-for-like renewal. #}
       <button class="btn btn-secondary" hx-get="{% url 'dashboard:term_create' member.pk %}?renew=1"
               hx-target="#drawer-content" @click="$store.drawer.show('Renew Membership')">Renew</button>
       {% endif %}
+      {% if perms.audience.add_membershipterm %}
       <button class="btn btn-primary" hx-get="{% url 'dashboard:term_create' member.pk %}"
               hx-target="#drawer-content" @click="$store.drawer.show('New Term')">+ New Term</button>
+      {% endif %}
     </div>
   </div>
 

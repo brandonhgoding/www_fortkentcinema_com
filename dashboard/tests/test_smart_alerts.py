@@ -317,3 +317,45 @@ class OnlineTicketAlertTests(TestCase):
             two["message"],
             "Dune at 7:00 PM is cancelled with 3 unrefunded online orders",
         )
+
+
+class AlertPermTests(TestCase):
+    def test_every_alert_carries_a_perm(self):
+        today = datetime.date(2026, 7, 10)
+        screen = Screen.objects.create(name="S1", capacity=50)
+        film = Film.objects.create(title="Dune")
+        engagements = [
+            make_eng(screen, film, end=today + datetime.timedelta(days=1)),
+            make_eng(screen, film, end=today + datetime.timedelta(days=30),
+                     status="DRAFT"),
+        ]
+        showtime = make_showtime()
+        alerts = build_smart_alerts(
+            engagements, 0, today,
+            new_rental_inquiries=1, new_ad_inquiries=1, new_voicemails=1,
+            square_pull_status="FAILED", square_sync_failures=1,
+            square_membership_failures=1, ticket_failures=1,
+            nearly_sold_out=[(showtime, 9, 10)],
+            cancelled_with_orders=[(showtime, 1)],
+        )
+        by_prefix = {
+            "no-showtimes-tomorrow": "cinema.view_showtime",
+            "ending-soon-": "cinema.view_engagement",
+            "draft-engagements": "cinema.view_engagement",
+            "new-rental-inquiries": "cinema.view_rentalinquiry",
+            "new-ad-inquiries": "cinema.view_adinquiry",
+            "new-voicemails": "phone.view_voicemail",
+            "square-pull-": "boxoffice.view_salespull",
+            "square-sync-failed": "cinema.view_engagement",
+            "square-membership-failed": "boxoffice.view_membershipsale",
+            "ticket-failures": "tickets.view_ticketorder",
+            "nearly-sold-out-": "tickets.view_ticketorder",
+            "cancelled-orders-": "tickets.view_ticketorder",
+        }
+        self.assertEqual(len(alerts), 12)
+        for alert in alerts:
+            expected = next(
+                perm for prefix, perm in by_prefix.items()
+                if alert["id"].startswith(prefix)
+            )
+            self.assertEqual(alert["perm"], expected, alert["id"])

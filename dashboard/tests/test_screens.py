@@ -1,20 +1,58 @@
-from cinema.models import Screen
+from cinema.models import Film, Screen
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from dashboard.tests.helpers import make_staff
 
 User = get_user_model()
 
 
 class ScreenListTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
 
     def test_empty_state(self) -> None:
         html = self.client.get(reverse("dashboard:screens")).content.decode()
         self.assertIn("empty-state", html)
         self.assertIn("No Screens Configured", html)
+
+    def test_view_only_user_sees_no_controls(self) -> None:
+        screen = Screen.objects.create(name="Screen 1", capacity=100)
+        make_staff(username="viewer", perms=("cinema.view_screen",))
+        self.client.login(username="viewer", password="pw12345")
+        html = self.client.get(reverse("dashboard:screens")).content.decode()
+        self.assertIn("Screen 1", html)
+        self.assertNotIn(reverse("dashboard:screen_create"), html)
+        self.assertNotIn(reverse("dashboard:screen_edit", args=[screen.pk]), html)
+        self.assertNotIn(reverse("dashboard:screen_delete", args=[screen.pk]), html)
+
+    def test_add_only_user_sees_new_but_not_edit(self) -> None:
+        screen = Screen.objects.create(name="Screen 1", capacity=100)
+        make_staff(
+            username="adder", perms=("cinema.view_screen", "cinema.add_screen")
+        )
+        self.client.login(username="adder", password="pw12345")
+        html = self.client.get(reverse("dashboard:screens")).content.decode()
+        self.assertIn(reverse("dashboard:screen_create"), html)
+        self.assertNotIn(reverse("dashboard:screen_edit", args=[screen.pk]), html)
+
+    def test_view_only_empty_state_has_no_add_button(self) -> None:
+        make_staff(username="viewer", perms=("cinema.view_screen",))
+        self.client.login(username="viewer", password="pw12345")
+        html = self.client.get(reverse("dashboard:screens")).content.decode()
+        self.assertIn("No Screens Configured", html)
+        self.assertNotIn(reverse("dashboard:screen_create"), html)
+
+    def test_film_search_hides_tmdb_without_add_film(self) -> None:
+        Film.objects.create(title="Casablanca")
+        make_staff(username="viewer", perms=("cinema.view_film",))
+        self.client.login(username="viewer", password="pw12345")
+        html = self.client.get(
+            reverse("dashboard:film_search"), {"q": "Casa"}
+        ).content.decode()
+        self.assertIn("Casablanca", html)
+        self.assertNotIn(reverse("dashboard:film_search_tmdb"), html)
 
     def test_rows_and_labels(self) -> None:
         Screen.objects.create(
@@ -44,7 +82,7 @@ class ScreenListTests(TestCase):
 
 class ScreenCreateEditTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
 
     def test_get_create_form(self) -> None:
@@ -103,7 +141,7 @@ from cinema.models import Engagement
 
 class ScreenDeleteTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
 
     def test_delete_unreferenced(self) -> None:
@@ -139,7 +177,7 @@ class HtmxCsrfTests(TestCase):
     <button> (not inside a <form>), so htmx must supply the header itself."""
 
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
 
     def test_body_has_csrf_hx_headers(self) -> None:
         self.client.login(username="s", password="pw12345")
@@ -185,7 +223,7 @@ class HtmxCsrfTests(TestCase):
 
 class FieldErrorStylingTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
 
     def test_field_error_styling_linked(self) -> None:

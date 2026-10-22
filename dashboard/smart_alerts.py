@@ -32,6 +32,7 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
     if tomorrow_showtimes_count == 0 and engagements:
         alerts.append({
             "id": "no-showtimes-tomorrow", "type": "warning",
+            "perm": "cinema.view_showtime",
             "message": "No showtimes scheduled for tomorrow",
         })
 
@@ -44,6 +45,7 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
             unit = "day" if days_left == 1 else "days"
             alerts.append({
                 "id": f"ending-soon-{e.id}", "type": "info",
+                "perm": "cinema.view_engagement",
                 "message": f"{e.title} ends in {days_left} {unit}",
             })
 
@@ -52,6 +54,7 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
         unit = "engagement" if draft_count == 1 else "engagements"
         alerts.append({
             "id": "draft-engagements", "type": "info",
+            "perm": "cinema.view_engagement",
             "message": f"You have {draft_count} draft {unit} waiting to be confirmed",
         })
 
@@ -59,6 +62,7 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
         unit = "inquiry" if new_rental_inquiries == 1 else "inquiries"
         alerts.append({
             "id": "new-rental-inquiries", "type": "info",
+            "perm": "cinema.view_rentalinquiry",
             "message": f"You have {new_rental_inquiries} new rental {unit}",
             "url": reverse("dashboard:rental_inquiries") + "?status=NEW",
         })
@@ -67,6 +71,7 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
         unit = "inquiry" if new_ad_inquiries == 1 else "inquiries"
         alerts.append({
             "id": "new-ad-inquiries", "type": "info",
+            "perm": "cinema.view_adinquiry",
             "message": f"You have {new_ad_inquiries} new ad {unit}",
             "url": reverse("dashboard:ad_inquiries"),
         })
@@ -75,6 +80,7 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
         unit = "voicemail" if new_voicemails == 1 else "voicemails"
         alerts.append({
             "id": "new-voicemails", "type": "info",
+            "perm": "phone.view_voicemail",
             "message": f"You have {new_voicemails} new {unit}",
             "url": reverse("dashboard:voicemails") + "?status=NEW",
         })
@@ -82,16 +88,19 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
     if square_pull_status == "FAILED":
         alerts.append({
             "id": "square-pull-failed", "type": "warning",
+            "perm": "boxoffice.view_salespull",
             "message": "Yesterday's Square sales pull failed",
         })
     elif square_pull_status == "MISSING":
         alerts.append({
             "id": "square-pull-missing", "type": "warning",
+            "perm": "boxoffice.view_salespull",
             "message": "No Square sales pull ran yesterday",
         })
     elif square_pull_status == "INCOMPLETE":
         alerts.append({
             "id": "square-pull-incomplete", "type": "warning",
+            "perm": "boxoffice.view_salespull",
             "message": "Yesterday's Square sales pull missed paid online "
                        "ticket orders",
         })
@@ -100,6 +109,7 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
         unit = "run" if square_sync_failures == 1 else "runs"
         alerts.append({
             "id": "square-sync-failed", "type": "warning",
+            "perm": "cinema.view_engagement",
             "message": f"{square_sync_failures} {unit} failed to sync to Square",
         })
 
@@ -111,6 +121,7 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
             message = f"{n} Square membership sales need attention"
         alerts.append({
             "id": "square-membership-failed", "type": "warning",
+            "perm": "boxoffice.view_membershipsale",
             "message": message,
             "url": reverse("dashboard:square_sales"),
         })
@@ -123,6 +134,7 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
             message = f"{n} online ticket orders need attention"
         alerts.append({
             "id": "ticket-failures", "type": "warning",
+            "perm": "tickets.view_ticketorder",
             "message": message,
             "url": reverse("dashboard:ticket_orders") + "?status=FAILED",
         })
@@ -130,6 +142,7 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
     for showtime, sold, allowance in nearly_sold_out:
         alerts.append({
             "id": f"nearly-sold-out-{showtime.pk}", "type": "info",
+            "perm": "tickets.view_ticketorder",
             "message": (f"{_showing(showtime)} is nearly sold out online "
                         f"({sold} of {allowance})"),
             "url": reverse("dashboard:showtime_orders", args=[showtime.pk]),
@@ -139,6 +152,7 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
         unit = "order" if count == 1 else "orders"
         alerts.append({
             "id": f"cancelled-orders-{showtime.pk}", "type": "warning",
+            "perm": "tickets.view_ticketorder",
             "message": (f"{_showing(showtime)} is cancelled with {count} "
                         f"unrefunded online {unit}"),
             "url": reverse("dashboard:showtime_orders", args=[showtime.pk]),

@@ -17,5 +17,5 @@
     </div>
     <div id="{{ combo_id|default:'film-combo' }}-results" class="dropdown" role="listbox" x-show="open" x-cloak></div>
   </div>
-  <p class="helpText fieldHint" x-show="!open">Search your films or find new ones on TMDB.</p>
+  <p class="helpText fieldHint" x-show="!open">Search your films{% if perms.cinema.add_film %} or find new ones on TMDB{% endif %}.</p>
 </div>

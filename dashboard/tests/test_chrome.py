@@ -3,14 +3,13 @@ import re
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-
-User = get_user_model()
+from dashboard.tests.helpers import make_staff
 
 
 class ChromeTests(TestCase):
     def setUp(self) -> None:
-        self.staff = User.objects.create_user(
-            username="staffer", password="pw12345", is_staff=True
+        self.staff = make_staff(
+            username="staffer", password="pw12345"
         )
         self.client.login(username="staffer", password="pw12345")
 
@@ -67,3 +66,63 @@ class ChromeTests(TestCase):
         html = self.client.get(reverse("dashboard:screens")).content.decode()
         # the Screens link carries the active class on its own page
         self.assertRegex(html, r'href="/dashboard/screens"[^>]*class="[^"]*\bactive\b')
+
+    def test_sidebar_shows_only_viewable_sections(self) -> None:
+        from phone.models import Voicemail
+
+        Voicemail.objects.create(recording_sid="RE-badge")
+        make_staff(username="box", perms=("tickets.view_ticketorder",))
+        self.client.login(username="box", password="pw12345")
+        html = self.client.get(reverse("dashboard:home")).content.decode()
+        self.assertIn(reverse("dashboard:tickets"), html)
+        for name in (
+            "ad_inquiries",
+            "blog",
+            "engagements",
+            "members",
+            "tiers",
+            "polls",
+            "rental_inquiries",
+            "screens",
+            "subscribers",
+            "voicemails",
+        ):
+            self.assertNotIn(f'href="{reverse(f"dashboard:{name}")}"', html)
+        self.assertNotIn("sidebarBadge", html)
+        self.assertNotIn("keyboardHint", html)
+
+    def test_superuser_sees_every_link(self) -> None:
+        get_user_model().objects.create_superuser(
+            username="root", email="r@example.com", password="pw12345"
+        )
+        self.client.login(username="root", password="pw12345")
+        html = self.client.get(reverse("dashboard:home")).content.decode()
+        for name in (
+            "ad_inquiries",
+            "blog",
+            "engagements",
+            "members",
+            "tiers",
+            "tickets",
+            "polls",
+            "rental_inquiries",
+            "screens",
+            "subscribers",
+            "voicemails",
+        ):
+            self.assertIn(f'href="{reverse(f"dashboard:{name}")}"', html)
+        self.assertIn("keyboardHint", html)
+
+    def test_keyboard_hint_needs_add_engagement(self) -> None:
+        make_staff(
+            username="adder",
+            perms=("cinema.add_engagement", "cinema.view_engagement"),
+        )
+        self.client.login(username="adder", password="pw12345")
+        html = self.client.get(reverse("dashboard:home")).content.decode()
+        self.assertIn("keyboardHint", html)
+        self.client.logout()
+        make_staff(username="addonly", perms=("cinema.add_engagement",))
+        self.client.login(username="addonly", password="pw12345")
+        html = self.client.get(reverse("dashboard:home")).content.decode()
+        self.assertNotIn("keyboardHint", html)

@@ -9,8 +9,10 @@
       <h1 class="page-title">Screens</h1>
       <p class="page-subtitle">Manage your cinema's screens and auditoriums.</p>
     </div>
+    {% if perms.cinema.add_screen %}
     <button class="btn btn-primary" hx-get="{% url 'dashboard:screen_create' %}"
             hx-target="#drawer-content" @click="$store.drawer.show('New Screen')">+ New Screen</button>
+    {% endif %}
   </div>
   {% include "dashboard/_screen_list.html" %}
 </div>

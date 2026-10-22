@@ -10,10 +10,14 @@
       <p class="page-subtitle">{{ active_count }} active member{{ active_count|pluralize }}. {{ this_month_label }}: {{ free_given_this_month }} free admission{{ free_given_this_month|pluralize }} given.</p>
     </div>
     <div class="actions">
+      {% if perms.audience.view_membershipterm %}
       <a class="btn btn-secondary" href="{% url 'dashboard:terms' %}">Terms sold</a>
+      {% endif %}
       <a class="btn btn-secondary" href="{% url 'dashboard:members_export' %}?q={{ q|urlencode }}&status={{ selected_status|urlencode }}">Export CSV</a>
+      {% if perms.audience.add_member %}
       <button class="btn btn-primary" hx-get="{% url 'dashboard:member_create' %}"
               hx-target="#drawer-content" @click="$store.drawer.show('New Member')">+ New Member</button>
+      {% endif %}
     </div>
   </div>
 

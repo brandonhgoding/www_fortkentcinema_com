@@ -1,15 +1,15 @@
 import datetime
 
 from cinema.models import InquiryStatus, RentalInquiry
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from dashboard.tests.helpers import make_staff
 
 
 class RentalInquiryListTests(TestCase):
     def setUp(self) -> None:
-        self.staff = get_user_model().objects.create_user(
-            username="staff", password="pw", is_staff=True
+        self.staff = make_staff(
+            username="staff", password="pw"
         )
         self.inquiry = RentalInquiry.objects.create(
             contact_name="Alex Harper",
@@ -88,3 +88,21 @@ class RentalInquiryListTests(TestCase):
         self.client.force_login(self.staff)
         response = self.client.get(reverse("dashboard:home"))
         self.assertContains(response, "You have 1 new rental inquiry")
+
+
+class RentalInquiryViewOnlyTests(TestCase):
+    def test_view_only_user_sees_status_as_text(self):
+        inquiry = RentalInquiry.objects.create(
+            contact_name="Alex Harper", email="alex@example.com"
+        )
+        make_staff(
+            username="viewer", password="pw", perms=("cinema.view_rentalinquiry",)
+        )
+        self.client.login(username="viewer", password="pw")
+        response = self.client.get(reverse("dashboard:rental_inquiries"))
+        self.assertContains(response, "Alex Harper")
+        self.assertNotContains(
+            response,
+            reverse("dashboard:rental_inquiry_status", args=[inquiry.pk]),
+        )
+        self.assertContains(response, inquiry.get_status_display() + "\n")

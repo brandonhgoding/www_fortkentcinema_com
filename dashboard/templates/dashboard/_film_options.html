@@ -18,6 +18,7 @@
   {% else %}
     <div class="emptyLocalState"><p class="emptyText">No films found for "{{ q }}"</p></div>
   {% endif %}
+  {% if perms.cinema.add_film %}
   <div class="divider"></div>
   <button type="button" class="tmdbOption" role="option"
           hx-get="{% url 'dashboard:film_search_tmdb' %}?q={{ q|urlencode }}"
@@ -26,4 +27,5 @@
     <span>Search TMDB for "{{ q }}"</span>
   </button>
   <div id="tmdb-results"></div>
+  {% endif %}
 {% endif %}

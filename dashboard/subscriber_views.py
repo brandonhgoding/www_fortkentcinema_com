@@ -17,6 +17,8 @@ from .mixins import StaffRequiredMixin
 
 
 class SubscriberListView(StaffRequiredMixin, View):
+    permission_required = "audience.view_subscriber"
+
     def get(self, request):
         subscribers = Subscriber.objects.all()
         return render(
@@ -30,6 +32,8 @@ class SubscriberListView(StaffRequiredMixin, View):
 
 
 class SubscriberExportView(StaffRequiredMixin, View):
+    permission_required = "audience.view_subscriber"
+
     def get(self, request):
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = (

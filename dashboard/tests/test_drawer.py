@@ -1,17 +1,16 @@
 from pathlib import Path
 
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from dashboard.tests.helpers import make_staff
 
-User = get_user_model()
 CSS_DIR = Path(settings.BASE_DIR) / "dashboard" / "static" / "dashboard" / "css"
 
 
 class DrawerTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
 
     def test_drawer_shell_rendered(self) -> None:

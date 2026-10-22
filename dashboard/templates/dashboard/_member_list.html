@@ -21,17 +21,21 @@
           <td><span class="status-badge status-{{ member.status }}">{{ member.status_label }}</span></td>
           <td>
             <div class="actions">
-              {% if member.free_admission_allowance %}
+              {% if member.free_admission_allowance and perms.audience.add_freeadmission %}
               <button class="btn btn-secondary btn-sm" hx-post="{% url 'dashboard:free_admission_redeem' member.pk %}"
                       hx-target="#member-list" hx-swap="outerHTML" hx-include=".memberFilters"
                       {% if member.free_used_this_month >= member.free_admission_allowance %}data-dashboard-confirm='{"title":"Monthly allowance already used","message":"{{ member.full_name|escapejs }} has used {{ member.free_used_this_month }} of {{ member.free_admission_allowance }} free admission(s) this month. Record another?","confirmLabel":"Record anyway"}'{% endif %}>Redeem</button>
               {% endif %}
+              {% if perms.audience.change_member %}
               <button class="btn btn-secondary btn-sm" hx-get="{% url 'dashboard:member_edit' member.pk %}"
                       hx-target="#drawer-content" @click="$store.drawer.show('Edit Member')">Edit</button>
+              {% endif %}
+              {% if perms.audience.delete_member %}
               <button class="btn btn-danger btn-sm"
                       hx-post="{% url 'dashboard:member_delete' member.pk %}"
                       hx-target="#member-list" hx-swap="outerHTML"
                       data-dashboard-confirm='{"title":"Delete Member","message":"Delete {{ member.full_name|escapejs }} and their {{ member.terms.count }} membership term(s)? This cannot be undone.","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
+              {% endif %}
             </div>
           </td>
         </tr>
@@ -44,8 +48,10 @@
     <div class="empty-state-icon">🎟️</div>
     <h3 class="empty-state-title">No Members Yet</h3>
     <p class="empty-state-description">Memberships sold through Square are recorded here by hand. Add the roster as people join or renew.</p>
+    {% if perms.audience.add_member %}
     <button class="btn btn-primary" hx-get="{% url 'dashboard:member_create' %}"
             hx-target="#drawer-content" @click="$store.drawer.show('New Member')">Add First Member</button>
+    {% endif %}
   </div>
   {% endif %}
 </div>

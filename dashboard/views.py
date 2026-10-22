@@ -71,57 +71,78 @@ class HomeView(StaffRequiredMixin, TemplateView):
         today_start, today_end = day_range(today, tomorrow)
         tomo_start, tomo_end = day_range(tomorrow, day_after)
 
-        today_showtimes = list(
-            Showtime.objects.filter(starts_at__gte=today_start, starts_at__lt=today_end)
-            .select_related("screen")
-            .prefetch_related("engagement__engagement_films__film")
-            .order_by("starts_at")
-        )
+        user = self.request.user
         now = timezone.now()
-        availability = for_showtimes(
-            today_showtimes, now, square_enabled=square_enabled())
-        for st in today_showtimes:
-            st.online_sold = availability[st.pk].sold
-        tomorrow_count = Showtime.objects.filter(
-            starts_at__gte=tomo_start, starts_at__lt=tomo_end, is_cancelled=False).count()
+
+        today_showtimes = []
+        # Any non-zero value suppresses the no-showtimes alert, which is
+        # filtered out for this user anyway.
+        tomorrow_count = 1
+        if user.has_perm("cinema.view_showtime"):
+            today_showtimes = list(
+                Showtime.objects.filter(
+                    starts_at__gte=today_start, starts_at__lt=today_end)
+                .select_related("screen")
+                .prefetch_related("engagement__engagement_films__film")
+                .order_by("starts_at")
+            )
+            availability = for_showtimes(
+                today_showtimes, now, square_enabled=square_enabled())
+            for st in today_showtimes:
+                st.online_sold = availability[st.pk].sold
+            tomorrow_count = Showtime.objects.filter(
+                starts_at__gte=tomo_start, starts_at__lt=tomo_end,
+                is_cancelled=False).count()
 
         # Only what the alerts can mention: drafts, and runs not over yet.
         engagements = list(
             Engagement.objects.filter(Q(status=EngagementStatus.DRAFT) | Q(end_date__gte=today))
             .prefetch_related("engagement_films__film"))
 
-        user = self.request.user
+        can_orders = user.has_perm("tickets.view_ticketorder")
+        can_pulls = user.has_perm("boxoffice.view_salespull")
         ctx.update({
             # Same rule as the engagements page's Current tab.
             "active_engagements_count": sum(1 for e in engagements if e.is_active),
-            "screens_count": Screen.objects.count(),
+            "screens_count": (
+                Screen.objects.count() if user.has_perm("cinema.view_screen") else 0),
             "today_showtimes": today_showtimes,
             "today_showtimes_count": sum(1 for st in today_showtimes if not st.is_cancelled),
-            "alerts": build_smart_alerts(
-                engagements,
-                tomorrow_count,
-                today,
-                new_rental_inquiries=RentalInquiry.objects.filter(
-                    status=InquiryStatus.NEW
-                ).count(),
-                new_ad_inquiries=AdInquiry.objects.filter(
-                    status=InquiryStatus.NEW
-                ).count(),
-                new_voicemails=Voicemail.objects.filter(
-                    status=VoicemailStatus.NEW
-                ).count(),
-                square_pull_status=(
-                    pull_status(today - datetime.timedelta(days=1))
-                    if square_enabled() else None),
-                square_sync_failures=SquareItem.objects.filter(
-                    deleted_at__isnull=True).exclude(last_error="").count(),
-                square_membership_failures=MembershipSale.objects.filter(
-                    status=MembershipSale.Status.FAILED).count(),
-                ticket_failures=ticket_alerts.failures_count(),
-                nearly_sold_out=ticket_alerts.nearly_sold_out(now),
-                cancelled_with_orders=ticket_alerts.cancelled_with_orders(),
-            ),
-            "sales_panel": sales_panel(today),
+            "alerts": [
+                alert for alert in build_smart_alerts(
+                    engagements,
+                    tomorrow_count,
+                    today,
+                    new_rental_inquiries=(
+                        RentalInquiry.objects.filter(status=InquiryStatus.NEW).count()
+                        if user.has_perm("cinema.view_rentalinquiry") else 0),
+                    new_ad_inquiries=(
+                        AdInquiry.objects.filter(status=InquiryStatus.NEW).count()
+                        if user.has_perm("cinema.view_adinquiry") else 0),
+                    new_voicemails=(
+                        Voicemail.objects.filter(status=VoicemailStatus.NEW).count()
+                        if user.has_perm("phone.view_voicemail") else 0),
+                    square_pull_status=(
+                        pull_status(today - datetime.timedelta(days=1))
+                        if can_pulls and square_enabled() else None),
+                    square_sync_failures=(
+                        SquareItem.objects.filter(
+                            deleted_at__isnull=True).exclude(last_error="").count()
+                        if user.has_perm("cinema.view_engagement") else 0),
+                    square_membership_failures=(
+                        MembershipSale.objects.filter(
+                            status=MembershipSale.Status.FAILED).count()
+                        if user.has_perm("boxoffice.view_membershipsale") else 0),
+                    ticket_failures=(
+                        ticket_alerts.failures_count() if can_orders else 0),
+                    nearly_sold_out=(
+                        ticket_alerts.nearly_sold_out(now) if can_orders else ()),
+                    cancelled_with_orders=(
+                        ticket_alerts.cancelled_with_orders() if can_orders else ()),
+                )
+                if user.has_perm(alert["perm"])
+            ],
+            "sales_panel": sales_panel(today) if can_pulls else None,
             "display_name": user.get_short_name() or user.get_username(),
         })
         return ctx
@@ -144,6 +165,7 @@ def screen_labels() -> dict:
 
 
 class ScreenListView(StaffRequiredMixin, TemplateView):
+    permission_required = "cinema.view_screen"
     template_name = "dashboard/screens.html"
 
     def get_context_data(self, **kwargs):
@@ -183,6 +205,8 @@ def _screen_list_response_error(request, message):
 
 
 class ScreenCreateView(StaffRequiredMixin, View):
+    permission_required = "cinema.add_screen"
+
     def get(self, request):
         return _render_screen_form(request, ScreenForm(),
                                    reverse("dashboard:screen_create"), "Create Screen")
@@ -197,6 +221,8 @@ class ScreenCreateView(StaffRequiredMixin, View):
 
 
 class ScreenEditView(StaffRequiredMixin, View):
+    permission_required = "cinema.change_screen"
+
     def get(self, request, pk):
         screen = get_object_or_404(Screen, pk=pk)
         return _render_screen_form(request, ScreenForm(instance=screen),
@@ -213,6 +239,8 @@ class ScreenEditView(StaffRequiredMixin, View):
 
 
 class ScreenDeleteView(StaffRequiredMixin, View):
+    permission_required = "cinema.delete_screen"
+
     def post(self, request, pk):
         screen = get_object_or_404(Screen, pk=pk)
         name = screen.name
@@ -230,6 +258,8 @@ class ScreenDeleteView(StaffRequiredMixin, View):
 
 
 class FilmSearchView(StaffRequiredMixin, View):
+    permission_required = "cinema.view_film"
+
     def get(self, request):
         q = request.GET.get("q", "").strip()
         films = Film.objects.filter(title__icontains=q)[:8] if q else Film.objects.none()
@@ -237,6 +267,8 @@ class FilmSearchView(StaffRequiredMixin, View):
 
 
 class FilmSearchTMDBView(StaffRequiredMixin, View):
+    permission_required = "cinema.add_film"
+
     def get(self, request):
         q = request.GET.get("q", "").strip()
         ctx = {"q": q, "results": [], "error": False}
@@ -249,6 +281,8 @@ class FilmSearchTMDBView(StaffRequiredMixin, View):
 
 
 class FilmFromTMDBView(StaffRequiredMixin, View):
+    permission_required = "cinema.add_film"
+
     def post(self, request):
         tmdb_id = request.POST.get("tmdb_id")
         resp = HttpResponse(status=204)
@@ -303,6 +337,8 @@ def engagement_list_context(request):
 
 
 class EngagementListView(StaffRequiredMixin, TemplateView):
+    permission_required = "cinema.view_engagement"
+
     def get_template_names(self):
         # A tab click is an HTMX GET that swaps only the #engagement-list region,
         # so return the partial (not the full base-extending page) for HX requests.
@@ -317,6 +353,7 @@ class EngagementListView(StaffRequiredMixin, TemplateView):
 
 
 class EngagementDetailView(StaffRequiredMixin, TemplateView):
+    permission_required = "cinema.view_engagement"
     template_name = "dashboard/engagement_detail.html"
 
     def get_context_data(self, **kwargs):
@@ -405,6 +442,8 @@ def _save_toast(engagement, message):
 
 
 class EngagementCreateView(StaffRequiredMixin, View):
+    permission_required = "cinema.add_engagement"
+
     def get(self, request):
         return _render_engagement_form(request, EngagementForm(),
                                        reverse("dashboard:engagement_create"), "Create Engagement", [])
@@ -433,6 +472,8 @@ class EngagementCreateView(StaffRequiredMixin, View):
 
 
 class EngagementEditView(StaffRequiredMixin, View):
+    permission_required = "cinema.change_engagement"
+
     def get(self, request, pk):
         engagement = get_object_or_404(Engagement, pk=pk)
         film_ids = list(engagement.engagement_films.order_by("position").values_list("film_id", flat=True))
@@ -462,6 +503,8 @@ class EngagementEditView(StaffRequiredMixin, View):
 
 
 class EngagementStatusView(StaffRequiredMixin, View):
+    permission_required = "cinema.change_engagement"
+
     def post(self, request, pk):
         engagement = get_object_or_404(Engagement, pk=pk)
         new_status = request.POST.get("status")
@@ -490,6 +533,8 @@ def _clear_dead_orders(orders):
 
 
 class EngagementDeleteView(StaffRequiredMixin, View):
+    permission_required = "cinema.delete_engagement"
+
     def post(self, request, pk):
         engagement = get_object_or_404(Engagement, pk=pk)
         tab = request.GET.get("tab") or "CURRENT"
@@ -509,6 +554,8 @@ class EngagementDeleteView(StaffRequiredMixin, View):
 
 
 class EngagementSquareRetryView(StaffRequiredMixin, View):
+    permission_required = "cinema.change_engagement"
+
     def post(self, request, pk):
         engagement = get_object_or_404(Engagement, pk=pk)
         sync(engagement)
@@ -591,6 +638,8 @@ def _render_showtime_form(request, engagement, action_url, submit_label, mode,
 
 
 class ShowtimeCreateView(StaffRequiredMixin, View):
+    permission_required = "cinema.add_showtime"
+
     def get(self, request, eng_pk):
         engagement = get_object_or_404(Engagement, pk=eng_pk)
         return _render_showtime_form(
@@ -636,6 +685,8 @@ class ShowtimeCreateView(StaffRequiredMixin, View):
 
 
 class ShowtimeEditView(StaffRequiredMixin, View):
+    permission_required = "cinema.change_showtime"
+
     def get(self, request, pk):
         st = get_object_or_404(
             Showtime.objects.select_related("engagement", "screen"), pk=pk)
@@ -696,6 +747,8 @@ class ShowtimeEditView(StaffRequiredMixin, View):
 
 
 class ShowtimeDeleteView(StaffRequiredMixin, View):
+    permission_required = "cinema.delete_showtime"
+
     def post(self, request, pk):
         st = get_object_or_404(Showtime.objects.select_related("engagement"), pk=pk)
         engagement = st.engagement
@@ -717,6 +770,8 @@ def _render_bulk_form(request, engagement, start_date="", end_date="", captions=
 
 
 class ShowtimeBulkView(StaffRequiredMixin, View):
+    permission_required = "cinema.add_showtime"
+
     def get(self, request, eng_pk):
         engagement = get_object_or_404(Engagement, pk=eng_pk)
         return _render_bulk_form(request, engagement,
@@ -790,6 +845,8 @@ class EngagementSocialCardView(StaffRequiredMixin, View):
     Served inline for the dashboard preview; with ?download=1 as an
     attachment for the download buttons.
     """
+
+    permission_required = "cinema.view_engagement"
 
     def get(
         self, request: HttpRequest, pk: int, platform: str

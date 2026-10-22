@@ -44,14 +44,18 @@
             <td>{{ inquiry.event_type|default:"—" }}</td>
             <td>{{ inquiry.created_at|date:"M j, Y" }}</td>
             <td>
-              <form method="post" action="{% url 'dashboard:rental_inquiry_status' inquiry.pk %}">
-                {% csrf_token %}
-                <select class="input inputCompact" name="status" onchange="this.form.submit()">
-                  {% for value, label in statuses %}
-                    <option value="{{ value }}" {% if value == inquiry.status %}selected{% endif %}>{{ label }}</option>
-                  {% endfor %}
-                </select>
-              </form>
+              {% if perms.cinema.change_rentalinquiry %}
+                <form method="post" action="{% url 'dashboard:rental_inquiry_status' inquiry.pk %}">
+                  {% csrf_token %}
+                  <select class="input inputCompact" name="status" onchange="this.form.submit()">
+                    {% for value, label in statuses %}
+                      <option value="{{ value }}" {% if value == inquiry.status %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </form>
+              {% else %}
+                {{ inquiry.get_status_display }}
+              {% endif %}
             </td>
           </tr>
           {% if inquiry.message %}

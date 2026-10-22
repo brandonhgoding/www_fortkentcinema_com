@@ -8,6 +8,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase
 from django.urls import NoReverseMatch, reverse
+from dashboard.tests.helpers import make_staff
 
 
 class SponsorPageRemovedTests(TestCase):
@@ -68,14 +69,12 @@ class HomeSponsorshipRemovedTests(TestCase):
 
 class DashboardSponsorshipRemovedTests(TestCase):
     def test_dashboard_inquiries_gone(self):
-        from django.contrib.auth import get_user_model
-
         with self.assertRaises(NoReverseMatch):
             reverse("dashboard:inquiries")
         with self.assertRaises(NoReverseMatch):
             reverse("dashboard:inquiry_status", args=[1])
-        staff = get_user_model().objects.create_user(
-            username="staff", password="pw", is_staff=True
+        staff = make_staff(
+            username="staff", password="pw"
         )
         self.client.force_login(staff)
         html = self.client.get(reverse("dashboard:home")).content.decode()

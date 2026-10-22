@@ -20,12 +20,16 @@
           <td>{{ term.purchased_at|date:"M j, Y"|default:"—" }}</td>
           <td>
             <div class="actions">
+              {% if perms.audience.change_membershipterm %}
               <button class="btn btn-secondary btn-sm" hx-get="{% url 'dashboard:term_edit' term.pk %}"
                       hx-target="#drawer-content" @click="$store.drawer.show('Edit Term')">Edit</button>
+              {% endif %}
+              {% if perms.audience.delete_membershipterm %}
               <button class="btn btn-danger btn-sm"
                       hx-post="{% url 'dashboard:term_delete' term.pk %}"
                       hx-target="#term-list" hx-swap="outerHTML"
                       data-dashboard-confirm='{"title":"Delete Term","message":"Delete this membership term? This cannot be undone.","confirmLabel":"Delete","variant":"danger"}'>Delete</button>
+              {% endif %}
             </div>
           </td>
         </tr>

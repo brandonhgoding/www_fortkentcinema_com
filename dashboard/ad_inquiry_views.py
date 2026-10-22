@@ -12,6 +12,8 @@ from .mixins import StaffRequiredMixin
 
 
 class AdInquiryListView(StaffRequiredMixin, View):
+    permission_required = "cinema.view_adinquiry"
+
     def get(self, request):
         inquiries = AdInquiry.objects.all()
 
@@ -34,6 +36,8 @@ class AdInquiryListView(StaffRequiredMixin, View):
 
 
 class AdInquiryStatusView(StaffRequiredMixin, View):
+    permission_required = "cinema.change_adinquiry"
+
     def post(self, request, pk: int):
         inquiry = get_object_or_404(AdInquiry, pk=pk)
         status = (request.POST.get("status") or "").strip()
