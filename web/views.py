@@ -687,8 +687,10 @@ class VoteCastView(View):
         # (not even "wrong option" versus "right option").
         if poll is None or poll.status == PollStatus.DRAFT or not poll.has_started():
             return HttpResponseBadRequest("Unknown poll.")
-        option_id = request.POST.get("option")
-        if not option_id:
+        # Parsed like the poll id: junk is a 400, not a ValueError from the
+        # ORM (a 500, and an error email, for anyone who posts "abc").
+        option_id = _pk_or_none(request.POST.get("option"))
+        if option_id is None:
             return HttpResponseBadRequest("No option selected.")
 
         # Honeypot. A real person never fills this in; bots fill everything.

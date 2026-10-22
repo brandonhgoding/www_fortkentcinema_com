@@ -60,7 +60,7 @@
           name="option"
           id="option-{{ option.pk }}"
           value="{{ option.pk }}"
-          {% if form.option == option.pk|stringformat:"s" %}checked{% endif %}
+          {% if form.option == option.pk %}checked{% endif %}
           required
         />
         {% if option.film.poster_url %}
