@@ -116,6 +116,27 @@ class DoorListTests(DoorListTestCase):
         self.assertIn('name="online_allowance"', html)
         self.assertIn("0 means in-person purchase only", html)
 
+    def test_view_only_user_sees_door_list_without_actions(self) -> None:
+        order = self.paid(lines={"adult": 3})
+        self.st.is_cancelled = True
+        self.st.save()
+        make_staff(username="viewer", perms=("tickets.view_ticketorder",))
+        self.client.login(username="viewer", password="pw12345")
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        self.assertIn(order.number, html)
+        self.assertIn("3 / 50", html)  # the allowance value still printed
+        for name in (
+            "ticket_order_arrive",
+            "ticket_order_refund",
+            "showtime_allowance",
+            "showtime_refund_all",
+        ):
+            with self.subTest(name=name):
+                args = [self.st.pk if "showtime" in name else order.pk]
+                self.assertNotIn(reverse(f"dashboard:{name}", args=args), html)
+
     def test_search_filters_by_name_or_number(self) -> None:
         ann = self.paid("Ann Lee")
         zed = self.paid("Zed Moss")

@@ -34,6 +34,17 @@ PERMISSION_TABLE: list[tuple[str, dict, str, str | tuple[str, ...]]] = [
     ("showtime_bulk", {"eng_pk": 999999}, "get", "cinema.add_showtime"),
     ("showtime_edit", {"pk": 999999}, "get", "cinema.change_showtime"),
     ("showtime_delete", {"pk": 999999}, "post", "cinema.delete_showtime"),
+    ("showtime_orders", {"pk": 999999}, "get", "tickets.view_ticketorder"),
+    ("showtime_orders_export", {"pk": 999999}, "get", "tickets.view_ticketorder"),
+    ("tickets", {}, "get", "tickets.view_ticketorder"),
+    ("ticket_orders", {}, "get", "tickets.view_ticketorder"),
+    ("ticket_orders_export", {}, "get", "tickets.view_ticketorder"),
+    ("showtime_allowance", {"pk": 999999}, "post", "cinema.change_showtime"),
+    ("showtime_refund_all", {"pk": 999999}, "post", "tickets.change_ticketorder"),
+    ("ticket_order_arrive", {"pk": 999999}, "post", "tickets.change_ticketorder"),
+    ("ticket_order_unarrive", {"pk": 999999}, "post", "tickets.change_ticketorder"),
+    ("ticket_order_retry", {"pk": 999999}, "post", "tickets.change_ticketorder"),
+    ("ticket_order_refund", {"pk": 999999}, "post", "tickets.change_ticketorder"),
 ]
 
 

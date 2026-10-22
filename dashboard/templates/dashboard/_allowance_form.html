@@ -1,5 +1,6 @@
 <div id="online-count" class="onlineCount">
   <p class="page-subtitle"><strong>{{ sold }} / {{ allowance }}</strong> online tickets taken</p>
+  {% if perms.cinema.change_showtime %}
   <form method="post" action="{% url 'dashboard:showtime_allowance' showtime.pk %}"
         hx-post="{% url 'dashboard:showtime_allowance' showtime.pk %}"
         hx-target="#online-count" hx-swap="outerHTML" class="actions">
@@ -12,4 +13,5 @@
   </form>
   <p class="fieldHint" id="online-allowance-help">Blank uses the default; 0 means in-person purchase only.</p>
   {% if error %}<p class="fieldHint" id="online-allowance-error" role="alert">{{ error }}</p>{% endif %}
+  {% endif %}
 </div>

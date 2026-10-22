@@ -146,6 +146,8 @@ def _row_response(request, pk, toast: tuple[str, str] | None = None):
 class ShowtimeOrdersView(StaffRequiredMixin, View):
     """The door list; an HTMX request (the search box) gets just the rows."""
 
+    permission_required = "tickets.view_ticketorder"
+
     def get(self, request, pk):
         showtime = _get_showtime(pk)
         q = request.GET.get("q", "").strip()
@@ -189,6 +191,8 @@ def _csv_time(value) -> str:
 
 
 class ShowtimeOrdersExportView(StaffRequiredMixin, View):
+    permission_required = "tickets.view_ticketorder"
+
     def get(self, request, pk):
         showtime = _get_showtime(pk)
         local = showtime.starts_at.astimezone(CINEMA_TZ)
@@ -202,6 +206,8 @@ class ShowtimeOrdersExportView(StaffRequiredMixin, View):
 
 class ShowtimeAllowanceView(StaffRequiredMixin, View):
     """Set the online allowance from the door list; blank means the default."""
+
+    permission_required = "cinema.change_showtime"
 
     def post(self, request, pk):
         showtime = _get_showtime(pk)
@@ -228,6 +234,8 @@ class ShowtimeAllowanceView(StaffRequiredMixin, View):
 class ShowtimeRefundAllView(StaffRequiredMixin, View):
     """Refund every sold order on the showtime, then show the list again."""
 
+    permission_required = "tickets.change_ticketorder"
+
     def post(self, request, pk):
         showtime = _get_showtime(pk)
         # The banner only shows on a cancelled showtime, but a stale tab or a
@@ -250,6 +258,8 @@ class ShowtimeRefundAllView(StaffRequiredMixin, View):
 
 
 class TicketOrderArriveView(StaffRequiredMixin, View):
+    permission_required = "tickets.change_ticketorder"
+
     def post(self, request, pk):
         order = get_object_or_404(TicketOrder, pk=pk)
         if order.counts_as_sold and order.redeemed_at is None:
@@ -260,6 +270,8 @@ class TicketOrderArriveView(StaffRequiredMixin, View):
 
 
 class TicketOrderUnarriveView(StaffRequiredMixin, View):
+    permission_required = "tickets.change_ticketorder"
+
     def post(self, request, pk):
         order = get_object_or_404(TicketOrder, pk=pk)
         order.redeemed_at = None
@@ -270,6 +282,8 @@ class TicketOrderUnarriveView(StaffRequiredMixin, View):
 
 class TicketOrderRetryView(StaffRequiredMixin, View):
     """Send the ticket email again for a paid order whose email failed."""
+
+    permission_required = "tickets.change_ticketorder"
 
     def post(self, request, pk):
         order = get_object_or_404(TicketOrder, pk=pk)
@@ -285,6 +299,8 @@ class TicketOrderRetryView(StaffRequiredMixin, View):
 
 
 class TicketOrderRefundView(StaffRequiredMixin, View):
+    permission_required = "tickets.change_ticketorder"
+
     def post(self, request, pk):
         order = get_object_or_404(TicketOrder, pk=pk)
         if not order.counts_as_sold:
@@ -368,6 +384,8 @@ def _days(showtimes, today: datetime.date) -> list[dict]:
 class TicketSummaryView(StaffRequiredMixin, View):
     """Online sales per showtime: upcoming from today, or past (paginated)."""
 
+    permission_required = "tickets.view_ticketorder"
+
     def get(self, request):
         tab = request.GET.get("tab")
         tab = tab if tab in SUMMARY_TABS else SUMMARY_TABS[0]
@@ -401,6 +419,8 @@ def _log_orders(request) -> tuple:
 
 
 class TicketOrderListView(StaffRequiredMixin, View):
+    permission_required = "tickets.view_ticketorder"
+
     def get(self, request):
         orders, status = _log_orders(request)
         page_obj = Paginator(orders, PER_PAGE).get_page(request.GET.get("page"))
@@ -414,6 +434,8 @@ class TicketOrderListView(StaffRequiredMixin, View):
 
 class TicketOrderLogExportView(StaffRequiredMixin, View):
     """The order log as CSV: the door-list columns after the film and showtime."""
+
+    permission_required = "tickets.view_ticketorder"
 
     def get(self, request):
         orders, status = _log_orders(request)
