@@ -5,13 +5,14 @@ from django.test import TestCase
 from django.urls import reverse
 
 from cinema.models import Film, Poll, PollOption, PollStatus, Vote
+from dashboard.tests.helpers import make_staff
 
 User = get_user_model()
 
 
 class PollListTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
 
     def test_empty_state(self) -> None:
@@ -43,7 +44,7 @@ class PollListTests(TestCase):
 
 class PollCreateEditTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
 
     def test_create_form_renders(self) -> None:
@@ -104,7 +105,7 @@ class PollCreateEditTests(TestCase):
 
 class PollDeleteTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.poll = Poll.objects.create(title="Round One", status=PollStatus.OPEN)
         self.film = Film.objects.create(title="Casablanca")
@@ -193,7 +194,7 @@ class PollDeleteTests(TestCase):
 
 class PollVotersTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.poll = Poll.objects.create(title="Round One", status=PollStatus.OPEN)
         option = PollOption.objects.create(
@@ -250,7 +251,7 @@ class PollVoteRemoveTests(TestCase):
     """
 
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.poll = Poll.objects.create(title="Round One", status=PollStatus.OPEN)
         self.option = PollOption.objects.create(

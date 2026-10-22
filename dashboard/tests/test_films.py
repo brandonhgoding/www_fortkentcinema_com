@@ -4,16 +4,14 @@ from unittest import mock
 
 from cinema.models import Film
 from django.conf import settings as dj_settings
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-
-User = get_user_model()
+from dashboard.tests.helpers import make_staff
 
 
 class FilmSearchTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
 
     def test_local_search_matches(self) -> None:
@@ -55,7 +53,7 @@ class FilmSearchTests(TestCase):
 
 class FilmFromTMDBTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
 
     @mock.patch("dashboard.views.import_film_from_tmdb")
@@ -82,7 +80,7 @@ class FilmFromTMDBTests(TestCase):
 
 class FilmComboTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
 
     def test_filmcombo_registered(self) -> None:

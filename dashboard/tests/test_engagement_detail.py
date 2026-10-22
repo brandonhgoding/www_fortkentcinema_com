@@ -1,11 +1,9 @@
 import datetime
 
 from cinema.models import Engagement, EngagementFilm, Film, Screen
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-
-User = get_user_model()
+from dashboard.tests.helpers import make_staff
 
 
 def make_eng(screen, films=(), **over):
@@ -20,7 +18,7 @@ def make_eng(screen, films=(), **over):
 
 class EngagementDetailPageTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.screen = Screen.objects.create(name="Screen 1", capacity=100)
         self.film = Film.objects.create(title="Dune", runtime_minutes=155,
@@ -70,7 +68,7 @@ from django.utils import timezone
 
 class ShowtimeListTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.screen = Screen.objects.create(name="Screen 1", capacity=100)
         self.film = Film.objects.create(title="Dune", runtime_minutes=155)
@@ -102,7 +100,7 @@ TZ = ZoneInfo("America/New_York")
 
 class ShowtimeCreateEditTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.screen = Screen.objects.create(name="Screen 1", capacity=100)
         self.film = Film.objects.create(title="Dune", runtime_minutes=155)
@@ -181,7 +179,7 @@ class ShowtimeCreateEditTests(TestCase):
 
 class ShowtimeDeleteTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.screen = Screen.objects.create(name="Screen 1", capacity=100)
         self.film = Film.objects.create(title="Dune", runtime_minutes=155)
@@ -200,7 +198,7 @@ class ShowtimeDeleteTests(TestCase):
 
 class ShowtimeBulkTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.screen = Screen.objects.create(name="Screen 1", capacity=100)
         self.film = Film.objects.create(title="Dune", runtime_minutes=100)

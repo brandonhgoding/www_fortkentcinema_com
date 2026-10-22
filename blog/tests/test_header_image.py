@@ -25,10 +25,10 @@ import tempfile
 from pathlib import Path
 
 from blog.models import BlogAuthor, BlogCategory, BlogPost
-from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from dashboard.tests.helpers import make_staff
 
 # A minimal valid PNG (1x1). ImageField validates that the file is a real image.
 PNG = (
@@ -216,7 +216,7 @@ class EditorHeaderImageTests(TestCase):
         super().tearDownClass()
 
     def test_replacing_the_image_changes_its_url_in_the_editor(self):
-        get_user_model().objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         author = BlogAuthor.objects.create(first_name="Ada", last_name="Lovelace")
         cat = BlogCategory.objects.create(name="Reviews")
@@ -296,7 +296,7 @@ class DeletedPostImageTests(TestCase):
         self.assertFalse(path.exists())
 
     def test_dashboard_delete_removes_the_file(self):
-        get_user_model().objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         post = self.make_post("Gone From Dashboard")
         path = self.path(post)

@@ -4,7 +4,6 @@ from zoneinfo import ZoneInfo
 
 from boxoffice.models import SaleLine
 from cinema.models import Film, Screen, Showtime
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -12,15 +11,15 @@ from tickets.availability import remaining
 from tickets.tests.factories import make_order
 
 from dashboard.tests.test_engagement_detail import make_eng
+from dashboard.tests.helpers import make_staff
 
-User = get_user_model()
 TZ = ZoneInfo("America/New_York")
 ALLOWANCE_ERROR = "Online allowance must be a whole number."
 
 
 class ShowtimeAllowanceTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.screen = Screen.objects.create(name="Screen 1", capacity=100)
         film = Film.objects.create(title="Dune", runtime_minutes=155)
@@ -184,7 +183,7 @@ class ShowtimeAllowanceTests(TestCase):
 
 class ShowtimeOrdersStubTests(TestCase):
     def test_orders_page_resolves_for_staff(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         screen = Screen.objects.create(name="Screen 1", capacity=100)
         film = Film.objects.create(title="Dune", runtime_minutes=155)

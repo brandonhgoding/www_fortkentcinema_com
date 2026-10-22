@@ -6,6 +6,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from phone.models import Voicemail, VoicemailStatus
 from phone.recordings import RecordingError
+from dashboard.tests.helpers import make_staff
 
 SID = "RE" + "1" * 32
 RECORDING_URL = f"https://api.twilio.com/2010-04-01/Accounts/AC1/Recordings/{SID}"
@@ -17,8 +18,8 @@ UNCONFIGURED = override_settings(TWILIO_ACCOUNT_SID="")
 
 class VoicemailTestCase(TestCase):
     def setUp(self) -> None:
-        self.staff = get_user_model().objects.create_user(
-            username="staff", password="pw", is_staff=True
+        self.staff = make_staff(
+            username="staff", password="pw"
         )
         self.voicemail = Voicemail.objects.create(
             recording_sid=SID,

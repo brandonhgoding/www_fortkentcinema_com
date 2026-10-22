@@ -1,15 +1,13 @@
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
 from audience.models import Subscriber
-
-User = get_user_model()
+from dashboard.tests.helpers import make_staff
 
 
 class SubscriberListTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
 
     def test_empty_state(self) -> None:
@@ -50,7 +48,7 @@ class SubscriberListTests(TestCase):
 
 class SubscriberExportTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
 
     def test_export_is_a_csv_attachment(self) -> None:

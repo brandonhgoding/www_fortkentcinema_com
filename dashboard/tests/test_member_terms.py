@@ -2,14 +2,12 @@ import datetime
 import json
 from decimal import Decimal
 
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
 from audience.models import Member, MembershipTerm, MembershipTier
-
-User = get_user_model()
+from dashboard.tests.helpers import make_staff
 
 
 def a_tier(slug="individual"):
@@ -24,7 +22,7 @@ def make_member():
 
 class MemberDetailTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.member = Member.objects.create(
             first_name="Ada",
@@ -83,7 +81,7 @@ class MemberDetailTests(TestCase):
 
 class TermCreateTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.member = Member.objects.create(
             first_name="Ada", last_name="Lovelace", email="ada@example.com"
@@ -184,7 +182,7 @@ class TermCreateTests(TestCase):
 
 class TermEditDeleteTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.member = Member.objects.create(
             first_name="Ada", last_name="Lovelace", email="ada@example.com"
@@ -322,7 +320,7 @@ class RenewPrefillTests(TestCase):
     """The Renew button opens the same form as Add Term, pre-answered."""
 
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.member = make_member()
 
@@ -504,7 +502,7 @@ class EndOfTimeTermTests(TestCase):
     """A term at or near date.max must not turn Renew or Add Term into a 500."""
 
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.member = make_member()
 
@@ -538,7 +536,7 @@ class OverlapFlagTests(TestCase):
     so the roster flags the pair instead of refusing the save."""
 
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.member = make_member()
 

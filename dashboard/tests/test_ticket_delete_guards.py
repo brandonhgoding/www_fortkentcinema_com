@@ -2,13 +2,12 @@ import json
 from unittest import mock
 
 from cinema.models import Engagement, Showtime
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from tickets.models import TicketOrder
 from tickets.tests.factories import age, make_order, make_showtime
+from dashboard.tests.helpers import make_staff
 
-User = get_user_model()
 REFUSED = "Has online orders. Cancel it instead."
 
 
@@ -18,7 +17,7 @@ def toast(resp) -> dict:
 
 class DeleteGuardTestCase(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="sam", password="pw12345", is_staff=True)
+        make_staff(username="sam", password="pw12345")
         self.client.login(username="sam", password="pw12345")
         self.st = make_showtime()
 

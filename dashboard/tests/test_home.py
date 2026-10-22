@@ -7,6 +7,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from tickets.tests.factories import make_order
+from dashboard.tests.helpers import make_staff
 
 User = get_user_model()
 
@@ -23,8 +24,7 @@ def make_eng(screen, film, *, status="CONFIRMED", start=None, end=None):
 
 class HomeViewTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="staffer", password="pw12345", is_staff=True,
-                                 first_name="Bran")
+        make_staff(username="staffer", password="pw12345", first_name="Bran")
         self.client.login(username="staffer", password="pw12345")
         self.screen = Screen.objects.create(name="Screen 1", capacity=100)
         self.film = Film.objects.create(title="Dune", runtime_minutes=155)
@@ -87,7 +87,7 @@ class HomeViewTests(TestCase):
 
 class HomeRenderTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.screen = Screen.objects.create(name="Screen 1", capacity=100)
         self.film = Film.objects.create(title="Dune", runtime_minutes=155)

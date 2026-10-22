@@ -1,4 +1,3 @@
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
@@ -11,13 +10,12 @@ from cinema.models import (
     Screen,
     Vote,
 )
-
-User = get_user_model()
+from dashboard.tests.helpers import make_staff
 
 
 class PollStatusTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.poll = Poll.objects.create(title="Round One")
         PollOption.objects.create(
@@ -108,7 +106,7 @@ class PollStatusTests(TestCase):
 
 class PollAnnounceTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.poll = Poll.objects.create(title="Round One", status=PollStatus.CLOSED)
         self.leader = PollOption.objects.create(

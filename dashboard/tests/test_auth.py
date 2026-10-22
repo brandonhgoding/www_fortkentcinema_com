@@ -36,8 +36,8 @@ urlpatterns = [
 
 class DashboardAuthTests(TestCase):
     def setUp(self) -> None:
-        self.staff = User.objects.create_user(
-            username="staffer", password="pw12345", is_staff=True
+        self.staff = make_staff(
+            username="staffer", password="pw12345"
         )
         self.plain = User.objects.create_user(
             username="plain", password="pw12345", is_staff=False

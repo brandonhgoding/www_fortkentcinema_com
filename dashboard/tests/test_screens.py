@@ -2,13 +2,14 @@ from cinema.models import Screen
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from dashboard.tests.helpers import make_staff
 
 User = get_user_model()
 
 
 class ScreenListTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
 
     def test_empty_state(self) -> None:
@@ -44,7 +45,7 @@ class ScreenListTests(TestCase):
 
 class ScreenCreateEditTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
 
     def test_get_create_form(self) -> None:
@@ -103,7 +104,7 @@ from cinema.models import Engagement
 
 class ScreenDeleteTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
 
     def test_delete_unreferenced(self) -> None:
@@ -139,7 +140,7 @@ class HtmxCsrfTests(TestCase):
     <button> (not inside a <form>), so htmx must supply the header itself."""
 
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
 
     def test_body_has_csrf_hx_headers(self) -> None:
         self.client.login(username="s", password="pw12345")
@@ -185,7 +186,7 @@ class HtmxCsrfTests(TestCase):
 
 class FieldErrorStylingTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
 
     def test_field_error_styling_linked(self) -> None:

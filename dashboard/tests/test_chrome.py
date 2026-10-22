@@ -1,16 +1,14 @@
 import re
 
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-
-User = get_user_model()
+from dashboard.tests.helpers import make_staff
 
 
 class ChromeTests(TestCase):
     def setUp(self) -> None:
-        self.staff = User.objects.create_user(
-            username="staffer", password="pw12345", is_staff=True
+        self.staff = make_staff(
+            username="staffer", password="pw12345"
         )
         self.client.login(username="staffer", password="pw12345")
 

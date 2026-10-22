@@ -1,15 +1,15 @@
 import datetime
 
 from cinema.models import InquiryStatus, RentalInquiry
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from dashboard.tests.helpers import make_staff
 
 
 class RentalInquiryListTests(TestCase):
     def setUp(self) -> None:
-        self.staff = get_user_model().objects.create_user(
-            username="staff", password="pw", is_staff=True
+        self.staff = make_staff(
+            username="staff", password="pw"
         )
         self.inquiry = RentalInquiry.objects.create(
             contact_name="Alex Harper",

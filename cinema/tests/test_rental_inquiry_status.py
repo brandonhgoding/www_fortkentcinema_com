@@ -1,8 +1,8 @@
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
 from cinema.models import RentalInquiry
+from dashboard.tests.helpers import make_staff
 
 
 class InquiryStatusHomeTests(TestCase):
@@ -21,8 +21,8 @@ class InquiryStatusHomeTests(TestCase):
         r = RentalInquiry.objects.create(
             contact_name="A", email="a@b.c", status="WON"
         )
-        staff = get_user_model().objects.create_user(
-            username="staff", password="pw", is_staff=True
+        staff = make_staff(
+            username="staff", password="pw"
         )
         self.client.force_login(staff)
         self.client.post(

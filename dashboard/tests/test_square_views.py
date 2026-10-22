@@ -7,14 +7,12 @@ from boxoffice.models import SquareItem, SquareVariation
 from boxoffice.sync import live_item
 from boxoffice.tests.fakes import FakeGateway
 from cinema.models import Engagement, Film, Screen, Showtime
-from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
 from .test_engagement_detail import make_eng
-
-User = get_user_model()
+from dashboard.tests.helpers import make_staff
 
 
 def retry_url(pk: int) -> str:
@@ -27,7 +25,7 @@ def delete_url(eng: Engagement) -> str:
 
 class StaffTestCase(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.screen = Screen.objects.create(name="S1", capacity=50)
         self.film = Film.objects.create(title="Dune", runtime_minutes=155)

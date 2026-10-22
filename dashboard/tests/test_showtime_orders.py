@@ -12,6 +12,7 @@ from django.test import TestCase
 from django.urls import reverse
 from tickets.models import TicketOrder
 from tickets.tests.factories import make_order, make_showtime
+from dashboard.tests.helpers import make_staff
 
 User = get_user_model()
 TZ = ZoneInfo("America/New_York")
@@ -23,8 +24,8 @@ def toast(resp) -> dict:
 
 class DoorListTestCase(TestCase):
     def setUp(self) -> None:
-        self.staff = User.objects.create_user(
-            username="sam", password="pw12345", is_staff=True, first_name="Sam"
+        self.staff = make_staff(
+            username="sam", password="pw12345", first_name="Sam"
         )
         self.client.login(username="sam", password="pw12345")
         self.st = make_showtime()
@@ -154,7 +155,7 @@ class DoorListTests(DoorListTestCase):
         self.assertIsNone(order.redeemed_by)
 
     def test_arrived_falls_back_to_username(self) -> None:
-        User.objects.create_user(username="kim", password="pw12345", is_staff=True)
+        make_staff(username="kim", password="pw12345")
         self.client.login(username="kim", password="pw12345")
         order = self.paid()
         resp = self.client.post(

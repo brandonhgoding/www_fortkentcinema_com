@@ -1,12 +1,10 @@
 from html.parser import HTMLParser
 
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
 from cinema.models import Film, Poll, PollOption, PollStatus, Vote
-
-User = get_user_model()
+from dashboard.tests.helpers import make_staff
 
 
 class _SearchBoxAncestors(HTMLParser):
@@ -41,7 +39,7 @@ def _hx_vals_above_search_box(html: str) -> list[str]:
 
 class PollDetailTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.poll = Poll.objects.create(title="Round One")
 
@@ -95,7 +93,7 @@ class PollDetailTests(TestCase):
 
 class PollOptionTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.poll = Poll.objects.create(title="Round One")
         self.film = Film.objects.create(title="Casablanca")
@@ -166,7 +164,7 @@ class PollOptionTests(TestCase):
 
 class PollOptionReorderTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.poll = Poll.objects.create(title="Round One")
         self.first = PollOption.objects.create(

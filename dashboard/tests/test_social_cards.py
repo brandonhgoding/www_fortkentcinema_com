@@ -8,6 +8,7 @@ from django.urls import reverse
 from PIL import Image
 
 from cinema.models import Engagement, EngagementFilm, Film, Screen
+from dashboard.tests.helpers import make_staff
 
 User = get_user_model()
 
@@ -18,7 +19,7 @@ def an_image() -> Image.Image:
 
 class SocialCardViewTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.screen = Screen.objects.create(name="Screen 1", capacity=100)
         self.film = Film.objects.create(
@@ -131,7 +132,7 @@ class SocialCardViewTests(TestCase):
 
 class SocialPanelTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
+        make_staff(username="s", password="pw12345")
         self.client.login(username="s", password="pw12345")
         self.screen = Screen.objects.create(name="Screen 1", capacity=100)
         self.film = Film.objects.create(title="Dune")

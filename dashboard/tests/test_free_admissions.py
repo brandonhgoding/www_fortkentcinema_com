@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
+from dashboard.tests.helpers import make_staff
 
 
 def make_member(first="Marguerite", last="Ouellette", email="m.o@example.com"):
@@ -37,8 +38,8 @@ def give_expired_term(member, slug="family-plus"):
 
 class StaffClient(TestCase):
     def setUp(self) -> None:
-        self.staff = User.objects.create_user(
-            username="s", password="pw12345", is_staff=True
+        self.staff = make_staff(
+            username="s", password="pw12345"
         )
         self.client.login(username="s", password="pw12345")
 
