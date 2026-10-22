@@ -390,3 +390,41 @@ class BenefitTests(StaffTestCase):
         self.assertFalse(MembershipBenefit.objects.filter(pk=doomed.pk).exists())
         self.assertTrue(MembershipTier.objects.filter(pk=tier.pk).exists())
         self.assertEqual(set(tier.benefits.all()), survivors)
+
+
+class ViewOnlyTests(TestCase):
+    def test_view_only_user_sees_catalogue_without_controls(self) -> None:
+        tier = MembershipTier.objects.get(slug="individual")
+        spare = MembershipTier.objects.get(slug="cinema-supporter")
+        benefit = MembershipBenefit.objects.first()
+        member = Member.objects.create(
+            first_name="Ada", last_name="Lovelace", email="ada@example.com"
+        )
+        MembershipTerm.objects.create(
+            member=member, tier=tier,
+            started_on=datetime.date(2026, 1, 1),
+            expires_on=datetime.date(2026, 12, 31),
+            price_paid=Decimal("60.00"),
+        )
+        make_staff(
+            username="viewer",
+            password="pw12345",
+            perms=("audience.view_membershiptier",),
+        )
+        self.client.login(username="viewer", password="pw12345")
+
+        html = self.client.get(reverse("dashboard:tiers")).content.decode()
+        self.assertIn(tier.name, html)
+        for name, args in (
+            ("tier_create", []),
+            ("tier_edit", [tier.pk]),
+            ("tier_listing", [tier.pk]),
+            ("tier_delete", [spare.pk]),
+            ("benefit_create", []),
+            ("benefit_edit", [benefit.pk]),
+            ("benefit_delete", [benefit.pk]),
+            ("square_sales", []),
+            ("terms", []),
+        ):
+            with self.subTest(name):
+                self.assertNotIn(reverse(f"dashboard:{name}", args=args), html)

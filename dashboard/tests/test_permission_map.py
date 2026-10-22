@@ -94,6 +94,18 @@ PERMISSION_TABLE: list[tuple[str, dict, str, str | tuple[str, ...]]] = [
     ("term_delete", {"pk": 999999}, "post", "audience.delete_membershipterm"),
     ("free_admission_redeem", {"pk": 999999}, "post", "audience.add_freeadmission"),
     ("free_admission_delete", {"pk": 999999}, "post", "audience.delete_freeadmission"),
+    ("tiers", {}, "get", "audience.view_membershiptier"),
+    ("tier_create", {}, "get", "audience.add_membershiptier"),
+    ("tier_edit", {"pk": 999999}, "get", "audience.change_membershiptier"),
+    ("tier_listing", {"pk": 999999}, "post", "audience.change_membershiptier"),
+    ("tier_delete", {"pk": 999999}, "post", "audience.delete_membershiptier"),
+    ("benefit_create", {}, "get", "audience.add_membershipbenefit"),
+    ("benefit_edit", {"pk": 999999}, "get", "audience.change_membershipbenefit"),
+    ("benefit_delete", {"pk": 999999}, "post", "audience.delete_membershipbenefit"),
+    ("square_sales", {}, "get", "boxoffice.view_membershipsale"),
+    ("square_sale_retry", {"pk": 999999}, "post", "boxoffice.change_membershipsale"),
+    ("subscribers", {}, "get", "audience.view_subscriber"),
+    ("subscribers_export", {}, "get", "audience.view_subscriber"),
 ]
 
 

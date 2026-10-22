@@ -17,6 +17,8 @@ from .mixins import StaffRequiredMixin
 
 
 class SquareSaleListView(StaffRequiredMixin, View):
+    permission_required = "boxoffice.view_membershipsale"
+
     def get(self, request):
         sales = MembershipSale.objects.select_related("tier", "term__member")
         failed_count = MembershipSale.objects.filter(
@@ -38,6 +40,8 @@ def _toast_for(sale: MembershipSale) -> dict:
 
 
 class SquareSaleRetryView(StaffRequiredMixin, View):
+    permission_required = "boxoffice.change_membershipsale"
+
     def post(self, request, pk):
         sale = get_object_or_404(MembershipSale, pk=pk)
         # Never raises on gateway failure: the outcome lands on the row.
