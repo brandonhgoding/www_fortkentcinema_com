@@ -58,11 +58,15 @@ def _render_poll_form(request, form, action_url: str, submit_label: str):
 
 
 class PollListView(StaffRequiredMixin, View):
+    permission_required = "cinema.view_poll"
+
     def get(self, request):
         return render(request, "dashboard/polls.html", {"polls": Poll.objects.all()})
 
 
 class PollCreateView(StaffRequiredMixin, View):
+    permission_required = "cinema.add_poll"
+
     def get(self, request):
         return _render_poll_form(
             request, PollForm(), reverse("dashboard:poll_create"), "Create Poll"
@@ -79,6 +83,8 @@ class PollCreateView(StaffRequiredMixin, View):
 
 
 class PollEditView(StaffRequiredMixin, View):
+    permission_required = "cinema.change_poll"
+
     def get(self, request, pk):
         poll = get_object_or_404(Poll, pk=pk)
         return _render_poll_form(
@@ -113,6 +119,8 @@ class PollDeleteView(StaffRequiredMixin, View):
     refreshed list. From the detail page there is nothing left to show, so a
     plain form posts here and is sent back to the list with a flash toast.
     """
+
+    permission_required = "cinema.delete_poll"
 
     def post(self, request, pk):
         poll = get_object_or_404(Poll, pk=pk)
@@ -149,6 +157,8 @@ def _voters_context(poll) -> dict:
 
 
 class PollDetailView(StaffRequiredMixin, View):
+    permission_required = "cinema.view_poll"
+
     def get(self, request, pk):
         poll = get_object_or_404(Poll, pk=pk)
         return render(request, "dashboard/poll_detail.html", _voters_context(poll))
@@ -163,6 +173,8 @@ class PollVoteRemoveView(StaffRequiredMixin, View):
     the Voters section, and out of band the ballot's tally bars and the
     header's vote count, which both just changed.
     """
+
+    permission_required = "cinema.delete_vote"
 
     def post(self, request, pk, vote_pk):
         poll = get_object_or_404(Poll, pk=pk)
@@ -187,6 +199,8 @@ class PollVotesExportView(StaffRequiredMixin, View):
     left out, having nothing to list.
     """
 
+    permission_required = "cinema.view_poll"
+
     def get(self, request, pk):
         poll = get_object_or_404(Poll, pk=pk)
         response = HttpResponse(content_type="text/csv")
@@ -209,6 +223,8 @@ class PollOptionAddView(StaffRequiredMixin, View):
     votes already cast meaningless.
     """
 
+    permission_required = "cinema.add_polloption"
+
     def post(self, request, pk):
         poll = get_object_or_404(Poll, pk=pk)
         if poll.status != PollStatus.DRAFT:
@@ -229,6 +245,8 @@ class PollOptionAddView(StaffRequiredMixin, View):
 
 
 class PollOptionRemoveView(StaffRequiredMixin, View):
+    permission_required = "cinema.delete_polloption"
+
     def post(self, request, pk, option_pk):
         poll = get_object_or_404(Poll, pk=pk)
         if poll.status != PollStatus.DRAFT:
@@ -245,6 +263,8 @@ class PollOptionMoveView(StaffRequiredMixin, View):
     Ballot order is what visitors see top to bottom, so it is worth
     controlling. Locked once voting opens, like the rest of the ballot.
     """
+
+    permission_required = "cinema.change_polloption"
 
     def post(self, request, pk, option_pk):
         poll = get_object_or_404(Poll, pk=pk)
@@ -307,6 +327,8 @@ class PollStatusView(StaffRequiredMixin, View):
     Any number of rounds may be open at once; /vote lists them.
     """
 
+    permission_required = "cinema.change_poll"
+
     def post(self, request, pk):
         poll = get_object_or_404(Poll, pk=pk)
         status = request.POST.get("status")
@@ -336,6 +358,8 @@ class PollAnnounceView(StaffRequiredMixin, View):
     The engagement link is what turns the public results page from
     "Casablanca won" into "Casablanca won, here are the showtimes".
     """
+
+    permission_required = "cinema.change_poll"
 
     def get(self, request, pk):
         poll = get_object_or_404(Poll, pk=pk)

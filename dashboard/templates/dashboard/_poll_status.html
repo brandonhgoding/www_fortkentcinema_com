@@ -7,6 +7,7 @@
       {% elif not poll.has_started %}&middot; voting opens {{ poll.opens_at|date:"M j, g:i A" }}{% endif %}
     {% endif %}
   </p>
+  {% if perms.cinema.change_poll %}
   {% if poll.status == "DRAFT" %}
     <button class="btn btn-primary"
             hx-post="{% url 'dashboard:poll_status' poll.pk %}"
@@ -22,5 +23,6 @@
             hx-get="{% url 'dashboard:poll_announce' poll.pk %}"
             hx-target="#drawer-content" hx-swap="innerHTML"
             @click="$store.drawer.show('Announce Winner')">Announce Winner</button>
+  {% endif %}
   {% endif %}
 </div>

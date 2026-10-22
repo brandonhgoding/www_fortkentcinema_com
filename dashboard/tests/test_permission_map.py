@@ -45,6 +45,33 @@ PERMISSION_TABLE: list[tuple[str, dict, str, str | tuple[str, ...]]] = [
     ("ticket_order_unarrive", {"pk": 999999}, "post", "tickets.change_ticketorder"),
     ("ticket_order_retry", {"pk": 999999}, "post", "tickets.change_ticketorder"),
     ("ticket_order_refund", {"pk": 999999}, "post", "tickets.change_ticketorder"),
+    ("polls", {}, "get", "cinema.view_poll"),
+    ("poll_detail", {"pk": 999999}, "get", "cinema.view_poll"),
+    ("poll_votes_export", {"pk": 999999}, "get", "cinema.view_poll"),
+    ("poll_create", {}, "get", "cinema.add_poll"),
+    ("poll_edit", {"pk": 999999}, "get", "cinema.change_poll"),
+    ("poll_status", {"pk": 999999}, "post", "cinema.change_poll"),
+    ("poll_announce", {"pk": 999999}, "get", "cinema.change_poll"),
+    ("poll_delete", {"pk": 999999}, "post", "cinema.delete_poll"),
+    ("poll_option_add", {"pk": 999999}, "post", "cinema.add_polloption"),
+    (
+        "poll_option_move",
+        {"pk": 999999, "option_pk": 999999},
+        "post",
+        "cinema.change_polloption",
+    ),
+    (
+        "poll_option_remove",
+        {"pk": 999999, "option_pk": 999999},
+        "post",
+        "cinema.delete_polloption",
+    ),
+    (
+        "poll_vote_remove",
+        {"pk": 999999, "vote_pk": 999999},
+        "post",
+        "cinema.delete_vote",
+    ),
 ]
 
 

@@ -366,3 +366,43 @@ class PollVoteRemoveTests(TestCase):
         self.client.login(username="p", password="pw12345")
         self.assertEqual(self.remove(self.test_vote).status_code, 403)
         self.assertTrue(Vote.objects.filter(pk=self.test_vote.pk).exists())
+
+
+class PollPermissionControlsTests(TestCase):
+    def test_view_only_user_sees_detail_without_controls(self) -> None:
+        poll = Poll.objects.create(title="Round One")
+        option = PollOption.objects.create(
+            poll=poll, film=Film.objects.create(title="Casablanca")
+        )
+        vote = Vote.objects.create(poll=poll, option=option, email="v@example.com")
+        make_staff(username="viewer", perms=("cinema.view_poll",))
+        self.client.login(username="viewer", password="pw12345")
+
+        response = self.client.get(reverse("dashboard:poll_detail", args=[poll.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        self.assertIn("Round One", html)
+        for name, args in (
+            ("poll_delete", [poll.pk]),
+            ("poll_status", [poll.pk]),
+            ("poll_announce", [poll.pk]),
+            ("poll_option_move", [poll.pk, option.pk]),
+            ("poll_option_remove", [poll.pk, option.pk]),
+            ("poll_vote_remove", [poll.pk, vote.pk]),
+        ):
+            with self.subTest(url_name=name):
+                self.assertNotIn(reverse(f"dashboard:{name}", args=args), html)
+        self.assertNotIn("data-add-url", html)
+
+    def test_view_only_user_sees_list_without_controls(self) -> None:
+        poll = Poll.objects.create(title="Round One")
+        make_staff(username="viewer", perms=("cinema.view_poll",))
+        self.client.login(username="viewer", password="pw12345")
+
+        html = self.client.get(reverse("dashboard:polls")).content.decode()
+
+        self.assertIn("Round One", html)
+        self.assertNotIn(reverse("dashboard:poll_create"), html)
+        self.assertNotIn(reverse("dashboard:poll_edit", args=[poll.pk]), html)
+        self.assertNotIn(reverse("dashboard:poll_delete", args=[poll.pk]), html)
