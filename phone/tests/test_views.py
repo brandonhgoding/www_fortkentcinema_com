@@ -256,6 +256,20 @@ class VoicemailTests(PhoneTestCase):
         self.assertIn("didn't get your message", twiml)
         self.assertNotIn("we got your message", twiml)
 
+    def test_no_recording_log_names_the_call_but_not_the_caller(self) -> None:
+        """ERROR goes to ADMINS by email outside DEBUG, so the line must not
+        carry the caller's number (or anything else Twilio posted); the
+        CallSid is enough to find the call in the Twilio console, and the
+        field names say what was missing."""
+        with self.assertLogs("phone.views", "ERROR") as logs:
+            self.call("voicemail_recorded", {"CallStatus": "completed"})
+        line = "\n".join(logs.output)
+        self.assertIn("CA123", line)
+        self.assertIn("CallStatus", line)
+        self.assertNotIn(CALL["From"], line)
+        self.assertNotIn(CALL["To"], line)
+        self.assertNotIn("completed", line)
+
     def test_action_without_a_sid_takes_it_from_the_recording_url(self) -> None:
         sid = "RE" + "a" * 32
         url = f"https://api.twilio.com/2010-04-01/Accounts/AC1/Recordings/{sid}"
