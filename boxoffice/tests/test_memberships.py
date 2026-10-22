@@ -202,14 +202,20 @@ class ExistingMemberTests(MembershipOrderTestCase):
         self.assertEqual(self.member.terms.count(), 2)
         self.assertEqual(sale.email, "ann@example.com")
 
-    def test_name_kept_phone_filled_only_when_blank(self):
+    def test_existing_member_record_is_left_as_staff_keep_it(self):
+        """The buyer is whoever typed this email at Square's checkout, which
+        nothing verifies. Matching the member by it is the renewal design,
+        and a term is a gift; writing the buyer's phone onto the member's
+        record was not (anyone could put their own number on a member who
+        had none). The sale row keeps what was typed, for staff to judge."""
         self.membership_order(recipient=Recipient(
             "A. Lee", "ann@example.com", "+12075550100"))
-        process_order("O1", self.gw)
+        sale = process_order("O1", self.gw)
         self.member.refresh_from_db()
         self.assertEqual(
             (self.member.first_name, self.member.last_name, self.member.phone),
-            ("Ann", "Lee", "+12075550100"))
+            ("Ann", "Lee", ""))
+        self.assertEqual((sale.status, sale.phone), ("OK", "+12075550100"))
 
         Member.objects.filter(pk=self.member.pk).update(phone="555")
         self.membership_order(order_id="O2", recipient=Recipient(
