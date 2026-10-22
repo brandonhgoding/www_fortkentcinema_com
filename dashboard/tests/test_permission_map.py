@@ -72,6 +72,15 @@ PERMISSION_TABLE: list[tuple[str, dict, str, str | tuple[str, ...]]] = [
         "post",
         "cinema.delete_vote",
     ),
+    ("rental_inquiries", {}, "get", "cinema.view_rentalinquiry"),
+    ("rental_inquiry_status", {"pk": 999999}, "post", "cinema.change_rentalinquiry"),
+    ("ad_inquiries", {}, "get", "cinema.view_adinquiry"),
+    ("ad_inquiry_status", {"pk": 999999}, "post", "cinema.change_adinquiry"),
+    ("voicemails", {}, "get", "phone.view_voicemail"),
+    ("voicemail_audio", {"pk": 999999}, "get", "phone.view_voicemail"),
+    ("voicemail_status", {"pk": 999999}, "post", "phone.change_voicemail"),
+    ("voicemail_notes", {"pk": 999999}, "post", "phone.change_voicemail"),
+    ("voicemail_delete", {"pk": 999999}, "post", "phone.delete_voicemail"),
 ]
 
 

@@ -88,3 +88,21 @@ class RentalInquiryListTests(TestCase):
         self.client.force_login(self.staff)
         response = self.client.get(reverse("dashboard:home"))
         self.assertContains(response, "You have 1 new rental inquiry")
+
+
+class RentalInquiryViewOnlyTests(TestCase):
+    def test_view_only_user_sees_status_as_text(self):
+        inquiry = RentalInquiry.objects.create(
+            contact_name="Alex Harper", email="alex@example.com"
+        )
+        make_staff(
+            username="viewer", password="pw", perms=("cinema.view_rentalinquiry",)
+        )
+        self.client.login(username="viewer", password="pw")
+        response = self.client.get(reverse("dashboard:rental_inquiries"))
+        self.assertContains(response, "Alex Harper")
+        self.assertNotContains(
+            response,
+            reverse("dashboard:rental_inquiry_status", args=[inquiry.pk]),
+        )
+        self.assertContains(response, inquiry.get_status_display() + "\n")

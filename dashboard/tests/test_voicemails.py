@@ -419,3 +419,28 @@ class SidebarBadgeTests(VoicemailTestCase):
     def test_hidden_when_nothing_is_new(self):
         Voicemail.objects.update(status=VoicemailStatus.HANDLED)
         self.assertNotIn("sidebarBadge", self.sidebar_link())
+
+
+class VoicemailViewOnlyTests(VoicemailTestCase):
+    @CONFIGURED
+    def test_view_only_user_sees_player_without_forms(self):
+        self.voicemail.notes = "Called back Tuesday"
+        self.voicemail.save(update_fields=["notes"])
+        make_staff(
+            username="viewer", password="pw", perms=("phone.view_voicemail",)
+        )
+        self.client.login(username="viewer", password="pw")
+        response = self.client.get(reverse("dashboard:voicemails"))
+        pk = self.voicemail.pk
+        self.assertContains(
+            response, reverse("dashboard:voicemail_audio", args=[pk])
+        )
+        for name in ("voicemail_status", "voicemail_notes", "voicemail_delete"):
+            with self.subTest(name):
+                self.assertNotContains(
+                    response, reverse(f"dashboard:{name}", args=[pk])
+                )
+        self.assertContains(response, "Called back Tuesday")
+        self.assertContains(
+            response, self.voicemail.get_status_display() + "\n"
+        )
