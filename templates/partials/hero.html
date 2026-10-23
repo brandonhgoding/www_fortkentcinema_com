@@ -46,18 +46,6 @@
   </div>
 
   {% comment %}
-    The hero fills the viewport and View Showtimes scrolls to Now Showing,
-    straight past the pre-sale banner under the hero. While the pre-sale
-    is live (HomeView sets presale; None after the deadline) this line
-    sends people to it.
-  {% endcomment %}
-  {% if presale %}
-  <p class="hero-presale">
-    <a href="#presale" data-track="presale_click" data-track-location="hero">Pre-sale: {{ presale.title }}, {{ presale.weekend_label }}. {{ presale.goal }} tickets by {{ presale.deadline_label }}.</a>
-  </p>
-  {% endif %}
-
-  {% comment %}
     Active-member count, hung under Join Membership so it answers "who else
     is in?" right where the question comes up. member_count comes from
     HomeView. Renders nothing at zero: an empty roster is not worth

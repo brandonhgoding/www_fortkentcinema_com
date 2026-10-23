@@ -49,7 +49,6 @@ from web.services.cinema_data import (
 )
 from web.services.heckle_night import get_heckle_nights
 from web.services.open_mic import upcoming_nights as upcoming_open_mics
-from web.services.presale import active_presale
 from web.services.showtimes import (
     today_eastern,
     format_showtime_date,
@@ -105,10 +104,6 @@ class HomeView(TemplateView):
         # Now Showing date navigation. Alpine only toggles which date is
         # visible, so every date + its label must be present in the DOM.
         today = today_eastern()
-
-        # The Graduate pre-sale banner, between the hero and Now Showing.
-        # None once the deadline has passed; the partial renders nothing.
-        ctx["presale"] = active_presale(datetime.date.fromisoformat(today))
 
         date_keys = set()
         for movie in now_showing:
