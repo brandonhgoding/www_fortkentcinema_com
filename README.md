@@ -103,10 +103,21 @@ generic change permission, so arriving buyers and refunding them can be
 granted separately. Manage users, groups, and permissions in Django admin at
 `/admin/`. Superusers see everything.
 
-Five wrong passwords for one username from one address lock that pair out of
+### Email login
+
+Staff sign in at `/login` with their email address (there is no username).
+Emails are unique ignoring case. Deploy order on an existing database:
+
+1. Back up the database.
+2. Deploy as usual. The deploy's own `migrate` adopts the existing `auth_user`
+   table as `accounts.0001_initial` and applies `accounts 0002_email_login`
+   (it refuses blank or case-duplicate emails, and keeps users' permissions).
+3. Sign in to the dashboard with your email address.
+
+Five wrong passwords for one email address from one address lock that pair out of
 `/login` for fifteen minutes (django-axes; the numbers are the `AXES_*` settings).
-A locked-out person sees a wait message, not which username was tried. To clear
-a lockout early, run `python manage.py axes_reset_username <username>` or delete
+A locked-out person sees a wait message, not which email was tried. To clear
+a lockout early, run `python manage.py axes_reset_username <email>` or delete
 the row under **Axes → Access attempts** in Django admin. Deploying this needs
 `pip install -r requirements.txt` and `migrate` (the `axes` tables).
 
