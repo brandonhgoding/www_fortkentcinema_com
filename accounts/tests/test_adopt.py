@@ -28,7 +28,9 @@ class AdoptAuthUserTests(TestCase):
 
     def test_does_nothing_without_auth_user_table(self):
         self.row().delete()
-        with mock.patch.object(connection.introspection, "table_names", return_value=[]):
+        with mock.patch.object(
+            connection.introspection, "table_names", return_value=[]
+        ):
             self.assertFalse(adopt_auth_user(connection))
         self.assertFalse(self.row().exists())
 
@@ -36,7 +38,10 @@ class AdoptAuthUserTests(TestCase):
         self.row().delete()
         out = StringIO()
         call_command("migrate", plan=True, stdout=out)
-        self.assertIn("Adopted the existing auth_user table as accounts.0001_initial.", out.getvalue())
+        self.assertIn(
+            "Adopted the existing auth_user table as accounts.0001_initial.",
+            out.getvalue(),
+        )
         out = StringIO()
         call_command("migrate", plan=True, stdout=out)
         self.assertNotIn("Adopted", out.getvalue())
@@ -44,6 +49,11 @@ class AdoptAuthUserTests(TestCase):
     def test_migrate_adopts_on_named_database(self):
         # The row stays: adopt is mocked away, and a missing 0001 under
         # applied dependants would be an inconsistent history.
-        with mock.patch("accounts.management.commands.migrate.adopt_auth_user", return_value=False) as adopt:
-            call_command("migrate", plan=True, database="default", stdout=StringIO())
+        with mock.patch(
+            "accounts.management.commands.migrate.adopt_auth_user",
+            return_value=False,
+        ) as adopt:
+            call_command(
+                "migrate", plan=True, database="default", stdout=StringIO()
+            )
         adopt.assert_called_once_with(connections["default"])

@@ -1,10 +1,10 @@
 import datetime
 from decimal import Decimal
 
-from accounts.models import User
 from django.test import TestCase
 from django.utils import timezone
 
+from accounts.models import User
 from audience.dates import month_bounds
 from audience.models import FreeAdmission, Member, MembershipTerm, MembershipTier
 

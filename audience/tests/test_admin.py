@@ -10,10 +10,10 @@ directly so that guarantee doesn't rest on a comment.
 import datetime
 from decimal import Decimal
 
-from accounts.models import User
 from django.test import TestCase
 from django.urls import reverse
 
+from accounts.models import User
 from audience.admin import MembershipTierAdmin
 from audience.models import (
     FreeAdmission,

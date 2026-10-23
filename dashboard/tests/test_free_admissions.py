@@ -2,8 +2,8 @@ import datetime
 from decimal import Decimal
 from unittest import mock
 
-from audience.models import FreeAdmission, Member, MembershipTerm, MembershipTier
 from accounts.models import User
+from audience.models import FreeAdmission, Member, MembershipTerm, MembershipTier
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
