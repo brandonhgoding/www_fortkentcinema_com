@@ -11,6 +11,7 @@ class Command(MigrateCommand):
 
     def handle(self, *args, **options):
         # --check must change nothing, so it never adopts.
-        if not options["check_unapplied"] and adopt_auth_user(connections[options["database"]]):
+        connection = connections[options["database"]]
+        if not options["check_unapplied"] and adopt_auth_user(connection):
             self.stdout.write(ADOPTED)
         return super().handle(*args, **options)
