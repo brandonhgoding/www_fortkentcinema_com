@@ -117,7 +117,9 @@ Emails are unique ignoring case. Deploy order on an existing database:
 Five wrong passwords for one email address from one address lock that pair out of
 `/login` for fifteen minutes (django-axes; the numbers are the `AXES_*` settings).
 A locked-out person sees a wait message, not which email was tried. To clear
-a lockout early, run `python manage.py axes_reset_username <email>` or delete
+a lockout early, run `python manage.py axes_reset_username <email>` (type the email in
+lowercase, as the lockout stores it, e.g. `axes_reset_username staff@example.com`;
+a mixed-case address prints "No attempts found.") or delete
 the row under **Axes → Access attempts** in Django admin. Deploying this needs
 `pip install -r requirements.txt` and `migrate` (the `axes` tables).
 
