@@ -38,7 +38,9 @@ def give_expired_term(member, slug="family-plus"):
 
 class StaffClient(TestCase):
     def setUp(self) -> None:
-        self.staff = make_staff(email="s@example.com", password="pw12345")
+        self.staff = make_staff(
+            email="s@example.com", password="pw12345"
+        )
         self.client.login(username="s@example.com", password="pw12345")
 
 
@@ -196,7 +198,9 @@ class RedeemTests(StaffClient):
         super().setUp()
         self.member = make_member()
         give_term(self.member, "cinema-supporter")
-        self.url = reverse("dashboard:free_admission_redeem", args=[self.member.pk])
+        self.url = reverse(
+            "dashboard:free_admission_redeem", args=[self.member.pk]
+        )
 
     def test_records_a_redemption(self) -> None:
         self.client.post(self.url)
@@ -210,7 +214,9 @@ class RedeemTests(StaffClient):
 
     def test_records_who_did_it(self) -> None:
         self.client.post(self.url)
-        self.assertEqual(self.member.free_admissions.first().recorded_by, self.staff)
+        self.assertEqual(
+            self.member.free_admissions.first().recorded_by, self.staff
+        )
 
     def test_swaps_the_list_back(self) -> None:
         html = self.client.post(self.url).content.decode()
@@ -246,7 +252,9 @@ class RedeemTests(StaffClient):
         other = make_member("Someone", "Else", "else@example.com")
         give_term(other, "family-plus")
 
-        html = self.client.post(self.url, {"q": self.member.last_name}).content.decode()
+        html = self.client.post(
+            self.url, {"q": self.member.last_name}
+        ).content.decode()
         self.assertIn(self.member.last_name, html)
         self.assertNotIn(other.last_name, html)
 
@@ -372,13 +380,15 @@ class DetailPanelTests(StaffClient):
 
     def test_shows_who_recorded_it(self) -> None:
         # An email unlikely to occur by accident elsewhere on the page —
-        # unlike `self.staff` (email "s@example.com"), which is a single letter that
-        # appears in ordinary markup and words regardless of whether
+        # unlike `self.staff` (s@example.com), whose pieces ("s", "example.com")
+        # appear in ordinary markup and words regardless of whether
         # `recorded_by` is ever rendered.
         recorder = make_user(email="ouellette_m@example.com", password="pw12345")
         FreeAdmission.objects.create(member=self.member, recorded_by=recorder)
         self.assertContains(
-            self.client.get(self.url), "ouellette_m@example.com", count=1
+            self.client.get(self.url),
+            "ouellette_m@example.com",
+            count=1,
         )
 
     def test_empty_state(self) -> None:
@@ -413,7 +423,9 @@ class DeleteRedemptionTests(StaffClient):
         self.member = make_member()
         give_term(self.member, "family-plus")
         self.admission = FreeAdmission.objects.create(member=self.member)
-        self.url = reverse("dashboard:free_admission_delete", args=[self.admission.pk])
+        self.url = reverse(
+            "dashboard:free_admission_delete", args=[self.admission.pk]
+        )
 
     def test_deletes_it(self) -> None:
         self.client.post(self.url)

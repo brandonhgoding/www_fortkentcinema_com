@@ -3,14 +3,11 @@ import datetime
 from accounts.tests.factories import make_user
 from boxoffice.models import MembershipSale, SaleLine, SalesPull
 from cinema.models import Engagement, EngagementFilm, Film, Screen, Showtime
-from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from tickets.tests.factories import make_order
 from dashboard.tests.helpers import make_staff
-
-User = get_user_model()
 
 
 def make_eng(screen, film, *, status="CONFIRMED", start=None, end=None):

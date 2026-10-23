@@ -143,7 +143,9 @@ PERMISSION_TABLE: list[tuple[str, dict, str, str | tuple[str, ...]]] = [
 
 class PermissionMapTests(TestCase):
     def test_every_view_enforces_its_permission(self) -> None:
-        for i, (url_name, kwargs, method, permission) in enumerate(PERMISSION_TABLE):
+        for i, (url_name, kwargs, method, permission) in enumerate(
+            PERMISSION_TABLE
+        ):
             with self.subTest(url_name=url_name):
                 url = reverse(f"dashboard:{url_name}", kwargs=kwargs)
                 alternatives = (

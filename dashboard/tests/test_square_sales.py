@@ -6,13 +6,11 @@ from unittest import mock
 from accounts.tests.factories import make_user
 from audience.models import Member, MembershipTerm, MembershipTier
 from boxoffice.models import MembershipSale
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 from dashboard.tests.helpers import make_staff
 
-User = get_user_model()
 
 UTC = datetime.timezone.utc
 

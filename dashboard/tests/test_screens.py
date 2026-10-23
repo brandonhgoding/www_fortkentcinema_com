@@ -1,11 +1,8 @@
 from accounts.tests.factories import make_user
 from cinema.models import Film, Screen
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from dashboard.tests.helpers import make_staff
-
-User = get_user_model()
 
 
 class ScreenListTests(TestCase):

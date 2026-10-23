@@ -36,7 +36,9 @@ class MembershipTierAdminReadonlyFieldsTests(TestCase):
         )
 
     def test_slug_is_editable_when_adding_a_new_tier(self) -> None:
-        self.assertEqual(self.admin.get_readonly_fields(request=None, obj=None), ())
+        self.assertEqual(
+            self.admin.get_readonly_fields(request=None, obj=None), ()
+        )
 
 
 class MembershipTierAdminPageTests(TestCase):

@@ -44,7 +44,8 @@ class LoginLockoutTests(TestCase):
 
     def attempt(self, password: str):
         return self.client.post(
-            "/login", {"username": "staffer@example.com", "password": password}
+            "/login",
+            {"username": "staffer@example.com", "password": password},
         )
 
     def test_wrong_passwords_under_the_limit_do_not_lock(self) -> None:
@@ -70,7 +71,8 @@ class LoginLockoutTests(TestCase):
         for _ in range(settings.AXES_FAILURE_LIMIT):
             self.attempt("nope")
         resp = self.client.post(
-            "/login", {"username": "other@example.com", "password": "pw12345"}
+            "/login",
+            {"username": "other@example.com", "password": "pw12345"},
         )
         self.assertEqual(resp.status_code, 302)
 

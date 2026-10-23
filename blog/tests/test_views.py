@@ -3,13 +3,10 @@
 import base64
 import datetime
 
-from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 
 from accounts.tests.factories import make_user
 from blog.models import BlogAuthor, BlogCategory, BlogPost
-
-User = get_user_model()
 
 
 class ReadOnlyApiTests(TestCase):

@@ -7,7 +7,6 @@ from zoneinfo import ZoneInfo
 
 from accounts.tests.factories import make_user
 from boxoffice.tests.fakes import FakeGateway
-from django.contrib.auth import get_user_model
 from django.core import mail
 from django.test import TestCase
 from django.urls import reverse
@@ -15,7 +14,6 @@ from tickets.models import TicketOrder
 from tickets.tests.factories import make_order, make_showtime
 from dashboard.tests.helpers import make_staff
 
-User = get_user_model()
 TZ = ZoneInfo("America/New_York")
 
 

@@ -1,14 +1,11 @@
 import json
 
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
 from accounts.tests.factories import make_user
 from cinema.models import Film, Poll, PollOption, PollStatus, Vote
 from dashboard.tests.helpers import make_staff
-
-User = get_user_model()
 
 
 class PollListTests(TestCase):

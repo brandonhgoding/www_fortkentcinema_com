@@ -4,7 +4,6 @@ import io
 from unittest import mock
 from zoneinfo import ZoneInfo
 
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -12,7 +11,6 @@ from accounts.tests.factories import make_user
 from tickets.tests.factories import make_order, make_showtime
 from dashboard.tests.helpers import make_staff
 
-User = get_user_model()
 TZ = ZoneInfo("America/New_York")
 
 

@@ -8,7 +8,9 @@ from dashboard.tests.helpers import make_staff
 
 class ChromeTests(TestCase):
     def setUp(self) -> None:
-        self.staff = make_staff(email="staffer@example.com", password="pw12345")
+        self.staff = make_staff(
+            email="staffer@example.com", password="pw12345"
+        )
         self.client.login(username="staffer@example.com", password="pw12345")
 
     def test_brand_and_nav_items(self) -> None:
@@ -91,7 +93,10 @@ class ChromeTests(TestCase):
 
     def test_superuser_sees_every_link(self) -> None:
         make_user(
-            email="r@example.com", password="pw12345", is_staff=True, is_superuser=True
+            email="r@example.com",
+            password="pw12345",
+            is_staff=True,
+            is_superuser=True,
         )
         self.client.login(username="r@example.com", password="pw12345")
         html = self.client.get(reverse("dashboard:home")).content.decode()

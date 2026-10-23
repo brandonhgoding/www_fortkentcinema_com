@@ -2,7 +2,6 @@ import datetime
 from io import BytesIO
 from unittest import mock
 
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from PIL import Image
@@ -10,8 +9,6 @@ from PIL import Image
 from accounts.tests.factories import make_user
 from cinema.models import Engagement, EngagementFilm, Film, Screen
 from dashboard.tests.helpers import make_staff
-
-User = get_user_model()
 
 
 def an_image() -> Image.Image:

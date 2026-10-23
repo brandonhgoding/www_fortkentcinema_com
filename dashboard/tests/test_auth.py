@@ -1,6 +1,5 @@
 import json
 
-from django.contrib.auth import get_user_model
 from django.http import HttpResponse
 from django.test import TestCase, override_settings
 from django.urls import path, reverse
@@ -10,8 +9,6 @@ from accounts.tests.factories import make_user
 from dashboard.mixins import StaffRequiredMixin
 from dashboard.tests.helpers import make_staff
 from fortkentcinema.urls import urlpatterns as project_urlpatterns
-
-User = get_user_model()
 
 
 class ProbeView(StaffRequiredMixin, View):
@@ -37,7 +34,9 @@ urlpatterns = [
 
 class DashboardAuthTests(TestCase):
     def setUp(self) -> None:
-        self.staff = make_staff(email="staffer@example.com", password="pw12345")
+        self.staff = make_staff(
+            email="staffer@example.com", password="pw12345"
+        )
         self.plain = make_user(
             email="plain@example.com", password="pw12345", is_staff=False
         )
