@@ -29,7 +29,9 @@ class User(AbstractUser):
         db_table = "auth_user"
         constraints = [
             models.UniqueConstraint(
-                Lower("email"), name="accounts_user_email_ci_unique"
+                Lower("email"),
+                name="accounts_user_email_ci_unique",
+                violation_error_message="A user with that email already exists.",
             ),
         ]
 

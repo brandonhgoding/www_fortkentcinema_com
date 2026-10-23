@@ -34,6 +34,18 @@ class AdoptAuthUserTests(TestCase):
             self.assertFalse(adopt_auth_user(connection))
         self.assertFalse(self.row().exists())
 
+    def test_migrate_check_does_not_adopt(self):
+        # Against the deliberately inconsistent history --check cannot run
+        # to completion, so pin "no write" by the adopt call itself.
+        with mock.patch(
+            "accounts.management.commands.migrate.adopt_auth_user"
+        ) as adopt:
+            try:
+                call_command("migrate", check_unapplied=True, stdout=StringIO())
+            except (SystemExit, Exception):
+                pass
+        adopt.assert_not_called()
+
     def test_migrate_prints_adopted_line_only_when_it_acted(self):
         self.row().delete()
         out = StringIO()

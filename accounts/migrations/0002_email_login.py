@@ -130,6 +130,7 @@ class Migration(migrations.Migration):
             constraint=models.UniqueConstraint(
                 django.db.models.functions.text.Lower("email"),
                 name="accounts_user_email_ci_unique",
+                violation_error_message="A user with that email already exists.",
             ),
         ),
     ]

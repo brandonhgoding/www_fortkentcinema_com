@@ -35,7 +35,8 @@ ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv())
 GA_MEASUREMENT_ID = config("GA_MEASUREMENT_ID", default="")
 
 INSTALLED_APPS = [
-    # Before django.contrib.admin so its migrate command wins.
+    # App commands override Django's built-in ones, and among apps the first
+    # listed wins: accounts is first, so its `migrate` is the one that runs.
     "accounts.apps.AccountsConfig",
     "django.contrib.admin",
     "django.contrib.auth",

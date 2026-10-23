@@ -10,6 +10,7 @@ class Command(MigrateCommand):
     """migrate, after adopting an existing auth_user table for accounts.User."""
 
     def handle(self, *args, **options):
-        if adopt_auth_user(connections[options["database"]]):
+        # --check must change nothing, so it never adopts.
+        if not options["check_unapplied"] and adopt_auth_user(connections[options["database"]]):
             self.stdout.write(ADOPTED)
         return super().handle(*args, **options)
