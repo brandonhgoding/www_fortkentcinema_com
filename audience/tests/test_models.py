@@ -135,7 +135,7 @@ class SubscriberStatusConsistencyTests(TestCase):
         self.assertIsNone(self.sub.unsubscribed_at)
 
     def test_the_admin_stamps_an_opt_out(self) -> None:
-        from django.contrib.auth.models import User
+        from accounts.models import User
         from django.urls import reverse
 
         User.objects.create_superuser(
@@ -203,7 +203,7 @@ class SubscriptionHistoryTests(TestCase):
         self.assertEqual(len(self.history()), 2)
 
     def test_the_admin_opt_out_is_recorded(self) -> None:
-        from django.contrib.auth.models import User
+        from accounts.models import User
         from django.urls import reverse
 
         User.objects.create_superuser(

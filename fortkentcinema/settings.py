@@ -35,6 +35,8 @@ ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv())
 GA_MEASUREMENT_ID = config("GA_MEASUREMENT_ID", default="")
 
 INSTALLED_APPS = [
+    # Before django.contrib.admin so its migrate command wins.
+    "accounts.apps.AccountsConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -235,6 +237,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [],
 }
 
+AUTH_USER_MODEL = "accounts.User"
 LOGIN_URL = "/login"
 LOGIN_REDIRECT_URL = "/dashboard/"
 

@@ -3,7 +3,7 @@ from decimal import Decimal
 from unittest import mock
 
 from audience.models import FreeAdmission, Member, MembershipTerm, MembershipTier
-from django.contrib.auth.models import User
+from accounts.models import User
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone

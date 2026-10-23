@@ -10,7 +10,7 @@ directly so that guarantee doesn't rest on a comment.
 import datetime
 from decimal import Decimal
 
-from django.contrib.auth.models import User
+from accounts.models import User
 from django.test import TestCase
 from django.urls import reverse
 
