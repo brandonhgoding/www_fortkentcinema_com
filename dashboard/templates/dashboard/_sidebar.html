@@ -55,7 +55,7 @@
   </nav>
   <div class="sidebarUser" data-cy="sidebar-user">
     <div class="sidebarUserInfo">
-      <span class="sidebarUsername" data-cy="username">{{ request.user.username }}</span>
+      <span class="sidebarUsername" data-cy="username">{{ request.user.get_short_name }}</span>
     </div>
     <form method="post" action="{% url 'logout' %}" style="display: contents">
       {% csrf_token %}

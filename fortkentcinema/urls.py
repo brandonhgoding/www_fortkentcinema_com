@@ -8,6 +8,7 @@ The `urlpatterns` list routes URLs to views. For more information please see:
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from accounts.forms import EmailAuthenticationForm
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path
@@ -43,7 +44,14 @@ urlpatterns = [
         name="robots",
     ),
     path("llms.txt", LlmsTxtView.as_view(), name="llms"),
-    path("login", LoginView.as_view(template_name="dashboard/login.html"), name="login"),
+    path(
+        "login",
+        LoginView.as_view(
+            template_name="dashboard/login.html",
+            authentication_form=EmailAuthenticationForm,
+        ),
+        name="login",
+    ),
     path("logout/", LogoutView.as_view(next_page="/login"), name="logout"),
     path("dashboard/", include("dashboard.urls")),
     path("phone/", include("phone.urls")),
