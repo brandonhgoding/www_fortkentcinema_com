@@ -10,8 +10,8 @@ CSS_DIR = Path(settings.BASE_DIR) / "dashboard" / "static" / "dashboard" / "css"
 
 class DrawerTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
 
     def test_drawer_shell_rendered(self) -> None:
         html = self.client.get(reverse("dashboard:home")).content.decode()

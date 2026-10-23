@@ -1,17 +1,15 @@
 import re
 
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from accounts.tests.factories import make_user
 from dashboard.tests.helpers import make_staff
 
 
 class ChromeTests(TestCase):
     def setUp(self) -> None:
-        self.staff = make_staff(
-            username="staffer", password="pw12345"
-        )
-        self.client.login(username="staffer", password="pw12345")
+        self.staff = make_staff(email="staffer@example.com", password="pw12345")
+        self.client.login(username="staffer@example.com", password="pw12345")
 
     def test_brand_and_nav_items(self) -> None:
         html = self.client.get(reverse("dashboard:home")).content.decode()
@@ -60,7 +58,7 @@ class ChromeTests(TestCase):
 
     def test_username_rendered(self) -> None:
         html = self.client.get(reverse("dashboard:home")).content.decode()
-        self.assertIn("staffer", html)
+        self.assertIn("staffer@example.com", html)
 
     def test_active_nav_marked(self) -> None:
         html = self.client.get(reverse("dashboard:screens")).content.decode()
@@ -71,8 +69,8 @@ class ChromeTests(TestCase):
         from phone.models import Voicemail
 
         Voicemail.objects.create(recording_sid="RE-badge")
-        make_staff(username="box", perms=("tickets.view_ticketorder",))
-        self.client.login(username="box", password="pw12345")
+        make_staff(email="box@example.com", perms=("tickets.view_ticketorder",))
+        self.client.login(username="box@example.com", password="pw12345")
         html = self.client.get(reverse("dashboard:home")).content.decode()
         self.assertIn(reverse("dashboard:tickets"), html)
         for name in (
@@ -92,10 +90,10 @@ class ChromeTests(TestCase):
         self.assertNotIn("keyboardHint", html)
 
     def test_superuser_sees_every_link(self) -> None:
-        get_user_model().objects.create_superuser(
-            username="root", email="r@example.com", password="pw12345"
+        make_user(
+            email="r@example.com", password="pw12345", is_staff=True, is_superuser=True
         )
-        self.client.login(username="root", password="pw12345")
+        self.client.login(username="r@example.com", password="pw12345")
         html = self.client.get(reverse("dashboard:home")).content.decode()
         for name in (
             "ad_inquiries",
@@ -115,14 +113,14 @@ class ChromeTests(TestCase):
 
     def test_keyboard_hint_needs_add_engagement(self) -> None:
         make_staff(
-            username="adder",
+            email="adder@example.com",
             perms=("cinema.add_engagement", "cinema.view_engagement"),
         )
-        self.client.login(username="adder", password="pw12345")
+        self.client.login(username="adder@example.com", password="pw12345")
         html = self.client.get(reverse("dashboard:home")).content.decode()
         self.assertIn("keyboardHint", html)
         self.client.logout()
-        make_staff(username="addonly", perms=("cinema.add_engagement",))
-        self.client.login(username="addonly", password="pw12345")
+        make_staff(email="addonly@example.com", perms=("cinema.add_engagement",))
+        self.client.login(username="addonly@example.com", password="pw12345")
         html = self.client.get(reverse("dashboard:home")).content.decode()
         self.assertNotIn("keyboardHint", html)

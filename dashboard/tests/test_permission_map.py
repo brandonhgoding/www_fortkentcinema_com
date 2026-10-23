@@ -143,9 +143,7 @@ PERMISSION_TABLE: list[tuple[str, dict, str, str | tuple[str, ...]]] = [
 
 class PermissionMapTests(TestCase):
     def test_every_view_enforces_its_permission(self) -> None:
-        for i, (url_name, kwargs, method, permission) in enumerate(
-            PERMISSION_TABLE
-        ):
+        for i, (url_name, kwargs, method, permission) in enumerate(PERMISSION_TABLE):
             with self.subTest(url_name=url_name):
                 url = reverse(f"dashboard:{url_name}", kwargs=kwargs)
                 alternatives = (
@@ -153,15 +151,16 @@ class PermissionMapTests(TestCase):
                 )
 
                 make_staff(
-                    username=f"deny-{i}", perms=permissions_except(*alternatives)
+                    email=f"deny-{i}@example.com",
+                    perms=permissions_except(*alternatives),
                 )
-                self.client.login(username=f"deny-{i}", password="pw12345")
+                self.client.login(username=f"deny-{i}@example.com", password="pw12345")
                 response = getattr(self.client, method)(url)
                 self.assertEqual(response.status_code, 403)
                 self.client.logout()
 
-                make_staff(username=f"allow-{i}", perms=(alternatives[0],))
-                self.client.login(username=f"allow-{i}", password="pw12345")
+                make_staff(email=f"allow-{i}@example.com", perms=(alternatives[0],))
+                self.client.login(username=f"allow-{i}@example.com", password="pw12345")
                 response = getattr(self.client, method)(url)
                 self.assertNotEqual(response.status_code, 403)
                 self.client.logout()

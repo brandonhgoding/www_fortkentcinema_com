@@ -3,6 +3,7 @@ import json
 from decimal import Decimal
 from unittest import mock
 
+from accounts.tests.factories import make_user
 from audience.models import Member, MembershipTerm, MembershipTier
 from boxoffice.models import MembershipSale
 from django.contrib.auth import get_user_model
@@ -44,8 +45,8 @@ def make_term(first="Ann", last="Lee") -> MembershipTerm:
 
 class StaffTestCase(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
 
 
 class StaffOnlyTests(TestCase):
@@ -55,8 +56,8 @@ class StaffOnlyTests(TestCase):
         retry_url = reverse("dashboard:square_sale_retry", args=[sale.pk])
         self.assertEqual(self.client.get(list_url).status_code, 302)
         self.assertEqual(self.client.post(retry_url).status_code, 302)
-        User.objects.create_user(username="n", password="pw12345")
-        self.client.login(username="n", password="pw12345")
+        make_user(email="n@example.com", password="pw12345")
+        self.client.login(username="n@example.com", password="pw12345")
         self.assertEqual(self.client.get(list_url).status_code, 403)
         with mock.patch("dashboard.membership_sale_views.process_order") as po:
             self.assertEqual(self.client.post(retry_url).status_code, 403)

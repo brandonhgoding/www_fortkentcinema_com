@@ -6,6 +6,7 @@ from django.test import TestCase, override_settings
 from django.urls import path, reverse
 from django.views import View
 
+from accounts.tests.factories import make_user
 from dashboard.mixins import StaffRequiredMixin
 from dashboard.tests.helpers import make_staff
 from fortkentcinema.urls import urlpatterns as project_urlpatterns
@@ -36,11 +37,9 @@ urlpatterns = [
 
 class DashboardAuthTests(TestCase):
     def setUp(self) -> None:
-        self.staff = make_staff(
-            username="staffer", password="pw12345"
-        )
-        self.plain = User.objects.create_user(
-            username="plain", password="pw12345", is_staff=False
+        self.staff = make_staff(email="staffer@example.com", password="pw12345")
+        self.plain = make_user(
+            email="plain@example.com", password="pw12345", is_staff=False
         )
 
     def test_anonymous_redirected_to_login(self) -> None:
@@ -50,12 +49,12 @@ class DashboardAuthTests(TestCase):
         self.assertIn("next=", resp["Location"])
 
     def test_non_staff_forbidden(self) -> None:
-        self.client.login(username="plain", password="pw12345")
+        self.client.login(username="plain@example.com", password="pw12345")
         resp = self.client.get(reverse("dashboard:home"))
         self.assertEqual(resp.status_code, 403)
 
     def test_staff_ok(self) -> None:
-        self.client.login(username="staffer", password="pw12345")
+        self.client.login(username="staffer@example.com", password="pw12345")
         resp = self.client.get(reverse("dashboard:home"))
         self.assertEqual(resp.status_code, 200)
 
@@ -68,8 +67,8 @@ class DashboardAuthTests(TestCase):
 @override_settings(ROOT_URLCONF="dashboard.tests.test_auth")
 class DashboardPermissionTests(TestCase):
     def login(self, perms) -> None:
-        make_staff(username="viewer", perms=perms)
-        self.client.login(username="viewer", password="pw12345")
+        make_staff(email="viewer@example.com", perms=perms)
+        self.client.login(username="viewer@example.com", password="pw12345")
 
     def test_staff_without_permission_forbidden(self) -> None:
         self.login(())
@@ -80,8 +79,13 @@ class DashboardPermissionTests(TestCase):
         self.assertEqual(self.client.get("/perm-probe").status_code, 200)
 
     def test_superuser_without_explicit_permission_ok(self) -> None:
-        User.objects.create_superuser(username="root", password="pw12345")
-        self.client.login(username="root", password="pw12345")
+        make_user(
+            email="root@example.com",
+            password="pw12345",
+            is_staff=True,
+            is_superuser=True,
+        )
+        self.client.login(username="root@example.com", password="pw12345")
         self.assertEqual(self.client.get("/perm-probe").status_code, 200)
 
     def test_htmx_denied_carries_toast(self) -> None:

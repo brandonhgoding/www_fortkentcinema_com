@@ -11,8 +11,8 @@ from dashboard.tests.helpers import make_staff
 
 class FilmSearchTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
 
     def test_local_search_matches(self) -> None:
         Film.objects.create(title="Jaws", runtime_minutes=124)
@@ -53,8 +53,8 @@ class FilmSearchTests(TestCase):
 
 class FilmFromTMDBTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
 
     @mock.patch("dashboard.views.import_film_from_tmdb")
     def test_import_fires_film_selected(self, mimport) -> None:
@@ -80,8 +80,8 @@ class FilmFromTMDBTests(TestCase):
 
 class FilmComboTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
 
     def test_filmcombo_registered(self) -> None:
         js = (Path(dj_settings.BASE_DIR) / "dashboard/static/dashboard/js/dashboard.js").read_text()

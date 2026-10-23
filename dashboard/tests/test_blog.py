@@ -4,6 +4,7 @@ import datetime
 import json
 from zoneinfo import ZoneInfo
 
+from accounts.tests.factories import make_user
 from blog.models import BlogAuthor, BlogCategory, BlogPost
 from cinema.models import Film
 from django.contrib.auth import get_user_model
@@ -23,8 +24,8 @@ class BlogFixture(TestCase):
         cls.film = Film.objects.create(title="Dune", runtime_minutes=155)
 
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
 
     def make_post(self, **overrides) -> BlogPost:
         fields = {
@@ -83,8 +84,8 @@ class StaffOnlyTests(BlogFixture):
         self.assertTrue(BlogPost.objects.filter(pk=post.pk).exists())
 
     def test_non_staff_get_403(self) -> None:
-        User.objects.create_user(username="member", password="pw12345")
-        self.client.login(username="member", password="pw12345")
+        make_user(email="member@example.com", password="pw12345")
+        self.client.login(username="member@example.com", password="pw12345")
         self.assertEqual(self.client.get(reverse("dashboard:blog")).status_code, 403)
 
 
@@ -95,8 +96,13 @@ class NavTests(BlogFixture):
         self.assertIn(f'href="{reverse("dashboard:blog")}"', html)
 
     def test_blog_is_gone_from_admin(self) -> None:
-        User.objects.create_superuser(username="root", password="pw12345")
-        self.client.login(username="root", password="pw12345")
+        make_user(
+            email="root@example.com",
+            password="pw12345",
+            is_staff=True,
+            is_superuser=True,
+        )
+        self.client.login(username="root@example.com", password="pw12345")
         self.assertEqual(self.client.get("/admin/blog/blogpost/").status_code, 404)
         # FilmAdmin used to autocomplete against BlogPostAdmin.
         film_admin = self.client.get(f"/admin/cinema/film/{self.film.pk}/change/")
@@ -106,17 +112,23 @@ class NavTests(BlogFixture):
 class PostListTests(BlogFixture):
     def test_lists_drafts_and_published_with_counts(self) -> None:
         self.make_post(title="Live One", subtitle="live-one")
-        self.make_post(title="Draft One", subtitle="draft-one", status=BlogPost.Status.DRAFT)
+        self.make_post(
+            title="Draft One", subtitle="draft-one", status=BlogPost.Status.DRAFT
+        )
         html = self.client.get(reverse("dashboard:blog")).content.decode()
         self.assertIn("Live One", html)
         self.assertIn("Draft One", html)
         self.assertIn("1 published · 1 draft", html)
 
     def test_drafts_sort_first(self) -> None:
-        self.make_post(title="Newer Live", subtitle="newer", post_date=datetime.date(2026, 9, 9))
         self.make_post(
-            title="Older Draft", subtitle="older",
-            post_date=datetime.date(2026, 1, 1), status=BlogPost.Status.DRAFT,
+            title="Newer Live", subtitle="newer", post_date=datetime.date(2026, 9, 9)
+        )
+        self.make_post(
+            title="Older Draft",
+            subtitle="older",
+            post_date=datetime.date(2026, 1, 1),
+            status=BlogPost.Status.DRAFT,
         )
         posts = list(self.client.get(reverse("dashboard:blog")).context["posts"])
         self.assertEqual([p.title for p in posts], ["Older Draft", "Newer Live"])
@@ -125,7 +137,9 @@ class PostListTests(BlogFixture):
         news = BlogCategory.objects.create(name="News")
         self.make_post(title="Dune Review", subtitle="dune")
         self.make_post(title="Hours Change", subtitle="hours", category=news)
-        self.make_post(title="Dune Draft", subtitle="dune-2", status=BlogPost.Status.DRAFT)
+        self.make_post(
+            title="Dune Draft", subtitle="dune-2", status=BlogPost.Status.DRAFT
+        )
 
         def titles(**params):
             resp = self.client.get(reverse("dashboard:blog"), params)
@@ -173,10 +187,10 @@ class CreatePostTests(BlogFixture):
     def test_add_only_user_is_sent_to_the_list_after_saving(self) -> None:
         self.client.logout()
         make_staff(
-            username="adder",
+            email="adder@example.com",
             perms=("blog.add_blogpost", "blog.view_blogpost"),
         )
-        self.client.login(username="adder", password="pw12345")
+        self.client.login(username="adder@example.com", password="pw12345")
         resp = self.client.post(
             reverse("dashboard:blog_post_create"), self.payload(status="draft")
         )
@@ -201,7 +215,8 @@ class CreatePostTests(BlogFixture):
 
     def test_draft_may_have_an_empty_body_but_publishing_needs_one(self) -> None:
         self.client.post(
-            reverse("dashboard:blog_post_create"), self.payload(status="draft", content="")
+            reverse("dashboard:blog_post_create"),
+            self.payload(status="draft", content=""),
         )
         self.assertEqual(BlogPost.objects.count(), 1)
 
@@ -295,7 +310,8 @@ class EditPostTests(BlogFixture):
     def test_delete_from_editor_redirects_to_list(self) -> None:
         post = self.make_post()
         resp = self.client.post(
-            reverse("dashboard:blog_post_delete", args=[post.pk]), HTTP_HX_REQUEST="true"
+            reverse("dashboard:blog_post_delete", args=[post.pk]),
+            HTTP_HX_REQUEST="true",
         )
         self.assertEqual(resp["HX-Redirect"], reverse("dashboard:blog"))
         self.assertFalse(BlogPost.objects.filter(pk=post.pk).exists())
@@ -356,7 +372,9 @@ class PublishDateTests(BlogFixture):
         self.assertEqual(post.post_date, self.STARTED)
 
     def test_new_posts_record_when_they_were_started(self) -> None:
-        self.client.post(reverse("dashboard:blog_post_create"), self.payload(status="draft"))
+        self.client.post(
+            reverse("dashboard:blog_post_create"), self.payload(status="draft")
+        )
         self.assertEqual(
             timezone.localdate(BlogPost.objects.get().created_at), timezone.localdate()
         )
@@ -373,7 +391,9 @@ class BackfillDraftStartTests(BlogFixture):
 
         from django.apps import apps
 
-        import_module("blog.migrations.0023_backfill_draft_created_at").backfill(apps, None)
+        import_module("blog.migrations.0023_backfill_draft_created_at").backfill(
+            apps, None
+        )
 
     def make_legacy(self, status, post_date) -> BlogPost:
         post = self.make_post(status=status, post_date=post_date)
@@ -405,7 +425,9 @@ class BackfillDraftStartTests(BlogFixture):
         self.assertIsNone(post.created_at)
 
     def test_drafts_that_already_have_a_start_are_untouched(self) -> None:
-        post = self.make_post(status=BlogPost.Status.DRAFT, post_date=datetime.date(2026, 9, 1))
+        post = self.make_post(
+            status=BlogPost.Status.DRAFT, post_date=datetime.date(2026, 9, 1)
+        )
         started = post.created_at
         self.backfill()
         post.refresh_from_db()
@@ -450,7 +472,9 @@ class BodyFormatTests(BlogFixture):
         self.assertEqual(post.body_format, BlogPost.BodyFormat.MARKDOWN)
 
     def test_editor_marks_a_plain_post_and_previews_it_as_plain(self) -> None:
-        resp = self.client.get(reverse("dashboard:blog_post_edit", args=[self.plain_post().pk]))
+        resp = self.client.get(
+            reverse("dashboard:blog_post_edit", args=[self.plain_post().pk])
+        )
         self.assertContains(resp, "Plain text (legacy)")
         self.assertContains(resp, 'name="use_markdown"')
         self.assertEqual(
@@ -459,7 +483,9 @@ class BodyFormatTests(BlogFixture):
         )
 
     def test_editor_has_no_legacy_note_for_markdown_posts(self) -> None:
-        resp = self.client.get(reverse("dashboard:blog_post_edit", args=[self.make_post().pk]))
+        resp = self.client.get(
+            reverse("dashboard:blog_post_edit", args=[self.make_post().pk])
+        )
         self.assertNotContains(resp, "Plain text (legacy)")
         resp = self.client.get(reverse("dashboard:blog_post_create"))
         self.assertNotContains(resp, "Plain text (legacy)")
@@ -472,12 +498,16 @@ class BodyFormatTests(BlogFixture):
             url, {"content": "# hi", "body_format": "plain", "use_markdown": "on"}
         )
         self.assertEqual(switched.content.decode(), "<h2>hi</h2>")
-        self.assertEqual(self.client.post(url, {"content": "# hi"}).content.decode(), "<h2>hi</h2>")
+        self.assertEqual(
+            self.client.post(url, {"content": "# hi"}).content.decode(), "<h2>hi</h2>"
+        )
 
 
 class PreviewTests(BlogFixture):
     def test_draft_preview_renders_the_public_template_noindexed(self) -> None:
-        post = self.make_post(status=BlogPost.Status.DRAFT, content="# Verdict\n\n**Yes.**")
+        post = self.make_post(
+            status=BlogPost.Status.DRAFT, content="# Verdict\n\n**Yes.**"
+        )
         resp = self.client.get(reverse("dashboard:blog_post_preview", args=[post.pk]))
         self.assertEqual(resp.status_code, 200)
         self.assertTemplateUsed(resp, "blog/post_detail.html")
@@ -498,8 +528,8 @@ class PreviewTests(BlogFixture):
 
 class BlogPermissionTests(BlogFixture):
     def login_with(self, *perms: str) -> None:
-        make_staff(username="limited", password="pw12345", perms=perms)
-        self.client.login(username="limited", password="pw12345")
+        make_staff(email="limited@example.com", password="pw12345", perms=perms)
+        self.client.login(username="limited@example.com", password="pw12345")
 
     def test_markdown_preview_accepts_change_alone(self) -> None:
         self.login_with("blog.change_blogpost")
@@ -577,7 +607,11 @@ class AuthorCategoryTests(BlogFixture):
         self.client.post(url, {"first_name": "★★★", "last_name": "☆"})
         self.client.post(url, {"first_name": "♥♥", "last_name": "☆"})
         self.assertEqual(
-            sorted(BlogAuthor.objects.exclude(pk=self.author.pk).values_list("slug", flat=True)),
+            sorted(
+                BlogAuthor.objects.exclude(pk=self.author.pk).values_list(
+                    "slug", flat=True
+                )
+            ),
             ["author", "author-2"],
         )
 
@@ -593,7 +627,11 @@ class AuthorCategoryTests(BlogFixture):
         self.client.post(url, {"name": "★★★"})
         self.client.post(url, {"name": "♥♥♥"})
         self.assertEqual(
-            sorted(BlogCategory.objects.filter(slug__startswith="category").values_list("slug", flat=True)),
+            sorted(
+                BlogCategory.objects.filter(slug__startswith="category").values_list(
+                    "slug", flat=True
+                )
+            ),
             ["category", "category-2"],
         )
 
@@ -636,7 +674,9 @@ class AuthorCategoryTests(BlogFixture):
         self.assertEqual(self.category.name, "Reviews")
 
     def test_duplicate_category_name_is_a_form_error(self) -> None:
-        resp = self.client.post(reverse("dashboard:blog_category_create"), {"name": "Reviews"})
+        resp = self.client.post(
+            reverse("dashboard:blog_category_create"), {"name": "Reviews"}
+        )
         self.assertContains(resp, "already a category with that name")
 
     def test_cannot_delete_an_author_or_category_with_posts(self) -> None:
@@ -648,7 +688,9 @@ class AuthorCategoryTests(BlogFixture):
         ):
             with self.subTest(url=url):
                 resp = self.client.post(url)
-                self.assertEqual(json.loads(resp["HX-Trigger"])["dashboard-toast"]["kind"], "error")
+                self.assertEqual(
+                    json.loads(resp["HX-Trigger"])["dashboard-toast"]["kind"], "error"
+                )
         self.assertTrue(BlogPost.objects.filter(pk=post.pk).exists())
         self.assertTrue(BlogAuthor.objects.filter(pk=self.author.pk).exists())
 

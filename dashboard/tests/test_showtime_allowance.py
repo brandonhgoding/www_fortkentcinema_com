@@ -19,8 +19,8 @@ ALLOWANCE_ERROR = "Online allowance must be a whole number."
 
 class ShowtimeAllowanceTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.screen = Screen.objects.create(name="Screen 1", capacity=100)
         film = Film.objects.create(title="Dune", runtime_minutes=155)
         self.eng = make_eng(self.screen, films=[film])
@@ -183,8 +183,8 @@ class ShowtimeAllowanceTests(TestCase):
 
 class ShowtimeOrdersStubTests(TestCase):
     def test_orders_page_resolves_for_staff(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         screen = Screen.objects.create(name="Screen 1", capacity=100)
         film = Film.objects.create(title="Dune", runtime_minutes=155)
         st = Showtime.objects.create(

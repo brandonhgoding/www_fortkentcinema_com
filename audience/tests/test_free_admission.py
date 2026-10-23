@@ -4,7 +4,7 @@ from decimal import Decimal
 from django.test import TestCase
 from django.utils import timezone
 
-from accounts.models import User
+from accounts.tests.factories import make_user
 from audience.dates import month_bounds
 from audience.models import FreeAdmission, Member, MembershipTerm, MembershipTier
 
@@ -56,8 +56,8 @@ class FreeAdmissionTests(TestCase):
 class RecordedByTests(TestCase):
     def setUp(self) -> None:
         self.member = make_member()
-        self.staff = User.objects.create_user(
-            username="bgoding", password="pw12345", is_staff=True
+        self.staff = make_user(
+            email="bgoding@example.com", password="pw12345", is_staff=True
         )
 
     def test_records_who_gave_it(self) -> None:

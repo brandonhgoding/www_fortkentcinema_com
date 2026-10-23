@@ -7,6 +7,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from accounts.tests.factories import make_user
 from audience.models import FreeAdmission, Member, MembershipTerm, MembershipTier
 from dashboard.tests.helpers import make_staff
 
@@ -36,8 +37,8 @@ def give_term(member, days_left=100, tier=None):
 
 class MemberListTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
 
     def test_empty_state(self) -> None:
         html = self.client.get(reverse("dashboard:members")).content.decode()
@@ -175,14 +176,10 @@ class MemberListTests(TestCase):
 
     def test_requires_staff(self) -> None:
         self.client.logout()
-        self.assertEqual(
-            self.client.get(reverse("dashboard:members")).status_code, 302
-        )
-        User.objects.create_user(username="p", password="pw12345", is_staff=False)
-        self.client.login(username="p", password="pw12345")
-        self.assertEqual(
-            self.client.get(reverse("dashboard:members")).status_code, 403
-        )
+        self.assertEqual(self.client.get(reverse("dashboard:members")).status_code, 302)
+        make_user(email="p@example.com", password="pw12345", is_staff=False)
+        self.client.login(username="p@example.com", password="pw12345")
+        self.assertEqual(self.client.get(reverse("dashboard:members")).status_code, 403)
 
     def test_members_css_linked(self) -> None:
         html = self.client.get(reverse("dashboard:members")).content.decode()
@@ -195,8 +192,8 @@ class MemberListTests(TestCase):
 
 class MemberCreateEditTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
 
     def test_get_create_form(self) -> None:
         html = self.client.get(reverse("dashboard:member_create")).content.decode()
@@ -257,8 +254,8 @@ class MemberCreateEditTests(TestCase):
 
 class MemberDeleteTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
 
     def test_delete_removes_the_member_and_their_terms(self) -> None:
         member = make_member()
@@ -283,8 +280,8 @@ class MemberDeleteTests(TestCase):
 
 class MemberExportTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
 
     def test_export_is_a_csv_attachment(self) -> None:
         resp = self.client.get(reverse("dashboard:members_export"))
@@ -305,16 +302,20 @@ class MemberExportTests(TestCase):
     def test_one_row_per_member_from_the_latest_term(self) -> None:
         member = make_member()
         MembershipTerm.objects.create(
-            member=member, tier=a_tier("individual"),
+            member=member,
+            tier=a_tier("individual"),
             started_on=datetime.date(2025, 1, 1),
-            expires_on=datetime.date(2026, 1, 1), price_paid=Decimal("60.00"),
+            expires_on=datetime.date(2026, 1, 1),
+            price_paid=Decimal("60.00"),
         )
         give_term(member, tier=a_tier("cinema-supporter"))  # newer
 
         rows = [
-            r for r in self.client.get(
-                reverse("dashboard:members_export")
-            ).content.decode().splitlines() if r
+            r
+            for r in self.client.get(reverse("dashboard:members_export"))
+            .content.decode()
+            .splitlines()
+            if r
         ]
         self.assertEqual(len(rows), 2)  # header + one member
         self.assertIn("cinema-supporter", rows[1])
@@ -370,9 +371,11 @@ class MemberExportTests(TestCase):
     def test_a_member_with_no_terms_still_exports(self) -> None:
         make_member("No", "Terms", "never@example.com")
         rows = [
-            r for r in self.client.get(
-                reverse("dashboard:members_export")
-            ).content.decode().splitlines() if r
+            r
+            for r in self.client.get(reverse("dashboard:members_export"))
+            .content.decode()
+            .splitlines()
+            if r
         ]
         self.assertEqual(len(rows), 2)
         self.assertIn("lapsed", rows[1])
@@ -401,8 +404,8 @@ class RosterOrderTests(TestCase):
     """
 
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         # Created out of order, so insertion (pk) order is not the answer.
         make_member("Ann", "Young", "ann@example.com")
         make_member("Zed", "Adams", "zed@example.com")
@@ -452,8 +455,8 @@ class MemberRosterQueryCountTests(TestCase):
     """
 
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
 
     def test_roster_query_count_does_not_scale_with_member_count(self) -> None:
         for i in range(8):
@@ -476,9 +479,11 @@ class MemberViewOnlyTests(TestCase):
         term = give_term(member, tier=a_tier("cinema-supporter"))
         admission = FreeAdmission.objects.create(member=member)
         make_staff(
-            username="viewer", password="pw12345", perms=("audience.view_member",)
+            email="viewer@example.com",
+            password="pw12345",
+            perms=("audience.view_member",),
         )
-        self.client.login(username="viewer", password="pw12345")
+        self.client.login(username="viewer@example.com", password="pw12345")
 
         listing = self.client.get(reverse("dashboard:members"))
         self.assertContains(listing, "Lovelace")

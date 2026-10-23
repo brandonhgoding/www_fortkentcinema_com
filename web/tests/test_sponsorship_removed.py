@@ -74,7 +74,7 @@ class DashboardSponsorshipRemovedTests(TestCase):
         with self.assertRaises(NoReverseMatch):
             reverse("dashboard:inquiry_status", args=[1])
         staff = make_staff(
-            username="staff", password="pw"
+            email="staff@example.com", password="pw"
         )
         self.client.force_login(staff)
         html = self.client.get(reverse("dashboard:home")).content.decode()

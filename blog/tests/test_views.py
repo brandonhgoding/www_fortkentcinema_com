@@ -6,6 +6,7 @@ import datetime
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 
+from accounts.tests.factories import make_user
 from blog.models import BlogAuthor, BlogCategory, BlogPost
 
 User = get_user_model()
@@ -23,8 +24,8 @@ class ReadOnlyApiTests(TestCase):
 
     def setUp(self):
         # Even staff: the old ModelViewSet let any logged-in account write.
-        User.objects.create_user(username="s", password="pw12345", is_staff=True)
-        self.client.login(username="s", password="pw12345")
+        make_user(email="s@example.com", password="pw12345", is_staff=True)
+        self.client.login(username="s@example.com", password="pw12345")
 
     def test_reads_work(self):
         self.assertEqual(self.client.get("/api/posts/").status_code, 200)

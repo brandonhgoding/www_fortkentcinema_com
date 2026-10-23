@@ -216,8 +216,8 @@ class EditorHeaderImageTests(TestCase):
         super().tearDownClass()
 
     def test_replacing_the_image_changes_its_url_in_the_editor(self):
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         author = BlogAuthor.objects.create(first_name="Ada", last_name="Lovelace")
         cat = BlogCategory.objects.create(name="Reviews")
         data = {
@@ -296,8 +296,8 @@ class DeletedPostImageTests(TestCase):
         self.assertFalse(path.exists())
 
     def test_dashboard_delete_removes_the_file(self):
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         post = self.make_post("Gone From Dashboard")
         path = self.path(post)
         with self.captureOnCommitCallbacks(execute=True):

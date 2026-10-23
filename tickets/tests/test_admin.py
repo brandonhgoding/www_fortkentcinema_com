@@ -2,13 +2,14 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
+from accounts.tests.factories import make_user
 from tickets.tests.factories import make_order, make_showtime
 
 
 class TicketOrderAdminTests(TestCase):
     def setUp(self) -> None:
-        user = get_user_model().objects.create_superuser(
-            username="admin", email="admin@example.com", password="pw"
+        user = make_user(
+            email="admin@example.com", password="pw", is_staff=True, is_superuser=True
         )
         self.client.force_login(user)
         self.order = make_order(make_showtime(), status="PAID")

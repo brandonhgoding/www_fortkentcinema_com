@@ -5,6 +5,8 @@ from typing import Iterable
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 
+from accounts.tests.factories import make_user
+
 User = get_user_model()
 
 ALL = object()
@@ -104,7 +106,7 @@ DASHBOARD_PERMISSIONS = SPEC_PERMISSIONS | _declared_by_views()
 
 
 def make_staff(
-    username: str = "staffer",
+    email: str = "staffer@example.com",
     password: str = "pw12345",
     perms: object | Iterable[str] = ALL,
     **extra,
@@ -114,9 +116,7 @@ def make_staff(
     The default holds every dashboard permission.
     """
     wanted = DASHBOARD_PERMISSIONS if perms is ALL else frozenset(perms)
-    user = User.objects.create_user(
-        username=username, password=password, is_staff=True, **extra
-    )
+    user = make_user(email, password, is_staff=True, **extra)
     rows = []
     for label in sorted(wanted):
         app, codename = label.split(".", 1)

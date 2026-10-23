@@ -63,8 +63,8 @@ class StaffOnlyTests(TestCase):
 
 class StaffTestCase(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
 
 
 class TierListTests(StaffTestCase):
@@ -407,11 +407,11 @@ class ViewOnlyTests(TestCase):
             price_paid=Decimal("60.00"),
         )
         make_staff(
-            username="viewer",
+            email="viewer@example.com",
             password="pw12345",
             perms=("audience.view_membershiptier",),
         )
-        self.client.login(username="viewer", password="pw12345")
+        self.client.login(username="viewer@example.com", password="pw12345")
 
         html = self.client.get(reverse("dashboard:tiers")).content.decode()
         self.assertIn(tier.name, html)
