@@ -238,6 +238,11 @@ REST_FRAMEWORK = {
 }
 
 AUTH_USER_MODEL = "accounts.User"
+# auth.E003/W004 (one check: an error under ModelBackend alone, as in tests,
+# a warning otherwise) want the login field unique=True. The user's email is
+# unique ignoring case through a Lower("email") constraint instead, which the
+# check cannot see, and the manager looks it up with email__iexact.
+SILENCED_SYSTEM_CHECKS = ["auth.E003", "auth.W004"]
 LOGIN_URL = "/login"
 LOGIN_REDIRECT_URL = "/dashboard/"
 
@@ -264,6 +269,9 @@ AUTHENTICATION_BACKENDS = (
 AXES_FAILURE_LIMIT = 5
 AXES_COOLOFF_TIME = datetime.timedelta(minutes=15)
 AXES_LOCKOUT_PARAMETERS = [["username", "ip_address"]]
+# The login form's field is still named "username"; axes would otherwise
+# default to USERNAME_FIELD ("email") and find no username to lock out.
+AXES_USERNAME_FORM_FIELD = "username"
 AXES_RESET_ON_SUCCESS = True
 AXES_LOCKOUT_TEMPLATE = "dashboard/locked_out.html"
 if config("USE_PROXY_HEADERS", default=False, cast=bool):
