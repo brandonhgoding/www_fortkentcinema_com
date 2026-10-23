@@ -4,6 +4,8 @@ from collections import defaultdict
 
 import django.db.models.functions.text
 from django.db import migrations, models
+from django.db.models import Value
+from django.db.models.functions import Cast, Concat, Length
 
 import accounts.managers
 
@@ -37,7 +39,55 @@ def normalise_emails(apps, schema_editor):
 def fill_username_from_email(apps, schema_editor):
     """On reversal, give every user back a username: their email."""
     User = apps.get_model("accounts", "User")
-    User.objects.update(username=models.F("email"))
+    # username holds 150 characters, an email up to 254; those get a
+    # placeholder that fits and is unique because the pk is.
+    User.objects.annotate(n=Length("email")).filter(n__gt=150).update(
+        username=Concat(Value("user"), Cast("pk", models.CharField()))
+    )
+    User.objects.filter(username__isnull=True).update(username=models.F("email"))
+
+
+def move_user_content_type(apps, schema_editor):
+    """Carry the auth | user content type, and what hangs off it, to accounts.
+
+    Production has permissions, group and user grants and admin log entries
+    pointing at auth | user. Renaming that row keeps them all; if an
+    accounts | user row already exists, merge into it instead.
+    """
+    ContentType = apps.get_model("contenttypes", "ContentType")
+    Permission = apps.get_model("auth", "Permission")
+    LogEntry = apps.get_model("admin", "LogEntry")
+    db = schema_editor.connection.alias
+
+    old = ContentType.objects.using(db).filter(app_label="auth", model="user").first()
+    if old is None:
+        return
+    new = (
+        ContentType.objects.using(db)
+        .filter(app_label="accounts", model="user")
+        .first()
+    )
+    if new is None:
+        old.app_label = "accounts"
+        old.save(using=db)
+        return
+
+    existing = {
+        p.codename: p for p in Permission.objects.using(db).filter(content_type=new)
+    }
+    for perm in Permission.objects.using(db).filter(content_type=old):
+        twin = existing.get(perm.codename)
+        if twin is None:
+            perm.content_type = new
+            perm.save(using=db)
+            continue
+        for group in perm.group_set.all():
+            group.permissions.add(twin)
+        for user in perm.user_set.all():
+            user.user_permissions.add(twin)
+        perm.delete()
+    LogEntry.objects.using(db).filter(content_type=old).update(content_type=new)
+    old.delete()
 
 
 class Migration(migrations.Migration):
@@ -45,13 +95,15 @@ class Migration(migrations.Migration):
     dependencies = [
         ("accounts", "0001_initial"),
         ("auth", "0012_alter_user_first_name_max_length"),
+        ("contenttypes", "0002_remove_content_type_name"),
+        ("admin", "0003_logentry_add_action_flag_choices"),
     ]
 
     # The order makes this reversible: going back re-adds username as
     # nullable, fills it from the email, then makes it unique and required.
     operations = [
         migrations.RunPython(normalise_emails, migrations.RunPython.noop),
-        # (Task 4 inserts move_user_content_type here.)
+        migrations.RunPython(move_user_content_type, migrations.RunPython.noop),
         migrations.AlterField(
             model_name="user",
             name="username",
