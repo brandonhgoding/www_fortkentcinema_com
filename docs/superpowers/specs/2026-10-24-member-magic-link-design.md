@@ -1,6 +1,6 @@
 # Member sign-in by magic link
 
-Date: 2026-10-24. Status: approved in conversation, awaiting spec review.
+Date: 2026-10-24. Status: superseded by `2026-10-24-member-registration-design.md` (owner switched members back to passwords).
 
 ## Why
 
