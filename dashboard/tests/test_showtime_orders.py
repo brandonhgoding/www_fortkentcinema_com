@@ -23,9 +23,7 @@ def toast(resp) -> dict:
 
 class DoorListTestCase(TestCase):
     def setUp(self) -> None:
-        self.staff = make_staff(
-            email="sam@example.com", password="pw12345", first_name="Sam"
-        )
+        self.staff = make_staff(email="sam@example.com", password="pw12345")
         self.client.login(username="sam@example.com", password="pw12345")
         self.st = make_showtime()
         self.url = reverse("dashboard:showtime_orders", args=[self.st.pk])
@@ -181,7 +179,7 @@ class DoorListTests(DoorListTestCase):
             resp = self.client.post(arrive, HTTP_HX_REQUEST="true")
         html = resp.content.decode()
         self.assertIn(f'id="ticket-order-{order.pk}"', html)
-        self.assertIn("Arrived 6:52 PM · Sam", html)
+        self.assertIn("Arrived 6:52 PM · sam@example.com", html)
         self.assertIn(">Undo</button>", html)
         order.refresh_from_db()
         self.assertEqual(order.redeemed_by, self.staff)
@@ -196,7 +194,7 @@ class DoorListTests(DoorListTestCase):
         self.assertIsNone(order.redeemed_at)
         self.assertIsNone(order.redeemed_by)
 
-    def test_arrived_falls_back_to_username(self) -> None:
+    def test_arrived_names_the_staff_email(self) -> None:
         make_staff(email="kim@example.com", password="pw12345")
         self.client.login(username="kim@example.com", password="pw12345")
         order = self.paid()

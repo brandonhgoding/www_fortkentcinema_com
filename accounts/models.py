@@ -14,9 +14,14 @@ class User(AbstractUser):
     stripped and lowercased, unique ignoring case at the database.
     Existing staff accounts, their group memberships and the foreign keys
     pointing at them carry over on the same auth_user table.
+
+    No personal names are stored: the email stands in wherever Django
+    would show one.
     """
 
     username = None
+    first_name = None
+    last_name = None
     email = models.EmailField("email address")
 
     USERNAME_FIELD = "email"
@@ -52,5 +57,8 @@ class User(AbstractUser):
         self.email = (self.email or "").strip().lower()
         super().save(*args, **kwargs)
 
+    def get_full_name(self) -> str:
+        return self.email
+
     def get_short_name(self) -> str:
-        return self.first_name or self.email
+        return self.email
