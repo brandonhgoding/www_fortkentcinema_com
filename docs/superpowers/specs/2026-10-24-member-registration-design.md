@@ -83,18 +83,33 @@ that user still exists with that email and password, is active and
 non-staff. Registering the address again sets a new password, which kills
 every older link.
 
-Opening the link (`GET`) verifies the account and shows "Your email is
-verified. Please sign in." with a link to `/login` (owner, 2026-10-24: the
-earlier confirm page that asked for the password was an extra step). It
-does not sign the person in. Opening it again, or after a mail scanner
-fetched it first, shows the same page. An unusable token shows "This
+Opening the link (`GET`) shows "Confirm your email, name@example.com"
+with a password field and a "Confirm my email" button, and changes
+nothing, so a mail scanner or link preview fetching the URL verifies
+nothing. `POST` re-checks the token and that the password matches the
+account's current one, then sets `email_verified_at` and shows "Your
+email is verified. Please sign in." with a link to `/login`. It does not
+sign the person in. A wrong or missing password shows the confirm page
+again with an error and verifies nothing; the latest registrant's
+password is the one that works, so someone who re-registers an address
+they do not own cannot have the owner confirm it, and the owner of an
+address someone else registered cannot confirm it by a curious click.
+Opening or posting a link for an account that is already verified shows
+the verified page without asking. An unusable token shows "This
 confirmation link has expired or was already used." with a link to
-`/login` (status 410). `POST` is not allowed. Responses are `never_cache`.
+`/login` (status 410). The submit button disables itself on click. All
+responses are `never_cache`.
 
-Accepted risk: a mail scanner, or someone clicking a link they didn't ask
-for, verifies an account someone else registered at their address. That
-person can then sign in and see the membership on file for that email;
-the owner of the address takes it back with "Forgot password?".
+The link must not become a second place to guess the password: after
+`AXES_FAILURE_LIMIT` wrong passwords for one account the link answers
+410 for `AXES_COOLOFF_TIME` (five in fifteen minutes, as at `/login`),
+counted in the cache under `register:verify-fail:<pk>`.
+
+History: the password step shipped first (8043af5), was dropped the same
+day as an extra step (8f121c4, GET verified on its own), and was
+restored that evening when the accounts security audit showed the
+click-verifies version let a verification click confirm an account
+whose password someone else had set (owner, 2026-10-24).
 
 ### 3. Signing in (`/login`)
 
@@ -143,7 +158,8 @@ lockout key on the real IP again for staff.
 Plain text, like the password-reset email.
 
 - Verify: subject "Confirm your Fort Kent Cinema account"; the link; that
-  it expires in 24 hours; ignore it if you didn't sign up.
+  it asks for the password chosen at sign-up and expires in 24 hours;
+  ignore it if you didn't sign up.
 - Already registered: subject "Your Fort Kent Cinema account"; you
   already have an account; links to sign in and reset the password;
   ignore it if you didn't try to sign up.
@@ -168,10 +184,16 @@ templates and tests are removed.
   "already registered" email and are unchanged; inactive gets nothing;
   same page in every case; per-address throttle message with the exact
   time; per-IP cap 429 after 5.
-- Verification: opening the link verifies without signing in; a second
-  open still says verified; re-registering kills the older link; expired
-  (24 h + 1 s), tampered, deleted user, changed email or password and
-  staff token all 410; POST 405; never_cache headers.
+- Verification: GET asks for the password and changes nothing; POST with
+  the right password verifies without signing in, with none or a wrong one
+  it does not and the link stays usable; an already-verified account sees
+  the verified page without a password; re-registering kills the older
+  link; an attacker's re-registration cannot be confirmed with the owner's
+  password, nor an attacker's registration by the owner's click; five
+  wrong passwords answer 410 until the cool-off passes, counted per
+  account; expired (24 h + 1 s), tampered, deleted user, changed email or
+  password and staff token all 410 on GET and POST; button disables on
+  click; never_cache headers.
 - Sign-in: unverified member with the right password is not signed in and
   sees the resend button; wrong password still says "Invalid email or
   password."; verified member signs in to `/dashboard/`; staff unchanged
@@ -183,7 +205,7 @@ templates and tests are removed.
   gives distinct buckets per visitor; a forged `X-Forwarded-For` changes
   nothing; without proxy headers it uses `REMOTE_ADDR`; axes uses it.
 - Migration 0004 marks existing users verified.
-- Headless screenshots of `/login`, `/register` and the verified page at
+- Headless screenshots of `/login`, `/register` and the confirm page at
   desktop and phone widths.
 
 ## Out of scope

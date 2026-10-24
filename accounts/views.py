@@ -134,14 +134,42 @@ class ResendVerificationView(_GatedEmailView):
 
 @method_decorator(never_cache, name="dispatch")
 class VerifyEmailView(View):
-    """Opening the link verifies the address. It does not sign the person in:
-    they sign in with their password, which proves they registered."""
+    """Opening the link shows a password field; verifying happens on the
+    POST, once the password matches. So a mail scanner fetching the URL
+    spends nothing, and whoever clicks a link for an address they did not
+    register cannot confirm it (owner, 2026-10-24, after the accounts
+    security audit). It does not sign the person in."""
 
     def get(self, request, token):
-        user = verification.read_token(token)
+        user = self._user(token)
         if user is None:
-            return render(request, "dashboard/verify_expired.html", status=410)
-        if user.email_verified_at is None:
-            user.email_verified_at = timezone.now()
-            user.save(update_fields=["email_verified_at"])
+            return self._expired(request)
+        if user.email_verified_at is not None:
+            return render(request, "dashboard/verify_done.html")
+        return render(request, "dashboard/verify_confirm.html", {"email": user.email})
+
+    def post(self, request, token):
+        user = self._user(token)
+        if user is None:
+            return self._expired(request)
+        if user.email_verified_at is not None:
+            return render(request, "dashboard/verify_done.html")
+        if not user.check_password(request.POST.get("password", "")):
+            verification.record_wrong_password(user)
+            return render(
+                request,
+                "dashboard/verify_confirm.html",
+                {"email": user.email, "wrong_password": True},
+            )
+        user.email_verified_at = timezone.now()
+        user.save(update_fields=["email_verified_at"])
         return render(request, "dashboard/verify_done.html")
+
+    def _user(self, token):
+        user = verification.read_token(token)
+        if user is None or verification.link_locked(user):
+            return None
+        return user
+
+    def _expired(self, request):
+        return render(request, "dashboard/verify_expired.html", status=410)

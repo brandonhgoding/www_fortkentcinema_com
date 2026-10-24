@@ -2,5 +2,5 @@
 
 {{ url }}
 
-It expires in 24 hours. If you didn't sign up, you can ignore this email.
+It will ask for the password you chose when you signed up, and it expires in 24 hours. If you didn't sign up, you can ignore this email.
 {% endautoescape %}
