@@ -2,6 +2,8 @@
 <div class="sidebarOverlay" x-show="sidebarOpen" @click="sidebarOpen = false" x-cloak></div>
 <aside class="sidebar" :class="sidebarOpen ? 'sidebarOpen' : ''" data-cy="sidebar">
   <div class="sidebarBrand">
+    <img class="sidebarCinemaLogo" src="{% static 'img/fkc-logo-white.png' %}" alt="Fort Kent Cinema" width="1800" height="377" />
+    <p class="sidebarPowered">powered by</p>
     <a href="{% url 'dashboard:home' %}" class="sidebarLogo" @click="sidebarOpen = false">LeprinceOS</a>
   </div>
   <nav class="sidebarNav" data-cy="sidebar-nav">
