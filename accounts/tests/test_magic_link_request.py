@@ -85,7 +85,7 @@ class MagicLinkRequestTests(TestCase):
     def test_second_request_within_five_minutes_says_so(self):
         # 14:00 UTC is 10:00 AM in New York (EDT); the retry is 5 minutes on.
         now = datetime(2026, 10, 24, 14, 0, tzinfo=dt_timezone.utc)
-        with mock.patch("accounts.magic_link.timezone.now", return_value=now):
+        with mock.patch("accounts.verification.timezone.now", return_value=now):
             self.client.post(URL, {"email": "ghost@example.com"})
             resp = self.client.post(URL, {"email": "ghost@example.com"})
         self.assertEqual(len(mail.outbox), 1)
