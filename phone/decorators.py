@@ -18,10 +18,10 @@ def _signed_url(request: HttpRequest) -> str:
     """The URL Twilio computed its signature over: the public one it called,
     query string included.
 
-    Behind nginx, build_absolute_uri() is only right because USE_PROXY_HEADERS
-    turns on SECURE_PROXY_SSL_HEADER and USE_X_FORWARDED_HOST; without them it
-    yields http://<internal>/... and every signature fails.
-    TWILIO_WEBHOOK_BASE_URL pins the scheme and host instead.
+    Behind nginx, build_absolute_uri() gets the host from the Host header
+    nginx passes through, and the scheme only because USE_PROXY_HEADERS turns
+    on SECURE_PROXY_SSL_HEADER; without it the URL is http://... and every
+    signature fails. TWILIO_WEBHOOK_BASE_URL pins the scheme and host instead.
     """
     base = settings.TWILIO_WEBHOOK_BASE_URL
     if base:

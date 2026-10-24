@@ -17,8 +17,6 @@ WEBHOOKS = (
 )
 PROXY = override_settings(
     SECURE_PROXY_SSL_HEADER=("HTTP_X_FORWARDED_PROTO", "https"),
-    USE_X_FORWARDED_HOST=True,
-    ALLOWED_HOSTS=["www.fortkentcinema.com", "testserver"],
 )
 
 
@@ -97,16 +95,22 @@ class SignatureTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
 
-@override_settings(TWILIO_AUTH_TOKEN=TOKEN, TWILIO_WEBHOOK_BASE_URL="")
+@override_settings(
+    TWILIO_AUTH_TOKEN=TOKEN,
+    TWILIO_WEBHOOK_BASE_URL="",
+    ALLOWED_HOSTS=["www.fortkentcinema.com", "testserver"],
+)
 class ReverseProxyTests(TestCase):
     """nginx terminates TLS, so Django sees plain HTTP from 127.0.0.1 while
-    Twilio signed https://www.fortkentcinema.com/... ."""
+    Twilio signed https://www.fortkentcinema.com/... . nginx's proxy_params
+    passes the public Host header through and adds X-Forwarded-Proto; it
+    sets no X-Forwarded-Host, and Django reads none."""
 
     path = "/phone/voice/"
     public_url = "https://www.fortkentcinema.com/phone/voice/"
     forwarded = {
         "HTTP_X_FORWARDED_PROTO": "https",
-        "HTTP_X_FORWARDED_HOST": "www.fortkentcinema.com",
+        "HTTP_HOST": "www.fortkentcinema.com",
     }
 
     def setUp(self) -> None:
@@ -123,6 +127,20 @@ class ReverseProxyTests(TestCase):
         # What production would do if USE_PROXY_HEADERS were left off.
         response = post_signed(
             self.client, self.path, CALL, url=self.public_url, **self.forwarded
+        )
+        self.assertEqual(response.status_code, 403)
+
+    @PROXY
+    def test_a_forged_forwarded_host_changes_nothing(self) -> None:
+        # The visitor's own X-Forwarded-Host is ignored: the signature is
+        # checked against the host nginx received.
+        response = post_signed(
+            self.client,
+            self.path,
+            CALL,
+            url="https://evil.example/phone/voice/",
+            HTTP_X_FORWARDED_HOST="evil.example",
+            **self.forwarded,
         )
         self.assertEqual(response.status_code, 403)
 
