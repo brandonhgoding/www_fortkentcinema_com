@@ -1,13 +1,13 @@
 # Core Django
-Django==5.2.3
-djangorestframework==3.16.0
+Django==5.2.18
+djangorestframework==3.18.3
 django-cors-headers==4.7.0
 
 # Database
 psycopg2-binary==2.9.11
 
 # Media handling
-pillow==11.2.1
+pillow==13.0.0
 
 # Blog post bodies (Markdown, sanitised)
 markdown==3.9
@@ -17,7 +17,7 @@ nh3==0.3.1
 twilio==9.11.2
 
 # Login lockout after repeated wrong passwords (fortkentcinema/settings.py AXES_*)
-django-axes==8.0.0
+django-axes==8.3.1
 
 # Configuration
 python-decouple==3.8
@@ -29,14 +29,14 @@ whitenoise==6.7.0
 gunicorn==23.0.0
 
 # Dependencies of above packages
-asgiref==3.8.1
-certifi==2025.6.15
-charset-normalizer==3.4.2
-idna==3.10
-requests==2.32.4
-sqlparse==0.5.3
+asgiref==3.13.0
+certifi==2026.10.23
+charset-normalizer==3.5.2
+idna==3.20
+requests==2.34.2
+sqlparse==0.6.0
 typing_extensions==4.16.0
-urllib3==2.5.0
+urllib3==2.8.0
 
 # Spreadsheet import (studio DCP availability lists)
 openpyxl==3.1.5

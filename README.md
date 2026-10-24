@@ -17,6 +17,12 @@ and `mypy.ini`); 3.11 is the floor, because `boxoffice.gateway.parse_timestamp`
 relies on `fromisoformat` reading Square's trailing `Z`. The deploy's
 interpreter must match; `.python-version` is gitignored here, so set it locally.
 
+Every package in `requirements.txt` is pinned. Before bumping or adding one, and
+whenever the pins are more than a few months old, run `pip-audit -r requirements.txt
+--no-deps` (from `dev-requirements.txt`): it checks the pins against the PyPI and OSV
+advisory databases and must report "No known vulnerabilities found". Upgrading
+`django-axes` can bring new migrations, so deploys run `migrate` as usual.
+
 ## Online tickets
 
 Online ticket sales (the `tickets` app) need one nightly job beside the Square
