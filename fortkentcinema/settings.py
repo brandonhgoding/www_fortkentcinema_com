@@ -179,10 +179,15 @@ MEDIA_ROOT = Path(config("MEDIA_ROOT", default=str(BASE_DIR / "media")))
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Behind nginx (proxy_params): trust X-Forwarded-Proto for the scheme. The
+# host needs no forwarded header, because nginx passes the real Host header
+# through (`proxy_set_header Host $http_host`). X-Forwarded-Host is never
+# read: proxy_params does not set it, so it would arrive from the visitor,
+# and the links in password-reset and verification emails are built from
+# the request host (accounts security audit 2026-10-24, L1).
 USE_PROXY_HEADERS = config("USE_PROXY_HEADERS", default=False, cast=bool)
 if USE_PROXY_HEADERS:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-    USE_X_FORWARDED_HOST = True
 
 # Production security hardening. All default OFF/empty so local dev and the
 # test suite are unaffected; set the corresponding env vars in production.
