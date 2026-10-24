@@ -9,7 +9,10 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from accounts.forms import EmailAuthenticationForm, EmailPasswordResetForm
-from accounts.views import LockoutClearingPasswordResetConfirmView
+from accounts.views import (
+    LockoutClearingPasswordResetConfirmView,
+    MagicLinkSignInView,
+)
 from django.contrib.auth.views import (
     LoginView,
     LogoutView,
@@ -58,6 +61,11 @@ urlpatterns = [
             authentication_form=EmailAuthenticationForm,
         ),
         name="login",
+    ),
+    path(
+        "login/link/<str:token>",
+        MagicLinkSignInView.as_view(),
+        name="magic_link_sign_in",
     ),
     path("logout/", LogoutView.as_view(next_page="/login"), name="logout"),
     path(
