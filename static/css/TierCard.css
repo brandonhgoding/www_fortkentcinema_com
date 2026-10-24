@@ -170,11 +170,10 @@
 .tier-card__perks {
   list-style: none;
   padding: 0;
-  margin: 0 0 var(--spacing-lg);
+  margin: 0;
   text-align: left;
   border-top: 1px solid rgba(32, 57, 130, 0.25);
-  border-bottom: 1px solid rgba(32, 57, 130, 0.25);
-  padding: var(--spacing-md) 0;
+  padding: var(--spacing-md) 0 0;
 }
 
 .tier-card__perks li {
@@ -207,29 +206,6 @@
 
 .tier-card__perk-text {
   flex: 1 1 auto;
-}
-
-/* CTA */
-.tier-card__cta {
-  margin-top: auto;
-  align-self: stretch;
-  letter-spacing: 4px;
-  font-size: 1rem;
-  padding: 0.85rem 1.5rem;
-}
-
-.tier-card--featured .tier-card__cta {
-  background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-warm) 100%);
-  color: var(--color-on-accent);
-  border: 1px solid var(--color-gold);
-  box-shadow: 0 4px 15px var(--color-gold-glow);
-}
-
-.tier-card--featured .tier-card__cta:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px var(--color-gold-glow);
-  background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-warm) 100%);
-  color: var(--color-on-accent);
 }
 
 /* Family ribbon — mirrored to the top-left so it can coexist with the featured ribbon */
