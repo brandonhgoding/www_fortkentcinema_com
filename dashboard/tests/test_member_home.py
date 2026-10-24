@@ -1,11 +1,18 @@
+import datetime
 import re
+from decimal import Decimal
 
 from accounts.tests.factories import make_user
-from audience.models import FreeAdmission
+from audience.models import FreeAdmission, MembershipTerm, MembershipTier
 from dashboard.tests.helpers import make_staff
-from dashboard.tests.test_free_admissions import give_term, make_member
+from dashboard.tests.test_free_admissions import (
+    give_expired_term,
+    give_term,
+    make_member,
+)
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 
 class MemberHomeTests(TestCase):
@@ -78,3 +85,56 @@ class MemberHomeTests(TestCase):
         resp = self.client.get(reverse("dashboard:home"))
         self.assertEqual(resp.status_code, 302)
         self.assertIn("/login", resp["Location"])
+
+
+class MemberHomeStateTests(TestCase):
+    sign_in = MemberHomeTests.sign_in
+
+    def page(self) -> str:
+        self.sign_in()
+        return self.client.get(reverse("dashboard:home")).content.decode()
+
+    def fmt(self, d) -> str:
+        return d.strftime("%b %-d, %Y")
+
+    def test_expiring_shows_tier_and_covered_through(self) -> None:
+        member = make_member()
+        term = give_term(member, "cinema-supporter")
+        term.expires_on = timezone.localdate() + datetime.timedelta(days=5)
+        term.save()
+        html = self.page()
+        self.assertIn("Expiring soon", html)
+        self.assertIn(term.tier.name, html)
+        self.assertIn(self.fmt(term.expires_on), html)
+
+    def test_lapsed_shows_last_tier_and_expired_date(self) -> None:
+        member = make_member()
+        term = give_expired_term(member, "family-plus")
+        html = self.page()
+        self.assertIn("Lapsed", html)
+        self.assertIn(term.tier.name, html)
+        self.assertIn(f"Expired {self.fmt(term.expires_on)}", html)
+        self.assertNotIn("None", html)
+        self.assertNotIn("Free admissions this month", html)
+
+    def test_upcoming_shows_tier_and_start_date(self) -> None:
+        member = make_member()
+        today = timezone.localdate()
+        term = MembershipTerm.objects.create(
+            member=member,
+            tier=MembershipTier.objects.get(slug="cinema-supporter"),
+            started_on=today + datetime.timedelta(days=10),
+            expires_on=today + datetime.timedelta(days=375),
+            price_paid=Decimal("120.00"),
+        )
+        html = self.page()
+        self.assertIn("Not started yet", html)
+        self.assertIn(term.tier.name, html)
+        self.assertIn(f"Starts {self.fmt(term.started_on)}", html)
+        self.assertNotIn("None", html)
+
+    def test_member_with_no_terms_has_no_tier_line(self) -> None:
+        make_member()
+        html = self.page()
+        self.assertNotIn(">Tier<", html)
+        self.assertNotIn("None", html)

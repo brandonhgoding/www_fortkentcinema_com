@@ -12,20 +12,30 @@
   </div>
 
   {% if member %}
-  {% with term=member.current_term %}
   <div class="card"><div class="cardBody">
+    {% if tier_name %}
     <p class="cardLabel">Tier</p>
-    <p class="cardValue">{% if term %}{{ term.tier.name }}{% else %}None{% endif %}</p>
+    <p class="cardValue">{{ tier_name }}</p>
+    {% endif %}
     <p class="cardLabel">Status</p>
     <p>{{ member.status_label }}</p>
     {% if member.covered_through %}
     <p class="cardLabel">Covered through</p>
     <p>{{ member.covered_through|date:"M j, Y" }}</p>
     {% endif %}
+    {% if starts_on %}
+    <p class="cardLabel">Starts</p>
+    <p>Starts {{ starts_on|date:"M j, Y" }}</p>
+    {% endif %}
+    {% if expired_on %}
+    <p class="cardLabel">Expired</p>
+    <p>Expired {{ expired_on|date:"M j, Y" }}</p>
+    {% endif %}
+    {% if member.free_admission_allowance > 0 %}
     <p class="cardLabel">Free admissions this month</p>
     <p>{{ free_used }} / {{ member.free_admission_allowance }}</p>
+    {% endif %}
   </div></div>
-  {% endwith %}
   {% else %}
   <p class="page-subtitle">No membership on file for this email. Join at the box office before any show.</p>
   <p><a href="/membership/">See membership options</a></p>
