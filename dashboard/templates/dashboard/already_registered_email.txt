@@ -1,0 +1,7 @@
+{% autoescape off %}Someone tried to create a Fort Kent Cinema account with this email address, but you already have one.
+
+Sign in: {{ login_url }}
+Forgot your password? Reset it: {{ reset_url }}
+
+If you didn't try to sign up, you can ignore this email.
+{% endautoescape %}

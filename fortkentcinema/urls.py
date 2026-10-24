@@ -14,6 +14,7 @@ from accounts.views import (
     MagicLinkRequestView,
     MagicLinkSignInView,
     SignInView,
+    VerifyEmailView,
 )
 from django.contrib.auth.views import (
     LogoutView,
@@ -65,6 +66,11 @@ urlpatterns = [
         "login/link/<str:token>",
         MagicLinkSignInView.as_view(),
         name="magic_link_sign_in",
+    ),
+    path(
+        "register/verify/<str:token>",
+        VerifyEmailView.as_view(),
+        name="verify_email",
     ),
     path("logout/", LogoutView.as_view(next_page="/login"), name="logout"),
     path(

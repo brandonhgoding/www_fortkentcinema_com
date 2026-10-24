@@ -1,5 +1,4 @@
 import time
-from datetime import timedelta
 from unittest import mock
 
 from django.core import mail
@@ -52,27 +51,6 @@ class MagicLinkTokenTests(TestCase):
         self.assertFalse(magic_link.link_allowed_for(gone))
         self.assertTrue(magic_link.link_allowed_for(None))
         self.assertTrue(magic_link.link_allowed_for(member))
-
-    def test_normalise(self):
-        self.assertEqual(magic_link.normalise(" Ann@Example.com "), "ann@example.com")
-
-
-class MagicLinkThrottleTests(TestCase):
-    def setUp(self):
-        cache.clear()
-
-    def test_claim_address_once_per_five_minutes(self):
-        self.assertIsNone(magic_link.claim_address("ann@example.com"))
-        retry = magic_link.claim_address("ann@example.com")
-        expected = timezone.now() + timedelta(seconds=300)
-        self.assertLess(abs((retry - expected).total_seconds()), 2)
-
-    def test_ip_cap(self):
-        for _ in range(5):
-            self.assertTrue(magic_link.ip_allowed("203.0.113.9"))
-        self.assertFalse(magic_link.ip_allowed("203.0.113.9"))
-        self.assertTrue(magic_link.ip_allowed("203.0.113.10"))
-        self.assertTrue(magic_link.ip_allowed(None))
 
 
 class MagicLinkEmailTests(TestCase):

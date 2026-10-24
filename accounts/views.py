@@ -2,6 +2,7 @@ from axes.utils import reset as reset_lockout
 from django.contrib.auth import get_user_model, login
 from django.contrib.auth.views import LoginView, PasswordResetConfirmView
 from django.db import IntegrityError, transaction
+from django.http import HttpResponseNotFound
 from django.shortcuts import redirect, render
 from django.views import View
 
@@ -103,3 +104,10 @@ class MagicLinkSignInView(View):
             {"link_form": MagicLinkForm()},
             status=410,
         )
+
+
+class VerifyEmailView(View):
+    """Filled in by the registration views."""
+
+    def get(self, request, token):
+        return HttpResponseNotFound()

@@ -6,26 +6,25 @@ once, and for a brand-new address creating the account does the same.
 """
 
 import logging
-from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core import signing
-from django.core.cache import cache
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.urls import reverse
-from django.utils import timezone
+
+from accounts.verification import (  # noqa: F401
+    IP_CAP,
+    IP_WINDOW,
+    claim_address,
+    ip_allowed,
+    normalise,
+)
 
 logger = logging.getLogger(__name__)
 
 SALT = "accounts.magic-link"
-IP_CAP = 5
-IP_WINDOW = 3600
-
-
-def normalise(email: str) -> str:
-    return email.strip().lower()
 
 
 def _find_user(email: str):
@@ -58,25 +57,6 @@ def read_token(token: str) -> str | None:
     if stamp != _stamp(user) or not link_allowed_for(user):
         return None
     return email
-
-
-def ip_allowed(ip: str | None) -> bool:
-    """Count this request against the IP's hourly cap."""
-    if ip is None:
-        return True
-    key = f"magic-link:ip:{ip}"
-    cache.add(key, 0, IP_WINDOW)
-    return cache.incr(key) <= IP_CAP
-
-
-def claim_address(email: str) -> datetime | None:
-    """None if the address was free (now claimed for 300 s); else when it may
-    ask again."""
-    key = f"magic-link:addr:{email}"
-    retry = timezone.now() + timedelta(seconds=settings.PASSWORD_RESET_TIMEOUT)
-    if cache.add(key, retry, settings.PASSWORD_RESET_TIMEOUT):
-        return None
-    return cache.get(key) or retry
 
 
 def send_link(request, email: str) -> None:
