@@ -8,6 +8,20 @@
 }
 .login-shell { width: 100%; max-width: 400px; }
 .login-card { padding: var(--space-2xl); animation: scale-in 0.4s ease-out; }
+.login-logo {
+  display: block;
+  width: 100%;
+  max-width: 260px;
+  height: auto;
+  margin: 0 auto;
+}
+.login-powered {
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  letter-spacing: 0.06em;
+  margin: var(--space-md) 0 var(--space-xs);
+}
 .login-brand {
   font-family: var(--font-serif);
   font-size: var(--text-3xl);
@@ -31,6 +45,7 @@
   margin-top: var(--space-sm);
 }
 .login-form input[type="text"],
+.login-form input[type="email"],
 .login-form input[type="password"] {
   width: 100%;
   padding: var(--space-md);
