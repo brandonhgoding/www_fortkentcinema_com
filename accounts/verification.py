@@ -1,9 +1,11 @@
-"""Confirm a member's email address by an emailed single-use link.
+"""Confirm a member's email address by an emailed link plus the password.
 
 The link carries a signed token naming the account, its email and a
 fingerprint of its password, so registering the address again with a new
-password kills older links. This module also holds the registration
-throttles (per-address and per-IP).
+password kills older links. Confirming also needs the account's password,
+so whoever clicks must be the person who chose it. This module also holds
+the registration throttles (per-address and per-IP) and the guess counter
+that kills a link after too many wrong passwords.
 """
 
 import logging
@@ -83,6 +85,27 @@ def claim_address(email: str) -> datetime | None:
     if cache.add(key, retry, settings.PASSWORD_RESET_TIMEOUT):
         return None
     return cache.get(key) or retry
+
+
+def _failures_key(user) -> str:
+    return f"register:verify-fail:{user.pk}"
+
+
+def link_locked(user) -> bool:
+    """True once the account's link took AXES_FAILURE_LIMIT wrong passwords
+    within AXES_COOLOFF_TIME: the same brake as the sign-in form, so the
+    link is not a second place to guess the password."""
+    return (cache.get(_failures_key(user)) or 0) >= settings.AXES_FAILURE_LIMIT
+
+
+def record_wrong_password(user) -> None:
+    key = _failures_key(user)
+    ttl = int(settings.AXES_COOLOFF_TIME.total_seconds())
+    cache.add(key, 0, ttl)
+    try:
+        cache.incr(key)
+    except ValueError:
+        cache.add(key, 1, ttl)
 
 
 def send_verification(request, user) -> None:
