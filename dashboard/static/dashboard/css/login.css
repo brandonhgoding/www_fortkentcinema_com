@@ -58,6 +58,27 @@
 }
 .login-form input:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 .login-submit { width: 100%; margin-top: var(--space-lg); }
+a.login-submit { display: block; text-align: center; text-decoration: none; }
+.login-message {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  text-align: center;
+  margin-bottom: var(--space-md);
+}
+.login-aside {
+  text-align: center;
+  font-size: var(--text-sm);
+  margin-top: var(--space-lg);
+}
+.login-aside + .login-aside { margin-top: var(--space-sm); }
+.login-aside a { color: var(--text-secondary); }
+.login-hp {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
 .login-error {
   background: var(--status-cancelled-bg);
   color: var(--status-cancelled);
