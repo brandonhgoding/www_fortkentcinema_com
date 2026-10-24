@@ -14,6 +14,7 @@ class Command(BaseCommand):
         stale = get_user_model().objects.filter(
             is_staff=False,
             email_verified_at__isnull=True,
+            last_login__isnull=True,
             date_joined__lt=timezone.now() - GRACE,
         )
         # delete() totals cascaded rows too; report only the accounts.

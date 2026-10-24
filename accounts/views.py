@@ -112,7 +112,9 @@ class RegisterView(_GatedEmailView):
             verification.send_already_registered(request, email)
             return
         user.set_password(password)
-        user.save(update_fields=["password"])
+        # The 7-day cleanup counts from the latest link sent.
+        user.date_joined = timezone.now()
+        user.save(update_fields=["password", "date_joined"])
         verification.send_verification(request, user)
 
 
@@ -125,6 +127,8 @@ class ResendVerificationView(_GatedEmailView):
             and not user.is_staff
             and user.email_verified_at is None
         ):
+            user.date_joined = timezone.now()
+            user.save(update_fields=["date_joined"])
             verification.send_verification(request, user)
 
 

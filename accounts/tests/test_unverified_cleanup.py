@@ -56,3 +56,11 @@ class DeleteUnverifiedAccountsTests(TestCase):
             sorted(get_user_model().objects.values_list("email", flat=True)),
             ["new@example.com", "staff@example.com", "verified@example.com"],
         )
+
+    def test_account_that_ever_signed_in_survives(self):
+        demoted = self.make("demoted@example.com", 30)
+        get_user_model().objects.filter(pk=demoted.pk).update(
+            last_login=timezone.now() - timedelta(days=20)
+        )
+        call_command("delete_unverified_accounts", stdout=StringIO())
+        self.assertTrue(get_user_model().objects.filter(pk=demoted.pk).exists())

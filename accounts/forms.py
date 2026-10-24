@@ -5,7 +5,7 @@ from django.contrib.auth.forms import (
     PasswordResetForm,
     UsernameField,
 )
-from django.contrib.auth import password_validation
+from django.contrib.auth import get_user_model, password_validation
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 
@@ -110,5 +110,7 @@ class RegisterForm(ResendForm):
             raise ValidationError(
                 self.error_messages["password_mismatch"], code="password_mismatch"
             )
-        password_validation.validate_password(password2, user=None)
+        # An unsaved user lets the similarity validator compare the email.
+        candidate = get_user_model()(email=self.cleaned_data.get("email", ""))
+        password_validation.validate_password(password2, user=candidate)
         return password2

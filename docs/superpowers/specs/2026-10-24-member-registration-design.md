@@ -33,6 +33,10 @@ register with a password, then confirm their address by emailed link.
   blank=True)`. Migration `accounts 0004` adds it and marks every
   existing user verified (`email_verified_at = now`), so staff are
   unaffected.
+- Accounts made or promoted in the admin are stamped verified on save
+  (added through the admin, or `is_staff` ticked), and an admin action
+  "Mark email verified" stamps selected users so the owner can rescue a
+  member.
 - Verification is required only for non-staff accounts. Staff are made
   in the admin as today and never asked to verify.
 - A registered, unverified member is `is_active=True`,
@@ -117,8 +121,10 @@ reset flow is also marked verified (the reset link reached their inbox).
 ### 4. Cleanup
 
 Management command `delete_unverified_accounts` deletes non-staff users
-with `email_verified_at` null and `date_joined` more than 7 days ago, and
-prints how many. The ansible `django_app` role gets an optional nightly
+with `email_verified_at` null, no `last_login`, and `date_joined` more
+than 7 days ago, and prints how many; anyone who has ever signed in is
+never deleted. Re-registering or resending a link resets `date_joined`, so
+the 7 days count from the latest link sent. The ansible `django_app` role gets an optional nightly
 cron (`cron_unverified_cleanup`, 3:15 AM Eastern, `flock`, like
 `cron_ticket_expire`), enabled for this site. The ansible edit is left
 uncommitted for the owner.

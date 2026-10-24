@@ -1,6 +1,6 @@
 """The one place the visitor's IP address is worked out.
 
-Used by the sign-in link throttle, registration and axes lockout alike, so
+Used by the registration throttle and axes lockout alike, so
 all of them see the same address.
 """
 

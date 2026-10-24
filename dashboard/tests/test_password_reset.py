@@ -191,7 +191,7 @@ class PasswordResetLockoutTests(TestCase):
 
 
 class MemberResetTests(TestCase):
-    def test_member_account_gets_no_reset_email(self):
+    def test_account_with_unusable_password_gets_no_reset_email(self):
         cache.clear()
         get_user_model().objects.create_user("member@example.com", password=None)
         self.client.post("/password-reset", {"email": "member@example.com"})

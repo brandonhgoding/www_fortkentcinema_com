@@ -1,10 +1,11 @@
-from datetime import datetime, timezone as dt_timezone
+from datetime import datetime, timedelta, timezone as dt_timezone
 from unittest import mock
 
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.core.cache import cache
 from django.test import TestCase, override_settings
+from django.utils import timezone
 
 from accounts.tests.factories import make_user
 from dashboard.tests.helpers import make_staff
@@ -74,6 +75,18 @@ class RegisterTests(TestCase):
         self.assertEqual(
             mail.outbox[0].subject, "Confirm your Fort Kent Cinema account"
         )
+
+    def test_reregistering_refreshes_date_joined(self):
+        user = make_user("ann@example.com", "old-password-1", is_staff=False)
+        old = timezone.now() - timedelta(days=6)
+        self.users.filter(pk=user.pk).update(date_joined=old)
+        post(self.client)
+        self.assertGreater(self.users.get().date_joined, old + timedelta(days=5))
+
+    def test_similar_password_refused(self):
+        response = post(self.client, email="annmarie@example.com", p1="annmarie12")
+        self.assertTrue(response.context["form"].errors["password2"])
+        self.assertEqual(self.users.count(), 0)
 
     def test_verified_and_staff_get_already_registered_and_are_unchanged(self):
         from django.utils import timezone
@@ -210,6 +223,14 @@ class ResendTests(TestCase):
         self.assertEqual(
             mail.outbox[0].subject, "Confirm your Fort Kent Cinema account"
         )
+
+    def test_resend_refreshes_date_joined(self):
+        user = make_user("u@example.com", "pw-1-long-enough", is_staff=False)
+        old = timezone.now() - timedelta(days=6)
+        get_user_model().objects.filter(pk=user.pk).update(date_joined=old)
+        self.resend("u@example.com")
+        joined = get_user_model().objects.get().date_joined
+        self.assertGreater(joined, old + timedelta(days=5))
 
     def test_honeypot_sends_nothing(self):
         make_user("u@example.com", "pw-1-long-enough", is_staff=False)

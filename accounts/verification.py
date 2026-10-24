@@ -58,7 +58,13 @@ def ip_allowed(ip: str | None) -> bool:
         return True
     key = f"register:ip:{ip}"
     cache.add(key, 0, IP_WINDOW)
-    return cache.incr(key) <= IP_CAP
+    try:
+        count = cache.incr(key)
+    except ValueError:
+        # The key expired between add and incr: start a fresh window.
+        cache.add(key, 1, IP_WINDOW)
+        count = 1
+    return count <= IP_CAP
 
 
 def claim_address(email: str) -> datetime | None:
