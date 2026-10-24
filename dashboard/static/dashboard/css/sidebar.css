@@ -78,6 +78,20 @@
   opacity: 0.5;
 }
 
+.sidebarCinemaLogo {
+  display: block;
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+}
+
+.sidebarPowered {
+  color: var(--text-light-muted);
+  font-size: var(--text-xs);
+  letter-spacing: 0.06em;
+  margin: 0.75rem 0 0.125rem;
+}
+
 .sidebarLogo {
   font-family: var(--font-serif);
   color: var(--brass);

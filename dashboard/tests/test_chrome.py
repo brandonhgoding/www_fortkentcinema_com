@@ -21,6 +21,22 @@ class ChromeTests(TestCase):
         self.assertIn(">Screens<", html)
         self.assertNotIn("API Docs", html)
 
+    def test_sidebar_shows_white_logo_powered_by_leprinceos(self) -> None:
+        html = self.client.get(reverse("dashboard:home")).content.decode()
+        brand = html.split('class="sidebarBrand"', 1)[1].split("</div>", 1)[0]
+        self.assertIn("img/fkc-logo-white.png", brand)
+        self.assertIn('alt="Fort Kent Cinema"', brand)
+        self.assertLess(brand.index("fkc-logo-white"), brand.index("powered by"))
+        self.assertLess(brand.index("powered by"), brand.index("LeprinceOS"))
+
+    def test_mobile_header_shows_white_logo_powered_by_leprinceos(self) -> None:
+        html = self.client.get(reverse("dashboard:home")).content.decode()
+        header = html.split('class="mobileHeader"', 1)[1].split("</header>", 1)[0]
+        self.assertIn("img/fkc-logo-white.png", header)
+        self.assertIn('alt="Fort Kent Cinema"', header)
+        self.assertLess(header.index("fkc-logo-white"), header.index("powered by"))
+        self.assertLess(header.index("powered by"), header.index("LeprinceOS"))
+
     def test_nav_order_home_first_then_alphabetical(self) -> None:
         # Home stays on top; everything under it is alphabetical by the label
         # staff see, the order the owner set on 2026-10-03. The mobile menu

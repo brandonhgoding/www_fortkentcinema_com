@@ -68,12 +68,34 @@
 }
 
 .mobileBrand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   font-family: var(--font-serif);
   color: var(--brass);
-  font-size: var(--text-xl);
+  font-size: var(--text-base);
   font-weight: 400;
   text-decoration: none;
   letter-spacing: 0.02em;
+}
+
+.mobileCinemaLogo {
+  display: block;
+  width: auto;
+  height: 28px;
+}
+
+.mobileBrandText {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.mobilePowered {
+  font-family: var(--font-sans);
+  color: var(--text-light-muted);
+  font-size: 0.625rem;
+  letter-spacing: 0.06em;
 }
 
 .mobileBrand:hover {

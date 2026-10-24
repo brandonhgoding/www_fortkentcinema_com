@@ -1,6 +1,9 @@
-<header class="mobileHeader">
+{% load static %}<header class="mobileHeader">
   <button class="mobileMenuToggle" @click="sidebarOpen = true" aria-label="Toggle navigation">
     <span class="hamburgerIcon"><span></span><span></span><span></span></span>
   </button>
-  <a href="{% url 'dashboard:home' %}" class="mobileBrand">LeprinceOS</a>
+  <a href="{% url 'dashboard:home' %}" class="mobileBrand">
+    <img class="mobileCinemaLogo" src="{% static 'img/fkc-logo-white.png' %}" alt="Fort Kent Cinema" width="1800" height="377" />
+    <span class="mobileBrandText"><span class="mobilePowered">powered by</span>LeprinceOS</span>
+  </a>
 </header>
