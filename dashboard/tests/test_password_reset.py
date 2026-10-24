@@ -4,6 +4,7 @@ from unittest import mock
 
 from axes.models import AccessAttempt
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core import mail
 from django.core.cache import cache
 from django.test import TestCase, override_settings
@@ -187,3 +188,11 @@ class PasswordResetLockoutTests(TestCase):
             {"username": "staffer@example.com", "password": "popcorn-balcony-42"},
         )
         self.assertEqual((resp.status_code, resp["Location"]), (302, "/dashboard/"))
+
+
+class MemberResetTests(TestCase):
+    def test_member_account_gets_no_reset_email(self):
+        cache.clear()
+        get_user_model().objects.create_user("member@example.com", password=None)
+        self.client.post("/password-reset", {"email": "member@example.com"})
+        self.assertEqual(len(mail.outbox), 0)

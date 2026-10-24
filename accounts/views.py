@@ -1,9 +1,9 @@
 from axes.helpers import get_client_ip_address
 from axes.utils import reset as reset_lockout
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, login
 from django.contrib.auth.views import LoginView, PasswordResetConfirmView
-from django.http import HttpResponseNotFound
-from django.shortcuts import render
+from django.db import IntegrityError, transaction
+from django.shortcuts import redirect, render
 from django.views import View
 
 from accounts import magic_link
@@ -67,7 +67,39 @@ class MagicLinkRequestView(View):
 
 
 class MagicLinkSignInView(View):
-    """Stub: the sign-in view arrives in a later task."""
+    """Opening a link only shows a confirm button; signing in (and creating
+    the member account on first use) happens on the POST, so mail scanners
+    and link previews that fetch the URL spend nothing."""
 
     def get(self, request, token):
-        return HttpResponseNotFound()
+        if request.user.is_authenticated:
+            return redirect("/dashboard/")
+        email = magic_link.read_token(token)
+        if email is None:
+            return self._expired(request)
+        return render(request, "dashboard/magic_link_confirm.html", {"email": email})
+
+    def post(self, request, token):
+        if request.user.is_authenticated:
+            return redirect("/dashboard/")
+        email = magic_link.read_token(token)
+        if email is None:
+            return self._expired(request)
+        users = get_user_model().objects
+        user = users.filter(email__iexact=email).first()
+        if user is None:
+            try:
+                with transaction.atomic():
+                    user = users.create_user(email, password=None, is_staff=False)
+            except IntegrityError:
+                return self._expired(request)
+        login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+        return redirect("/dashboard/")
+
+    def _expired(self, request):
+        return render(
+            request,
+            "dashboard/magic_link_expired.html",
+            {"link_form": MagicLinkForm()},
+            status=410,
+        )
