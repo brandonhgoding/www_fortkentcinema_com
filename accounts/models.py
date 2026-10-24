@@ -23,6 +23,7 @@ class User(AbstractUser):
     first_name = None
     last_name = None
     email = models.EmailField("email address")
+    email_verified_at = models.DateTimeField(null=True, blank=True)
 
     USERNAME_FIELD = "email"
     EMAIL_FIELD = "email"
