@@ -1,9 +1,9 @@
 import re
 from unittest.mock import Mock, patch
 
-from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from accounts.tests.factories import make_user
 from phone.models import Voicemail, VoicemailStatus
 from phone.recordings import RecordingError
 from dashboard.tests.helpers import make_staff
@@ -19,7 +19,7 @@ UNCONFIGURED = override_settings(TWILIO_ACCOUNT_SID="")
 class VoicemailTestCase(TestCase):
     def setUp(self) -> None:
         self.staff = make_staff(
-            username="staff", password="pw"
+            email="staff@example.com", password="pw"
         )
         self.voicemail = Voicemail.objects.create(
             recording_sid=SID,
@@ -384,7 +384,7 @@ class VoicemailPermissionTests(VoicemailTestCase):
     @patch("dashboard.voicemail_views.recordings.delete_recording")
     def test_signed_in_non_staff_is_refused(self, *_: Mock):
         self.client.force_login(
-            get_user_model().objects.create_user(username="member", password="pw")
+            make_user(email="member@example.com", password="pw")
         )
         for method, url in self.routes():
             with self.subTest(url):
@@ -427,9 +427,9 @@ class VoicemailViewOnlyTests(VoicemailTestCase):
         self.voicemail.notes = "Called back Tuesday"
         self.voicemail.save(update_fields=["notes"])
         make_staff(
-            username="viewer", password="pw", perms=("phone.view_voicemail",)
+            email="viewer@example.com", password="pw", perms=("phone.view_voicemail",)
         )
-        self.client.login(username="viewer", password="pw")
+        self.client.login(username="viewer@example.com", password="pw")
         response = self.client.get(reverse("dashboard:voicemails"))
         pk = self.voicemail.pk
         self.assertContains(

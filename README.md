@@ -103,10 +103,41 @@ generic change permission, so arriving buyers and refunding them can be
 granted separately. Manage users, groups, and permissions in Django admin at
 `/admin/`. Superusers see everything.
 
-Five wrong passwords for one username from one address lock that pair out of
+### Email login
+
+Staff sign in at `/login` with their email address (there is no username).
+Emails are unique ignoring case. Deploy order on an existing database:
+
+1. Back up the database. Then, on the production DB, check there are no blank
+   or case-duplicate emails (0002 stops the deploy on either; the old release
+   keeps serving, but the deploy fails):
+   `SELECT id, username FROM auth_user WHERE coalesce(trim(email), '') = '';`
+   `SELECT lower(trim(email)), count(*) FROM auth_user GROUP BY lower(trim(email)) HAVING count(*) > 1;`
+   Fix any hits in `/admin/` on the current code first (e.g. a superuser
+   created with no email).
+2. Deploy as usual, outside show hours. The deploy's own `migrate` adopts the existing `auth_user`
+   table as `accounts.0001_initial` and applies `accounts 0002_email_login`
+   (it refuses blank or case-duplicate emails, and keeps users' permissions).
+3. Sign in to the dashboard with your email address.
+
+To roll back, FIRST, on the current (new) release, run
+`python manage.py migrate accounts 0001` (never `zero`: that would drop
+`auth_user` and every staff account), THEN run ansible `rollback.yml`. The old
+code has no accounts app and cannot reverse 0002, so skipping this leaves every
+sign-in, dashboard and admin request failing with
+`column auth_user.username does not exist`. Afterwards the old code recreates an
+`auth | user` content type, so re-grant any group add/change/view/delete user
+permissions in admin until a later redeploy merges them back.
+
+`python manage.py changepassword <email>` looks the email up exactly, so type it
+in lowercase.
+
+Five wrong passwords for one email address from one address lock that pair out of
 `/login` for fifteen minutes (django-axes; the numbers are the `AXES_*` settings).
-A locked-out person sees a wait message, not which username was tried. To clear
-a lockout early, run `python manage.py axes_reset_username <username>` or delete
+A locked-out person sees a wait message, not which email was tried. To clear
+a lockout early, run `python manage.py axes_reset_username <email>` (type the email in
+lowercase, as the lockout stores it, e.g. `axes_reset_username staff@example.com`;
+a mixed-case address prints "No attempts found.") or delete
 the row under **Axes → Access attempts** in Django admin. Deploying this needs
 `pip install -r requirements.txt` and `migrate` (the `axes` tables).
 

@@ -15,12 +15,12 @@
         <div class="login-brand">LeprinceOS</div>
         <p class="login-subtitle">Cinema Management</p>
         {% if form.errors %}
-          <div class="login-error">Invalid username or password.</div>
+          <div class="login-error">Invalid email or password.</div>
         {% endif %}
         <form method="post" action="{% url 'login' %}" class="login-form">
           {% csrf_token %}
           <input type="hidden" name="next" value="{{ next }}" />
-          <label class="login-label" for="id_username">Username</label>
+          <label class="login-label" for="id_username">Email</label>
           {{ form.username }}
           <label class="login-label" for="id_password">Password</label>
           {{ form.password }}

@@ -2,8 +2,8 @@ import datetime
 from decimal import Decimal
 from unittest import mock
 
+from accounts.tests.factories import make_user
 from audience.models import FreeAdmission, Member, MembershipTerm, MembershipTier
-from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -39,9 +39,9 @@ def give_expired_term(member, slug="family-plus"):
 class StaffClient(TestCase):
     def setUp(self) -> None:
         self.staff = make_staff(
-            username="s", password="pw12345"
+            email="s@example.com", password="pw12345"
         )
-        self.client.login(username="s", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
 
 
 class RosterColumnTests(StaffClient):
@@ -379,13 +379,17 @@ class DetailPanelTests(StaffClient):
         self.assertLess(html.index("September 2026"), html.index("August 2026"))
 
     def test_shows_who_recorded_it(self) -> None:
-        # A username unlikely to occur by accident elsewhere on the page —
-        # unlike `self.staff` (username "s"), which is a single letter that
-        # appears in ordinary markup and words regardless of whether
+        # An email unlikely to occur by accident elsewhere on the page —
+        # unlike `self.staff` (s@example.com), whose pieces ("s", "example.com")
+        # appear in ordinary markup and words regardless of whether
         # `recorded_by` is ever rendered.
-        recorder = User.objects.create_user(username="ouellette_m", password="pw12345")
+        recorder = make_user(email="ouellette_m@example.com", password="pw12345")
         FreeAdmission.objects.create(member=self.member, recorded_by=recorder)
-        self.assertContains(self.client.get(self.url), "ouellette_m", count=1)
+        self.assertContains(
+            self.client.get(self.url),
+            "ouellette_m@example.com",
+            count=1,
+        )
 
     def test_empty_state(self) -> None:
         self.assertIn("No free admissions yet", self.page())
@@ -483,8 +487,8 @@ class MemberPageQueryCountTests(StaffClient):
     def add_rows(self, n: int) -> None:
         today = timezone.localdate()
         for i in range(n):
-            recorder = User.objects.create_user(
-                username=f"recorder-{FreeAdmission.objects.count()}"
+            recorder = make_user(
+                email=f"recorder-{FreeAdmission.objects.count()}@example.com"
             )
             FreeAdmission.objects.create(member=self.member, recorded_by=recorder)
             MembershipTerm.objects.create(

@@ -17,8 +17,8 @@ def toast(resp) -> dict:
 
 class DeleteGuardTestCase(TestCase):
     def setUp(self) -> None:
-        make_staff(username="sam", password="pw12345")
-        self.client.login(username="sam", password="pw12345")
+        make_staff(email="sam@example.com", password="pw12345")
+        self.client.login(username="sam@example.com", password="pw12345")
         self.st = make_showtime()
 
 

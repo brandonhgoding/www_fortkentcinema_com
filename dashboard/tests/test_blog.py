@@ -4,15 +4,13 @@ import datetime
 import json
 from zoneinfo import ZoneInfo
 
+from accounts.tests.factories import make_user
 from blog.models import BlogAuthor, BlogCategory, BlogPost
 from cinema.models import Film
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 from dashboard.tests.helpers import make_staff
-
-User = get_user_model()
 
 
 class BlogFixture(TestCase):
@@ -23,8 +21,8 @@ class BlogFixture(TestCase):
         cls.film = Film.objects.create(title="Dune", runtime_minutes=155)
 
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
 
     def make_post(self, **overrides) -> BlogPost:
         fields = {
@@ -83,8 +81,8 @@ class StaffOnlyTests(BlogFixture):
         self.assertTrue(BlogPost.objects.filter(pk=post.pk).exists())
 
     def test_non_staff_get_403(self) -> None:
-        User.objects.create_user(username="member", password="pw12345")
-        self.client.login(username="member", password="pw12345")
+        make_user(email="member@example.com", password="pw12345")
+        self.client.login(username="member@example.com", password="pw12345")
         self.assertEqual(self.client.get(reverse("dashboard:blog")).status_code, 403)
 
 
@@ -95,8 +93,13 @@ class NavTests(BlogFixture):
         self.assertIn(f'href="{reverse("dashboard:blog")}"', html)
 
     def test_blog_is_gone_from_admin(self) -> None:
-        User.objects.create_superuser(username="root", password="pw12345")
-        self.client.login(username="root", password="pw12345")
+        make_user(
+            email="root@example.com",
+            password="pw12345",
+            is_staff=True,
+            is_superuser=True,
+        )
+        self.client.login(username="root@example.com", password="pw12345")
         self.assertEqual(self.client.get("/admin/blog/blogpost/").status_code, 404)
         # FilmAdmin used to autocomplete against BlogPostAdmin.
         film_admin = self.client.get(f"/admin/cinema/film/{self.film.pk}/change/")
@@ -173,10 +176,10 @@ class CreatePostTests(BlogFixture):
     def test_add_only_user_is_sent_to_the_list_after_saving(self) -> None:
         self.client.logout()
         make_staff(
-            username="adder",
+            email="adder@example.com",
             perms=("blog.add_blogpost", "blog.view_blogpost"),
         )
-        self.client.login(username="adder", password="pw12345")
+        self.client.login(username="adder@example.com", password="pw12345")
         resp = self.client.post(
             reverse("dashboard:blog_post_create"), self.payload(status="draft")
         )
@@ -498,8 +501,8 @@ class PreviewTests(BlogFixture):
 
 class BlogPermissionTests(BlogFixture):
     def login_with(self, *perms: str) -> None:
-        make_staff(username="limited", password="pw12345", perms=perms)
-        self.client.login(username="limited", password="pw12345")
+        make_staff(email="limited@example.com", password="pw12345", perms=perms)
+        self.client.login(username="limited@example.com", password="pw12345")
 
     def test_markdown_preview_accepts_change_alone(self) -> None:
         self.login_with("blog.change_blogpost")

@@ -9,7 +9,7 @@ from dashboard.tests.helpers import make_staff
 class RentalInquiryListTests(TestCase):
     def setUp(self) -> None:
         self.staff = make_staff(
-            username="staff", password="pw"
+            email="staff@example.com", password="pw"
         )
         self.inquiry = RentalInquiry.objects.create(
             contact_name="Alex Harper",
@@ -96,9 +96,11 @@ class RentalInquiryViewOnlyTests(TestCase):
             contact_name="Alex Harper", email="alex@example.com"
         )
         make_staff(
-            username="viewer", password="pw", perms=("cinema.view_rentalinquiry",)
+            email="viewer@example.com",
+            password="pw",
+            perms=("cinema.view_rentalinquiry",),
         )
-        self.client.login(username="viewer", password="pw")
+        self.client.login(username="viewer@example.com", password="pw")
         response = self.client.get(reverse("dashboard:rental_inquiries"))
         self.assertContains(response, "Alex Harper")
         self.assertNotContains(

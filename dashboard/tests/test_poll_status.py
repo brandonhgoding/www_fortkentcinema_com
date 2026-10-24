@@ -15,8 +15,8 @@ from dashboard.tests.helpers import make_staff
 
 class PollStatusTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.poll = Poll.objects.create(title="Round One")
         PollOption.objects.create(
             poll=self.poll, film=Film.objects.create(title="Casablanca")
@@ -106,8 +106,8 @@ class PollStatusTests(TestCase):
 
 class PollAnnounceTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.poll = Poll.objects.create(title="Round One", status=PollStatus.CLOSED)
         self.leader = PollOption.objects.create(
             poll=self.poll, film=Film.objects.create(title="Casablanca")

@@ -4,14 +4,13 @@ import io
 from unittest import mock
 from zoneinfo import ZoneInfo
 
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
+from accounts.tests.factories import make_user
 from tickets.tests.factories import make_order, make_showtime
 from dashboard.tests.helpers import make_staff
 
-User = get_user_model()
 TZ = ZoneInfo("America/New_York")
 
 
@@ -21,8 +20,8 @@ def at(day: datetime.date, hour: int, minute: int = 0) -> datetime.datetime:
 
 class StaffTestCase(TestCase):
     def setUp(self) -> None:
-        make_staff(username="sam", password="pw12345")
-        self.client.login(username="sam", password="pw12345")
+        make_staff(email="sam@example.com", password="pw12345")
+        self.client.login(username="sam@example.com", password="pw12345")
         self.today = timezone.localdate()
 
 
@@ -147,10 +146,10 @@ class OrderLogTests(StaffTestCase):
             self.st, status="FAILED", square_payment_id="P1", error="Email bounced"
         )
         make_staff(
-            username="clerk",
+            email="clerk@example.com",
             perms=("tickets.view_ticketorder", "tickets.change_ticketorder"),
         )
-        self.client.login(username="clerk", password="pw12345")
+        self.client.login(username="clerk@example.com", password="pw12345")
         resp = self.client.get(self.url)
         self.assertContains(
             resp, reverse("dashboard:ticket_order_retry", args=[failed.pk])
@@ -254,13 +253,13 @@ class SidebarAndStaffTests(TestCase):
         ]
         for url in urls:
             self.assertEqual(self.client.get(url).status_code, 302, url)
-        User.objects.create_user(username="n", password="pw12345")
-        self.client.login(username="n", password="pw12345")
+        make_user(email="n@example.com", password="pw12345")
+        self.client.login(username="n@example.com", password="pw12345")
         for url in urls:
             self.assertEqual(self.client.get(url).status_code, 403, url)
 
-        make_staff(username="sam", password="pw12345")
-        self.client.login(username="sam", password="pw12345")
+        make_staff(email="sam@example.com", password="pw12345")
+        self.client.login(username="sam@example.com", password="pw12345")
         for url in urls[:2]:
             resp = self.client.get(url)
             html = resp.content.decode()

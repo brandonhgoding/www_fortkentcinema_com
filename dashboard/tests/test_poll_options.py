@@ -39,8 +39,8 @@ def _hx_vals_above_search_box(html: str) -> list[str]:
 
 class PollDetailTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.poll = Poll.objects.create(title="Round One")
 
     def test_detail_renders(self) -> None:
@@ -93,8 +93,8 @@ class PollDetailTests(TestCase):
 
 class PollOptionTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.poll = Poll.objects.create(title="Round One")
         self.film = Film.objects.create(title="Casablanca")
 
@@ -164,8 +164,8 @@ class PollOptionTests(TestCase):
 
 class PollOptionReorderTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.poll = Poll.objects.create(title="Round One")
         self.first = PollOption.objects.create(
             poll=self.poll,

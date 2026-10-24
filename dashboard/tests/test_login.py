@@ -5,7 +5,7 @@ from dashboard.tests.helpers import make_staff
 
 class LoginTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="staffer", password="pw12345")
+        make_staff(email="staffer@example.com", password="pw12345")
 
     def test_login_page_themed(self) -> None:
         resp = self.client.get("/login")
@@ -16,13 +16,31 @@ class LoginTests(TestCase):
 
     def test_login_redirects_to_dashboard(self) -> None:
         resp = self.client.post(
-            "/login", {"username": "staffer", "password": "pw12345"}
+            "/login", {"username": "staffer@example.com", "password": "pw12345"}
         )
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(resp["Location"], "/dashboard/")
 
+    def test_login_asks_for_email(self) -> None:
+        html = self.client.get("/login").content.decode()
+        self.assertIn('type="email"', html)
+        self.assertIn('autocomplete="email"', html)
+        self.assertIn(">Email<", html)
+
+    def test_wrong_password_says_email(self) -> None:
+        resp = self.client.post(
+            "/login", {"username": "staffer@example.com", "password": "no"}
+        )
+        self.assertContains(resp, "Invalid email or password.")
+
+    def test_login_ignores_email_case(self) -> None:
+        resp = self.client.post(
+            "/login", {"username": "Staffer@Example.com", "password": "pw12345"}
+        )
+        self.assertEqual(resp["Location"], "/dashboard/")
+
     def test_logout_works(self) -> None:
-        self.client.login(username="staffer", password="pw12345")
+        self.client.login(username="staffer@example.com", password="pw12345")
         resp = self.client.post("/logout/")
         self.assertEqual(resp.status_code, 302)
 
@@ -40,10 +58,13 @@ class LoginLockoutTests(TestCase):
     lock that pair out for a while; the right password then waits too."""
 
     def setUp(self) -> None:
-        make_staff(username="staffer", password="pw12345")
+        make_staff(email="staffer@example.com", password="pw12345")
 
     def attempt(self, password: str):
-        return self.client.post("/login", {"username": "staffer", "password": password})
+        return self.client.post(
+            "/login",
+            {"username": "staffer@example.com", "password": password},
+        )
 
     def test_wrong_passwords_under_the_limit_do_not_lock(self) -> None:
         for _ in range(settings.AXES_FAILURE_LIMIT - 1):
@@ -61,13 +82,22 @@ class LoginLockoutTests(TestCase):
         html = resp.content.decode()
         self.assertIn("Too many sign-in attempts", html)
         self.assertIn("15 minutes", html)
-        self.assertNotIn("staffer", html)  # the page echoes no username
+        self.assertNotIn("staffer@example.com", html)  # the page echoes no email
+
+    def test_mixed_case_tries_count_against_one_email(self) -> None:
+        for i in range(settings.AXES_FAILURE_LIMIT):
+            email = "staffer@example.com" if i % 2 == 0 else "STAFFER@example.com"
+            self.client.post("/login", {"username": email, "password": "nope"})
+        self.assertEqual(self.attempt("pw12345").status_code, 429)
 
     def test_lockout_is_per_username_not_site_wide(self) -> None:
-        make_staff(username="other", password="pw12345")
+        make_staff(email="other@example.com", password="pw12345")
         for _ in range(settings.AXES_FAILURE_LIMIT):
             self.attempt("nope")
-        resp = self.client.post("/login", {"username": "other", "password": "pw12345"})
+        resp = self.client.post(
+            "/login",
+            {"username": "other@example.com", "password": "pw12345"},
+        )
         self.assertEqual(resp.status_code, 302)
 
     def test_a_good_login_resets_the_count(self) -> None:

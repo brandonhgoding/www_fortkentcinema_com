@@ -12,8 +12,8 @@ from dashboard.tests.helpers import make_staff
 
 class LedgerTestCase(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.today = timezone.localdate()
 
     def term(self, last_name, slug, start, end, price="60.00", **kwargs):

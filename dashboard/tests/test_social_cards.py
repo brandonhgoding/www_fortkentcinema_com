@@ -2,15 +2,13 @@ import datetime
 from io import BytesIO
 from unittest import mock
 
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from PIL import Image
 
+from accounts.tests.factories import make_user
 from cinema.models import Engagement, EngagementFilm, Film, Screen
 from dashboard.tests.helpers import make_staff
-
-User = get_user_model()
 
 
 def an_image() -> Image.Image:
@@ -19,8 +17,8 @@ def an_image() -> Image.Image:
 
 class SocialCardViewTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.screen = Screen.objects.create(name="Screen 1", capacity=100)
         self.film = Film.objects.create(
             title="Dune", poster_url="https://image.tmdb.org/t/p/w500/d.jpg"
@@ -124,16 +122,16 @@ class SocialCardViewTests(TestCase):
         self.assertEqual(self.client.get(self.url()).status_code, 302)
 
     def test_non_staff_users_are_forbidden(self) -> None:
-        User.objects.create_user(username="u", password="pw12345")
+        make_user(email="u@example.com", password="pw12345")
         self.client.logout()
-        self.client.login(username="u", password="pw12345")
+        self.client.login(username="u@example.com", password="pw12345")
         self.assertEqual(self.client.get(self.url()).status_code, 403)
 
 
 class SocialPanelTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.screen = Screen.objects.create(name="Screen 1", capacity=100)
         self.film = Film.objects.create(title="Dune")
 

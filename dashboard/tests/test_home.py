@@ -1,15 +1,13 @@
 import datetime
 
+from accounts.tests.factories import make_user
 from boxoffice.models import MembershipSale, SaleLine, SalesPull
 from cinema.models import Engagement, EngagementFilm, Film, Screen, Showtime
-from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from tickets.tests.factories import make_order
 from dashboard.tests.helpers import make_staff
-
-User = get_user_model()
 
 
 def make_eng(screen, film, *, status="CONFIRMED", start=None, end=None):
@@ -24,8 +22,8 @@ def make_eng(screen, film, *, status="CONFIRMED", start=None, end=None):
 
 class HomeViewTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="staffer", password="pw12345", first_name="Bran")
-        self.client.login(username="staffer", password="pw12345")
+        make_staff(email="staffer@example.com", password="pw12345", first_name="Bran")
+        self.client.login(username="staffer@example.com", password="pw12345")
         self.screen = Screen.objects.create(name="Screen 1", capacity=100)
         self.film = Film.objects.create(title="Dune", runtime_minutes=155)
 
@@ -80,15 +78,15 @@ class HomeViewTests(TestCase):
     def test_requires_staff(self) -> None:
         self.client.logout()
         self.assertEqual(self.client.get(reverse("dashboard:home")).status_code, 302)
-        User.objects.create_user(username="p", password="pw12345", is_staff=False)
-        self.client.login(username="p", password="pw12345")
+        make_user(email="p@example.com", password="pw12345", is_staff=False)
+        self.client.login(username="p@example.com", password="pw12345")
         self.assertEqual(self.client.get(reverse("dashboard:home")).status_code, 403)
 
 
 class HomeRenderTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.screen = Screen.objects.create(name="Screen 1", capacity=100)
         self.film = Film.objects.create(title="Dune", runtime_minutes=155)
 
@@ -197,8 +195,8 @@ class HomeRenderTests(TestCase):
 
 class HomePermissionTests(TestCase):
     def _login(self, perms):
-        make_staff(username="limited", password="pw12345", perms=perms)
-        self.client.login(username="limited", password="pw12345")
+        make_staff(email="limited@example.com", password="pw12345", perms=perms)
+        self.client.login(username="limited@example.com", password="pw12345")
 
     def test_no_permissions_renders_header_only(self) -> None:
         self._login(())

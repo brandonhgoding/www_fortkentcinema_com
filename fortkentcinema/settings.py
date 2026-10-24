@@ -35,6 +35,9 @@ ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv())
 GA_MEASUREMENT_ID = config("GA_MEASUREMENT_ID", default="")
 
 INSTALLED_APPS = [
+    # App commands override Django's built-in ones, and among apps the first
+    # listed wins: accounts is first, so its `migrate` is the one that runs.
+    "accounts.apps.AccountsConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -235,13 +238,19 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [],
 }
 
+AUTH_USER_MODEL = "accounts.User"
+# auth.E003/W004 (one check: an error under ModelBackend alone, as in tests,
+# a warning otherwise) want the login field unique=True. The user's email is
+# unique ignoring case through a Lower("email") constraint instead, which the
+# check cannot see, and the manager looks it up with email__iexact.
+SILENCED_SYSTEM_CHECKS = ["auth.E003", "auth.W004"]
 LOGIN_URL = "/login"
 LOGIN_REDIRECT_URL = "/dashboard/"
 
 # Login lockout (django-axes). Password guessing against staff accounts was
 # bounded only by the password validators. Five wrong passwords for one
-# username from one address lock that pair out for fifteen minutes; a good
-# login clears the count. Keyed by username AND address, so one address
+# email from one address lock that pair out for fifteen minutes; a good
+# login clears the count. Keyed by email AND address, so one address
 # cannot lock the whole dashboard, and behind nginx (where every request
 # shares an address unless X-Forwarded-For is honoured) one address cannot
 # lock every account at once either.
@@ -261,6 +270,11 @@ AUTHENTICATION_BACKENDS = (
 AXES_FAILURE_LIMIT = 5
 AXES_COOLOFF_TIME = datetime.timedelta(minutes=15)
 AXES_LOCKOUT_PARAMETERS = [["username", "ip_address"]]
+# The login form's field is still named "username"; axes would otherwise
+# default to USERNAME_FIELD ("email") and find no email to lock out. The
+# callable strips and lowercases it so every spelling of one email shares a count.
+AXES_USERNAME_FORM_FIELD = "username"
+AXES_USERNAME_CALLABLE = "accounts.lockout.lockout_username"
 AXES_RESET_ON_SUCCESS = True
 AXES_LOCKOUT_TEMPLATE = "dashboard/locked_out.html"
 if config("USE_PROXY_HEADERS", default=False, cast=bool):

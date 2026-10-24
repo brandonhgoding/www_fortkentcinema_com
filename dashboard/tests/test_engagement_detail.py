@@ -18,8 +18,8 @@ def make_eng(screen, films=(), **over):
 
 class EngagementDetailPageTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.screen = Screen.objects.create(name="Screen 1", capacity=100)
         self.film = Film.objects.create(title="Dune", runtime_minutes=155,
                                         poster_url="https://img/d.jpg")
@@ -68,8 +68,8 @@ from django.utils import timezone
 
 class ShowtimeListTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.screen = Screen.objects.create(name="Screen 1", capacity=100)
         self.film = Film.objects.create(title="Dune", runtime_minutes=155)
         self.eng = make_eng(self.screen, films=[self.film])
@@ -116,8 +116,8 @@ class ShowtimeControlPermissionTests(TestCase):
         }
 
     def _get(self, perms):
-        make_staff(username="limited", password="pw12345", perms=perms)
-        self.client.login(username="limited", password="pw12345")
+        make_staff(email="limited@example.com", password="pw12345", perms=perms)
+        self.client.login(username="limited@example.com", password="pw12345")
         url = reverse("dashboard:engagement_detail", args=[self.eng.pk])
         return self.client.get(url)
 
@@ -143,8 +143,8 @@ class ShowtimeControlPermissionTests(TestCase):
 
 class ShowtimeCreateEditTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.screen = Screen.objects.create(name="Screen 1", capacity=100)
         self.film = Film.objects.create(title="Dune", runtime_minutes=155)
         self.eng = make_eng(self.screen, films=[self.film])
@@ -222,8 +222,8 @@ class ShowtimeCreateEditTests(TestCase):
 
 class ShowtimeDeleteTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.screen = Screen.objects.create(name="Screen 1", capacity=100)
         self.film = Film.objects.create(title="Dune", runtime_minutes=155)
         self.eng = make_eng(self.screen, films=[self.film])
@@ -241,8 +241,8 @@ class ShowtimeDeleteTests(TestCase):
 
 class ShowtimeBulkTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.screen = Screen.objects.create(name="Screen 1", capacity=100)
         self.film = Film.objects.create(title="Dune", runtime_minutes=100)
         self.eng = make_eng(self.screen, films=[self.film])

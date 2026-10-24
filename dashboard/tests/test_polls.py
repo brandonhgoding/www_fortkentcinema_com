@@ -1,19 +1,17 @@
 import json
 
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
+from accounts.tests.factories import make_user
 from cinema.models import Film, Poll, PollOption, PollStatus, Vote
 from dashboard.tests.helpers import make_staff
-
-User = get_user_model()
 
 
 class PollListTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
 
     def test_empty_state(self) -> None:
         html = self.client.get(reverse("dashboard:polls")).content.decode()
@@ -29,8 +27,8 @@ class PollListTests(TestCase):
     def test_requires_staff(self) -> None:
         self.client.logout()
         self.assertEqual(self.client.get(reverse("dashboard:polls")).status_code, 302)
-        User.objects.create_user(username="p", password="pw12345", is_staff=False)
-        self.client.login(username="p", password="pw12345")
+        make_user(email="p@example.com", password="pw12345", is_staff=False)
+        self.client.login(username="p@example.com", password="pw12345")
         self.assertEqual(self.client.get(reverse("dashboard:polls")).status_code, 403)
 
     def test_polls_css_linked(self) -> None:
@@ -44,8 +42,8 @@ class PollListTests(TestCase):
 
 class PollCreateEditTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
 
     def test_create_form_renders(self) -> None:
         response = self.client.get(reverse("dashboard:poll_create"))
@@ -105,8 +103,8 @@ class PollCreateEditTests(TestCase):
 
 class PollDeleteTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.poll = Poll.objects.create(title="Round One", status=PollStatus.OPEN)
         self.film = Film.objects.create(title="Casablanca")
         option = PollOption.objects.create(poll=self.poll, film=self.film)
@@ -194,8 +192,8 @@ class PollDeleteTests(TestCase):
 
 class PollVotersTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.poll = Poll.objects.create(title="Round One", status=PollStatus.OPEN)
         option = PollOption.objects.create(
             poll=self.poll, film=Film.objects.create(title="Casablanca")
@@ -251,8 +249,8 @@ class PollVoteRemoveTests(TestCase):
     """
 
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.poll = Poll.objects.create(title="Round One", status=PollStatus.OPEN)
         self.option = PollOption.objects.create(
             poll=self.poll, film=Film.objects.create(title="Casablanca")
@@ -362,8 +360,8 @@ class PollVoteRemoveTests(TestCase):
     def test_remove_requires_staff(self) -> None:
         self.client.logout()
         self.assertEqual(self.remove(self.test_vote).status_code, 302)
-        User.objects.create_user(username="p", password="pw12345", is_staff=False)
-        self.client.login(username="p", password="pw12345")
+        make_user(email="p@example.com", password="pw12345", is_staff=False)
+        self.client.login(username="p@example.com", password="pw12345")
         self.assertEqual(self.remove(self.test_vote).status_code, 403)
         self.assertTrue(Vote.objects.filter(pk=self.test_vote.pk).exists())
 
@@ -375,8 +373,8 @@ class PollPermissionControlsTests(TestCase):
             poll=poll, film=Film.objects.create(title="Casablanca")
         )
         vote = Vote.objects.create(poll=poll, option=option, email="v@example.com")
-        make_staff(username="viewer", perms=("cinema.view_poll",))
-        self.client.login(username="viewer", password="pw12345")
+        make_staff(email="viewer@example.com", perms=("cinema.view_poll",))
+        self.client.login(username="viewer@example.com", password="pw12345")
 
         response = self.client.get(reverse("dashboard:poll_detail", args=[poll.pk]))
 
@@ -397,8 +395,8 @@ class PollPermissionControlsTests(TestCase):
 
     def test_view_only_user_sees_list_without_controls(self) -> None:
         poll = Poll.objects.create(title="Round One")
-        make_staff(username="viewer", perms=("cinema.view_poll",))
-        self.client.login(username="viewer", password="pw12345")
+        make_staff(email="viewer@example.com", perms=("cinema.view_poll",))
+        self.client.login(username="viewer@example.com", password="pw12345")
 
         html = self.client.get(reverse("dashboard:polls")).content.decode()
 

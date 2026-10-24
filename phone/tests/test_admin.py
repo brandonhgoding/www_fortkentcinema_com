@@ -1,7 +1,7 @@
 from django.contrib import admin
-from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from accounts.tests.factories import make_user
 from phone.admin import VoicemailAdmin
 from phone.models import CallLog, Voicemail
 
@@ -15,7 +15,12 @@ class VoicemailAdminTests(TestCase):
 
     def setUp(self) -> None:
         self.client.force_login(
-            get_user_model().objects.create_superuser("admin", password="pw")
+            make_user(
+                email="admin@example.com",
+                password="pw",
+                is_staff=True,
+                is_superuser=True,
+            )
         )
         self.voicemail = Voicemail.objects.create(
             recording_sid=SID, caller="+12075550100", recording_url=RECORDING_URL
@@ -65,7 +70,12 @@ class VoicemailExcerptTests(TestCase):
 class CallLogAdminTests(TestCase):
     def setUp(self) -> None:
         self.client.force_login(
-            get_user_model().objects.create_superuser("admin", password="pw")
+            make_user(
+                email="admin@example.com",
+                password="pw",
+                is_staff=True,
+                is_superuser=True,
+            )
         )
         self.log = CallLog.objects.create(
             call_sid="CA1", caller="+12075550100", choices=["1", "3"]

@@ -5,8 +5,8 @@ import json
 from unittest import mock
 from zoneinfo import ZoneInfo
 
+from accounts.tests.factories import make_user
 from boxoffice.tests.fakes import FakeGateway
-from django.contrib.auth import get_user_model
 from django.core import mail
 from django.test import TestCase
 from django.urls import reverse
@@ -14,7 +14,6 @@ from tickets.models import TicketOrder
 from tickets.tests.factories import make_order, make_showtime
 from dashboard.tests.helpers import make_staff
 
-User = get_user_model()
 TZ = ZoneInfo("America/New_York")
 
 
@@ -25,9 +24,9 @@ def toast(resp) -> dict:
 class DoorListTestCase(TestCase):
     def setUp(self) -> None:
         self.staff = make_staff(
-            username="sam", password="pw12345", first_name="Sam"
+            email="sam@example.com", password="pw12345", first_name="Sam"
         )
-        self.client.login(username="sam", password="pw12345")
+        self.client.login(username="sam@example.com", password="pw12345")
         self.st = make_showtime()
         self.url = reverse("dashboard:showtime_orders", args=[self.st.pk])
 
@@ -66,8 +65,8 @@ class StaffOnlyTests(TestCase):
                 self.assertEqual(self.client.get(url).status_code, 302, url)
             for url in posts:
                 self.assertEqual(self.client.post(url).status_code, 302, url)
-            User.objects.create_user(username="n", password="pw12345")
-            self.client.login(username="n", password="pw12345")
+            make_user(email="n@example.com", password="pw12345")
+            self.client.login(username="n@example.com", password="pw12345")
             for url in gets:
                 self.assertEqual(self.client.get(url).status_code, 403, url)
             for url in posts:
@@ -120,8 +119,8 @@ class DoorListTests(DoorListTestCase):
         order = self.paid(lines={"adult": 3})
         self.st.is_cancelled = True
         self.st.save()
-        make_staff(username="viewer", perms=("tickets.view_ticketorder",))
-        self.client.login(username="viewer", password="pw12345")
+        make_staff(email="viewer@example.com", perms=("tickets.view_ticketorder",))
+        self.client.login(username="viewer@example.com", password="pw12345")
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         html = response.content.decode()
@@ -145,10 +144,10 @@ class DoorListTests(DoorListTestCase):
         self.st.is_cancelled = True
         self.st.save()
         make_staff(
-            username="clerk",
+            email="clerk@example.com",
             perms=("tickets.view_ticketorder", "tickets.change_ticketorder"),
         )
-        self.client.login(username="clerk", password="pw12345")
+        self.client.login(username="clerk@example.com", password="pw12345")
         html = self.client.get(self.url).content.decode()
         self.assertIn(reverse("dashboard:ticket_order_arrive", args=[order.pk]), html)
         self.assertIn("still needs refunding", html)
@@ -198,14 +197,14 @@ class DoorListTests(DoorListTestCase):
         self.assertIsNone(order.redeemed_by)
 
     def test_arrived_falls_back_to_username(self) -> None:
-        make_staff(username="kim", password="pw12345")
-        self.client.login(username="kim", password="pw12345")
+        make_staff(email="kim@example.com", password="pw12345")
+        self.client.login(username="kim@example.com", password="pw12345")
         order = self.paid()
         resp = self.client.post(
             reverse("dashboard:ticket_order_arrive", args=[order.pk]),
             HTTP_HX_REQUEST="true",
         )
-        self.assertIn("· kim", resp.content.decode())
+        self.assertIn("· kim@example.com", resp.content.decode())
 
     def test_refunded_order_cannot_arrive(self) -> None:
         order = make_order(self.st, status="REFUNDED", square_payment_id="P1")

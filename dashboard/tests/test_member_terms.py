@@ -22,8 +22,8 @@ def make_member():
 
 class MemberDetailTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.member = Member.objects.create(
             first_name="Ada",
             last_name="Lovelace",
@@ -81,8 +81,8 @@ class MemberDetailTests(TestCase):
 
 class TermCreateTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.member = Member.objects.create(
             first_name="Ada", last_name="Lovelace", email="ada@example.com"
         )
@@ -182,8 +182,8 @@ class TermCreateTests(TestCase):
 
 class TermEditDeleteTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.member = Member.objects.create(
             first_name="Ada", last_name="Lovelace", email="ada@example.com"
         )
@@ -320,8 +320,8 @@ class RenewPrefillTests(TestCase):
     """The Renew button opens the same form as Add Term, pre-answered."""
 
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.member = make_member()
 
     def renew_form(self):
@@ -502,8 +502,8 @@ class EndOfTimeTermTests(TestCase):
     """A term at or near date.max must not turn Renew or Add Term into a 500."""
 
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.member = make_member()
 
     def test_renewing_a_term_that_runs_to_date_max(self) -> None:
@@ -536,8 +536,8 @@ class OverlapFlagTests(TestCase):
     so the roster flags the pair instead of refusing the save."""
 
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.member = make_member()
 
     def add_term(self, start, end):

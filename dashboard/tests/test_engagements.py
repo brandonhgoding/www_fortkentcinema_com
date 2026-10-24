@@ -20,8 +20,8 @@ def make_engagement(screen, *, start, end, status="CONFIRMED", kind="REGULAR",
 
 class EngagementListTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.screen = Screen.objects.create(name="Screen 1", capacity=100)
         self.film = Film.objects.create(title="Jaws", poster_url="https://img/j.jpg")
         self.today = timezone.localdate()
@@ -97,10 +97,10 @@ class EngagementListTests(TestCase):
 class EngagementPermissionTemplateTests(TestCase):
     def setUp(self) -> None:
         make_staff(
-            username="viewer", password="pw12345",
+            email="viewer@example.com", password="pw12345",
             perms=("cinema.view_engagement",),
         )
-        self.client.login(username="viewer", password="pw12345")
+        self.client.login(username="viewer@example.com", password="pw12345")
         self.screen = Screen.objects.create(name="Screen 1", capacity=100)
         self.film = Film.objects.create(title="Jaws")
         today = timezone.localdate()
@@ -128,8 +128,8 @@ class EngagementPermissionTemplateTests(TestCase):
 
 class EngagementStatusTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.screen = Screen.objects.create(name="S1", capacity=50)
         self.today = timezone.localdate()
 
@@ -170,8 +170,8 @@ class EngagementStatusTests(TestCase):
 
 class EngagementDeleteTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.screen = Screen.objects.create(name="S1", capacity=50)
         self.today = timezone.localdate()
 
@@ -187,8 +187,8 @@ class EngagementDeleteTests(TestCase):
 
 class EngagementCreateTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.screen = Screen.objects.create(name="S1", capacity=50)
         self.f1 = Film.objects.create(title="A")
         self.f2 = Film.objects.create(title="B")
@@ -303,8 +303,8 @@ class EngagementCreateTests(TestCase):
 
 class EngagementEditTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.screen = Screen.objects.create(name="S1", capacity=50)
         self.f1 = Film.objects.create(title="A")
         self.f2 = Film.objects.create(title="B")

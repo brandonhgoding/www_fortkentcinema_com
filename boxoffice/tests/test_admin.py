@@ -1,7 +1,7 @@
 """The ledger and the catalog link rows are visible in the admin, read-only."""
+from accounts.tests.factories import make_user
 from boxoffice.models import SaleLine, SquareItem, SquareVariation
 from boxoffice.tests.test_pull import make_eng
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -9,8 +9,12 @@ from django.utils import timezone
 
 class LedgerAdminTests(TestCase):
     def setUp(self) -> None:
-        user = get_user_model().objects.create_superuser(
-            username="admin", email="admin@example.com", password="pw")
+        user = make_user(
+            email="admin@example.com",
+            password="pw",
+            is_staff=True,
+            is_superuser=True,
+        )
         self.client.force_login(user)
         eng = make_eng()
         self.item = SquareItem.objects.create(engagement=eng, name="Dune",

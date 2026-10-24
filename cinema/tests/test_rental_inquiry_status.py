@@ -22,7 +22,7 @@ class InquiryStatusHomeTests(TestCase):
             contact_name="A", email="a@b.c", status="WON"
         )
         staff = make_staff(
-            username="staff", password="pw"
+            email="staff@example.com", password="pw"
         )
         self.client.force_login(staff)
         self.client.post(

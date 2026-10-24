@@ -25,8 +25,8 @@ def delete_url(eng: Engagement) -> str:
 
 class StaffTestCase(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
         self.screen = Screen.objects.create(name="S1", capacity=50)
         self.film = Film.objects.create(title="Dune", runtime_minutes=155)
         self.today = timezone.localdate()
@@ -137,9 +137,9 @@ class SquarePillTests(StaffTestCase):
         eng = make_eng(self.screen, films=[self.film])
         SquareItem.objects.create(engagement=eng, name="Dune",
                                   last_error="Square said no")
-        make_staff(username="viewer", password="pw12345",
+        make_staff(email="viewer@example.com", password="pw12345",
                    perms=("cinema.view_engagement",))
-        self.client.login(username="viewer", password="pw12345")
+        self.client.login(username="viewer@example.com", password="pw12345")
         html = self._detail(eng)
         self.assertIn("Square sync failed", html)
         self.assertNotIn(retry_url(eng.pk), html)

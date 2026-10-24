@@ -7,7 +7,7 @@ from dashboard.tests.helpers import make_staff
 class AdInquiryListTests(TestCase):
     def setUp(self):
         self.staff = make_staff(
-            username="staff", password="pw"
+            email="staff@example.com", password="pw"
         )
         self.inquiry = AdInquiry.objects.create(
             business_name="Rock's Diner",

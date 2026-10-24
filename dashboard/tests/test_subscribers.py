@@ -7,8 +7,8 @@ from dashboard.tests.helpers import make_staff
 
 class SubscriberListTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
 
     def test_empty_state(self) -> None:
         html = self.client.get(reverse("dashboard:subscribers")).content.decode()
@@ -48,8 +48,8 @@ class SubscriberListTests(TestCase):
 
 class SubscriberExportTests(TestCase):
     def setUp(self) -> None:
-        make_staff(username="s", password="pw12345")
-        self.client.login(username="s", password="pw12345")
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
 
     def test_export_is_a_csv_attachment(self) -> None:
         response = self.client.get(reverse("dashboard:subscribers_export"))

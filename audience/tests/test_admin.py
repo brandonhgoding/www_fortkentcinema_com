@@ -10,10 +10,10 @@ directly so that guarantee doesn't rest on a comment.
 import datetime
 from decimal import Decimal
 
-from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
+from accounts.tests.factories import make_user
 from audience.admin import MembershipTierAdmin
 from audience.models import (
     FreeAdmission,
@@ -52,10 +52,13 @@ class MembershipTierAdminPageTests(TestCase):
     """
 
     def setUp(self) -> None:
-        User.objects.create_superuser(
-            username="root", email="root@example.com", password="pw12345"
+        make_user(
+            email="root@example.com",
+            password="pw12345",
+            is_staff=True,
+            is_superuser=True,
         )
-        self.client.login(username="root", password="pw12345")
+        self.client.login(username="root@example.com", password="pw12345")
         self.tier = MembershipTier.objects.get(slug="individual")
 
     def change_url(self) -> str:
@@ -88,10 +91,13 @@ class AudienceAdminSmokeTests(TestCase):
     """
 
     def setUp(self) -> None:
-        User.objects.create_superuser(
-            username="root", email="root@example.com", password="pw12345"
+        make_user(
+            email="root@example.com",
+            password="pw12345",
+            is_staff=True,
+            is_superuser=True,
         )
-        self.client.login(username="root", password="pw12345")
+        self.client.login(username="root@example.com", password="pw12345")
 
     def assertRenders(self, url_name, *args) -> None:
         url = reverse(url_name, args=args)
@@ -136,10 +142,13 @@ class AudienceAdminSmokeTests(TestCase):
 
 class MembershipTierAdminValidationTests(TestCase):
     def setUp(self) -> None:
-        User.objects.create_superuser(
-            username="root", email="root@example.com", password="pw12345"
+        make_user(
+            email="root@example.com",
+            password="pw12345",
+            is_staff=True,
+            is_superuser=True,
         )
-        self.client.login(username="root", password="pw12345")
+        self.client.login(username="root@example.com", password="pw12345")
 
     def payload(self, **overrides: str) -> dict:
         return {
@@ -180,10 +189,13 @@ class EmailCaseAdminTests(TestCase):
     """
 
     def setUp(self) -> None:
-        User.objects.create_superuser(
-            username="root", email="root@example.com", password="pw12345"
+        make_user(
+            email="root@example.com",
+            password="pw12345",
+            is_staff=True,
+            is_superuser=True,
         )
-        self.client.login(username="root", password="pw12345")
+        self.client.login(username="root@example.com", password="pw12345")
 
     def test_member_admin_reports_a_duplicate_in_another_case(self) -> None:
         Member.objects.create(
@@ -244,10 +256,13 @@ class SubscriberAdminConsentTests(TestCase):
     """confirmed_at is the CAN-SPAM consent record: staff must not type it."""
 
     def setUp(self) -> None:
-        User.objects.create_superuser(
-            username="root", email="root@example.com", password="pw12345"
+        make_user(
+            email="root@example.com",
+            password="pw12345",
+            is_staff=True,
+            is_superuser=True,
         )
-        self.client.login(username="root", password="pw12345")
+        self.client.login(username="root@example.com", password="pw12345")
 
     def test_admin_created_active_row_has_confirmed_at(self) -> None:
         resp = self.client.post(
@@ -313,8 +328,11 @@ class MembershipTermInlineQueryTests(TestCase):
                 price_paid=Decimal("60.00"),
             )
         request = RequestFactory().get("/")
-        request.user = User.objects.create_superuser(
-            username="root", email="root@example.com", password="pw12345"
+        request.user = make_user(
+            email="root@example.com",
+            password="pw12345",
+            is_staff=True,
+            is_superuser=True,
         )
         terms = list(
             MembershipTermInline(Member, site)

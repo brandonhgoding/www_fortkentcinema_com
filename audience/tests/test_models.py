@@ -6,6 +6,7 @@ from django.db.models import QuerySet
 from django.test import TestCase
 from django.utils import timezone
 
+from accounts.tests.factories import make_user
 from audience.models import Subscriber, SubscriberStatus
 
 
@@ -135,13 +136,15 @@ class SubscriberStatusConsistencyTests(TestCase):
         self.assertIsNone(self.sub.unsubscribed_at)
 
     def test_the_admin_stamps_an_opt_out(self) -> None:
-        from django.contrib.auth.models import User
         from django.urls import reverse
 
-        User.objects.create_superuser(
-            username="root", email="root@example.com", password="pw12345"
+        make_user(
+            email="root@example.com",
+            password="pw12345",
+            is_staff=True,
+            is_superuser=True,
         )
-        self.client.login(username="root", password="pw12345")
+        self.client.login(username="root@example.com", password="pw12345")
         resp = self.client.post(
             reverse("admin:audience_subscriber_change", args=[self.sub.pk]),
             {
@@ -203,13 +206,15 @@ class SubscriptionHistoryTests(TestCase):
         self.assertEqual(len(self.history()), 2)
 
     def test_the_admin_opt_out_is_recorded(self) -> None:
-        from django.contrib.auth.models import User
         from django.urls import reverse
 
-        User.objects.create_superuser(
-            username="root", email="root@example.com", password="pw12345"
+        make_user(
+            email="root@example.com",
+            password="pw12345",
+            is_staff=True,
+            is_superuser=True,
         )
-        self.client.login(username="root", password="pw12345")
+        self.client.login(username="root@example.com", password="pw12345")
         url = reverse("admin:audience_subscriber_change", args=[self.sub.pk])
         self.assertEqual(self.client.get(url).status_code, 200)
         resp = self.client.post(
