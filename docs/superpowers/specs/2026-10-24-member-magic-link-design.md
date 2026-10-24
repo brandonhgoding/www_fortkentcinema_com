@@ -43,8 +43,11 @@ The link form posts to `/login/link`. In order:
    "Check your email" page and no email, as on the site's other forms.
 2. **Invalid email.** The form is redisplayed with the field error.
 3. **Per-IP cap.** More than 5 link requests from one IP in an hour
-   (counted with `cinema.voting.client_ip`) shows: "Too many sign-in
-   requests from this connection. Try again later." No email is sent.
+   shows: "Too many sign-in requests from this connection. Try again
+   later." No email is sent. The IP comes from
+   `axes.helpers.get_client_ip_address`, which reads the address nginx
+   saw (`AXES_IPWARE_PROXY_COUNT`); not `cinema.voting.client_ip`, whose
+   leftmost X-Forwarded-For hop the visitor can forge.
 4. **Per-address throttle.** If this address was sent a link in the last
    5 minutes, the page shows: "We sent a sign-in link to this address in
    the last 5 minutes. Check your inbox (and spam), or try again after
