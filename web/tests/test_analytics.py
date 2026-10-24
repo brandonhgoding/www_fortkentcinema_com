@@ -43,20 +43,11 @@ class GA4SnippetTests(TestCase):
 
 
 class ClickEventMarkupTests(TestCase):
-    def test_membership_join_buttons_tagged_with_tier(self):
+    def test_no_membership_join_clicks(self):
+        # The Join buttons left /membership/ on 2026-10-24 (the owner's
+        # call): memberships are sold at the box office.
         html = self.client.get(reverse("membership")).content.decode()
-        tiers = MembershipTier.objects.filter(show_on_membership_page=True)
-        hits = tracked(html, "membership_join_click")
-        self.assertEqual(len(hits), tiers.count())
-        for tier in tiers:
-            self.assertIn(f'data-track-tier="{tier.slug}"', html)
-
-    def test_membership_click_carries_no_monetary_value(self):
-        """A click is not a purchase. Money belongs on /thanks and nowhere else."""
-        html = self.client.get(reverse("membership")).content.decode()
-        for hit in tracked(html, "membership_join_click"):
-            self.assertNotIn("data-track-value", hit)
-            self.assertNotIn("data-track-price", hit)
+        self.assertEqual(len(tracked(html, "membership_join_click")), 0)
 
     def test_no_giftcard_link_on_the_home_page(self):
         # The gift-card card left the home page on 2026-10-13 (the owner's

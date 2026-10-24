@@ -110,12 +110,15 @@ class MembershipPageIsUnchangedTests(TestCase):
                 positions, sorted(positions), f"{name} perks are out of order"
             )
 
-    def test_every_checkout_url_is_present(self) -> None:
+    def test_no_join_buttons(self) -> None:
+        """Owner, 2026-10-24: memberships are sold at the box office, so
+        the cards carry no Square payment link."""
         for *_head, url, _perks in EXPECTED_TIERS:
-            self.assertIn(url, self.html)
+            self.assertNotIn(url, self.html)
+        self.assertNotIn(">Join<", self.html)
 
     def test_tiers_appear_in_price_order(self) -> None:
-        positions = [self.html.index(f'data-track-tier="{t[0]}"')
+        positions = [self.html.index(f'data-tier="{t[0]}"')
                      for t in EXPECTED_TIERS]
         self.assertEqual(positions, sorted(positions))
 
@@ -130,12 +133,10 @@ class MembershipPageIsUnchangedTests(TestCase):
     def card_for(self, slug: str) -> str:
         """The slice of HTML belonging to one tier card.
 
-        Cards are <article> elements and the slug appears only in the Join
-        link at the end of one, so a card runs from the previous article
-        boundary up to its own slug.
+        Cards are <article> elements carrying their slug as data-tier.
         """
-        end = self.html.index(f'data-track-tier="{slug}"')
-        start = self.html.rindex("<article", 0, end)
+        start = self.html.index(f'data-tier="{slug}"')
+        end = self.html.index("</article>", start)
         return self.html[start:end]
 
 
@@ -160,7 +161,7 @@ class RetiredTierTests(TestCase):
         self.retire()
         html = self.client.get(reverse("membership")).content.decode()
         for slug in ("silver-screen", "individual", "cinema-supporter", "family"):
-            self.assertIn(f'data-track-tier="{slug}"', html)
+            self.assertIn(f'data-tier="{slug}"', html)
 
     def test_retired_tier_still_resolves_on_thanks(self) -> None:
         """A bookmarked Square link must still attribute its revenue."""

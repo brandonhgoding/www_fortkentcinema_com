@@ -42,9 +42,9 @@ class MembershipWordingTests(TestCase):
         self.assertTrue(family.exists())
         self.assertEqual(self.html.count(HOUSEHOLD), family.count())
 
-    def test_checkout_is_explained_under_the_tiers(self):
+    def test_joining_is_explained_under_the_tiers(self):
         tiers = self.html.split('id="tiers"', 1)[1].split("</section>", 1)[0]
-        self.assertIn("Square", tiers)
+        self.assertIn("box office", tiers)
         self.assertIn(f"${TICKET_PRICES['adult']}", tiers)
         self.assertIn(f"${TICKET_PRICES['member']}", tiers)
 
@@ -82,3 +82,23 @@ class NoPrintableCardTests(TestCase):
         self.assertNotIn("printable", html)
         self.assertNotIn("pdf", html)
         self.assertIn("give us your name", html)
+
+
+class JoinAtTheBoxOfficeTests(TestCase):
+    """Owner, 2026-10-24: no Join buttons; the page sends people to the
+    box office instead of a Square checkout."""
+
+    def setUp(self):
+        self.html = unescape(self.client.get(reverse("membership")).content.decode())
+
+    def test_no_checkout_promised(self):
+        self.assertNotIn("checkout", self.html.lower())
+
+    def test_note_and_final_section_point_to_the_box_office(self):
+        note = self.html.split('class="membership-tiers__note"', 1)[1].split(
+            "</p>", 1)[0]
+        self.assertIn("box office", note)
+        final = self.html.split('class="membership-page__final-cta"', 1)[1].split(
+            "</section>", 1)[0]
+        self.assertIn("box office", final)
+        self.assertNotIn('href="#tiers"', final)

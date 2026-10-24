@@ -100,7 +100,7 @@ markup that isn't on the page.
 
     {% comment %}
       Tiers: loops a MembershipTier queryset into partials/tier_card.html.
-      id="tiers" is the scroll target for the hero + final CTA anchor links.
+      id="tiers" is the scroll target for the hero anchor link.
     {% endcomment %}
     <section class="membership-tiers" id="tiers">
       <header class="membership-tiers__header" data-reveal>
@@ -113,15 +113,16 @@ markup that isn't on the page.
         {% endfor %}
       </div>
       {% comment %}
-        What Join does and what $4 is cheaper than. The page never said
-        either: Join opens a Square checkout in a new tab, and "$4
-        Admission" meant nothing without the regular price beside it.
-        Prices come from TICKET_PRICES, like the ticket line on the home page.
+        Where to join and what $4 is cheaper than: "$4 Admission" meant
+        nothing without the regular price beside it. Prices come from
+        TICKET_PRICES, like the ticket line on the home page. There are no
+        Join buttons (owner, 2026-10-24): memberships are sold at the box
+        office.
       {% endcomment %}
       <p class="membership-tiers__note">
         Regular admission is ${{ ticket_prices.adult }} (${{ ticket_prices.matinee }} for matinees); members pay ${{ ticket_prices.member }}.
-        Join opens Square's secure checkout. There's no card to carry: at the
-        box office, your name is all we need.
+        Join at the box office before any show. There's no card to carry:
+        after that, your name is all we need.
       </p>
     </section>
 
@@ -149,8 +150,8 @@ markup that isn't on the page.
     <section class="membership-page__final-cta">
       <span class="membership-page__final-cta-rule" aria-hidden="true"></span>
       <h2>Ready to join?</h2>
-      <p>Pick your tier above and welcome yourself into the picture show.</p>
-      <a href="#tiers" class="btn btn-primary">Choose your tier</a>
+      <p>Stop by the box office before any show. It opens 30 minutes before each showtime.</p>
+      <a href="/#now-showing" class="btn btn-primary">See showtimes</a>
     </section>
   </div>
 {% endblock %}
