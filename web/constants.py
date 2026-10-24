@@ -90,6 +90,11 @@ SITE_CONFIG = {
             "href": "/blog/",
         },
         {
+            "label": "Member sign in",
+            "note": "See your membership",
+            "href": "/login",
+        },
+        {
             "label": "Rent the Cinema",
             "note": "Rent the whole theater",
             "href": "/rentals/",
