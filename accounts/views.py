@@ -1,4 +1,3 @@
-from axes.helpers import get_client_ip_address
 from axes.utils import reset as reset_lockout
 from django.contrib.auth import get_user_model, login
 from django.contrib.auth.views import LoginView, PasswordResetConfirmView
@@ -7,6 +6,7 @@ from django.shortcuts import redirect, render
 from django.views import View
 
 from accounts import magic_link
+from accounts.client_ip import request_ip
 from accounts.forms import EmailAuthenticationForm, MagicLinkForm
 
 
@@ -53,7 +53,7 @@ class MagicLinkRequestView(View):
         ctx = {"email": email}
         if form.cleaned_data["website"]:
             return render(request, "dashboard/magic_link_sent.html", ctx)
-        if not magic_link.ip_allowed(get_client_ip_address(request)):
+        if not magic_link.ip_allowed(request_ip(request)):
             ctx["too_many"] = True
             return render(request, "dashboard/magic_link_sent.html", ctx, status=429)
         retry = magic_link.claim_address(email)
