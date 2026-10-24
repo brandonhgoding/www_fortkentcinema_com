@@ -7,6 +7,10 @@
   <h1 class="login-heading">Confirm your email, {{ email }}</h1>
   <form method="post" class="login-form" onsubmit="this.querySelector('button').disabled = true;">
     {% csrf_token %}
+    {% if wrong_password %}<div class="login-error">That password doesn't match this account. If you've forgotten it, create the account again with the same email to choose a new password, then use the newest link.</div>{% endif %}
+    <label class="login-label" for="id_password">Password</label>
+    <input type="password" name="password" id="id_password" autocomplete="current-password" required autofocus />
+    <p class="login-aside">Enter the password you chose when you created the account.</p>
     <button type="submit" class="btn btn-primary login-submit">Confirm my email</button>
   </form>
 {% endblock %}

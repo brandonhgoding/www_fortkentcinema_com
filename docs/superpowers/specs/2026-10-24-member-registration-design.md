@@ -78,10 +78,16 @@ valid 24 hours. It is usable only while that user still exists, still
 has that email, is active, non-staff and unverified, so confirming spends
 it (and any other link still out for that account).
 
-`GET` shows "Confirm your email, name@example.com" with a "Confirm my
-email" button and changes nothing, so a mail scanner fetching the link
-cannot verify an account someone else registered with that address.
-`POST` re-checks the token, sets `email_verified_at`, and shows "Email
+`GET` shows "Confirm your email, name@example.com" with a password field
+and a "Confirm my email" button and changes nothing, so a mail scanner
+fetching the link cannot verify an account someone else registered with
+that address. The password field is there because anyone can re-register
+an unverified address after the throttle (which sets a new password) and
+older links stay usable: without it, an attacker's password could end up
+on an account the owner verifies, or the reverse. `POST` re-checks the
+token and that the password matches the account's current one (otherwise
+it shows the confirm page again with an error and verifies nothing; the
+latest registrant's password is the one that works), then sets `email_verified_at`, and shows "Email
 confirmed. You can sign in now." with a link to `/login`. It does not
 sign the person in: signing in with the password proves they registered.
 An unusable token shows "This confirmation link has expired or was
@@ -159,7 +165,7 @@ templates and tests are removed.
   "already registered" email and are unchanged; inactive gets nothing;
   same page in every case; per-address throttle message with the exact
   time; per-IP cap 429 after 5.
-- Verification: GET changes nothing; POST verifies; second POST, expired
+- Verification: GET changes nothing; POST with the right password verifies, with none or a wrong one it does not (and the link stays usable); an attacker's re-registration cannot be confirmed with the owner's old password; second POST, expired
   (24 h + 1 s), tampered, deleted user, changed email and staff token all
   410; button disables on click; never_cache headers.
 - Sign-in: unverified member with the right password is not signed in and

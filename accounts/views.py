@@ -130,6 +130,14 @@ class VerifyEmailView(View):
         user = verification.read_token(token)
         if user is None:
             return self._expired(request)
+        # Proves whoever clicks knows the account's current password, so
+        # re-registering someone else's address cannot get it verified.
+        if not user.check_password(request.POST.get("password", "")):
+            return render(
+                request,
+                "dashboard/verify_confirm.html",
+                {"email": user.email, "wrong_password": True},
+            )
         user.email_verified_at = timezone.now()
         user.save(update_fields=["email_verified_at"])
         return render(request, "dashboard/verify_done.html")
