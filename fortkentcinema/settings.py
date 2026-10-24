@@ -246,6 +246,9 @@ AUTH_USER_MODEL = "accounts.User"
 SILENCED_SYSTEM_CHECKS = ["auth.E003", "auth.W004"]
 LOGIN_URL = "/login"
 LOGIN_REDIRECT_URL = "/dashboard/"
+# Password reset links (accounts/views.py) expire after five minutes, the
+# owner's choice; an address is also sent at most one link per five minutes.
+PASSWORD_RESET_TIMEOUT = 5 * 60
 
 # Login lockout (django-axes). Password guessing against staff accounts was
 # bounded only by the password validators. Five wrong passwords for one

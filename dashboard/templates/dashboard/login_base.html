@@ -1,0 +1,24 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{% block title %}Sign in{% endblock %} · LeprinceOS</title>
+    <link rel="stylesheet" href="{% static 'dashboard/css/fonts.css' %}" />
+    <link rel="stylesheet" href="{% static 'dashboard/css/design-system.css' %}" />
+    <link rel="stylesheet" href="{% static 'dashboard/css/login.css' %}" />
+  </head>
+  <body class="login-body">
+    <main class="login-shell">
+      <div class="login-card card">
+        <img class="login-logo" src="{% static 'img/fkc-logo-black.png' %}" alt="Fort Kent Cinema" width="1800" height="371" />
+        <p class="login-powered">powered by</p>
+        <div class="login-brand">LeprinceOS</div>
+        <p class="login-subtitle">{% block subtitle %}Cinema Management{% endblock %}</p>
+        {% block card %}{% endblock %}
+      </div>
+    </main>
+  </body>
+</html>

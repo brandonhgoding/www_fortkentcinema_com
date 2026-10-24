@@ -1,28 +1,12 @@
-{% load static %}
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="robots" content="noindex, nofollow" />
-    <title>Sign in · LeprinceOS</title>
-    <link rel="stylesheet" href="{% static 'dashboard/css/fonts.css' %}" />
-    <link rel="stylesheet" href="{% static 'dashboard/css/design-system.css' %}" />
-    <link rel="stylesheet" href="{% static 'dashboard/css/login.css' %}" />
-  </head>
-  <body class="login-body">
-    <main class="login-shell">
-      <div class="login-card card">
-        <div class="login-brand">LeprinceOS</div>
-        <p class="login-subtitle">Cinema Management</p>
-        {% comment %}
-          django-axes renders this after too many wrong passwords for one
-          email address from one address. It says nothing about which email,
-          and the wait is the AXES_COOLOFF_TIME in settings.
-        {% endcomment %}
-        <div class="login-error">Too many sign-in attempts. Please wait 15 minutes and try again.</div>
-        <p class="login-subtitle"><a href="{% url 'login' %}">Back to sign in</a></p>
-      </div>
-    </main>
-  </body>
-</html>
+{% extends "dashboard/login_base.html" %}
+
+{% block card %}
+  {% comment %}
+    django-axes renders this after too many wrong passwords for one
+    email address from one address. It says nothing about which email,
+    and the wait is the AXES_COOLOFF_TIME in settings.
+  {% endcomment %}
+  <div class="login-error">Too many sign-in attempts. Please wait 15 minutes and try again.</div>
+  <p class="login-aside"><a href="{% url 'login' %}">Back to sign in</a></p>
+  <p class="login-aside"><a href="{% url 'password_reset' %}">Forgot password?</a></p>
+{% endblock %}

@@ -1,5 +1,11 @@
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm, UsernameField
+from django.conf import settings
+from django.contrib.auth.forms import (
+    AuthenticationForm,
+    PasswordResetForm,
+    UsernameField,
+)
+from django.core.cache import cache
 
 
 class EmailAuthenticationForm(AuthenticationForm):
@@ -21,3 +27,28 @@ class EmailAuthenticationForm(AuthenticationForm):
         **AuthenticationForm.error_messages,
         "invalid_login": "Invalid email or password.",
     }
+
+
+class EmailPasswordResetForm(PasswordResetForm):
+    """Asks for the email to send a reset link to. An address is sent at most
+    one link per PASSWORD_RESET_TIMEOUT, so nobody can flood a staff inbox and
+    each address has only one live link at a time. Known or not, the page
+    answers the same way."""
+
+    email = forms.EmailField(
+        label="Email",
+        max_length=254,
+        widget=forms.EmailInput(attrs={"autofocus": True, "autocomplete": "email"}),
+    )
+
+    def save(self, *args, **kwargs) -> None:
+        # The honeypot "website" field, as on the site's other forms: hidden
+        # from people, so filling it in marks a bot, which gets the same
+        # reply and no email.
+        if self.data.get("website"):
+            return
+        # The in-process cache, so each server worker counts on its own: a
+        # soft limit, which is all flooding protection needs.
+        key = "password-reset:" + self.cleaned_data["email"].strip().lower()
+        if cache.add(key, True, settings.PASSWORD_RESET_TIMEOUT):
+            super().save(*args, **kwargs)
