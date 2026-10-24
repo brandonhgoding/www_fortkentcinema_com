@@ -51,10 +51,6 @@ class Member(models.Model):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
-
-    # Free text on purpose: people give us "543-7000" and "+1 207 555 0100"
-    # alike, and validating a local roster's phone numbers buys nothing.
-    phone = models.CharField(max_length=40, blank=True)
     notes = models.TextField(blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)

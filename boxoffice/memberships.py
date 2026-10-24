@@ -143,17 +143,16 @@ def _member(buyer: _Buyer) -> Member:
     The buyer is whoever typed this email at Square's hosted checkout;
     nothing verifies it is theirs. A term on the matched member is a gift,
     so matching is safe. Writing anything else from the checkout onto an
-    existing record is not (the phone used to be filled in when blank,
-    which let anyone put their own number on a member who had none), so an
-    existing member is returned as staff keep it. The typed name and phone
-    stay on the MembershipSale row, where staff can compare them.
+    existing record is not, so an existing member is returned as staff
+    keep it. The typed name and phone stay on the MembershipSale row,
+    where staff can compare them.
     """
     member = Member.objects.filter(email=buyer.email).first()
     if member is None:
         first_name, last_name = split_name(buyer.display_name)
         return Member.objects.create(first_name=first_name[:100],
                                      last_name=last_name[:100],
-                                     email=buyer.email, phone=buyer.phone)
+                                     email=buyer.email)
     return member
 
 

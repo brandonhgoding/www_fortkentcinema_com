@@ -3,14 +3,13 @@
   <div class="tableWrapper">
     <table class="table">
       <thead>
-        <tr><th>Name</th><th>Email</th><th>Phone</th><th>Tier</th><th>Free this month</th><th>Expires</th><th>Status</th><th>Actions</th></tr>
+        <tr><th>Name</th><th>Email</th><th>Tier</th><th>Free this month</th><th>Expires</th><th>Status</th><th>Actions</th></tr>
       </thead>
       <tbody>
         {% for member in members %}
         <tr>
           <td><a class="memberLink" href="{% url 'dashboard:member_detail' member.pk %}">{{ member.last_name }}, {{ member.first_name }}</a></td>
           <td>{{ member.email }}</td>
-          <td>{{ member.phone|default:"—" }}</td>
           <td>{% if member.current_term %}{{ member.current_term.tier.name }}{% else %}—{% endif %}</td>
           <td>
             {% if member.free_admission_allowance %}

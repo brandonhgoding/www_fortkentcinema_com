@@ -389,7 +389,7 @@ class MemberExportView(StaffRequiredMixin, View):
 
         writer = safe_csv_writer(response)
         writer.writerow([
-            "first_name", "last_name", "email", "phone",
+            "first_name", "last_name", "email",
             "tier", "started_on", "expires_on", "price_paid", "status",
         ])
         for member in members:
@@ -398,7 +398,6 @@ class MemberExportView(StaffRequiredMixin, View):
                 member.first_name,
                 member.last_name,
                 member.email,
-                member.phone,
                 term.tier.slug if term else "",
                 term.started_on.isoformat() if term else "",
                 term.expires_on.isoformat() if term else "",

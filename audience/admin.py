@@ -107,6 +107,6 @@ class MembershipTermInline(admin.TabularInline):
 
 @admin.register(Member)
 class MemberAdmin(admin.ModelAdmin):
-    list_display = ("last_name", "first_name", "email", "phone")
+    list_display = ("last_name", "first_name", "email")
     search_fields = ("last_name", "first_name", "email")
     inlines = [MembershipTermInline]

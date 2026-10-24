@@ -207,7 +207,6 @@ class EmailCaseAdminTests(TestCase):
                 "first_name": "Ada",
                 "last_name": "Again",
                 "email": "ADA@Example.com",
-                "phone": "",
                 "notes": "",
                 "terms-TOTAL_FORMS": "0",
                 "terms-INITIAL_FORMS": "0",

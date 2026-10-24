@@ -200,6 +200,7 @@ class MemberCreateEditTests(TestCase):
         html = self.client.get(reverse("dashboard:member_create")).content.decode()
         self.assertIn('id="member-form"', html)
         self.assertIn("Create Member", html)
+        self.assertNotIn('name="phone"', html)
 
     def test_post_create_valid(self) -> None:
         resp = self.client.post(
@@ -208,7 +209,6 @@ class MemberCreateEditTests(TestCase):
                 "first_name": "Ada",
                 "last_name": "Lovelace",
                 "email": "Ada@Example.com",
-                "phone": "",
                 "notes": "",
             },
         )
@@ -238,13 +238,11 @@ class MemberCreateEditTests(TestCase):
                 "first_name": "Ada",
                 "last_name": "King",
                 "email": "ada@example.com",
-                "phone": "207-555-0100",
                 "notes": "",
             },
         )
         member.refresh_from_db()
         self.assertEqual(member.last_name, "King")
-        self.assertEqual(member.phone, "207-555-0100")
 
     def test_requires_staff(self) -> None:
         self.client.logout()
@@ -295,7 +293,7 @@ class MemberExportTests(TestCase):
         body = self.client.get(reverse("dashboard:members_export")).content.decode()
         self.assertTrue(
             body.startswith(
-                "first_name,last_name,email,phone,tier,started_on,"
+                "first_name,last_name,email,tier,started_on,"
                 "expires_on,price_paid,status"
             )
         )

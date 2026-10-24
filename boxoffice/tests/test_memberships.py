@@ -86,8 +86,8 @@ class NewMemberTests(MembershipOrderTestCase):
         self.membership_order()
         sale = process_order("O1", self.gw)
         member = Member.objects.get(email="ann@example.com")
-        self.assertEqual((member.first_name, member.last_name, member.phone),
-                         ("Ann", "Lee", "+12075550100"))
+        self.assertEqual((member.first_name, member.last_name),
+                         ("Ann", "Lee"))
         term = member.terms.get()
         self.assertEqual((term.tier.slug, term.started_on, term.expires_on),
                          ("individual", date(2026, 10, 2), date(2027, 10, 1)))
@@ -153,7 +153,6 @@ class NewMemberTests(MembershipOrderTestCase):
         member = Member.objects.get(email="long@example.com")
         self.assertLessEqual(len(member.first_name), 100)
         self.assertLessEqual(len(member.last_name), 100)
-        self.assertEqual(len(member.phone), 40)
 
     def test_membership_with_tickets_in_the_same_order(self):
         self.membership_order(extra_lines=(ticket_line(),))
@@ -167,7 +166,7 @@ class ExistingMemberTests(MembershipOrderTestCase):
     def setUp(self):
         super().setUp()
         self.member = Member.objects.create(
-            first_name="Ann", last_name="Lee", email="ann@example.com", phone="")
+            first_name="Ann", last_name="Lee", email="ann@example.com")
         self.term = MembershipTerm.objects.create(
             member=self.member, tier=MembershipTier.objects.get(slug="individual"),
             started_on=date(2026, 1, 15), expires_on=date(2027, 1, 14),
@@ -205,25 +204,16 @@ class ExistingMemberTests(MembershipOrderTestCase):
     def test_existing_member_record_is_left_as_staff_keep_it(self):
         """The buyer is whoever typed this email at Square's checkout, which
         nothing verifies. Matching the member by it is the renewal design,
-        and a term is a gift; writing the buyer's phone onto the member's
-        record was not (anyone could put their own number on a member who
-        had none). The sale row keeps what was typed, for staff to judge."""
+        and a term is a gift; writing the typed name onto the member's
+        record is not. The sale row keeps what was typed, for staff to
+        judge."""
         self.membership_order(recipient=Recipient(
             "A. Lee", "ann@example.com", "+12075550100"))
         sale = process_order("O1", self.gw)
         self.member.refresh_from_db()
         self.assertEqual(
-            (self.member.first_name, self.member.last_name, self.member.phone),
-            ("Ann", "Lee", ""))
-        self.assertEqual((sale.status, sale.phone), ("OK", "+12075550100"))
-
-        Member.objects.filter(pk=self.member.pk).update(phone="555")
-        self.membership_order(order_id="O2", recipient=Recipient(
-            "A. Lee", "ann@example.com", "+12075550199"))
-        sale = process_order("O2", self.gw)
-        self.member.refresh_from_db()
-        self.assertEqual(self.member.phone, "555")
-        self.assertEqual((sale.status, sale.phone), ("OK", "+12075550199"))
+            (self.member.first_name, self.member.last_name), ("Ann", "Lee"))
+        self.assertEqual((sale.status, sale.display_name), ("OK", "A. Lee"))
 
     def test_member_with_no_terms_starts_on_the_purchase_date(self):
         self.term.delete()

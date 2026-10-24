@@ -104,13 +104,11 @@ class PollForm(forms.ModelForm):
 class MemberForm(forms.ModelForm):
     class Meta:
         model = Member
-        fields = ["first_name", "last_name", "email", "phone", "notes"]
+        fields = ["first_name", "last_name", "email", "notes"]
         widgets = {
             "first_name": forms.TextInput(attrs={"class": "input"}),
             "last_name": forms.TextInput(attrs={"class": "input"}),
             "email": forms.EmailInput(attrs={"class": "input"}),
-            # No "optional" placeholder: the drawer label says so.
-            "phone": forms.TextInput(attrs={"class": "input"}),
             "notes": forms.Textarea(attrs={"class": "input", "rows": 3}),
         }
 
