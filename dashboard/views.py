@@ -50,12 +50,20 @@ from tickets.availability import for_showtimes
 from tickets.models import TicketOrder
 
 from .forms import EngagementForm, ScreenForm
+from .member_home import MemberHomeView
 from .mixins import StaffRequiredMixin
 from .smart_alerts import build_smart_alerts
 
 
 class HomeView(StaffRequiredMixin, TemplateView):
     template_name = "dashboard/home.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        # Signed-in non-staff (members) get their own home; staff and
+        # anonymous visitors keep the existing gate.
+        if request.user.is_authenticated and not request.user.is_staff:
+            return MemberHomeView.as_view()(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)

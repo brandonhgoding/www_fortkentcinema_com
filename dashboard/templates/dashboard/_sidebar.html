@@ -9,6 +9,7 @@
   <nav class="sidebarNav" data-cy="sidebar-nav">
     <a href="{% url 'dashboard:home' %}" class="sidebarLink {% nav_active request 'dashboard:home' %}" @click="sidebarOpen = false">
       <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 10.5L10 4l7 6.5V17a1 1 0 01-1 1h-4v-5H8v5H4a1 1 0 01-1-1v-6.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Home</a>
+    {% if request.user.is_staff %}
     {% if perms.cinema.view_adinquiry %}
     <a href="{% url 'dashboard:ad_inquiries' %}" class="sidebarLink {% nav_active request 'dashboard:ad_inquiries' %}" @click="sidebarOpen = false">
       <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 8v4h3l6 4V4L6 8H3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M14.5 7.5a3.5 3.5 0 010 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Ad Inquiries</a>
@@ -53,6 +54,7 @@
     {% if perms.phone.view_voicemail %}
     <a href="{% url 'dashboard:voicemails' %}" class="sidebarLink {% nav_active request 'dashboard:voicemails' %}" @click="sidebarOpen = false">
       <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 3.5h2.2l1.3 3.4-1.7 1.1a8.5 8.5 0 004.2 4.2l1.1-1.7 3.4 1.3V15a1.5 1.5 0 01-1.5 1.5A11.5 11.5 0 013.5 5 1.5 1.5 0 015 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>Voicemails{% new_voicemail_count as voicemails_new %}{% if voicemails_new %}<span class="sidebarBadge" aria-label="{{ voicemails_new }} new">{{ voicemails_new }}</span>{% endif %}</a>
+    {% endif %}
     {% endif %}
   </nav>
   <div class="sidebarUser" data-cy="sidebar-user">
