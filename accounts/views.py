@@ -1,5 +1,16 @@
 from axes.utils import reset as reset_lockout
-from django.contrib.auth.views import PasswordResetConfirmView
+from django.contrib.auth import get_user_model
+from django.contrib.auth.views import LoginView, PasswordResetConfirmView
+from django.db import IntegrityError, transaction
+from django.shortcuts import render
+from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.views.decorators.cache import never_cache
+
+from accounts import verification
+from accounts.client_ip import request_ip
+from accounts.forms import EmailAuthenticationForm, RegisterForm, ResendForm
 
 
 class LockoutClearingPasswordResetConfirmView(PasswordResetConfirmView):
@@ -9,6 +20,128 @@ class LockoutClearingPasswordResetConfirmView(PasswordResetConfirmView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
+        # Following the emailed link proves the address, so a member who
+        # reset instead of confirming can sign in.
+        if self.user.email_verified_at is None:
+            self.user.email_verified_at = timezone.now()
+            self.user.save(update_fields=["email_verified_at"])
         # Stored emails are already the lowercased form axes counts against.
         reset_lockout(username=self.user.email)
         return response
+
+
+class SignInView(LoginView):
+    """The sign-in screen: email and password."""
+
+    template_name = "dashboard/login.html"
+    authentication_form = EmailAuthenticationForm
+
+    def dispatch(self, request, *args, **kwargs):
+        # Someone already signed in goes on to the dashboard, unless sent
+        # here with a "next" (say, to reach a page their account may not
+        # open), in which case they see the form to sign in as someone else.
+        self.redirect_authenticated_user = not (
+            request.POST.get("next") or request.GET.get("next")
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+
+class _GatedEmailView(View):
+    """Shared by register and resend: honeypot, form, per-IP cap and
+    per-address throttle, in that order. Every outcome that is not a form
+    error shows the same "check your email" page."""
+
+    form_class = ResendForm
+    form_template = "dashboard/register.html"
+    sent_template = "dashboard/register_sent.html"
+    http_method_names = ["post"]
+
+    def post(self, request):
+        # The honeypot comes first, before validation, so a bot learns nothing.
+        if request.POST.get("website"):
+            return render(
+                request,
+                self.sent_template,
+                {"email": request.POST.get("email", "").strip()},
+            )
+        form = self.form_class(request.POST)
+        if not form.is_valid():
+            return render(request, self.form_template, {"form": form})
+        email = form.cleaned_data["email"]
+        ctx = {"email": email}
+        if not verification.ip_allowed(request_ip(request)):
+            ctx["too_many"] = True
+            return render(request, self.sent_template, ctx, status=429)
+        retry = verification.claim_address(email)
+        if retry is not None:
+            ctx["retry"] = retry
+        else:
+            self.act(request, form, email)
+        return render(request, self.sent_template, ctx)
+
+    def act(self, request, form, email):
+        raise NotImplementedError
+
+
+class RegisterView(_GatedEmailView):
+    form_class = RegisterForm
+    http_method_names = ["get", "post"]
+
+    def get(self, request):
+        return render(request, self.form_template, {"form": RegisterForm()})
+
+    def act(self, request, form, email):
+        password = form.cleaned_data["password2"]
+        users = get_user_model().objects
+        user = users.filter(email__iexact=email).first()
+        if user is None:
+            try:
+                with transaction.atomic():
+                    user = users.create_user(email, password, is_staff=False)
+            except IntegrityError:
+                # Someone registered the same address a moment ago.
+                user = users.filter(email__iexact=email).first()
+                if user is None:
+                    return
+            else:
+                verification.send_verification(request, user)
+                return
+        if not user.is_active:
+            return
+        if user.is_staff or user.email_verified_at is not None:
+            verification.send_already_registered(request, email)
+            return
+        user.set_password(password)
+        # The 7-day cleanup counts from the latest link sent.
+        user.date_joined = timezone.now()
+        user.save(update_fields=["password", "date_joined"])
+        verification.send_verification(request, user)
+
+
+class ResendVerificationView(_GatedEmailView):
+    def act(self, request, form, email):
+        user = get_user_model().objects.filter(email__iexact=email).first()
+        if (
+            user is not None
+            and user.is_active
+            and not user.is_staff
+            and user.email_verified_at is None
+        ):
+            user.date_joined = timezone.now()
+            user.save(update_fields=["date_joined"])
+            verification.send_verification(request, user)
+
+
+@method_decorator(never_cache, name="dispatch")
+class VerifyEmailView(View):
+    """Opening the link verifies the address. It does not sign the person in:
+    they sign in with their password, which proves they registered."""
+
+    def get(self, request, token):
+        user = verification.read_token(token)
+        if user is None:
+            return render(request, "dashboard/verify_expired.html", status=410)
+        if user.email_verified_at is None:
+            user.email_verified_at = timezone.now()
+            user.save(update_fields=["email_verified_at"])
+        return render(request, "dashboard/verify_done.html")

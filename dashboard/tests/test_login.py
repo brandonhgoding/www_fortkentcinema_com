@@ -1,4 +1,6 @@
 from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.utils import timezone
 from django.test import TestCase, override_settings
 from dashboard.tests.helpers import make_staff
 
@@ -108,3 +110,101 @@ class LoginLockoutTests(TestCase):
         for _ in range(settings.AXES_FAILURE_LIMIT - 1):
             self.attempt("nope")
         self.assertEqual(self.attempt("pw12345").status_code, 302)
+
+
+class StaffNextTests(TestCase):
+    def test_staff_password_login_still_honours_next(self) -> None:
+        make_staff(email="staffer@example.com", password="pw12345")
+        resp = self.client.post(
+            "/login",
+            {
+                "username": "staffer@example.com",
+                "password": "pw12345",
+                "next": "/dashboard/members",
+            },
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp["Location"], "/dashboard/members")
+
+
+PRODUCTION_BACKENDS = [
+    "axes.backends.AxesStandaloneBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+UNVERIFIED = "Please confirm your email first. We can send a new link."
+
+
+def make_member(verified: bool, email: str = "member@example.com"):
+    user = get_user_model().objects.create_user(email, "pw12345", is_staff=False)
+    if verified:
+        user.email_verified_at = timezone.now()
+        user.save(update_fields=["email_verified_at"])
+    return user
+
+
+class MemberSignInTests(TestCase):
+    def test_login_single_form(self) -> None:
+        html = self.client.get("/login").content.decode()
+        self.assertNotIn("<details", html)
+        self.assertNotIn("Email me a sign-in link", html)
+        self.assertIn('href="/register"', html)
+        self.assertIn("Create an account", html)
+        self.assertEqual(html.count("<form"), 1)
+
+    def _assert_unverified(self, resp) -> None:
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, UNVERIFIED)
+        self.assertContains(resp, "Send a new link")
+        self.assertContains(resp, 'action="/register/resend"')
+        self.assertContains(resp, 'name="email" value="member@example.com"')
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_unverified_member_not_signed_in_sees_resend(self) -> None:
+        make_member(verified=False)
+        resp = self.client.post(
+            "/login", {"username": "member@example.com", "password": "pw12345"}
+        )
+        self._assert_unverified(resp)
+
+    @override_settings(AXES_ENABLED=True, AUTHENTICATION_BACKENDS=PRODUCTION_BACKENDS)
+    def test_unverified_member_with_axes_enabled(self) -> None:
+        make_member(verified=False)
+        resp = self.client.post(
+            "/login", {"username": "member@example.com", "password": "pw12345"}
+        )
+        self._assert_unverified(resp)
+
+    def test_unverified_wrong_password_says_invalid(self) -> None:
+        make_member(verified=False)
+        resp = self.client.post(
+            "/login", {"username": "member@example.com", "password": "nope"}
+        )
+        self.assertContains(resp, "Invalid email or password.")
+        self.assertNotContains(resp, UNVERIFIED)
+        self.assertNotContains(resp, "Send a new link")
+
+    def test_verified_member_signs_in_to_dashboard(self) -> None:
+        make_member(verified=True)
+        resp = self.client.post(
+            "/login", {"username": "member@example.com", "password": "pw12345"}
+        )
+        self.assertEqual((resp.status_code, resp["Location"]), (302, "/dashboard/"))
+
+    def test_staff_without_verification_still_signs_in(self) -> None:
+        make_staff(email="staffer@example.com", password="pw12345")
+        resp = self.client.post(
+            "/login", {"username": "staffer@example.com", "password": "pw12345"}
+        )
+        self.assertEqual(resp["Location"], "/dashboard/")
+
+    def test_signed_in_visitor_redirected_from_login(self) -> None:
+        make_member(verified=True)
+        self.client.login(username="member@example.com", password="pw12345")
+        resp = self.client.get("/login")
+        self.assertEqual((resp.status_code, resp["Location"]), (302, "/dashboard/"))
+
+    def test_signed_in_visitor_with_next_sees_the_form(self) -> None:
+        make_member(verified=True)
+        self.client.login(username="member@example.com", password="pw12345")
+        resp = self.client.get("/login?next=/dashboard/members")
+        self.assertEqual(resp.status_code, 200)

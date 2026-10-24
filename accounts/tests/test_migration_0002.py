@@ -10,6 +10,9 @@ BEFORE = ("accounts", "0001_initial")
 AFTER = ("accounts", "0002_email_login")
 
 
+LATEST = ("accounts", "0004_user_email_verified_at")
+
+
 def migrate_to(target):
     """Migrate accounts to target and return the app registry at that state."""
     executor = MigrationExecutor(connection)
@@ -26,7 +29,7 @@ class EmailLoginMigrationTests(TransactionTestCase):
         # Seeded duplicates or blanks would stop 0002 from applying, and the
         # database must end at the latest state for the tests that follow.
         migrate_to(BEFORE).get_model("accounts", "User").objects.all().delete()
-        migrate_to(AFTER)
+        migrate_to(LATEST)
 
     def test_normalises_existing_emails(self):
         old = migrate_to(BEFORE).get_model("accounts", "User")
@@ -75,7 +78,7 @@ class MoveUserContentTypeTests(TransactionTestCase):
         self.apps = migrate_to(BEFORE)
 
     def tearDown(self):
-        migrate_to(AFTER)
+        migrate_to(LATEST)
 
     def _m(self, app, name):
         return self.apps.get_model(app, name)
@@ -98,7 +101,7 @@ class MoveUserContentTypeTests(TransactionTestCase):
 
     def test_renames_auth_user_content_type(self):
         ct = self._auth_only()
-        migrate_to(AFTER)
+        migrate_to(LATEST)
         moved = ContentType.objects.get(app_label="accounts", model="user")
         self.assertEqual(moved.pk, ct.pk)
         self.assertFalse(ContentType.objects.filter(app_label="auth", model="user"))
@@ -115,7 +118,7 @@ class MoveUserContentTypeTests(TransactionTestCase):
             username="s", email="s@example.com"
         )
         old.groups.add(group)
-        migrate_to(AFTER)
+        migrate_to(LATEST)
         user = get_user_model().objects.get(pk=old.pk)
         self.assertTrue(user.has_perm("accounts.change_user"))
 
@@ -143,7 +146,7 @@ class MoveUserContentTypeTests(TransactionTestCase):
             object_repr="x",
             action_flag=2,
         )
-        migrate_to(AFTER)
+        migrate_to(LATEST)
         self.assertFalse(ContentType.objects.filter(app_label="auth", model="user"))
         self._assert_settled_with_extra()
         group = Group.objects.get(name="staff-editors")

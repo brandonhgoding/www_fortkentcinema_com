@@ -75,12 +75,14 @@ class HomeViewTests(TestCase):
         resp = self.client.get(reverse("dashboard:home"))
         self.assertEqual(resp.context["display_name"], "staffer@example.com")
 
-    def test_requires_staff(self) -> None:
+    def test_non_staff_get_member_home_not_staff_home(self) -> None:
         self.client.logout()
         self.assertEqual(self.client.get(reverse("dashboard:home")).status_code, 302)
         make_user(email="p@example.com", password="pw12345", is_staff=False)
         self.client.login(username="p@example.com", password="pw12345")
-        self.assertEqual(self.client.get(reverse("dashboard:home")).status_code, 403)
+        resp = self.client.get(reverse("dashboard:home"))
+        self.assertTemplateUsed(resp, "dashboard/member_home.html")
+        self.assertTemplateNotUsed(resp, "dashboard/home.html")
 
 
 class HomeRenderTests(TestCase):

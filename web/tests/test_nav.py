@@ -98,10 +98,19 @@ class NavigationConfigTests(TestCase):
                 "Buy Ad Space",
                 "Century Theatre in Fort Kent",
                 "From the Booth",
+                "Member sign in",
                 "Rent the Cinema",
                 "You Choose",
             ],
         )
+
+    def test_footer_links_member_sign_in(self):
+        item = footer_item("/login")
+        self.assertEqual(item["label"], "Member sign in")
+        self.assertEqual(item["note"], "See your membership")
+        html = footer_html(self.client.get("/").content.decode())
+        self.assertIn('href="/login"', html)
+        self.assertIn("Member sign in", html)
 
     def test_rentals_link_lives_in_the_footer(self):
         # The owner's call on 2026-10-14: /rentals/ had no internal link

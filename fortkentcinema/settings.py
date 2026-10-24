@@ -179,7 +179,8 @@ MEDIA_ROOT = Path(config("MEDIA_ROOT", default=str(BASE_DIR / "media")))
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-if config("USE_PROXY_HEADERS", default=False, cast=bool):
+USE_PROXY_HEADERS = config("USE_PROXY_HEADERS", default=False, cast=bool)
+if USE_PROXY_HEADERS:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     USE_X_FORWARDED_HOST = True
 
@@ -280,11 +281,11 @@ AXES_USERNAME_FORM_FIELD = "username"
 AXES_USERNAME_CALLABLE = "accounts.lockout.lockout_username"
 AXES_RESET_ON_SUCCESS = True
 AXES_LOCKOUT_TEMPLATE = "dashboard/locked_out.html"
-if config("USE_PROXY_HEADERS", default=False, cast=bool):
-    # nginx is the only hop, so the last address X-Forwarded-For names is
-    # the real client; without this every visitor is 127.0.0.1.
-    AXES_IPWARE_PROXY_COUNT = 1
-    AXES_IPWARE_META_PRECEDENCE_ORDER = ("HTTP_X_FORWARDED_FOR", "REMOTE_ADDR")
+# One client-IP source for throttles and lockout. gunicorn listens on a unix
+# socket, so REMOTE_ADDR is empty; nginx (proxy_params) sets X-Real-IP to the
+# address it saw. django-ipware is not installed, so axes' AXES_IPWARE_*
+# settings would do nothing. See accounts/client_ip.py.
+AXES_CLIENT_IP_CALLABLE = "accounts.client_ip.request_ip"
 
 # TMDB (The Movie Database) integration
 TMDB_API_KEY = config("TMDB_API_KEY", default="")

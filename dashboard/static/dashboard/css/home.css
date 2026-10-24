@@ -222,3 +222,7 @@
     transform: none;
   }
 }
+
+.memberValue {
+  margin-bottom: var(--space-md);
+}

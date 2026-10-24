@@ -1,0 +1,44 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% block title %}Your membership · LeprinceOS{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/home.css' %}" />{% endblock %}
+{% block content %}
+<div class="dashboardHome">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Your membership</h1>
+      <p class="page-subtitle">{{ request.user.email }}</p>
+    </div>
+  </div>
+
+  {% if member %}
+  <div class="card"><div class="cardBody">
+    {% if tier_name %}
+    <p class="cardLabel">Tier</p>
+    <p class="cardValue memberValue">{{ tier_name }}</p>
+    {% endif %}
+    <p class="cardLabel">Status</p>
+    <p class="memberValue">{{ member.status_label }}</p>
+    {% if member.covered_through %}
+    <p class="cardLabel">Covered through</p>
+    <p class="memberValue">{{ member.covered_through|date:"M j, Y" }}</p>
+    {% endif %}
+    {% if starts_on %}
+    <p class="cardLabel">Starts</p>
+    <p class="memberValue">{{ starts_on|date:"M j, Y" }}</p>
+    {% endif %}
+    {% if expired_on %}
+    <p class="cardLabel">Expired</p>
+    <p class="memberValue">{{ expired_on|date:"M j, Y" }}</p>
+    {% endif %}
+    {% if member.free_admission_allowance > 0 %}
+    <p class="cardLabel">Free admissions this month</p>
+    <p class="memberValue">{{ free_used }} / {{ member.free_admission_allowance }}</p>
+    {% endif %}
+  </div></div>
+  {% else %}
+  <p class="page-subtitle">No membership on file for this email. Join at the box office before any show.</p>
+  <p><a href="/membership/">See membership options</a></p>
+  {% endif %}
+</div>
+{% endblock %}

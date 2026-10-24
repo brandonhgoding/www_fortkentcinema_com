@@ -4,6 +4,7 @@ from unittest import mock
 
 from axes.models import AccessAttempt
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core import mail
 from django.core.cache import cache
 from django.test import TestCase, override_settings
@@ -187,3 +188,27 @@ class PasswordResetLockoutTests(TestCase):
             {"username": "staffer@example.com", "password": "popcorn-balcony-42"},
         )
         self.assertEqual((resp.status_code, resp["Location"]), (302, "/dashboard/"))
+
+
+class MemberResetTests(TestCase):
+    def test_account_with_unusable_password_gets_no_reset_email(self):
+        cache.clear()
+        get_user_model().objects.create_user("member@example.com", password=None)
+        self.client.post("/password-reset", {"email": "member@example.com"})
+        self.assertEqual(len(mail.outbox), 0)
+
+
+class MemberVerifiedByResetTests(TestCase):
+    def test_reset_marks_member_verified(self):
+        cache.clear()
+        user = get_user_model().objects.create_user(
+            "member@example.com", "oldpass-12345", is_staff=False
+        )
+        self.assertIsNone(user.email_verified_at)
+        self.client.post("/password-reset", {"email": "member@example.com"})
+        self.assertEqual(len(mail.outbox), 1)
+        link = re.search(r"http://testserver(/password-reset/\S+)", mail.outbox[0].body)
+        resp = self.client.get(link.group(1), follow=True)
+        self.client.post(resp.redirect_chain[-1][0], NEW_PASSWORD)
+        user.refresh_from_db()
+        self.assertIsNotNone(user.email_verified_at)

@@ -102,3 +102,10 @@ class JoinAtTheBoxOfficeTests(TestCase):
             "</section>", 1)[0]
         self.assertIn("box office", final)
         self.assertNotIn('href="#tiers"', final)
+
+    def test_tiers_section_links_members_to_sign_in(self):
+        tiers = self.html.split('class="membership-tiers"', 1)[1].split(
+            "</section>", 1)[0]
+        self.assertIn("Already a member? ", tiers)
+        self.assertIn('href="/login"', tiers)
+        self.assertIn("Sign in to see your membership.", tiers)

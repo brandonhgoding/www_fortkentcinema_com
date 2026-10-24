@@ -1,0 +1,16 @@
+{% extends "dashboard/login_base.html" %}
+
+{% block title %}Check your email{% endblock %}
+{% block subtitle %}Member account{% endblock %}
+
+{% block card %}
+  {% if too_many %}
+    <p class="login-message">Too many requests from this connection. Try again later.</p>
+  {% elif retry %}
+    <p class="login-message">We sent an email to this address in the last 5 minutes. Check your inbox (and spam), or try again after {{ retry|date:"g:i A" }}.</p>
+  {% else %}
+    <h1 class="login-heading">Check your email to confirm your address</h1>
+    <p class="login-message">If we can use <strong>{{ email }}</strong>, we sent it an email. The link in it expires in 24 hours.</p>
+  {% endif %}
+  <p class="login-aside"><a href="{% url 'login' %}">Back to sign in</a></p>
+{% endblock %}

@@ -1,7 +1,10 @@
 {% extends "dashboard/login_base.html" %}
 
 {% block card %}
-  {% if form.errors %}
+  <h1 class="login-heading">Sign in</h1>
+  {% if form.unverified %}
+    <div class="login-error">Please confirm your email first. We can send a new link.</div>
+  {% elif form.errors %}
     <div class="login-error">Invalid email or password.</div>
   {% endif %}
   <form method="post" action="{% url 'login' %}" class="login-form">
@@ -11,7 +14,15 @@
     {{ form.username }}
     <label class="login-label" for="id_password">Password</label>
     {{ form.password }}
-    <button type="submit" class="btn btn-primary login-submit">Sign In</button>
+    <button type="submit" class="btn btn-primary login-submit">Sign in</button>
   </form>
+  {% if form.unverified %}
+    <form method="post" action="{% url 'register_resend' %}" class="login-form">
+      {% csrf_token %}
+      <input type="hidden" name="email" value="{{ form.data.username }}" />
+      <button type="submit" class="btn login-submit">Send a new link</button>
+    </form>
+  {% endif %}
   <p class="login-aside"><a href="{% url 'password_reset' %}">Forgot password?</a></p>
+  <p class="login-aside"><a href="{% url 'register' %}">Create an account</a></p>
 {% endblock %}
