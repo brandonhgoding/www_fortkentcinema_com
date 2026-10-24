@@ -113,7 +113,9 @@ class MemberHomeStateTests(TestCase):
         html = self.page()
         self.assertIn("Lapsed", html)
         self.assertIn(term.tier.name, html)
-        self.assertIn(f"Expired {self.fmt(term.expires_on)}", html)
+        self.assertRegex(
+            html, rf">Expired</p>\s*<p[^>]*>{self.fmt(term.expires_on)}</p>"
+        )
         self.assertNotIn("None", html)
         self.assertNotIn("Free admissions this month", html)
 
@@ -130,7 +132,9 @@ class MemberHomeStateTests(TestCase):
         html = self.page()
         self.assertIn("Not started yet", html)
         self.assertIn(term.tier.name, html)
-        self.assertIn(f"Starts {self.fmt(term.started_on)}", html)
+        self.assertRegex(
+            html, rf">Starts</p>\s*<p[^>]*>{self.fmt(term.started_on)}</p>"
+        )
         self.assertNotIn("None", html)
 
     def test_member_with_no_terms_has_no_tier_line(self) -> None:
