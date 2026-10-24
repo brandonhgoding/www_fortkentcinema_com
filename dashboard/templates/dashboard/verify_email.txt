@@ -2,5 +2,5 @@
 
 {{ url }}
 
-It works once and expires in 24 hours. If you didn't sign up, you can ignore this email.
+It expires in 24 hours. If you didn't sign up, you can ignore this email.
 {% endautoescape %}

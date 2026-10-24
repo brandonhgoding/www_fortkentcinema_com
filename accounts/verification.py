@@ -1,8 +1,9 @@
 """Confirm a member's email address by an emailed single-use link.
 
-The link carries a signed token naming the account and its email. It is
-spent once the account's email_verified_at is set. This module also holds
-the registration throttles (per-address and per-IP).
+The link carries a signed token naming the account, its email and a
+fingerprint of its password, so registering the address again with a new
+password kills older links. This module also holds the registration
+throttles (per-address and per-IP).
 """
 
 import logging
@@ -13,6 +14,7 @@ from django.contrib.auth import get_user_model
 from django.core import signing
 from django.core.cache import cache
 from django.core.mail import EmailMessage
+from django.utils.crypto import salted_hmac
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
@@ -29,24 +31,30 @@ def normalise(email: str) -> str:
     return email.strip().lower()
 
 
+def _password_fingerprint(user) -> str:
+    return salted_hmac(SALT, user.password).hexdigest()[:16]
+
+
 def make_token(user) -> str:
-    return signing.dumps({"u": user.pk, "e": user.email}, salt=SALT)
+    return signing.dumps(
+        {"u": user.pk, "e": user.email, "p": _password_fingerprint(user)}, salt=SALT
+    )
 
 
 def read_token(token: str):
-    """The unverified member a usable token names, or None."""
+    """The member a usable token names (verified or not), or None."""
     try:
         data = signing.loads(token, salt=SALT, max_age=VERIFY_MAX_AGE)
-        pk, email = data["u"], data["e"]
+        pk, email, fingerprint = data["u"], data["e"], data["p"]
     except (signing.BadSignature, KeyError, TypeError):
         return None
     user = get_user_model().objects.filter(pk=pk).first()
     if (
         user is None
         or user.email != email
+        or _password_fingerprint(user) != fingerprint
         or not user.is_active
         or user.is_staff
-        or user.email_verified_at is not None
     ):
         return None
     return user

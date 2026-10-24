@@ -77,27 +77,24 @@ password again, and the hidden `website` honeypot. Passwords must pass
 ### 2. The verification link
 
 `/register/verify/<token>`: a `django.core.signing` timestamped
-signature (salt `accounts.verify-email`) over the user's pk and email,
-valid 24 hours. It is usable only while that user still exists, still
-has that email, is active, non-staff and unverified, so confirming spends
-it (and any other link still out for that account).
+signature (salt `accounts.verify-email`) over the user's pk, email and a
+fingerprint of the password hash, valid 24 hours. It is usable only while
+that user still exists with that email and password, is active and
+non-staff. Registering the address again sets a new password, which kills
+every older link.
 
-`GET` shows "Confirm your email, name@example.com" with a password field
-and a "Confirm my email" button and changes nothing, so a mail scanner
-fetching the link cannot verify an account someone else registered with
-that address. The password field is there because anyone can re-register
-an unverified address after the throttle (which sets a new password) and
-older links stay usable: without it, an attacker's password could end up
-on an account the owner verifies, or the reverse. `POST` re-checks the
-token and that the password matches the account's current one (otherwise
-it shows the confirm page again with an error and verifies nothing; the
-latest registrant's password is the one that works), then sets `email_verified_at`, and shows "Email
-confirmed. You can sign in now." with a link to `/login`. It does not
-sign the person in: signing in with the password proves they registered.
-An unusable token shows "This confirmation link has expired or was
-already used." with a link to `/login` to request a new one (status
-410). The submit button disables itself on click. Both responses are
-`never_cache`.
+Opening the link (`GET`) verifies the account and shows "Your email is
+verified. Please sign in." with a link to `/login` (owner, 2026-10-24: the
+earlier confirm page that asked for the password was an extra step). It
+does not sign the person in. Opening it again, or after a mail scanner
+fetched it first, shows the same page. An unusable token shows "This
+confirmation link has expired or was already used." with a link to
+`/login` (status 410). `POST` is not allowed. Responses are `never_cache`.
+
+Accepted risk: a mail scanner, or someone clicking a link they didn't ask
+for, verifies an account someone else registered at their address. That
+person can then sign in and see the membership on file for that email;
+the owner of the address takes it back with "Forgot password?".
 
 ### 3. Signing in (`/login`)
 
@@ -146,7 +143,7 @@ lockout key on the real IP again for staff.
 Plain text, like the password-reset email.
 
 - Verify: subject "Confirm your Fort Kent Cinema account"; the link; that
-  it works once and expires in 24 hours; ignore it if you didn't sign up.
+  it expires in 24 hours; ignore it if you didn't sign up.
 - Already registered: subject "Your Fort Kent Cinema account"; you
   already have an account; links to sign in and reset the password;
   ignore it if you didn't try to sign up.
@@ -171,9 +168,10 @@ templates and tests are removed.
   "already registered" email and are unchanged; inactive gets nothing;
   same page in every case; per-address throttle message with the exact
   time; per-IP cap 429 after 5.
-- Verification: GET changes nothing; POST with the right password verifies, with none or a wrong one it does not (and the link stays usable); an attacker's re-registration cannot be confirmed with the owner's old password; second POST, expired
-  (24 h + 1 s), tampered, deleted user, changed email and staff token all
-  410; button disables on click; never_cache headers.
+- Verification: opening the link verifies without signing in; a second
+  open still says verified; re-registering kills the older link; expired
+  (24 h + 1 s), tampered, deleted user, changed email or password and
+  staff token all 410; POST 405; never_cache headers.
 - Sign-in: unverified member with the right password is not signed in and
   sees the resend button; wrong password still says "Invalid email or
   password."; verified member signs in to `/dashboard/`; staff unchanged
@@ -185,7 +183,7 @@ templates and tests are removed.
   gives distinct buckets per visitor; a forged `X-Forwarded-For` changes
   nothing; without proxy headers it uses `REMOTE_ADDR`; axes uses it.
 - Migration 0004 marks existing users verified.
-- Headless screenshots of `/login`, `/register` and the confirm page at
+- Headless screenshots of `/login`, `/register` and the verified page at
   desktop and phone widths.
 
 ## Out of scope

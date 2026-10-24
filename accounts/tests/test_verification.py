@@ -31,9 +31,17 @@ class VerificationTokenTests(TestCase):
         with mock.patch("time.time", return_value=time.time() + 86401):
             self.assertIsNone(verification.read_token(token))
 
-    def test_spent_once_verified(self):
+    def test_still_reads_once_verified(self):
+        # A second click (or a mail scanner's earlier fetch) still finds the
+        # account, so the page can say it is verified rather than expired.
         token = verification.make_token(self.user)
         self.user.email_verified_at = timezone.now()
+        self.user.save()
+        self.assertEqual(verification.read_token(token), self.user)
+
+    def test_refused_once_password_changes(self):
+        token = verification.make_token(self.user)
+        self.user.set_password("another-passphrase-9")
         self.user.save()
         self.assertIsNone(verification.read_token(token))
 

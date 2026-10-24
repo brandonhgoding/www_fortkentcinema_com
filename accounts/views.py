@@ -134,31 +134,14 @@ class ResendVerificationView(_GatedEmailView):
 
 @method_decorator(never_cache, name="dispatch")
 class VerifyEmailView(View):
-    """Opening the link only shows a confirm button; verifying happens on the
-    POST, so mail scanners and link previews that fetch the URL spend
-    nothing. It does not sign the person in."""
+    """Opening the link verifies the address. It does not sign the person in:
+    they sign in with their password, which proves they registered."""
 
     def get(self, request, token):
         user = verification.read_token(token)
         if user is None:
-            return self._expired(request)
-        return render(request, "dashboard/verify_confirm.html", {"email": user.email})
-
-    def post(self, request, token):
-        user = verification.read_token(token)
-        if user is None:
-            return self._expired(request)
-        # Proves whoever clicks knows the account's current password, so
-        # re-registering someone else's address cannot get it verified.
-        if not user.check_password(request.POST.get("password", "")):
-            return render(
-                request,
-                "dashboard/verify_confirm.html",
-                {"email": user.email, "wrong_password": True},
-            )
-        user.email_verified_at = timezone.now()
-        user.save(update_fields=["email_verified_at"])
+            return render(request, "dashboard/verify_expired.html", status=410)
+        if user.email_verified_at is None:
+            user.email_verified_at = timezone.now()
+            user.save(update_fields=["email_verified_at"])
         return render(request, "dashboard/verify_done.html")
-
-    def _expired(self, request):
-        return render(request, "dashboard/verify_expired.html", status=410)
