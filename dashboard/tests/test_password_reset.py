@@ -196,3 +196,19 @@ class MemberResetTests(TestCase):
         get_user_model().objects.create_user("member@example.com", password=None)
         self.client.post("/password-reset", {"email": "member@example.com"})
         self.assertEqual(len(mail.outbox), 0)
+
+
+class MemberVerifiedByResetTests(TestCase):
+    def test_reset_marks_member_verified(self):
+        cache.clear()
+        user = get_user_model().objects.create_user(
+            "member@example.com", "oldpass-12345", is_staff=False
+        )
+        self.assertIsNone(user.email_verified_at)
+        self.client.post("/password-reset", {"email": "member@example.com"})
+        self.assertEqual(len(mail.outbox), 1)
+        link = re.search(r"http://testserver(/password-reset/\S+)", mail.outbox[0].body)
+        resp = self.client.get(link.group(1), follow=True)
+        self.client.post(resp.redirect_chain[-1][0], NEW_PASSWORD)
+        user.refresh_from_db()
+        self.assertIsNotNone(user.email_verified_at)

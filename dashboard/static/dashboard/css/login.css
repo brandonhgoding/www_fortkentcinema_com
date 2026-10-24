@@ -93,14 +93,3 @@ a.login-submit { display: block; text-align: center; text-decoration: none; }
   text-align: center;
   margin-bottom: var(--space-sm);
 }
-.login-staff { margin-top: var(--space-lg); }
-.login-staff summary {
-  cursor: pointer;
-  text-align: center;
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  list-style: none;
-}
-.login-staff summary::-webkit-details-marker { display: none; }
-.login-staff summary:hover { text-decoration: underline; }
-.login-staff[open] summary { margin-bottom: var(--space-md); }

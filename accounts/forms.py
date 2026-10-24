@@ -12,6 +12,9 @@ from django.core.exceptions import ValidationError
 from accounts.verification import normalise
 
 
+UNVERIFIED_MESSAGE = "Please confirm your email first. We can send a new link."
+
+
 class EmailAuthenticationForm(AuthenticationForm):
     """The sign-in form, asking for an email. The field keeps the name
     "username" because LoginView and django-axes both read it by that name."""
@@ -31,6 +34,16 @@ class EmailAuthenticationForm(AuthenticationForm):
         **AuthenticationForm.error_messages,
         "invalid_login": "Invalid email or password.",
     }
+
+    unverified = False
+
+    def confirm_login_allowed(self, user) -> None:
+        """Runs only once the password was right, so saying the address is
+        unconfirmed gives nothing away. Staff are exempt from confirming."""
+        super().confirm_login_allowed(user)
+        if not user.is_staff and user.email_verified_at is None:
+            self.unverified = True
+            raise ValidationError(UNVERIFIED_MESSAGE, code="unverified")
 
 
 class EmailPasswordResetForm(PasswordResetForm):

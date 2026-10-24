@@ -20,6 +20,11 @@ class LockoutClearingPasswordResetConfirmView(PasswordResetConfirmView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
+        # Following the emailed link proves the address, so a member who
+        # reset instead of confirming can sign in.
+        if self.user.email_verified_at is None:
+            self.user.email_verified_at = timezone.now()
+            self.user.save(update_fields=["email_verified_at"])
         # Stored emails are already the lowercased form axes counts against.
         reset_lockout(username=self.user.email)
         return response
@@ -30,6 +35,15 @@ class SignInView(LoginView):
 
     template_name = "dashboard/login.html"
     authentication_form = EmailAuthenticationForm
+
+    def dispatch(self, request, *args, **kwargs):
+        # Someone already signed in goes on to the dashboard, unless sent
+        # here with a "next" (say, to reach a page their account may not
+        # open), in which case they see the form to sign in as someone else.
+        self.redirect_authenticated_user = not (
+            request.POST.get("next") or request.GET.get("next")
+        )
+        return super().dispatch(request, *args, **kwargs)
 
 
 class _GatedEmailView(View):
