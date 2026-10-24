@@ -1,0 +1,9 @@
+{% extends "dashboard/login_base.html" %}
+
+{% block title %}Email confirmed{% endblock %}
+{% block subtitle %}Member account{% endblock %}
+
+{% block card %}
+  <p class="login-message">Email confirmed. You can sign in now.</p>
+  <p class="login-aside"><a href="{% url 'login' %}">Sign in</a></p>
+{% endblock %}

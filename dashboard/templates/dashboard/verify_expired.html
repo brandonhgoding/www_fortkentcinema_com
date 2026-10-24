@@ -1,10 +1,9 @@
 {% extends "dashboard/login_base.html" %}
 
 {% block title %}Link expired{% endblock %}
-{% block subtitle %}Member sign in{% endblock %}
+{% block subtitle %}Member account{% endblock %}
 
 {% block card %}
-  <p class="login-message">This sign-in link has expired or was already used.</p>
-  {% include "dashboard/_magic_link_form.html" %}
+  <p class="login-message">This confirmation link has expired or was already used.</p>
   <p class="login-aside"><a href="{% url 'login' %}">Back to sign in</a></p>
 {% endblock %}

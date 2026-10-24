@@ -1,0 +1,12 @@
+{% extends "dashboard/login_base.html" %}
+
+{% block title %}Confirm your email{% endblock %}
+{% block subtitle %}Member account{% endblock %}
+
+{% block card %}
+  <h1 class="login-heading">Confirm your email, {{ email }}</h1>
+  <form method="post" class="login-form" onsubmit="this.querySelector('button').disabled = true;">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-primary login-submit">Confirm my email</button>
+  </form>
+{% endblock %}

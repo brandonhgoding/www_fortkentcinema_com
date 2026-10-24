@@ -1,7 +1,6 @@
 {% extends "dashboard/login_base.html" %}
 
 {% block card %}
-  {% include "dashboard/_magic_link_form.html" %}
   <details class="login-staff"{% if form.errors %} open{% endif %}>
     <summary>Staff: sign in with password</summary>
     {% if form.errors %}

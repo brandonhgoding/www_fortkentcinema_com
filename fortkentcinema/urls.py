@@ -11,8 +11,8 @@ from django.contrib import admin
 from accounts.forms import EmailPasswordResetForm
 from accounts.views import (
     LockoutClearingPasswordResetConfirmView,
-    MagicLinkRequestView,
-    MagicLinkSignInView,
+    RegisterView,
+    ResendVerificationView,
     SignInView,
     VerifyEmailView,
 )
@@ -61,11 +61,11 @@ urlpatterns = [
         SignInView.as_view(),
         name="login",
     ),
-    path("login/link", MagicLinkRequestView.as_view(), name="magic_link_request"),
+    path("register", RegisterView.as_view(), name="register"),
     path(
-        "login/link/<str:token>",
-        MagicLinkSignInView.as_view(),
-        name="magic_link_sign_in",
+        "register/resend",
+        ResendVerificationView.as_view(),
+        name="register_resend",
     ),
     path(
         "register/verify/<str:token>",

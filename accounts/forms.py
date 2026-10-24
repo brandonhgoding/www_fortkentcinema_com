@@ -5,9 +5,11 @@ from django.contrib.auth.forms import (
     PasswordResetForm,
     UsernameField,
 )
+from django.contrib.auth import password_validation
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
 
-from accounts.magic_link import normalise
+from accounts.verification import normalise
 
 
 class EmailAuthenticationForm(AuthenticationForm):
@@ -56,9 +58,9 @@ class EmailPasswordResetForm(PasswordResetForm):
             super().save(*args, **kwargs)
 
 
-class MagicLinkForm(forms.Form):
-    """Asks for the address to email a sign-in link to. "website" is the
-    honeypot, as on the site's other forms."""
+class ResendForm(forms.Form):
+    """Asks for the address to send a fresh confirmation link to. "website"
+    is the honeypot, as on the site's other forms."""
 
     email = forms.EmailField(
         label="Email",
@@ -69,3 +71,31 @@ class MagicLinkForm(forms.Form):
 
     def clean_email(self) -> str:
         return normalise(self.cleaned_data["email"])
+
+
+class RegisterForm(ResendForm):
+    """Email, a password twice (checked as Django's SetPasswordForm does),
+    and the honeypot."""
+
+    error_messages = {"password_mismatch": "The two password fields didn’t match."}
+
+    password1 = forms.CharField(
+        label="Password",
+        strip=False,
+        widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
+    )
+    password2 = forms.CharField(
+        label="Password again",
+        strip=False,
+        widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
+    )
+
+    def clean_password2(self) -> str:
+        password1 = self.cleaned_data.get("password1")
+        password2 = self.cleaned_data.get("password2")
+        if password1 and password2 and password1 != password2:
+            raise ValidationError(
+                self.error_messages["password_mismatch"], code="password_mismatch"
+            )
+        password_validation.validate_password(password2, user=None)
+        return password2
