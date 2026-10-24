@@ -36,14 +36,15 @@ class UserModelTests(TestCase):
             self.client.login(username="Staff@Example.com", password="pw12345")
         )
 
-    def test_short_name_falls_back_to_email(self):
-        self.assertEqual(
-            make_user(email="a@example.com").get_short_name(), "a@example.com"
-        )
-        self.assertEqual(
-            make_user(email="b@example.com", first_name="Bea").get_short_name(),
-            "Bea",
-        )
+    def test_names_are_the_email(self):
+        user = make_user(email="a@example.com")
+        self.assertEqual(user.get_short_name(), "a@example.com")
+        self.assertEqual(user.get_full_name(), "a@example.com")
+
+    def test_stores_no_personal_names(self):
+        fields = [f.name for f in User._meta.get_fields()]
+        self.assertNotIn("first_name", fields)
+        self.assertNotIn("last_name", fields)
 
     def test_has_no_username_field(self):
         self.assertNotIn("username", [f.name for f in User._meta.get_fields()])

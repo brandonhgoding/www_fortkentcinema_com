@@ -22,7 +22,7 @@ def make_eng(screen, film, *, status="CONFIRMED", start=None, end=None):
 
 class HomeViewTests(TestCase):
     def setUp(self) -> None:
-        make_staff(email="staffer@example.com", password="pw12345", first_name="Bran")
+        make_staff(email="staffer@example.com", password="pw12345")
         self.client.login(username="staffer@example.com", password="pw12345")
         self.screen = Screen.objects.create(name="Screen 1", capacity=100)
         self.film = Film.objects.create(title="Dune", runtime_minutes=155)
@@ -71,9 +71,9 @@ class HomeViewTests(TestCase):
         self.assertEqual(resp.context["today_showtimes_count"], 0)
         self.assertIn("no-showtimes-tomorrow", [a["id"] for a in resp.context["alerts"]])
 
-    def test_display_name_first_name(self) -> None:
+    def test_display_name_is_email(self) -> None:
         resp = self.client.get(reverse("dashboard:home"))
-        self.assertEqual(resp.context["display_name"], "Bran")
+        self.assertEqual(resp.context["display_name"], "staffer@example.com")
 
     def test_requires_staff(self) -> None:
         self.client.logout()

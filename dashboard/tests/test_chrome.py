@@ -78,13 +78,6 @@ class ChromeTests(TestCase):
         html = self.client.get(reverse("dashboard:home")).content.decode()
         self.assertIn("staffer@example.com", html)
 
-    def test_sidebar_prefers_first_name(self) -> None:
-        self.staff.first_name = "Bea"
-        self.staff.save()
-        html = self.client.get(reverse("dashboard:home")).content.decode()
-        shown = html.split('data-cy="username">', 1)[1].split("<", 1)[0]
-        self.assertEqual(shown, "Bea")
-
     def test_active_nav_marked(self) -> None:
         html = self.client.get(reverse("dashboard:screens")).content.decode()
         # the Screens link carries the active class on its own page

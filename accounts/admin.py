@@ -22,12 +22,12 @@ class UserAdmin(BaseUserAdmin):
     add_form = EmailUserCreationForm
     form = EmailUserChangeForm
     ordering = ("email",)
-    list_display = ("email", "first_name", "last_name", "is_staff")
-    search_fields = ("email", "first_name", "last_name")
-    # The base groups, with email moved up from "Personal info" to the login.
+    list_display = ("email", "is_staff")
+    search_fields = ("email",)
+    # The base groups, with email moved up to the login and "Personal info"
+    # dropped: the user stores no names.
     fieldsets = (
         (None, {"fields": ("email", "password")}),
-        (BaseUserAdmin.fieldsets[1][0], {"fields": ("first_name", "last_name")}),
         *BaseUserAdmin.fieldsets[2:],
     )
     add_fieldsets = (
