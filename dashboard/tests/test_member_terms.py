@@ -28,7 +28,6 @@ class MemberDetailTests(TestCase):
             first_name="Ada",
             last_name="Lovelace",
             email="ada@example.com",
-            phone="207-555-0100",
         )
 
     def test_shows_contact_details(self) -> None:
@@ -37,7 +36,6 @@ class MemberDetailTests(TestCase):
         ).content.decode()
         self.assertIn("Ada Lovelace", html)
         self.assertIn("ada@example.com", html)
-        self.assertIn("207-555-0100", html)
 
     def test_lists_terms_newest_first_with_tier_labels(self) -> None:
         MembershipTerm.objects.create(

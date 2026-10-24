@@ -41,12 +41,15 @@ class MemberFieldTests(TestCase):
             [m.last_name for m in Member.objects.all()], ["Adams", "Baker"]
         )
 
-    def test_phone_and_notes_are_optional(self) -> None:
+    def test_notes_are_optional(self) -> None:
         member = Member.objects.create(
             first_name="Ada", last_name="Lovelace", email="ada@example.com"
         )
-        self.assertEqual(member.phone, "")
         self.assertEqual(member.notes, "")
+
+    def test_stores_no_phone(self) -> None:
+        fields = [f.name for f in Member._meta.get_fields()]
+        self.assertNotIn("phone", fields)
 
 
 class MembershipTermTests(TestCase):
