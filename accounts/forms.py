@@ -7,6 +7,8 @@ from django.contrib.auth.forms import (
 )
 from django.core.cache import cache
 
+from accounts.magic_link import normalise
+
 
 class EmailAuthenticationForm(AuthenticationForm):
     """The sign-in form, asking for an email. The field keeps the name
@@ -52,3 +54,18 @@ class EmailPasswordResetForm(PasswordResetForm):
         key = "password-reset:" + self.cleaned_data["email"].strip().lower()
         if cache.add(key, True, settings.PASSWORD_RESET_TIMEOUT):
             super().save(*args, **kwargs)
+
+
+class MagicLinkForm(forms.Form):
+    """Asks for the address to email a sign-in link to. "website" is the
+    honeypot, as on the site's other forms."""
+
+    email = forms.EmailField(
+        label="Email",
+        max_length=254,
+        widget=forms.EmailInput(attrs={"autocomplete": "email"}),
+    )
+    website = forms.CharField(required=False)
+
+    def clean_email(self) -> str:
+        return normalise(self.cleaned_data["email"])

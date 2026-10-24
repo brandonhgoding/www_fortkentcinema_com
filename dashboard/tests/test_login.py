@@ -108,3 +108,18 @@ class LoginLockoutTests(TestCase):
         for _ in range(settings.AXES_FAILURE_LIMIT - 1):
             self.attempt("nope")
         self.assertEqual(self.attempt("pw12345").status_code, 302)
+
+
+class StaffNextTests(TestCase):
+    def test_staff_password_login_still_honours_next(self) -> None:
+        make_staff(email="staffer@example.com", password="pw12345")
+        resp = self.client.post(
+            "/login",
+            {
+                "username": "staffer@example.com",
+                "password": "pw12345",
+                "next": "/dashboard/members",
+            },
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp["Location"], "/dashboard/members")

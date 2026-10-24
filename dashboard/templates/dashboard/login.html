@@ -1,17 +1,21 @@
 {% extends "dashboard/login_base.html" %}
 
 {% block card %}
-  {% if form.errors %}
-    <div class="login-error">Invalid email or password.</div>
-  {% endif %}
-  <form method="post" action="{% url 'login' %}" class="login-form">
-    {% csrf_token %}
-    <input type="hidden" name="next" value="{{ next }}" />
-    <label class="login-label" for="id_username">Email</label>
-    {{ form.username }}
-    <label class="login-label" for="id_password">Password</label>
-    {{ form.password }}
-    <button type="submit" class="btn btn-primary login-submit">Sign In</button>
-  </form>
-  <p class="login-aside"><a href="{% url 'password_reset' %}">Forgot password?</a></p>
+  {% include "dashboard/_magic_link_form.html" %}
+  <details class="login-staff"{% if form.errors %} open{% endif %}>
+    <summary>Staff: sign in with password</summary>
+    {% if form.errors %}
+      <div class="login-error">Invalid email or password.</div>
+    {% endif %}
+    <form method="post" action="{% url 'login' %}" class="login-form">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}" />
+      <label class="login-label" for="id_username">Email</label>
+      {{ form.username }}
+      <label class="login-label" for="id_password">Password</label>
+      {{ form.password }}
+      <button type="submit" class="btn btn-primary login-submit">Sign In</button>
+    </form>
+    <p class="login-aside"><a href="{% url 'password_reset' %}">Forgot password?</a></p>
+  </details>
 {% endblock %}

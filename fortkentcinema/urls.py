@@ -8,13 +8,14 @@ The `urlpatterns` list routes URLs to views. For more information please see:
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from accounts.forms import EmailAuthenticationForm, EmailPasswordResetForm
+from accounts.forms import EmailPasswordResetForm
 from accounts.views import (
     LockoutClearingPasswordResetConfirmView,
+    MagicLinkRequestView,
     MagicLinkSignInView,
+    SignInView,
 )
 from django.contrib.auth.views import (
-    LoginView,
     LogoutView,
     PasswordResetCompleteView,
     PasswordResetDoneView,
@@ -56,12 +57,10 @@ urlpatterns = [
     path("llms.txt", LlmsTxtView.as_view(), name="llms"),
     path(
         "login",
-        LoginView.as_view(
-            template_name="dashboard/login.html",
-            authentication_form=EmailAuthenticationForm,
-        ),
+        SignInView.as_view(),
         name="login",
     ),
+    path("login/link", MagicLinkRequestView.as_view(), name="magic_link_request"),
     path(
         "login/link/<str:token>",
         MagicLinkSignInView.as_view(),
