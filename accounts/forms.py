@@ -2,6 +2,7 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth.forms import (
     AuthenticationForm,
+    PasswordChangeForm,
     PasswordResetForm,
     UsernameField,
 )
@@ -114,3 +115,14 @@ class RegisterForm(ResendForm):
         candidate = get_user_model()(email=self.cleaned_data.get("email", ""))
         password_validation.validate_password(password2, user=candidate)
         return password2
+
+
+class DashboardPasswordChangeForm(PasswordChangeForm):
+    """Django's change form with the dashboard's .input class on each box
+    (components.css styles controls by class, not element), matching every
+    other form the {% field %} tag renders."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs["class"] = "input"
