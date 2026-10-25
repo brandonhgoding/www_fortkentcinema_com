@@ -65,6 +65,10 @@
     <div class="sidebarUserInfo">
       <span class="sidebarUsername" data-cy="username">{{ request.user.get_short_name }}</span>
     </div>
+    <a href="{% url 'password_change' %}" class="sidebarLogout" data-cy="password-change-link" @click="sidebarOpen = false">
+      <svg class="sidebarIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="9" width="12" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M7 9V6.5a3 3 0 016 0V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Change Password
+    </a>
     <form method="post" action="{% url 'logout' %}" style="display: contents">
       {% csrf_token %}
       <button type="submit" class="sidebarLogout" data-cy="logout-button">
