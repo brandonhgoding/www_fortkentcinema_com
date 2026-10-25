@@ -6,27 +6,12 @@ from the visitor; Django must not read it, or the links in password-reset
 and verification emails could be pointed at a host the visitor chose.
 """
 
-import importlib.util
-import os
-from pathlib import Path
-from unittest import mock
-
 from django.core import mail
 from django.test import TestCase, override_settings
 
 from accounts.tests.factories import make_user
 
-SETTINGS = Path(__file__).resolve().parents[1] / "settings.py"
-
-
-def load_settings(**env):
-    """Evaluate settings.py afresh under this environment."""
-    base = {"SECRET_KEY": "test", "ALLOWED_HOSTS": "www.fortkentcinema.com"}
-    with mock.patch.dict(os.environ, {**base, **env}):
-        spec = importlib.util.spec_from_file_location("fkc_settings_probe", SETTINGS)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-    return module
+from .settings_probe import load_settings
 
 
 class ProxyHeaderSettingsTests(TestCase):

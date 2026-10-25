@@ -211,11 +211,25 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
 ]
 CORS_ALLOWED_ORIGINS: list[str] = []
 
+# The default cache holds the sign-in and registration throttles (accounts
+# app) and short TMDB search results. gunicorn runs several workers and
+# recycles each after ~1000 requests, so an in-process cache would give every
+# throttle one counter per worker, reset at random: a database table is
+# shared and durable (accounts security audit 2026-10-24, L3). `migrate`
+# creates the table (accounts/management/commands/migrate.py). Tests keep the
+# in-memory cache: they patch the clock, which the database backend ignores.
 CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "fkc-local",
-    },
+    "default": (
+        {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "fkc-local",
+        }
+        if TESTING
+        else {
+            "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+            "LOCATION": "django_cache",
+        }
+    ),
     # Dedicated alias for social-card artwork bytes (cinema/social_cards/posters.py).
     # Entries can be up to MAX_BYTES (5 MB) each, so this needs its own small
     # cap rather than sharing the default alias's MAX_ENTRIES=300 (worst case
@@ -252,6 +266,10 @@ AUTH_USER_MODEL = "accounts.User"
 SILENCED_SYSTEM_CHECKS = ["auth.E003", "auth.W004"]
 LOGIN_URL = "/login"
 LOGIN_REDIRECT_URL = "/dashboard/"
+# Staff sessions can refund orders and read member PII, so a session lasts a
+# working day, not Django's default two weeks (accounts security audit
+# 2026-10-24, L4). Members get the same; signing in again is one form.
+SESSION_COOKIE_AGE = 12 * 60 * 60
 # Password reset links (accounts/views.py) expire after five minutes, the
 # owner's choice; an address is also sent at most one link per five minutes.
 PASSWORD_RESET_TIMEOUT = 5 * 60
@@ -291,6 +309,13 @@ AXES_LOCKOUT_TEMPLATE = "dashboard/locked_out.html"
 # address it saw. django-ipware is not installed, so axes' AXES_IPWARE_*
 # settings would do nothing. See accounts/client_ip.py.
 AXES_CLIENT_IP_CALLABLE = "accounts.client_ip.request_ip"
+# The axes key is email AND address, so one address trying one password
+# against many emails never trips it. This looser cap counts every failed
+# sign-in from one address (accounts/lockout.py) and locks the address for
+# AXES_COOLOFF_TIME once reached: far above what a shared connection of
+# honest people mistypes, far below a spray (accounts security audit
+# 2026-10-24, L2).
+LOGIN_IP_FAILURE_LIMIT = 30
 
 # TMDB (The Movie Database) integration
 TMDB_API_KEY = config("TMDB_API_KEY", default="")

@@ -17,6 +17,11 @@ and `mypy.ini`); 3.11 is the floor, because `boxoffice.gateway.parse_timestamp`
 relies on `fromisoformat` reading Square's trailing `Z`. The deploy's
 interpreter must match; `.python-version` is gitignored here, so set it locally.
 
+The default cache is a database table, `django_cache`, so the sign-in and
+registration throttles are shared by every gunicorn worker. `migrate` creates
+the table (the project's own `migrate` command), so deploys need no extra step;
+a fresh checkout gets it on the first `migrate` too.
+
 Every package in `requirements.txt` is pinned. Before bumping or adding one, and
 whenever the pins are more than a few months old, run `pip-audit -r requirements.txt
 --no-deps` (from `dev-requirements.txt`): it checks the pins against the PyPI and OSV
