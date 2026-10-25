@@ -250,3 +250,40 @@ class MagicLinkGoneTests(TestCase):
     def test_magic_link_urls_gone(self):
         self.assertEqual(self.client.get("/login/link").status_code, 404)
         self.assertEqual(self.client.post("/login/link", {}).status_code, 404)
+
+
+class RegisterTimingTests(TestCase):
+    """Every outcome shows the same page, but a new or unverified address
+    also hashes the password while a verified one only sends mail. Hashing
+    on the other branches too keeps the response time from saying which
+    addresses already have a confirmed account."""
+
+    def setUp(self):
+        cache.clear()
+
+    def hashes_for(self, email):
+        with mock.patch("accounts.views.make_password") as dummy:
+            post(self.client, email=email)
+        return dummy
+
+    def test_verified_and_staff_addresses_pay_for_a_hash(self):
+        member = make_user("ann@example.com", "old-password-1", is_staff=False)
+        member.email_verified_at = timezone.now()
+        member.save()
+        make_staff(email="bo@example.com", password="old-password-1")
+        for email in ("ann@example.com", "bo@example.com"):
+            cache.clear()
+            dummy = self.hashes_for(email)
+            dummy.assert_called_once_with(GOOD)
+
+    def test_inactive_address_pays_for_a_hash(self):
+        user = make_user("ann@example.com", "old-password-1", is_staff=False)
+        user.is_active = False
+        user.save()
+        self.hashes_for("ann@example.com").assert_called_once_with(GOOD)
+
+    def test_new_and_unverified_addresses_hash_only_once(self):
+        # create_user / set_password already hash; no second one.
+        self.hashes_for("new@example.com").assert_not_called()
+        cache.clear()
+        self.hashes_for("new@example.com").assert_not_called()

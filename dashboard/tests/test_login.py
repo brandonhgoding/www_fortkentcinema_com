@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.utils import timezone
 from django.test import TestCase, override_settings
 from dashboard.tests.helpers import make_staff
@@ -7,6 +8,7 @@ from dashboard.tests.helpers import make_staff
 
 class LoginTests(TestCase):
     def setUp(self) -> None:
+        cache.clear()
         make_staff(email="staffer@example.com", password="pw12345")
 
     def test_login_page_themed(self) -> None:
@@ -60,6 +62,7 @@ class LoginLockoutTests(TestCase):
     lock that pair out for a while; the right password then waits too."""
 
     def setUp(self) -> None:
+        cache.clear()
         make_staff(email="staffer@example.com", password="pw12345")
 
     def attempt(self, password: str):
@@ -113,6 +116,9 @@ class LoginLockoutTests(TestCase):
 
 
 class StaffNextTests(TestCase):
+    def setUp(self) -> None:
+        cache.clear()
+
     def test_staff_password_login_still_honours_next(self) -> None:
         make_staff(email="staffer@example.com", password="pw12345")
         resp = self.client.post(
@@ -143,6 +149,9 @@ def make_member(verified: bool, email: str = "member@example.com"):
 
 
 class MemberSignInTests(TestCase):
+    def setUp(self) -> None:
+        cache.clear()
+
     def test_login_single_form(self) -> None:
         html = self.client.get("/login").content.decode()
         self.assertNotIn("<details", html)
@@ -208,3 +217,88 @@ class MemberSignInTests(TestCase):
         self.client.login(username="member@example.com", password="pw12345")
         resp = self.client.get("/login?next=/dashboard/members")
         self.assertEqual(resp.status_code, 200)
+
+
+@override_settings(
+    AXES_ENABLED=True,
+    AUTHENTICATION_BACKENDS=[
+        "axes.backends.AxesStandaloneBackend",
+        "django.contrib.auth.backends.ModelBackend",
+    ],
+)
+class LoginIpCapTests(TestCase):
+    """The axes lockout is per (email, address), so one address trying one
+    password against many emails never trips it. A looser per-address cap
+    (LOGIN_IP_FAILURE_LIMIT per AXES_COOLOFF_TIME) stops that spray without
+    letting one mistyped password lock a shared connection out."""
+
+    IP = "203.0.113.5"
+
+    def setUp(self) -> None:
+        cache.clear()
+        make_staff(email="staffer@example.com", password="pw12345")
+
+    def attempt(self, email: str, password: str, ip: str = IP):
+        return self.client.post(
+            "/login", {"username": email, "password": password}, REMOTE_ADDR=ip
+        )
+
+    def spray(self, count: int, ip: str = IP) -> None:
+        for i in range(count):
+            resp = self.attempt(f"member{i}@example.com", "Winter2026!", ip)
+            self.assertEqual(resp.status_code, 200)
+
+    def test_spraying_many_emails_from_one_address_locks_that_address(self) -> None:
+        self.spray(settings.LOGIN_IP_FAILURE_LIMIT)
+        resp = self.attempt("staffer@example.com", "pw12345")
+        self.assertEqual(resp.status_code, 429)
+        html = resp.content.decode()
+        self.assertIn("Too many sign-in attempts", html)
+        self.assertNotIn("staffer@example.com", html)
+
+    def test_under_the_cap_the_right_password_still_works(self) -> None:
+        self.spray(settings.LOGIN_IP_FAILURE_LIMIT - 1)
+        self.assertEqual(
+            self.attempt("staffer@example.com", "pw12345").status_code, 302
+        )
+
+    def test_other_addresses_are_unaffected(self) -> None:
+        self.spray(settings.LOGIN_IP_FAILURE_LIMIT)
+        resp = self.attempt("staffer@example.com", "pw12345", ip="203.0.113.6")
+        self.assertEqual(resp.status_code, 302)
+
+    def test_the_cap_lifts_after_the_cooloff(self) -> None:
+        import time
+        from unittest import mock
+
+        self.spray(settings.LOGIN_IP_FAILURE_LIMIT)
+        later = time.time() + settings.AXES_COOLOFF_TIME.total_seconds() + 1
+        with mock.patch("time.time", return_value=later):
+            resp = self.attempt("staffer@example.com", "pw12345")
+        self.assertEqual(resp.status_code, 302)
+
+    def test_no_address_means_no_cap(self) -> None:
+        # gunicorn behind nginx without X-Real-IP: nothing to count against.
+        self.spray(settings.LOGIN_IP_FAILURE_LIMIT, ip="")
+        self.assertEqual(
+            self.attempt("staffer@example.com", "pw12345", ip="").status_code, 302
+        )
+
+    def test_get_is_never_blocked(self) -> None:
+        self.spray(settings.LOGIN_IP_FAILURE_LIMIT)
+        self.assertEqual(
+            self.client.get("/login", REMOTE_ADDR=self.IP).status_code, 200
+        )
+
+
+class SessionLengthTests(TestCase):
+    def setUp(self) -> None:
+        cache.clear()
+
+    def test_signing_in_sets_a_twelve_hour_session_cookie(self) -> None:
+        make_staff(email="staffer@example.com", password="pw12345")
+        resp = self.client.post(
+            "/login", {"username": "staffer@example.com", "password": "pw12345"}
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(int(resp.cookies["sessionid"]["max-age"]), 12 * 60 * 60)

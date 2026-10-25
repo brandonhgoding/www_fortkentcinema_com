@@ -1,6 +1,8 @@
 from axes.utils import reset as reset_lockout
 from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.views import LoginView, PasswordResetConfirmView
+from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.shortcuts import render
 from django.utils import timezone
@@ -8,7 +10,7 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.cache import never_cache
 
-from accounts import verification
+from accounts import lockout, verification
 from accounts.client_ip import request_ip
 from accounts.forms import EmailAuthenticationForm, RegisterForm, ResendForm
 
@@ -44,6 +46,13 @@ class SignInView(LoginView):
             request.POST.get("next") or request.GET.get("next")
         )
         return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        # Too many failed sign-ins from this address, whatever the emails:
+        # the same page axes shows, before the password is even checked.
+        if lockout.ip_locked(request):
+            return render(request, settings.AXES_LOCKOUT_TEMPLATE, status=429)
+        return super().post(request, *args, **kwargs)
 
 
 class _GatedEmailView(View):
@@ -106,10 +115,13 @@ class RegisterView(_GatedEmailView):
             else:
                 verification.send_verification(request, user)
                 return
-        if not user.is_active:
-            return
-        if user.is_staff or user.email_verified_at is not None:
-            verification.send_already_registered(request, email)
+        if not user.is_active or user.is_staff or user.email_verified_at is not None:
+            # Nothing is set on these branches; hash anyway so the response
+            # takes as long as a new registration and says nothing about
+            # whether this address already has a confirmed account.
+            make_password(password)
+            if user.is_active:
+                verification.send_already_registered(request, email)
             return
         user.set_password(password)
         # The 7-day cleanup counts from the latest link sent.
