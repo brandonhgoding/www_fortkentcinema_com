@@ -1,5 +1,5 @@
 {% extends "dashboard/base_dashboard.html" %}
-{% load static %}
+{% load static dashboard_extras %}
 {% block title %}Your membership · LeprinceOS{% endblock %}
 {% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/home.css' %}" />{% endblock %}
 {% block content %}
@@ -39,6 +39,23 @@
   {% else %}
   <p class="page-subtitle">No membership on file for this email. Join at the box office before any show.</p>
   <p><a href="/membership/">See membership options</a></p>
+
+  <div class="card"><div class="cardBody">
+    {% if link_request %}
+      <p class="cardLabel">Link request sent {{ link_request.created_at|date:"M j" }}</p>
+      <p class="memberValue">We got your request. We'll link the membership for {{ link_request.full_name }} to this account, and it will show up here once we have.</p>
+    {% else %}
+      <p class="memberValue">If you're a member and your membership isn't showing up, don't panic. Ask us to link it to your dashboard account.</p>
+      <form method="post" action="{% url 'dashboard:home' %}" class="form">
+        {% csrf_token %}
+        <div class="formRow">
+          {% field link_form.first_name label="First name on your membership" %}
+          {% field link_form.last_name label="Last name" %}
+        </div>
+        <button type="submit" class="btn btn-primary">Ask us to link it</button>
+      </form>
+    {% endif %}
+  </div></div>
   {% endif %}
 </div>
 {% endblock %}

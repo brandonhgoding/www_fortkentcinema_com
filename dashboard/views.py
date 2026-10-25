@@ -1,6 +1,7 @@
 import datetime
 import json
 
+from audience.models import LinkRequestStatus, MembershipLinkRequest
 from boxoffice.gateway import GatewayError, square_enabled
 from boxoffice.models import MembershipSale, SquareItem
 from boxoffice.pull import recompute_show_dates
@@ -127,6 +128,11 @@ class HomeView(StaffRequiredMixin, TemplateView):
                     new_ad_inquiries=(
                         AdInquiry.objects.filter(status=InquiryStatus.NEW).count()
                         if user.has_perm("cinema.view_adinquiry") else 0),
+                    new_link_requests=(
+                        MembershipLinkRequest.objects.filter(
+                            status=LinkRequestStatus.NEW).count()
+                        if user.has_perm("audience.view_membershiplinkrequest")
+                        else 0),
                     new_voicemails=(
                         Voicemail.objects.filter(status=VoicemailStatus.NEW).count()
                         if user.has_perm("phone.view_voicemail") else 0),

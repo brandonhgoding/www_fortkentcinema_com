@@ -5,6 +5,7 @@ from django.db.models import QuerySet
 from django.http import HttpRequest
 
 from .models import (
+    MembershipLinkRequest,
     FreeAdmission,
     Member,
     MembershipBenefit,
@@ -110,3 +111,11 @@ class MemberAdmin(admin.ModelAdmin):
     list_display = ("last_name", "first_name", "email")
     search_fields = ("last_name", "first_name", "email")
     inlines = [MembershipTermInline]
+
+
+@admin.register(MembershipLinkRequest)
+class MembershipLinkRequestAdmin(admin.ModelAdmin):
+    list_display = ("first_name", "last_name", "user", "status", "created_at")
+    list_filter = ("status",)
+    search_fields = ("first_name", "last_name", "user__email")
+    readonly_fields = ("created_at", "resolved_at")

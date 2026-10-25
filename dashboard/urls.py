@@ -3,6 +3,7 @@ from django.urls import path
 from . import (
     ad_inquiry_views,
     blog_views,
+    link_request_views,
     member_views,
     membership_sale_views,
     poll_views,
@@ -214,6 +215,16 @@ urlpatterns = [
         "members/<int:pk>",
         member_views.MemberDetailView.as_view(),
         name="member_detail",
+    ),
+    path(
+        "members/link-requests",
+        link_request_views.LinkRequestListView.as_view(),
+        name="membership_link_requests",
+    ),
+    path(
+        "members/link-requests/<int:pk>/status",
+        link_request_views.LinkRequestStatusView.as_view(),
+        name="membership_link_request_status",
     ),
     path(
         "members/<int:pk>/terms/new",

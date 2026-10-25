@@ -2,6 +2,7 @@ import unicodedata
 from typing import cast
 
 from audience.models import (
+    MembershipLinkRequest,
     Member,
     MembershipBenefit,
     MembershipTerm,
@@ -417,3 +418,20 @@ class BlogCategoryForm(_SlugOnCreateMixin, forms.ModelForm):
         model = BlogCategory
         fields = ["name"]
         widgets = {"name": forms.TextInput(attrs={"class": "input"})}
+
+
+class MembershipLinkRequestForm(forms.ModelForm):
+    """The member home's "ask us to link it": only the name on the membership,
+    which is what staff search the roster by. The account email is known."""
+
+    class Meta:
+        model = MembershipLinkRequest
+        fields = ["first_name", "last_name"]
+        widgets = {
+            "first_name": forms.TextInput(
+                attrs={"class": "input", "autocomplete": "given-name"}
+            ),
+            "last_name": forms.TextInput(
+                attrs={"class": "input", "autocomplete": "family-name"}
+            ),
+        }

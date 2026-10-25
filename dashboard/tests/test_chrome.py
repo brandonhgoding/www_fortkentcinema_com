@@ -52,6 +52,7 @@ class ChromeTests(TestCase):
                 "Ad Inquiries",
                 "Blog",
                 "Engagements",
+                "Link Requests",
                 "Members",
                 "Memberships",
                 "Online tickets",
