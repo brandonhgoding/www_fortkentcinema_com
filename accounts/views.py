@@ -18,7 +18,12 @@ from django.views.decorators.cache import never_cache
 
 from accounts import lockout, verification
 from accounts.client_ip import request_ip
-from accounts.forms import EmailAuthenticationForm, RegisterForm, ResendForm
+from accounts.forms import (
+    DashboardPasswordChangeForm,
+    EmailAuthenticationForm,
+    RegisterForm,
+    ResendForm,
+)
 
 
 class LockoutClearingPasswordResetConfirmView(PasswordResetConfirmView):
@@ -46,6 +51,7 @@ class ChangePasswordView(LoginRequiredMixin, SuccessMessageMixin, PasswordChange
     """
 
     template_name = "dashboard/password_change.html"
+    form_class = DashboardPasswordChangeForm
     success_url = "/dashboard/"
     success_message = "Password changed."
 
