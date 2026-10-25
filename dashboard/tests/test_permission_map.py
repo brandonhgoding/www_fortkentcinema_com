@@ -102,6 +102,13 @@ PERMISSION_TABLE: list[tuple[str, dict, str, str | tuple[str, ...]]] = [
     ("member_create", {}, "get", "audience.add_member"),
     ("member_edit", {"pk": 999999}, "get", "audience.change_member"),
     ("member_delete", {"pk": 999999}, "post", "audience.delete_member"),
+    ("membership_link_requests", {}, "get", "audience.view_membershiplinkrequest"),
+    (
+        "membership_link_request_status",
+        {"pk": 999999},
+        "post",
+        "audience.change_membershiplinkrequest",
+    ),
     ("terms", {}, "get", "audience.view_membershipterm"),
     ("terms_export", {}, "get", "audience.view_membershipterm"),
     ("term_create", {"pk": 999999}, "get", "audience.add_membershipterm"),

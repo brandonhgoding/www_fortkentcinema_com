@@ -54,6 +54,8 @@ SPEC_PERMISSIONS = frozenset(
         "audience.add_membershipterm",
         "audience.change_membershipterm",
         "audience.delete_membershipterm",
+        "audience.view_membershiplinkrequest",
+        "audience.change_membershiplinkrequest",
         "audience.add_freeadmission",
         "audience.delete_freeadmission",
         "audience.view_membershiptier",

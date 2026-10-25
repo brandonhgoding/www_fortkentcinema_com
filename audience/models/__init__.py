@@ -5,8 +5,11 @@ from .subscription_change import SubscriptionChange
 from .membership_benefit import MembershipBenefit
 from .membership_tier import MembershipTier
 from .free_admission import FreeAdmission
+from .membership_link_request import LinkRequestStatus, MembershipLinkRequest
 
 __all__ = [
+    "LinkRequestStatus",
+    "MembershipLinkRequest",
     "Member",
     "MemberManager",
     "MemberStatus",

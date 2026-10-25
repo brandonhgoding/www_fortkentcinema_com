@@ -11,6 +11,7 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
                        today: datetime.date,
                        new_rental_inquiries: int = 0,
                        new_ad_inquiries: int = 0,
+                       new_link_requests: int = 0,
                        new_voicemails: int = 0,
                        square_pull_status: str | None = None,
                        square_sync_failures: int = 0,
@@ -74,6 +75,16 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
             "perm": "cinema.view_adinquiry",
             "message": f"You have {new_ad_inquiries} new ad {unit}",
             "url": reverse("dashboard:ad_inquiries"),
+        })
+
+    if new_link_requests > 0:
+        unit = "request" if new_link_requests == 1 else "requests"
+        alerts.append({
+            "id": "new-link-requests", "type": "info",
+            "perm": "audience.view_membershiplinkrequest",
+            "message": f"You have {new_link_requests} membership link {unit}",
+            "url": (reverse("dashboard:membership_link_requests")
+                    + "?status=NEW"),
         })
 
     if new_voicemails > 0:

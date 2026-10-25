@@ -1,0 +1,67 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% block title %}Link Requests · LeprinceOS{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/polls.css' %}" />{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Link Requests</h1>
+      <p class="page-subtitle">
+        {{ open_count }} open request{{ open_count|pluralize }} from members whose membership is under another email. Set the roster row's email to the account email and the member sees it on their next visit.
+      </p>
+    </div>
+  </div>
+
+  <form method="get" class="filterBar">
+    <select class="input" name="status" onchange="this.form.submit()">
+      <option value="">All statuses</option>
+      {% for value, label in statuses %}
+        <option value="{{ value }}" {% if value == selected_status %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </form>
+
+  {% if requests %}
+    <div class="tableWrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Name on membership</th><th>Account email</th>
+          <th>Received</th><th>Roster</th><th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ask in requests %}
+          <tr>
+            <td>{{ ask.full_name }}</td>
+            <td>{{ ask.user.email }}</td>
+            <td>{{ ask.created_at|date:"M j, Y" }}</td>
+            <td><a href="{% url 'dashboard:members' %}?q={{ ask.last_name|urlencode }}">Find in roster</a></td>
+            <td>
+              {% if perms.audience.change_membershiplinkrequest %}
+                <form method="post" action="{% url 'dashboard:membership_link_request_status' ask.pk %}">
+                  {% csrf_token %}
+                  <select class="input inputCompact" name="status" onchange="this.form.submit()">
+                    {% for value, label in statuses %}
+                      <option value="{{ value }}" {% if value == ask.status %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </form>
+              {% else %}
+                {{ ask.get_status_display }}
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <h3 class="empty-state-title">No link requests</h3>
+      <p class="empty-state-description">They'll show up here when a signed-in member asks to have their membership linked to their account.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
