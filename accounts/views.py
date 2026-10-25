@@ -1,7 +1,13 @@
 from axes.utils import reset as reset_lockout
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
-from django.contrib.auth.views import LoginView, PasswordResetConfirmView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import (
+    LoginView,
+    PasswordChangeView,
+    PasswordResetConfirmView,
+)
+from django.contrib.messages.views import SuccessMessageMixin
 from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.shortcuts import render
@@ -30,6 +36,18 @@ class LockoutClearingPasswordResetConfirmView(PasswordResetConfirmView):
         # Stored emails are already the lowercased form axes counts against.
         reset_lockout(username=self.user.email)
         return response
+
+
+class ChangePasswordView(LoginRequiredMixin, SuccessMessageMixin, PasswordChangeView):
+    """A signed-in user, staff or member, picks a new password by proving
+    the current one. Django keeps this session signed in and, since the
+    session hash changes, signs out every other session for the account.
+    Someone who has forgotten their password uses the emailed reset instead.
+    """
+
+    template_name = "dashboard/password_change.html"
+    success_url = "/dashboard/"
+    success_message = "Password changed."
 
 
 class SignInView(LoginView):

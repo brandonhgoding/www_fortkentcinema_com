@@ -10,6 +10,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from accounts.forms import EmailPasswordResetForm
 from accounts.views import (
+    ChangePasswordView,
     LockoutClearingPasswordResetConfirmView,
     RegisterView,
     ResendVerificationView,
@@ -73,6 +74,7 @@ urlpatterns = [
         name="verify_email",
     ),
     path("logout/", LogoutView.as_view(next_page="/login"), name="logout"),
+    path("password-change", ChangePasswordView.as_view(), name="password_change"),
     path(
         "password-reset",
         PasswordResetView.as_view(
