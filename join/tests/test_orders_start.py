@@ -1,5 +1,3 @@
-from unittest import mock
-
 from audience.models import MembershipTier
 from boxoffice.gateway import GatewayError
 from boxoffice.tests.fakes import FakeGateway
@@ -11,12 +9,6 @@ from join.tests.factories import BUYER, set_variation
 
 
 class StartTests(TestCase):
-    def setUp(self):
-        # join:order arrives with the views (Task 9); until then, its path.
-        patcher = mock.patch("join.spec.reverse", return_value="/membership/order/T/")
-        patcher.start()
-        self.addCleanup(patcher.stop)
-
     def test_start_creates_pending_order_customer_and_link(self):
         gw = FakeGateway()
         tier = set_variation()

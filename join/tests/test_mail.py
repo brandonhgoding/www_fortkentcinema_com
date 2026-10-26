@@ -2,16 +2,11 @@ from django.core import mail
 from django.test import TestCase, override_settings
 
 from join.mail import send_welcome
-from join.tests.helpers import paid_order, patch_reverse
+from join.tests.helpers import paid_order
 
 
 @override_settings(TICKETS_BASE_URL="https://www.fortkentcinema.com")
 class WelcomeEmailTests(TestCase):
-    def setUp(self):
-        patcher = patch_reverse("join.mail.reverse")
-        patcher.start()
-        self.addCleanup(patcher.stop)
-
     def test_welcome_email_for_a_first_term(self):
         order = paid_order()
         send_welcome(order)

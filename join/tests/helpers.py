@@ -2,8 +2,6 @@
 
 import datetime
 from decimal import Decimal
-from unittest import mock
-
 from audience.models import Member, MembershipTerm, MembershipTier
 
 from join.models import MembershipOrder
@@ -27,15 +25,3 @@ def paid_order(*, earlier_term: bool = False, **over) -> MembershipOrder:
     fields = {"status": "PAID", "term": term}
     fields.update(over)
     return make_order(**fields)
-
-
-def patch_reverse(target: str):
-    """Until the join URLs exist (Task 9), answer reverse() with their paths."""
-    paths = {"register": "/register"}
-
-    def fake(name, args=(), **kwargs):
-        if name == "join:order":
-            return f"/membership/order/{args[0]}/"
-        return paths[name]
-
-    return mock.patch(target, side_effect=fake)

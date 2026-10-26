@@ -1,5 +1,3 @@
-from unittest import mock
-
 from django.test import TestCase, override_settings
 
 from join.spec import checkout_spec
@@ -14,10 +12,7 @@ class CheckoutSpecTests(TestCase):
     def test_spec_has_one_explicitly_priced_line_and_no_showtime(self):
         set_variation()
         order = make_order(square_customer_id="C-3")
-        # join:order arrives with the views (Task 9); until then, its path.
-        with mock.patch("join.spec.reverse",
-                        return_value=f"/membership/order/{order.token}/"):
-            spec = checkout_spec(order)
+        spec = checkout_spec(order)
         line = spec.lines[0]
         self.assertEqual(
             (len(spec.lines), line.variation_id, line.name, line.quantity,

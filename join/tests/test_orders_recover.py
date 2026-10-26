@@ -7,15 +7,10 @@ from django.test import TestCase
 
 from join.orders import recover_pending, start
 from join.tests.factories import BUYER, make_order, set_variation
-from join.tests.helpers import patch_reverse
 
 
 class RecoverPendingTests(TestCase):
     def setUp(self):
-        for target in ("join.spec.reverse", "join.mail.reverse"):
-            patcher = patch_reverse(target)
-            patcher.start()
-            self.addCleanup(patcher.stop)
         self.gw = FakeGateway()
 
     def started(self):

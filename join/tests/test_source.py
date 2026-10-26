@@ -12,17 +12,11 @@ from django.test import TestCase
 from join.models import MembershipOrder
 from join.source import SOURCE
 from join.tests.factories import make_order
-from join.tests.helpers import patch_reverse
 
 PAID_AT = datetime.datetime(2026, 10, 26, 15, 0, tzinfo=datetime.timezone.utc)
 
 
 class SourceTestCase(TestCase):
-    def setUp(self):
-        patcher = patch_reverse("join.mail.reverse")
-        patcher.start()
-        self.addCleanup(patcher.stop)
-
     def ok_sale(self):
         tier = MembershipTier.objects.get(slug="individual")
         member = Member.objects.create(first_name="Ann", last_name="Lee",
