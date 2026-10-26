@@ -11,6 +11,7 @@ import dataclasses
 import datetime
 import logging
 from decimal import Decimal
+from typing import Protocol
 
 from audience.models import Member, MembershipTerm, MembershipTier
 from audience.terms import latest_term, renewal_start
@@ -38,10 +39,47 @@ class _Refused(Exception):
 
 
 @dataclasses.dataclass(frozen=True)
-class _Buyer:
+class Buyer:
     display_name: str
     email: str
     phone: str
+    # Set when the buyer typed two fields (the site's own checkout); blank
+    # for Square's recipient, whose display name is split instead.
+    first_name: str = ""
+    last_name: str = ""
+
+
+class OrderSource(Protocol):
+    """Another app that started a Square order and knows who the buyer is.
+
+    The site's own checkout builds orders with no shipment, so Square's
+    order carries no recipient; the app that holds the typed name and
+    email registers a source. ``buyer_for`` answers for its own orders
+    and None for everything else. ``record`` is told how every one of its
+    orders came out (and, on a failure before any order was read, every
+    source is told), with the fetched order when there is one.
+    """
+
+    def buyer_for(self, order_id: str) -> Buyer | None: ...
+
+    def record(self, order_id: str, sale: MembershipSale,
+               order: OrderData | None) -> None: ...
+
+
+_sources: list[OrderSource] = []
+
+
+def register_order_source(source: OrderSource) -> None:
+    if source not in _sources:
+        _sources.append(source)
+
+
+def order_sources() -> list[OrderSource]:
+    return list(_sources)
+
+
+def clear_order_sources() -> None:
+    _sources.clear()
 
 
 @dataclasses.dataclass(frozen=True)
@@ -52,7 +90,8 @@ class _Facts:
     line_count: int
     quantity: int
     gross_cents: int
-    buyer: _Buyer
+    buyer: Buyer
+    source: str = MembershipSale.Source.LINK
 
 
 def split_name(display_name: str) -> tuple[str, str]:
@@ -78,27 +117,52 @@ def _tiers_by_variation() -> dict[str, MembershipTier]:
             for tier in MembershipTier.objects.exclude(square_variation_id="")}
 
 
-def _buyer(recipient: Recipient | None) -> _Buyer:
+def _buyer(recipient: Recipient | None) -> Buyer:
     if recipient is None:
-        return _Buyer("", "", "")
+        return Buyer("", "", "")
     # Normalised exactly as Member.save does, so the lookup matches. Square
     # allows longer names and phones than our columns; Postgres would refuse
     # them, so cut them to fit.
-    return _Buyer(recipient.display_name[:200],
-                  recipient.email_address.strip().lower(),
-                  recipient.phone_number[:40])
+    return Buyer(recipient.display_name[:200],
+                 recipient.email_address.strip().lower(),
+                 recipient.phone_number[:40])
 
 
-def _facts(order: OrderData,
-           lines: list[tuple[OrderLine, MembershipTier]]) -> _Facts:
+def _sourced_buyer(order_id: str) -> tuple[Buyer, OrderSource] | None:
+    """The buyer the first registered source claims the order for, if any."""
+    for source in _sources:
+        buyer = source.buyer_for(order_id)
+        if buyer is not None:
+            return buyer, source
+    return None
+
+
+def _facts(order: OrderData, lines: list[tuple[OrderLine, MembershipTier]],
+           buyer: Buyer, source: str) -> _Facts:
     return _Facts(
         paid_at=order.paid_at,
         tier=lines[0][1],
         line_count=len(lines),
         quantity=sum(line.quantity for line, _ in lines),
         gross_cents=sum(line.gross_cents for line, _ in lines),
-        buyer=_buyer(order.recipient),
+        buyer=buyer,
+        source=source,
     )
+
+
+def _notify(sources: list[OrderSource], order_id: str, sale: MembershipSale,
+            order: OrderData | None) -> None:
+    """Tell each source how the sale came out; a broken source costs nothing.
+
+    Called outside the sale's transaction, so a term already entered stays
+    entered whatever the source does with the news.
+    """
+    for source in sources:
+        try:
+            source.record(order_id, sale, order)
+        except Exception:
+            logger.exception("Order source %r failed to record order %s",
+                             source, order_id)
 
 
 def _finish(sale: MembershipSale, status: str, error: str = "") -> MembershipSale:
@@ -137,7 +201,7 @@ def order_never_fetched(sale: MembershipSale) -> bool:
             and sale.paid_at is None and sale.tier_id is None)
 
 
-def _member(buyer: _Buyer) -> Member:
+def _member(buyer: Buyer) -> Member:
     """The member this sale renews, or a new one for an address never seen.
 
     The buyer is whoever typed this email at Square's hosted checkout;
@@ -149,7 +213,10 @@ def _member(buyer: _Buyer) -> Member:
     """
     member = Member.objects.filter(email=buyer.email).first()
     if member is None:
-        first_name, last_name = split_name(buyer.display_name)
+        if buyer.first_name or buyer.last_name:
+            first_name, last_name = buyer.first_name, buyer.last_name
+        else:
+            first_name, last_name = split_name(buyer.display_name)
         return Member.objects.create(first_name=first_name[:100],
                                      last_name=last_name[:100],
                                      email=buyer.email)
@@ -185,6 +252,7 @@ def _attribute(sale_pk: int, order_id: str, facts: _Facts) -> MembershipSale:
             return sale
         sale.paid_at = facts.paid_at
         sale.tier = facts.tier
+        sale.source = facts.source
         sale.quantity = facts.quantity
         sale.gross_cents = facts.gross_cents
         sale.display_name = facts.buyer.display_name
@@ -224,20 +292,40 @@ def process_order(order_id: str,
         defaults={"status": MembershipSale.Status.FAILED,
                   "error": "Processing did not finish"})
     if sale.status in FINISHED:
+        # Already entered or skipped. The sources are still told: a record()
+        # that broke on the first event is repaired by the next one, or by
+        # the order page asking Square, without a second fetch.
+        _notify(order_sources(), order_id, sale, None)
         return sale
     gateway = gateway or get_gateway()
     if gateway is None:
-        return _fail_unless_finished(
+        sale = _fail_unless_finished(
             sale.pk, f"Square sync disabled: {disabled_reason()}")
+        _notify(order_sources(), order_id, sale, None)
+        return sale
     try:
         order = gateway.retrieve_order(order_id)
     except GatewayError as exc:
-        return _fail_unless_finished(
+        sale = _fail_unless_finished(
             sale.pk, f"Could not fetch the order from Square: {exc}")
+        _notify(order_sources(), order_id, sale, None)
+        return sale
     lines = membership_lines(order, _tiers_by_variation())
     if not lines:
         # Not a membership after all: drop the placeholder or earlier failure.
         MembershipSale.objects.filter(
             pk=sale.pk, status=MembershipSale.Status.FAILED).delete()
         return None
-    return _attribute(sale.pk, order_id, _facts(order, lines))
+    buyer = _buyer(order.recipient)
+    source: str = MembershipSale.Source.LINK
+    answered: list[OrderSource] = []
+    if not buyer.email:
+        # No recipient on the order: the site's own checkout may know the buyer.
+        sourced = _sourced_buyer(order_id)
+        if sourced is not None:
+            buyer, source_obj = sourced
+            source = MembershipSale.Source.WEBSITE
+            answered = [source_obj]
+    sale = _attribute(sale.pk, order_id, _facts(order, lines, buyer, source))
+    _notify(answered, order_id, sale, order)
+    return sale

@@ -108,6 +108,15 @@ class MembershipSaleTests(TestCase):
                 order_id="O1", status=MembershipSale.Status.FAILED
             )
 
+    def test_sale_source_defaults_to_payment_link(self) -> None:
+        sale = MembershipSale.objects.create(
+            order_id="O1", status=MembershipSale.Status.FAILED
+        )
+        self.assertEqual(
+            (sale.source, sale.get_source_display()), ("LINK", "Payment link")
+        )
+        self.assertEqual(MembershipSale.Source.WEBSITE.label, "Website")
+
     def test_deleting_the_term_keeps_the_sale(self) -> None:
         tier = MembershipTier.objects.get(slug="individual")
         member = Member.objects.create(first_name="A", last_name="B", email="a@b.c")

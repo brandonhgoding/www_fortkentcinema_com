@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "phone.apps.PhoneConfig",
     "boxoffice.apps.BoxofficeConfig",
     "tickets.apps.TicketsConfig",
+    "join.apps.JoinConfig",
     "rest_framework",
     "corsheaders",
     "axes",

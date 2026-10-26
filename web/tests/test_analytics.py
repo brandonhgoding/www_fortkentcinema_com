@@ -43,11 +43,20 @@ class GA4SnippetTests(TestCase):
 
 
 class ClickEventMarkupTests(TestCase):
-    def test_no_membership_join_clicks(self):
-        # The Join buttons left /membership/ on 2026-10-24 (the owner's
-        # call): memberships are sold at the box office.
-        html = self.client.get(reverse("membership")).content.decode()
-        self.assertEqual(len(tracked(html, "membership_join_click")), 0)
+    def test_join_click_is_tracked_without_a_value(self):
+        # A Join click is intent, not money: the purchase event fires on the
+        # order page once Square has confirmed the payment.
+        from unittest import mock
+
+        for tier in MembershipTier.objects.all():
+            MembershipTier.objects.filter(pk=tier.pk).update(
+                square_variation_id=f"VAR-{tier.slug}")
+        with mock.patch("web.views.square_enabled", return_value=True):
+            html = self.client.get(reverse("membership")).content.decode()
+        hits = tracked(html, "membership_join_click")
+        self.assertEqual(len(hits), MembershipTier.objects.count())
+        for hit in hits:
+            self.assertNotIn("value", hit)
 
     def test_no_giftcard_link_on_the_home_page(self):
         # The gift-card card left the home page on 2026-10-13 (the owner's

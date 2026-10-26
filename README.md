@@ -49,6 +49,22 @@ the button would have; a partial refund flags the order for staff instead), and
 flagged while the dispute is open, voided if it is lost, and cleared if it is
 won). Do not tick `order.updated`.
 
+## Membership checkout
+
+Memberships are sold on the site (the `join` app) at
+`/membership/join/<tier slug>/`, through the same Square hosted-checkout
+flow as tickets: a pending order, a payment link with one explicitly priced
+line, and the payment webhook. A tier sells online when it is listed on the
+membership page and has its Square variation ID; otherwise its card says to
+join at the box office. On payment the existing membership entry code
+(`boxoffice.memberships.process_order`) creates or renews the member and
+term, and the `join` app's registered order source supplies the buyer and
+sends the welcome email. Website sales appear on the dashboard's Square
+Sales list as "Website" and use the same Retry button as payment-link
+sales. The legacy Square payment links keep working but are no longer
+linked from the site. No new settings, cron jobs or webhook events are
+needed: `payment.updated` already covers it.
+
 ## Phone line
 
 The cinema's number is a Twilio number (the `phone` app). Twilio POSTs to

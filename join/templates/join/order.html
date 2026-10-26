@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Order {{ order.number }} | Fort Kent Cinema{% endblock %}
+
+{% comment %}
+  Reached by the buyer's private link (Square's redirect, the welcome
+  email). The token in the URL is the buyer's: never index or follow it.
+  The site's analytics stay on, unlike the ticket page: this is where the
+  GA4 purchase event fires, behind a payment Square has confirmed, and the
+  token grants nothing redeemable.
+{% endcomment %}
+{% block robots %}noindex, nofollow{% endblock %}
+
+{% block extra_head %}
+  {% if state == "pending" %}
+    {% comment %}
+      Square's webhook usually lands within seconds; reload until it does,
+      for two minutes from created_at (join.views.order_state).
+    {% endcomment %}
+    <meta http-equiv="refresh" content="4">
+  {% elif state == "paid" %}
+    {% comment %}
+      The purchase event, as /thanks fired it for the payment links. The
+      value comes from the tier record, never from the URL.
+    {% endcomment %}
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      if (typeof gtag === 'function') {
+        gtag('event', 'purchase', {
+          currency: 'USD',
+          value: {{ tier.price }},
+          items: [{
+            item_id: '{{ tier.slug|escapejs }}',
+            item_name: '{{ tier.name|escapejs }} Membership',
+            item_category: 'membership',
+            price: {{ tier.price }},
+            quantity: 1
+          }]
+        });
+      }
+    </script>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="ticket-page join-page">
+  <div class="ticket-page__container">
+    {% if state == "paid" %}
+      <section class="ticket-page__ticket">
+        <p class="ticket-page__label">Payment received</p>
+        <h1 class="ticket-page__title">{% if renewal %}You're renewed{% else %}Welcome, {{ order.first_name }}{% endif %}</h1>
+        <p class="ticket-page__film">{{ tier_name }} membership</p>
+        <p class="ticket-page__when">Your membership runs {{ started_on }} through {{ expires_on }}.</p>
+        <p>There's no card to carry. Give your name at the box office.</p>
+        <p class="ticket-page__small">
+          {% if mine %}
+            <a href="/dashboard/">See your membership</a>
+          {% else %}
+            Want to see your membership online? <a href="{{ register_url }}">Create an account with {{ order.email }}</a>.
+          {% endif %}
+        </p>
+        <p class="ticket-page__small">Order {{ order.number }}</p>
+      </section>
+    {% elif state == "pending" %}
+      <h1 class="ticket-page__title">Confirming your payment&hellip;</h1>
+      <p>This page will update by itself in a moment.</p>
+    {% elif state == "waiting" %}
+      <h1 class="ticket-page__title">Still waiting</h1>
+      <p>We haven't heard from Square yet. Check your email for your welcome note, or return to payment.</p>
+      {% if order.square_checkout_url %}
+        <a href="{{ order.square_checkout_url }}" class="btn btn-primary">Return to payment</a>
+      {% endif %}
+    {% elif state == "failed" %}
+      <h1 class="ticket-page__title">Almost there</h1>
+      <p>Payment received. We're finishing your membership and will email you.</p>
+    {% else %}
+      <h1 class="ticket-page__title">Checkout didn't start</h1>
+      <p>This checkout didn't start. <a href="{% url 'join:start' order.tier.slug %}">Try again.</a></p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

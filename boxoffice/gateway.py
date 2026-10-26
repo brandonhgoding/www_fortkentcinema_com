@@ -127,7 +127,6 @@ class CheckoutLine:
 @dataclass(frozen=True)
 class CheckoutSpec:
     reference: str
-    showtime_id: int
     lines: tuple[CheckoutLine, ...]
     redirect_url: str
     buyer_email: str
@@ -135,6 +134,9 @@ class CheckoutSpec:
     support_email: str
     idempotency_key: str
     customer_id: str = ""  # the buyer's Square customer; "" sends none
+    # The showtime a ticket order is for, written to metadata.showtime so the
+    # nightly pull can attribute the order; None for anything but a ticket.
+    showtime_id: int | None = None
 
 
 @dataclass(frozen=True)
@@ -323,9 +325,10 @@ def payment_link_body(spec: CheckoutSpec, location_id: str) -> dict:
     order: dict[str, Any] = {
         "location_id": location_id,
         "reference_id": spec.reference,
-        "metadata": {"showtime": str(spec.showtime_id)},
         "line_items": [_checkout_line_item(line) for line in spec.lines],
     }
+    if spec.showtime_id is not None:
+        order["metadata"] = {"showtime": str(spec.showtime_id)}
     if spec.customer_id:
         order["customer_id"] = spec.customer_id
     discounts = [

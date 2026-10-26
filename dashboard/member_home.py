@@ -1,3 +1,5 @@
+import datetime
+
 from audience.models import (
     LinkRequestStatus,
     Member,
@@ -5,6 +7,7 @@ from audience.models import (
     MemberStatus,
 )
 from audience.terms import latest_term
+from boxoffice.gateway import square_enabled
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect
 from django.utils import timezone
@@ -20,7 +23,13 @@ class MemberHomeView(LoginRequiredMixin, TemplateView):
     The membership shown is the roster row whose email is the account's.
     Without one, the page offers to ask staff to link a membership held
     under another address (MembershipLinkRequest); POST saves that ask.
+
+    A member with cover (or lapsed cover) gets a Renew button to the join
+    page for their latest tier, when that tier sells online; otherwise just
+    a link to the tier list.
     """
+
+    RENEWABLE = (MemberStatus.ACTIVE, MemberStatus.EXPIRING, MemberStatus.LAPSED)
 
     template_name = "dashboard/member_home.html"
 
@@ -57,6 +66,8 @@ class MemberHomeView(LoginRequiredMixin, TemplateView):
         ctx["starts_on"] = None
         ctx["expired_on"] = None
         ctx["link_request"] = None
+        ctx["can_renew"] = False
+        ctx["renew_tier"] = None
         if member:
             # Staff linked it (or the member joined): the ask is answered.
             for ask in self.open_requests():
@@ -66,6 +77,15 @@ class MemberHomeView(LoginRequiredMixin, TemplateView):
             if term:
                 ctx["tier_name"] = term.tier.name
             status = member.status
+            latest = latest_term(terms)
+            # A term that never expires cannot be renewed: the entry code
+            # would refuse the paid order ("Current term never expires").
+            if (status in self.RENEWABLE and latest
+                    and latest.expires_on < datetime.date.max):
+                ctx["can_renew"] = True
+                if (latest.tier.show_on_membership_page
+                        and latest.tier.square_variation_id and square_enabled()):
+                    ctx["renew_tier"] = latest.tier
             if status == MemberStatus.UPCOMING:
                 today = timezone.localdate()
                 ctx["starts_on"] = min(

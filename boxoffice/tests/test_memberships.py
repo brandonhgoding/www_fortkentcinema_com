@@ -6,7 +6,15 @@ from zoneinfo import ZoneInfo
 
 from audience.models import Member, MembershipTerm, MembershipTier
 from boxoffice.gateway import GatewayError, OrderData, OrderLine, Recipient
-from boxoffice.memberships import order_never_fetched, process_order, split_name
+from boxoffice.memberships import (
+    Buyer,
+    clear_order_sources,
+    order_never_fetched,
+    order_sources,
+    process_order,
+    register_order_source,
+    split_name,
+)
 from boxoffice.models import MembershipSale
 from boxoffice.tests.fakes import FakeGateway
 from django.test import SimpleTestCase, TestCase, override_settings
@@ -442,3 +450,110 @@ class IdempotencyTests(MembershipOrderTestCase):
         self.assertEqual((sale.status, sale.term), ("OK", term))
         self.assertEqual((stored.status, stored.error, stored.term, stored.email),
                          ("OK", "", term, "ann@example.com"))
+
+
+class FakeSource:
+    """An order source that knows some orders and remembers every outcome."""
+
+    def __init__(self, orders: set[str], buyer: Buyer) -> None:
+        self.orders = orders
+        self.buyer = buyer
+        self.recorded: list[tuple] = []
+
+    def buyer_for(self, order_id):
+        return self.buyer if order_id in self.orders else None
+
+    def record(self, order_id, sale, order):
+        self.recorded.append((order_id, sale.status, order))
+
+
+class BrokenSource(FakeSource):
+    """Claims O1, then breaks when told how it went."""
+
+    def __init__(self):
+        super().__init__({"O1"}, Buyer("Bo Broke", "bo@example.com", ""))
+
+    def record(self, order_id, sale, order):
+        raise RuntimeError("record broke")
+
+
+class OrderSourceTests(MembershipOrderTestCase):
+    def setUp(self):
+        super().setUp()
+        # Other apps register their sources at startup; put them back after.
+        installed = order_sources()
+        clear_order_sources()
+        self.addCleanup(self._restore, installed)
+        self.source = FakeSource({"O1"}, Buyer(
+            "Mary Ann van Dyke", "mav@example.com", "",
+            first_name="Mary Ann", last_name="van Dyke"))
+        register_order_source(self.source)
+
+    @staticmethod
+    def _restore(installed):
+        clear_order_sources()
+        for source in installed:
+            register_order_source(source)
+
+    def test_source_supplies_the_buyer_when_square_has_no_recipient(self):
+        self.membership_order(recipient=None)
+        sale = process_order("O1", self.gw)
+        member = Member.objects.get(email="mav@example.com")
+        self.assertEqual((member.first_name, member.last_name),
+                         ("Mary Ann", "van Dyke"))
+        self.assertEqual((sale.status, sale.source, sale.display_name),
+                         ("OK", "WEBSITE", "Mary Ann van Dyke"))
+
+    def test_source_is_told_the_outcome_with_the_fetched_order(self):
+        order = self.membership_order(recipient=None)
+        process_order("O1", self.gw)
+        self.assertEqual(self.source.recorded, [("O1", "OK", order)])
+
+    def test_recipient_wins_over_the_source(self):
+        self.membership_order()  # ANN as recipient
+        sale = process_order("O1", self.gw)
+        self.assertEqual((sale.source, sale.email), ("LINK", "ann@example.com"))
+        self.assertEqual(self.source.recorded, [])
+
+    def test_order_no_source_knows_is_still_a_register_sale(self):
+        self.membership_order(order_id="O2", recipient=None)
+        sale = process_order("O2", self.gw)
+        self.assertEqual((sale.status, sale.source), ("SKIPPED", "LINK"))
+
+    def test_fetch_failure_is_recorded_to_every_source_without_an_order(self):
+        process_order("O1", FakeGateway(fail_with=GatewayError("boom")))
+        self.assertEqual(self.source.recorded, [("O1", "FAILED", None)])
+
+    def test_gateway_disabled_is_recorded_too(self):
+        with mock.patch("boxoffice.memberships.get_gateway", return_value=None):
+            process_order("O1")
+        self.assertEqual(self.source.recorded, [("O1", "FAILED", None)])
+
+    def test_attribution_failure_is_recorded(self):
+        self.membership_order(recipient=None, quantity=2)
+        process_order("O1", self.gw)
+        self.assertEqual(self.source.recorded[0][:2], ("O1", "FAILED"))
+
+    def test_a_broken_record_does_not_undo_the_term(self):
+        clear_order_sources()  # the cleanup from setUp restores everything
+        register_order_source(BrokenSource())
+        self.membership_order(recipient=None)
+        with self.assertLogs("boxoffice.memberships", "ERROR"):
+            sale = process_order("O1", self.gw)
+        self.assertEqual((sale.status, MembershipTerm.objects.count()), ("OK", 1))
+
+    def test_finished_sale_still_tells_every_source(self):
+        """A record() that broke once must not strand the order: the next
+        event or the order page's recovery hits the FINISHED early return,
+        and the sources are told then, without a second fetch."""
+        self.membership_order(recipient=None)
+        process_order("O1", self.gw)
+        self.source.recorded.clear()
+        sale = process_order("O1", self.gw)
+        self.assertEqual(self.source.recorded, [("O1", "OK", None)])
+        fetches = [c for c in self.gw.calls if c[0] == "retrieve_order"]
+        self.assertEqual((sale.status, len(fetches)), ("OK", 1))
+
+    def test_registering_twice_keeps_one(self):
+        register_order_source(self.source)
+        self.assertEqual(order_sources(), [self.source])

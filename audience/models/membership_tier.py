@@ -48,7 +48,11 @@ class MembershipTier(models.Model):
     is_family_tier = models.BooleanField(
         default=False, help_text="Shows the 'For Families' ribbon."
     )
-    checkout_url = models.URLField(blank=True, help_text="The Square payment link.")
+    checkout_url = models.URLField(
+        blank=True,
+        help_text="The legacy Square payment link. No longer linked from the "
+        "site, which sells through its own checkout.",
+    )
     square_variation_id = models.CharField(
         max_length=64,
         blank=True,
@@ -119,15 +123,6 @@ class MembershipTier(models.Model):
     def clean(self) -> None:
         if self._slug_changed():
             raise ValidationError({"slug": self.SLUG_IS_FIXED})
-        # A listed tier's card is a Join button pointing at checkout_url;
-        # without one it renders href="" and goes nowhere.
-        if self.show_on_membership_page and not self.checkout_url:
-            raise ValidationError(
-                {
-                    "checkout_url": "A tier listed on the membership page "
-                    "needs its Square payment link."
-                }
-            )
 
     def save(self, *args: Any, **kwargs: Any) -> None:
         # The forms and admin already lock the field; this catches code.

@@ -165,13 +165,9 @@ class MembershipTierAdminValidationTests(TestCase):
             **overrides,
         }
 
-    def test_a_listed_tier_needs_a_checkout_link(self) -> None:
-        resp = self.client.post(
-            reverse("admin:audience_membershiptier_add"), self.payload()
-        )
-        self.assertEqual(resp.status_code, 200)
-        self.assertIn("checkout_url", resp.context["adminform"].form.errors)
-        self.assertFalse(MembershipTier.objects.filter(slug="matinee-club").exists())
+    def test_a_listed_tier_saves_without_a_link(self) -> None:
+        self.client.post(reverse("admin:audience_membershiptier_add"), self.payload())
+        self.assertTrue(MembershipTier.objects.filter(slug="matinee-club").exists())
 
     def test_a_retired_tier_saves_without_one(self) -> None:
         payload = self.payload()

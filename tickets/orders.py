@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import logging
 
+from boxoffice.customers import ensure_customer
 from boxoffice.gateway import Gateway, GatewayError, InvalidPhone, get_gateway
 from tickets.tiers import ONLINE_TIERS
 from cinema.models import Showtime
@@ -12,10 +13,9 @@ from django.utils import timezone
 from web.constants import TICKET_HOLD_MINUTES
 
 from tickets import availability, pricing
-from tickets.customers import ensure_customer
 from tickets.mail import send_ticket
 from tickets.models import TicketLine, TicketOrder
-from tickets.spec import checkout_spec
+from tickets.spec import checkout_spec, e164_phone
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +85,10 @@ def start(
             for tier, quantity in quantities.items()
         )
     # Outside the transaction: never hold the showtime lock across a Square call.
-    order.square_customer_id = ensure_customer(gateway, order)
+    order.square_customer_id = ensure_customer(
+        gateway, first_name=order.first_name, last_name=order.last_name,
+        email=order.email, phone=e164_phone(order.phone), key=order.token,
+        label=order.number)
     order.save(update_fields=["square_customer_id"])
     try:
         link = _create_link(gateway, checkout_spec(order, variation_ids))

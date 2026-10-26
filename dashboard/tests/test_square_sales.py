@@ -102,6 +102,21 @@ class ListTests(StaffTestCase):
     def test_empty_state(self) -> None:
         html = self.client.get(self.url).content.decode()
         self.assertIn("No Square membership sales yet", html)
+        self.assertIn("They'll show up here when someone joins on the website or "
+                      "pays through a membership link.", html)
+
+    def test_source_column_says_website_or_payment_link(self) -> None:
+        web = make_sale(order_id="W", status="OK", error="", source="WEBSITE",
+                        display_name="Web Buyer")
+        link = make_sale(order_id="L", status="OK", error="", display_name="Link Buyer")
+        html = self.client.get(self.url).content.decode()
+        head = html.split("<thead>", 1)[1].split("</thead>", 1)[0]
+        self.assertLess(head.index("<th>Buyer</th>"), head.index("<th>Source</th>"))
+        web_row = html.split(f'id="square-sale-{web.pk}"', 1)[1].split("</tr>", 1)[0]
+        link_row = html.split(f'id="square-sale-{link.pk}"', 1)[1].split("</tr>", 1)[0]
+        self.assertIn("Website", web_row)
+        self.assertNotIn("Payment link", web_row)
+        self.assertIn("Payment link", link_row)
 
     def test_subtitle_counts_failed(self) -> None:
         make_sale(order_id="A")

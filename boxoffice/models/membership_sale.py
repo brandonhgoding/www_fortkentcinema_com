@@ -13,7 +13,17 @@ class MembershipSale(models.Model):
         SKIPPED = "SKIPPED", "Skipped"
         FAILED = "FAILED", "Needs attention"
 
+    class Source(models.TextChoices):
+        # A Square payment link (the buyer comes from Square's shipment
+        # recipient) or the site's own checkout (the buyer comes from the
+        # join app's order row).
+        LINK = "LINK", "Payment link"
+        WEBSITE = "WEBSITE", "Website"
+
     order_id = models.CharField(max_length=64, unique=True)
+    source = models.CharField(
+        max_length=8, choices=Source.choices, default=Source.LINK
+    )
     paid_at = models.DateTimeField(null=True, blank=True)
     tier = models.ForeignKey(
         "audience.MembershipTier",

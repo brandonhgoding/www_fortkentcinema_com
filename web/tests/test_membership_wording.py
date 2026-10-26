@@ -57,7 +57,10 @@ class MembershipFaqWordingTests(TestCase):
         self.fail(f"no FAQ starting {question_start!r}")
 
     def test_duration_answer_does_not_hedge(self):
-        self.assertNotIn("most are annual", self.answer("How long"))
+        answer = self.answer("How long")
+        self.assertNotIn("most are annual", answer)
+        self.assertIn("welcome email", answer)
+        self.assertNotIn("Ask at the box office", answer)
 
     def test_family_answer_matches_the_cards(self):
         answer = self.answer("What's included with a family tier")
@@ -84,24 +87,26 @@ class NoPrintableCardTests(TestCase):
         self.assertIn("give us your name", html)
 
 
-class JoinAtTheBoxOfficeTests(TestCase):
-    """Owner, 2026-10-24: no Join buttons; the page sends people to the
-    box office instead of a Square checkout."""
+class JoinOnlineOrAtTheBoxOfficeTests(TestCase):
+    """Owner, 2026-10-26: Join buttons are back; the box office stays an
+    option in the note and the closing section."""
 
     def setUp(self):
         self.html = unescape(self.client.get(reverse("membership")).content.decode())
 
-    def test_no_checkout_promised(self):
-        self.assertNotIn("checkout", self.html.lower())
-
-    def test_note_and_final_section_point_to_the_box_office(self):
+    def test_note_offers_both_ways_to_join(self):
         note = self.html.split('class="membership-tiers__note"', 1)[1].split(
             "</p>", 1)[0]
-        self.assertIn("box office", note)
+        self.assertIn("Join online from any tier above, or at the box office "
+                      "before any show.", note)
+
+    def test_final_section_sends_people_to_the_tiers(self):
         final = self.html.split('class="membership-page__final-cta"', 1)[1].split(
             "</section>", 1)[0]
+        self.assertIn("Pick a tier above and you'll be a member in a minute.", final)
         self.assertIn("box office", final)
-        self.assertNotIn('href="#tiers"', final)
+        self.assertIn('href="#tiers"', final)
+        self.assertIn("Choose a tier", final)
 
     def test_tiers_section_links_members_to_sign_in(self):
         tiers = self.html.split('class="membership-tiers"', 1)[1].split(

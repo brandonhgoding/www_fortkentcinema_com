@@ -10,6 +10,8 @@ from dashboard.tests.test_free_admissions import (
     give_term,
     make_member,
 )
+from unittest import mock
+
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -42,8 +44,8 @@ class MemberHomeTests(TestCase):
         html = resp.content.decode()
         self.assertIsNone(resp.context["member"])
         self.assertIn(
-            "No membership on file for this email. Join at the box office "
-            "before any show.",
+            "No membership on file for this email. You can join on the "
+            "membership page, or at the box office before any show.",
             html,
         )
         self.assertIn('href="/membership/"', html)
@@ -229,3 +231,78 @@ class MembershipLinkRequestTests(TestCase):
         resp = self.ask()
         self.assertNotEqual(resp.status_code, 500)
         self.assertEqual(MembershipLinkRequest.objects.count(), 0)
+
+
+class RenewButtonTests(TestCase):
+    """A member renews from their home; the join page prefills from here."""
+
+    def setUp(self) -> None:
+        patcher = mock.patch("dashboard.member_home.square_enabled", return_value=True)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        for slug in ("cinema-supporter", "family-plus"):
+            MembershipTier.objects.filter(slug=slug).update(
+                square_variation_id=f"VAR-{slug}")
+        self.member = make_member(email="m.o@example.com")
+        self.client.force_login(make_user("m.o@example.com", "pw12345", is_staff=False))
+
+    def html(self) -> str:
+        return self.client.get(reverse("dashboard:home")).content.decode()
+
+    def test_active_member_gets_renew_for_their_tier(self) -> None:
+        give_term(self.member, "cinema-supporter")
+        html = self.html()
+        self.assertIn('href="/membership/join/cinema-supporter/"', html)
+        self.assertIn(">Renew<", html)
+        self.assertIn("or choose a different tier", html)
+        self.assertIn('href="/membership/#tiers"', html)
+
+    def test_lapsed_member_gets_renew_for_their_last_tier(self) -> None:
+        give_expired_term(self.member, "family-plus")
+        html = self.html()
+        self.assertIn('href="/membership/join/family-plus/"', html)
+        self.assertIn(">Renew<", html)
+
+    def test_upcoming_member_gets_no_renew(self) -> None:
+        today = timezone.localdate()
+        MembershipTerm.objects.create(
+            member=self.member,
+            tier=MembershipTier.objects.get(slug="cinema-supporter"),
+            started_on=today + datetime.timedelta(days=10),
+            expires_on=today + datetime.timedelta(days=375),
+            price_paid=Decimal("120.00"),
+        )
+        html = self.html()
+        self.assertNotIn(">Renew<", html)
+        self.assertNotIn("Choose a tier", html)
+
+    def test_never_expiring_member_is_not_invited_to_renew(self) -> None:
+        """Paying would be refused ("Current term never expires") after the
+        card was charged, so the page must not offer it."""
+        MembershipTerm.objects.create(
+            member=self.member,
+            tier=MembershipTier.objects.get(slug="cinema-supporter"),
+            started_on=timezone.localdate() - datetime.timedelta(days=30),
+            expires_on=datetime.date.max,
+            price_paid=Decimal("0"),
+        )
+        html = self.html()
+        self.assertNotIn(">Renew<", html)
+        self.assertNotIn("Choose a tier", html)
+
+    def test_tier_not_sold_online_offers_the_tier_list_only(self) -> None:
+        give_term(self.member, "cinema-supporter")
+        MembershipTier.objects.filter(slug="cinema-supporter").update(
+            square_variation_id="")
+        html = self.html()
+        self.assertNotIn(">Renew<", html)
+        self.assertNotIn("/membership/join/", html)
+        self.assertIn("Choose a tier to renew", html)
+        self.assertIn('href="/membership/#tiers"', html)
+
+    def test_square_off_offers_the_tier_list_only(self) -> None:
+        give_term(self.member, "cinema-supporter")
+        with mock.patch("dashboard.member_home.square_enabled", return_value=False):
+            html = self.html()
+        self.assertNotIn(">Renew<", html)
+        self.assertIn("Choose a tier to renew", html)

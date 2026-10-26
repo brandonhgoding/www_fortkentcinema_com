@@ -1,0 +1,17 @@
+{% autoescape off %}Hi {{ order.first_name }},
+
+{% if renewal %}Thanks for renewing your Fort Kent Cinema membership.{% else %}Welcome to the Fort Kent Cinema. You're a member.{% endif %}
+
+Order {{ order.number }}
+{{ tier_name }} membership
+Good from {{ started_on }} through {{ expires_on }}
+
+There's no card to carry. Give your name at the box office.
+
+See your membership online: create an account with this email at {{ register_url }}
+Your order: {{ url }}
+
+Fort Kent Cinema
+{{ cinema.address.street }}, {{ cinema.address.city }}, {{ cinema.address.state }} {{ cinema.address.zip }}
+{{ cinema.phone }}
+{% endautoescape %}

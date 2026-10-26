@@ -1,29 +1,13 @@
 """Turn a TicketOrder into the gateway's CheckoutSpec for a Square payment link."""
 
 import re
-from email.utils import parseaddr
-from urllib.parse import urlsplit
-
 from boxoffice.gateway import CheckoutLine, CheckoutSpec
+from boxoffice.site import base_url, support_email
 from tickets.tiers import ONLINE_TIERS
-from django.conf import settings
 from django.urls import reverse
 
 from tickets import pricing
 from tickets.models import TicketOrder
-
-
-def base_url() -> str:
-    """Scheme and host for links Square sends the buyer back to; no trailing slash.
-
-    TICKETS_BASE_URL, else the host of SQUARE_WEBHOOK_URL, else "".
-    """
-    if settings.TICKETS_BASE_URL:
-        return settings.TICKETS_BASE_URL.rstrip("/")
-    if settings.SQUARE_WEBHOOK_URL:
-        parts = urlsplit(settings.SQUARE_WEBHOOK_URL)
-        return f"{parts.scheme}://{parts.netloc}"
-    return ""
 
 
 def e164_phone(raw: str) -> str:
@@ -41,15 +25,6 @@ def e164_phone(raw: str) -> str:
     if len(digits) == 11 and digits.startswith("1"):
         return "+" + digits
     return ""
-
-
-def support_email() -> str:
-    """DEFAULT_FROM_EMAIL's address, or "" when unset or on localhost."""
-    address = parseaddr(settings.DEFAULT_FROM_EMAIL or "")[1]
-    domain = address.rpartition("@")[2].lower()
-    if not domain or domain == "localhost":
-        return ""
-    return address
 
 
 def checkout_spec(order: TicketOrder, variation_ids: dict[str, str]) -> CheckoutSpec:

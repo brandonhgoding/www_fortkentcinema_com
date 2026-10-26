@@ -241,7 +241,7 @@ class MembershipTierForm(forms.ModelForm):
             "price": "Price (whole dollars)",
             "duration_months": "Length (months)",
             "free_admissions_per_month": "Free admissions per month",
-            "checkout_url": "Square payment link",
+            "checkout_url": "Square payment link (legacy)",
             "featured": "Show the 'Best Value' ribbon",
             "is_family_tier": "Show the 'For Families' ribbon",
             "show_on_membership_page": "List on the public membership page",

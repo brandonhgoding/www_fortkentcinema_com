@@ -348,6 +348,9 @@ class MembershipView(TemplateView):
             show_on_membership_page=True
         ).prefetch_related("benefits")
         ctx["faqs"] = MEMBERSHIP_FAQ
+        # With Square off every card sends people to the box office instead
+        # of a join page that would only say the same thing.
+        ctx["online_join"] = square_enabled()
         return ctx
 
 

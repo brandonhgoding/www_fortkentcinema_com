@@ -208,15 +208,12 @@ class TierCreateTests(StaffTestCase):
         self.assertTrue(trigger["close-drawer"])
         self.assertEqual(trigger["dashboard-toast"]["kind"], "success")
 
-    def test_a_listed_tier_needs_a_payment_link(self) -> None:
-        """Otherwise the public card's Join button goes nowhere."""
-        resp = self.client.post(
+    def test_a_listed_tier_saves_without_a_payment_link(self) -> None:
+        """The site sells through its own checkout; the link is legacy."""
+        self.client.post(
             reverse("dashboard:tier_create"), tier_payload(checkout_url="")
         )
-        self.assertEqual(resp.status_code, 200)
-        self.assertIn("checkout_url", resp.context["form"].errors)
-        self.assertIn("needs its Square payment link", resp.content.decode())
-        self.assertFalse(MembershipTier.objects.filter(slug="matinee-club").exists())
+        self.assertTrue(MembershipTier.objects.filter(slug="matinee-club").exists())
 
     def test_an_unlisted_tier_can_wait_for_its_payment_link(self) -> None:
         payload = tier_payload(checkout_url="")
@@ -314,16 +311,15 @@ class TierListingTests(StaffTestCase):
         )
         self.assertNotIn("close-drawer", resp.headers["HX-Trigger"])
 
-    def test_a_tier_without_a_payment_link_cannot_be_restored(self) -> None:
-        """Restoring would list a card whose Join button goes nowhere."""
+    def test_a_tier_without_a_payment_link_can_be_restored(self) -> None:
         tier = MembershipTier.objects.create(
             slug="draft", name="Draft", price=10, show_on_membership_page=False
         )
         resp = self.client.post(reverse("dashboard:tier_listing", args=[tier.pk]))
         tier.refresh_from_db()
-        self.assertFalse(tier.show_on_membership_page)
+        self.assertTrue(tier.show_on_membership_page)
         trigger = json.loads(resp.headers["HX-Trigger"])
-        self.assertEqual(trigger["dashboard-toast"]["kind"], "error")
+        self.assertEqual(trigger["dashboard-toast"]["kind"], "success")
 
 
 class TierDeleteTests(StaffTestCase):
@@ -333,6 +329,32 @@ class TierDeleteTests(StaffTestCase):
         )
         self.client.post(reverse("dashboard:tier_delete", args=[tier.pk]))
         self.assertFalse(MembershipTier.objects.filter(pk=tier.pk).exists())
+
+    def test_a_tier_with_website_orders_only_is_refused_and_says_so(self) -> None:
+        from join.tests.factories import make_order
+
+        tier = MembershipTier.objects.get(slug="individual")
+        make_order("individual")
+        resp = self.client.post(reverse("dashboard:tier_delete", args=[tier.pk]))
+        self.assertTrue(MembershipTier.objects.filter(pk=tier.pk).exists())
+        trigger = json.loads(resp.headers["HX-Trigger"])
+        self.assertEqual(trigger["dashboard-toast"]["kind"], "error")
+        self.assertIn("1 website order points at it", trigger["dashboard-toast"]["message"])
+        self.assertNotIn("0 membership terms", trigger["dashboard-toast"]["message"])
+
+    def test_a_tier_with_terms_and_orders_names_both(self) -> None:
+        from join.tests.factories import make_order
+
+        tier = MembershipTier.objects.get(slug="individual")
+        member = Member.objects.create(first_name="A", last_name="B", email="a@b.c")
+        MembershipTerm.objects.create(
+            member=member, tier=tier, started_on=datetime.date(2026, 1, 1),
+            expires_on=datetime.date(2026, 12, 31), price_paid=Decimal("60"))
+        make_order("individual")
+        make_order("individual", status="ABANDONED")
+        resp = self.client.post(reverse("dashboard:tier_delete", args=[tier.pk]))
+        message = json.loads(resp.headers["HX-Trigger"])["dashboard-toast"]["message"]
+        self.assertIn("1 membership term and 2 website orders point at it", message)
 
     def test_a_tier_with_terms_is_refused_and_points_at_retiring(self) -> None:
         tier = MembershipTier.objects.get(slug="individual")

@@ -29,4 +29,17 @@
       {% endfor %}
     </ul>
   {% endif %}
+  {% comment %}
+    The join page includes this card with join_button=False: it is the
+    page the button leads to. A tier sells online only when Square is on
+    and the tier has its Square item; otherwise the card says where to go.
+  {% endcomment %}
+  {% if join_button|default:True %}
+    {% if online_join and tier.square_variation_id %}
+      <a href="{% url 'join:start' tier.slug %}" class="btn btn-secondary tier-card__cta"
+         data-track="membership_join_click" data-track-tier="{{ tier.slug }}">Join</a>
+    {% else %}
+      <p class="tier-card__box-office">Join at the box office</p>
+    {% endif %}
+  {% endif %}
 </article>
