@@ -292,6 +292,10 @@ def process_order(order_id: str,
         defaults={"status": MembershipSale.Status.FAILED,
                   "error": "Processing did not finish"})
     if sale.status in FINISHED:
+        # Already entered or skipped. The sources are still told: a record()
+        # that broke on the first event is repaired by the next one, or by
+        # the order page asking Square, without a second fetch.
+        _notify(order_sources(), order_id, sale, None)
         return sale
     gateway = gateway or get_gateway()
     if gateway is None:

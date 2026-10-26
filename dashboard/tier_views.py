@@ -159,17 +159,29 @@ class TierDeleteView(StaffRequiredMixin, View):
         try:
             tier.delete()
         except ProtectedError:
-            # MembershipTerm.tier is PROTECT: a tier someone bought is part
-            # of a revenue record, so the answer is to retire it.
-            count = tier.terms.count()
+            # MembershipTerm.tier and MembershipOrder.tier are PROTECT: a
+            # tier someone bought, or started buying, is part of a revenue
+            # record, so the answer is to retire it.
+            holders = [
+                _plural(tier.terms.count(), "membership term"),
+                _plural(tier.orders.count(), "website order"),
+            ]
+            held_by = " and ".join(h for h in holders if h)
+            verb = "point" if " and " in held_by or held_by[:2] != "1 " else "points"
             return _catalogue_response(
                 request,
-                f'Can\'t delete "{name}" — {count} membership term'
-                f'{"" if count == 1 else "s"} point at it. Retire it instead.',
+                f'Can\'t delete "{name}" — {held_by} {verb} at it. Retire it instead.',
                 kind="error",
                 close=False,
             )
         return _catalogue_response(request, "Tier deleted")
+
+
+def _plural(count: int, noun: str) -> str:
+    """"1 website order", "2 website orders", or "" for none."""
+    if count == 0:
+        return ""
+    return f"{count} {noun}{'' if count == 1 else 's'}"
 
 
 def _render_benefit_form(request, form, action_url, submit_label):

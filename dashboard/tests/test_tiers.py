@@ -330,6 +330,32 @@ class TierDeleteTests(StaffTestCase):
         self.client.post(reverse("dashboard:tier_delete", args=[tier.pk]))
         self.assertFalse(MembershipTier.objects.filter(pk=tier.pk).exists())
 
+    def test_a_tier_with_website_orders_only_is_refused_and_says_so(self) -> None:
+        from join.tests.factories import make_order
+
+        tier = MembershipTier.objects.get(slug="individual")
+        make_order("individual")
+        resp = self.client.post(reverse("dashboard:tier_delete", args=[tier.pk]))
+        self.assertTrue(MembershipTier.objects.filter(pk=tier.pk).exists())
+        trigger = json.loads(resp.headers["HX-Trigger"])
+        self.assertEqual(trigger["dashboard-toast"]["kind"], "error")
+        self.assertIn("1 website order points at it", trigger["dashboard-toast"]["message"])
+        self.assertNotIn("0 membership terms", trigger["dashboard-toast"]["message"])
+
+    def test_a_tier_with_terms_and_orders_names_both(self) -> None:
+        from join.tests.factories import make_order
+
+        tier = MembershipTier.objects.get(slug="individual")
+        member = Member.objects.create(first_name="A", last_name="B", email="a@b.c")
+        MembershipTerm.objects.create(
+            member=member, tier=tier, started_on=datetime.date(2026, 1, 1),
+            expires_on=datetime.date(2026, 12, 31), price_paid=Decimal("60"))
+        make_order("individual")
+        make_order("individual", status="ABANDONED")
+        resp = self.client.post(reverse("dashboard:tier_delete", args=[tier.pk]))
+        message = json.loads(resp.headers["HX-Trigger"])["dashboard-toast"]["message"]
+        self.assertIn("1 membership term and 2 website orders point at it", message)
+
     def test_a_tier_with_terms_is_refused_and_points_at_retiring(self) -> None:
         tier = MembershipTier.objects.get(slug="individual")
         member = Member.objects.create(

@@ -1,3 +1,5 @@
+from unittest import mock
+
 from audience.models import Member, MembershipTier
 from boxoffice.gateway import GatewayError
 from boxoffice.models import MembershipSale
@@ -26,6 +28,19 @@ class RecoverPendingTests(TestCase):
         self.assertTrue(Member.objects.filter(email="ann@example.com").exists())
         self.assertEqual(MembershipSale.objects.get().source, "WEBSITE")
         self.assertEqual(len(mail.outbox), 1)
+
+    def test_recovery_repairs_a_row_whose_record_broke(self):
+        order = self.started()
+        self.gw.pay(order.square_order_id, "P2")
+        with mock.patch("join.source.MembershipOrderSource.record",
+                        side_effect=RuntimeError("db hiccup")), \
+                self.assertLogs("boxoffice.memberships", "ERROR"):
+            recover_pending(order, self.gw)
+        self.assertEqual((order.status, MembershipSale.objects.get().status),
+                         ("PENDING", "OK"))
+        recover_pending(order, self.gw)
+        self.assertEqual((order.status, order.term, len(mail.outbox)),
+                         ("PAID", MembershipSale.objects.get().term, 1))
 
     def test_unpaid_order_stays_pending(self):
         order = self.started()

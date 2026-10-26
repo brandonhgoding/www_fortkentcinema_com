@@ -7,6 +7,7 @@ from django.utils import timezone
 from tickets.spec import checkout_spec, e164_phone
 from tickets.tests.factories import make_order, make_showtime
 
+
 class CheckoutSpecTests(TestCase):
     def setUp(self):
         day = timezone.localdate() + datetime.timedelta(days=7)

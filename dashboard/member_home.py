@@ -1,3 +1,5 @@
+import datetime
+
 from audience.models import (
     LinkRequestStatus,
     Member,
@@ -75,10 +77,13 @@ class MemberHomeView(LoginRequiredMixin, TemplateView):
             if term:
                 ctx["tier_name"] = term.tier.name
             status = member.status
-            if status in self.RENEWABLE:
+            latest = latest_term(terms)
+            # A term that never expires cannot be renewed: the entry code
+            # would refuse the paid order ("Current term never expires").
+            if (status in self.RENEWABLE and latest
+                    and latest.expires_on < datetime.date.max):
                 ctx["can_renew"] = True
-                latest = latest_term(terms)
-                if (latest and latest.tier.show_on_membership_page
+                if (latest.tier.show_on_membership_page
                         and latest.tier.square_variation_id and square_enabled()):
                     ctx["renew_tier"] = latest.tier
             if status == MemberStatus.UPCOMING:

@@ -276,6 +276,20 @@ class RenewButtonTests(TestCase):
         self.assertNotIn(">Renew<", html)
         self.assertNotIn("Choose a tier", html)
 
+    def test_never_expiring_member_is_not_invited_to_renew(self) -> None:
+        """Paying would be refused ("Current term never expires") after the
+        card was charged, so the page must not offer it."""
+        MembershipTerm.objects.create(
+            member=self.member,
+            tier=MembershipTier.objects.get(slug="cinema-supporter"),
+            started_on=timezone.localdate() - datetime.timedelta(days=30),
+            expires_on=datetime.date.max,
+            price_paid=Decimal("0"),
+        )
+        html = self.html()
+        self.assertNotIn(">Renew<", html)
+        self.assertNotIn("Choose a tier", html)
+
     def test_tier_not_sold_online_offers_the_tier_list_only(self) -> None:
         give_term(self.member, "cinema-supporter")
         MembershipTier.objects.filter(slug="cinema-supporter").update(

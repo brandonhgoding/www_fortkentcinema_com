@@ -10,6 +10,7 @@ from boxoffice.memberships import (
     Buyer,
     clear_order_sources,
     order_never_fetched,
+    order_sources,
     process_order,
     register_order_source,
     split_name,
@@ -479,12 +480,20 @@ class BrokenSource(FakeSource):
 class OrderSourceTests(MembershipOrderTestCase):
     def setUp(self):
         super().setUp()
+        # Other apps register their sources at startup; put them back after.
+        installed = order_sources()
         clear_order_sources()
-        self.addCleanup(clear_order_sources)
+        self.addCleanup(self._restore, installed)
         self.source = FakeSource({"O1"}, Buyer(
             "Mary Ann van Dyke", "mav@example.com", "",
             first_name="Mary Ann", last_name="van Dyke"))
         register_order_source(self.source)
+
+    @staticmethod
+    def _restore(installed):
+        clear_order_sources()
+        for source in installed:
+            register_order_source(source)
 
     def test_source_supplies_the_buyer_when_square_has_no_recipient(self):
         self.membership_order(recipient=None)
@@ -526,14 +535,25 @@ class OrderSourceTests(MembershipOrderTestCase):
         self.assertEqual(self.source.recorded[0][:2], ("O1", "FAILED"))
 
     def test_a_broken_record_does_not_undo_the_term(self):
-        clear_order_sources()
+        clear_order_sources()  # the cleanup from setUp restores everything
         register_order_source(BrokenSource())
         self.membership_order(recipient=None)
         with self.assertLogs("boxoffice.memberships", "ERROR"):
             sale = process_order("O1", self.gw)
         self.assertEqual((sale.status, MembershipTerm.objects.count()), ("OK", 1))
 
+    def test_finished_sale_still_tells_every_source(self):
+        """A record() that broke once must not strand the order: the next
+        event or the order page's recovery hits the FINISHED early return,
+        and the sources are told then, without a second fetch."""
+        self.membership_order(recipient=None)
+        process_order("O1", self.gw)
+        self.source.recorded.clear()
+        sale = process_order("O1", self.gw)
+        self.assertEqual(self.source.recorded, [("O1", "OK", None)])
+        fetches = [c for c in self.gw.calls if c[0] == "retrieve_order"]
+        self.assertEqual((sale.status, len(fetches)), ("OK", 1))
+
     def test_registering_twice_keeps_one(self):
-        from boxoffice.memberships import order_sources
         register_order_source(self.source)
         self.assertEqual(order_sources(), [self.source])
