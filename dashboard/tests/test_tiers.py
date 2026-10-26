@@ -210,7 +210,9 @@ class TierCreateTests(StaffTestCase):
 
     def test_a_listed_tier_saves_without_a_payment_link(self) -> None:
         """The site sells through its own checkout; the link is legacy."""
-        self.client.post(reverse("dashboard:tier_create"), tier_payload(checkout_url=""))
+        self.client.post(
+            reverse("dashboard:tier_create"), tier_payload(checkout_url="")
+        )
         self.assertTrue(MembershipTier.objects.filter(slug="matinee-club").exists())
 
     def test_an_unlisted_tier_can_wait_for_its_payment_link(self) -> None:

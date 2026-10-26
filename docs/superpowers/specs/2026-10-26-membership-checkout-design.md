@@ -1,7 +1,7 @@
 # Membership checkout — join or renew on the site, pay on Square — Design
 
 **Date:** 2026-10-26
-**Status:** Approved in conversation, awaiting spec review
+**Status:** Implemented on feat/membership-checkout (see Amendments)
 **Repo:** `www_fortkentcinema_com` (branch: `feat/membership-checkout`)
 **Builds on:** `2026-10-17-online-ticket-presale-design.md` (the `tickets`
 app: pending order, hosted checkout, order page, webhook handler),
