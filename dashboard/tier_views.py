@@ -142,15 +142,6 @@ class TierListingView(StaffRequiredMixin, View):
 
     def post(self, request, pk):
         tier = get_object_or_404(MembershipTier, pk=pk)
-        if not tier.show_on_membership_page and not tier.checkout_url:
-            # Restoring would list a card whose Join button goes nowhere —
-            # the rule MembershipTier.clean() enforces on the forms.
-            return _catalogue_response(
-                request,
-                f'Add a Square payment link to "{tier.name}" before restoring it.',
-                kind="error",
-                close=False,
-            )
         tier.show_on_membership_page = not tier.show_on_membership_page
         # updated_at too: auto_now only reaches the columns being written,
         # and retiring or restoring a tier changes the public page.

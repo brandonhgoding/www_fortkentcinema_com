@@ -224,19 +224,11 @@ class FreeAdmissionAllowanceTests(TestCase):
 
 
 class CheckoutLinkTests(TestCase):
-    """A tier listed on /membership/ is a Join button, so it needs a link.
+    """The Square payment link is legacy: the site sells through its own
+    checkout, so a listed tier no longer needs one."""
 
-    Without one the card renders <a href="">Join</a>, which reloads the
-    page and still fires the GA4 join-click event.
-    """
-
-    def test_a_listed_tier_without_a_link_is_invalid(self) -> None:
-        from django.core.exceptions import ValidationError
-
-        tier = MembershipTier(slug="no-link", name="No Link", price=10)
-        with self.assertRaises(ValidationError) as caught:
-            tier.full_clean()
-        self.assertIn("checkout_url", caught.exception.message_dict)
+    def test_a_listed_tier_saves_without_a_payment_link(self) -> None:
+        MembershipTier(slug="no-link", name="No Link", price=10).full_clean()
 
     def test_a_retired_tier_may_have_no_link(self) -> None:
         MembershipTier(
