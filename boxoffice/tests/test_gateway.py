@@ -704,6 +704,15 @@ class PaymentLinkBodyTests(SimpleTestCase):
         spec = dataclasses.replace(MATINEE_SPEC, customer_id="C7")
         self.assertEqual(payment_link_body(spec, "LOC1")["order"]["customer_id"], "C7")
 
+    def test_payment_link_body_without_showtime_has_no_metadata(self) -> None:
+        spec = dataclasses.replace(MATINEE_SPEC, showtime_id=None)
+        self.assertNotIn("metadata", payment_link_body(spec, "LOC1")["order"])
+
+    def test_payment_link_body_with_showtime_keeps_metadata(self) -> None:
+        body = payment_link_body(MATINEE_SPEC, "LOC1")
+        self.assertEqual(body["order"]["metadata"],
+                         {"showtime": str(MATINEE_SPEC.showtime_id)})
+
     def test_payment_link_body_matinee(self) -> None:
         spec = MATINEE_SPEC
         body = payment_link_body(spec, "LOC1")
