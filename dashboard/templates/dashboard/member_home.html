@@ -35,9 +35,17 @@
     <p class="cardLabel">Free admissions this month</p>
     <p class="memberValue">{{ free_used }} / {{ member.free_admission_allowance }}</p>
     {% endif %}
+    {% if renew_tier %}
+    <p class="memberValue">
+      <a class="btn btn-primary" href="{% url 'join:start' renew_tier.slug %}">Renew</a>
+      <a href="/membership/#tiers">or choose a different tier</a>
+    </p>
+    {% elif can_renew %}
+    <p class="memberValue"><a href="/membership/#tiers">Choose a tier to renew</a></p>
+    {% endif %}
   </div></div>
   {% else %}
-  <p class="page-subtitle">No membership on file for this email. Join at the box office before any show.</p>
+  <p class="page-subtitle">No membership on file for this email. You can join on the membership page, or at the box office before any show.</p>
   <p><a href="/membership/">See membership options</a></p>
 
   <div class="card"><div class="cardBody">
