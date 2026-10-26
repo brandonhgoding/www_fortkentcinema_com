@@ -2,6 +2,7 @@
   <td>{% if sale.purchase_date %}{{ sale.purchase_date|date:"M j, Y" }}{% else %}—{% endif %}</td>
   <td>{% if sale.tier %}{{ sale.tier.name }}{% else %}—{% endif %}</td>
   <td>{% if sale.display_name %}{{ sale.display_name }}{% else %}—{% endif %}<br />{% if sale.email %}{{ sale.email }}{% else %}—{% endif %}</td>
+  <td>{{ sale.get_source_display }}</td>
   <td>${{ sale.gross_dollars|floatformat:2 }}</td>
   <td>
     <span class="status-badge {% if sale.status == 'OK' %}status-active{% elif sale.status == 'SKIPPED' %}status-draft{% else %}status-cancelled{% endif %}">{{ sale.get_status_display }}</span>
