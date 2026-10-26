@@ -20,7 +20,8 @@ from join.orders import NotSoldOnline, recover_pending
 BOX_OFFICE = "Join at the box office before any show."
 UNAVAILABLE = f"Online membership sign-up isn't available right now. {BOX_OFFICE}"
 NOT_ONLINE = f"This tier isn't sold online. {BOX_OFFICE}"
-CHECKOUT_FAILED = "We couldn't start checkout. Please try again, or join at the box office."
+CHECKOUT_FAILED = ("We couldn't start checkout. Please try again, or join at the "
+                   "box office.")
 
 # The order page refreshes itself this long while Square confirms the payment.
 CONFIRMING_FOR = datetime.timedelta(minutes=2)
@@ -126,7 +127,8 @@ class OrderView(View):
 
     def get(self, request, token):
         order = get_object_or_404(
-            MembershipOrder.objects.select_related("tier", "term__tier", "term__member"),
+            MembershipOrder.objects.select_related(
+                "tier", "term__tier", "term__member"),
             token=token)
         now = timezone.now()
         if (order.status == MembershipOrder.Status.PENDING
