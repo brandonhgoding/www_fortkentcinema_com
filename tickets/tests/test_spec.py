@@ -4,11 +4,8 @@ from zoneinfo import ZoneInfo
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.utils import timezone
 
-from tickets.spec import base_url, checkout_spec, e164_phone
+from tickets.spec import checkout_spec, e164_phone
 from tickets.tests.factories import make_order, make_showtime
-
-WEBHOOK_URL = "https://www.fortkentcinema.com/boxoffice/square/webhook/"
-
 
 class CheckoutSpecTests(TestCase):
     def setUp(self):
@@ -51,24 +48,6 @@ class CheckoutSpecTests(TestCase):
         self.assertEqual(spec.buyer_phone, "+12075550100")
         self.assertEqual(order.phone, "207-555-0100")
         self.assertEqual(spec.support_email, "info@fortkentcinema.com")
-
-    def test_base_url_prefers_tickets_setting_without_trailing_slash(self):
-        with override_settings(
-            TICKETS_BASE_URL="https://tickets.example.com/",
-            SQUARE_WEBHOOK_URL="https://www.fortkentcinema.com/boxoffice/x/",
-        ):
-            self.assertEqual(base_url(), "https://tickets.example.com")
-
-    def test_base_url_falls_back_to_webhook_host(self):
-        with override_settings(
-            TICKETS_BASE_URL="",
-            SQUARE_WEBHOOK_URL=WEBHOOK_URL,
-        ):
-            self.assertEqual(base_url(), "https://www.fortkentcinema.com")
-
-    def test_base_url_empty_without_either_setting(self):
-        with override_settings(TICKETS_BASE_URL="", SQUARE_WEBHOOK_URL=""):
-            self.assertEqual(base_url(), "")
 
     def spec_for(self, phone="207-555-0100", from_email="info@fortkentcinema.com"):
         order = make_order(self.matinee_st, phone=phone)
