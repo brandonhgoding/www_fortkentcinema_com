@@ -9,6 +9,7 @@ would mean asserting the page matches the thing that generated it.
 """
 
 from html import unescape
+from unittest import mock
 
 from django.test import TestCase
 from django.urls import reverse
@@ -110,12 +111,28 @@ class MembershipPageIsUnchangedTests(TestCase):
                 positions, sorted(positions), f"{name} perks are out of order"
             )
 
-    def test_no_join_buttons(self) -> None:
-        """Owner, 2026-10-24: memberships are sold at the box office, so
-        the cards carry no Square payment link."""
-        for *_head, url, _perks in EXPECTED_TIERS:
-            self.assertNotIn(url, self.html)
+    def test_join_buttons_link_to_the_join_page(self) -> None:
+        """Owner, 2026-10-26: Join buttons are back, pointing at the site's
+        own checkout, never at the legacy Square payment links."""
+        from audience.models import MembershipTier
+
+        for tier in MembershipTier.objects.all():
+            MembershipTier.objects.filter(pk=tier.pk).update(
+                square_variation_id=f"VAR-{tier.slug}")
+        with mock.patch("web.views.square_enabled", return_value=True):
+            html = unescape(self.client.get(reverse("membership")).content.decode())
+        for slug, *_rest, url, _perks in EXPECTED_TIERS:
+            self.assertNotIn(url, html)
+            card = html.split(f'data-tier="{slug}"', 1)[1].split("</article>", 1)[0]
+            self.assertIn(f'href="/membership/join/{slug}/"', card)
+            self.assertIn(">Join<", card)
+        self.assertEqual(html.count(">Join<"), len(EXPECTED_TIERS))
+
+    def test_square_off_shows_box_office_on_every_card(self) -> None:
+        # The test settings carry no Square token, so Square is off here.
         self.assertNotIn(">Join<", self.html)
+        self.assertEqual(self.html.count("Join at the box office"),
+                         len(EXPECTED_TIERS))
 
     def test_tiers_appear_in_price_order(self) -> None:
         positions = [self.html.index(f'data-tier="{t[0]}"')
@@ -171,18 +188,19 @@ class RetiredTierTests(TestCase):
         self.assertIn("value: 250", html)
 
 
-class MissingCheckoutLinkTests(TestCase):
-    def test_a_tier_without_a_link_renders_no_dead_join_button(self) -> None:
-        """Validation keeps this from happening; the card must not trust it.
-
-        An empty href reloads the page and still fires the join-click event.
-        """
+class MissingVariationTests(TestCase):
+    def test_a_tier_without_a_variation_sends_people_to_the_box_office(self) -> None:
+        """A tier with no Square item cannot be sold online; its card says
+        so instead of linking a join page that would refuse it."""
         from audience.models import MembershipTier
 
-        MembershipTier.objects.create(slug="no-link", name="No Link", price=10)
-        html = self.client.get(reverse("membership")).content.decode()
+        MembershipTier.objects.create(slug="no-item", name="No Item", price=10)
+        with mock.patch("web.views.square_enabled", return_value=True):
+            html = self.client.get(reverse("membership")).content.decode()
+        card = html.split('data-tier="no-item"', 1)[1].split("</article>", 1)[0]
         self.assertNotIn('href=""', html)
-        self.assertNotIn('data-track-tier="no-link"', html)
+        self.assertNotIn("/membership/join/no-item/", html)
+        self.assertIn("Join at the box office", card)
 
 
 class ThanksValueSourceTests(TestCase):
