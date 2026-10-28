@@ -46,7 +46,7 @@ from web.services.cinema_data import (
     get_now_showing,
     get_coming_soon,
     get_calendar_month,
-    get_featured_showtime,
+    get_hero_films,
 )
 from web.services.heckle_night import get_heckle_nights
 from web.services.open_mic import upcoming_nights as upcoming_open_mics
@@ -107,26 +107,32 @@ class HomeView(TemplateView):
         # visible, so every date + its label must be present in the DOM.
         today = today_eastern()
 
-        # Hero: the next film's own times, with the same ticket state the
-        # listing chips get, so a time on the fold and on the card agree.
-        # `can_buy` picks the button pair: with nothing purchasable the chips
-        # are information only and the fold falls back to the marquee's pair.
-        featured = get_featured_showtime()
-        if featured is not None:
-            for slot in featured["upcoming"]:
+        # Hero: every film with a showing to come, the next one on the fold
+        # and the rest a click away, each with its own times carrying the
+        # same ticket state the listing chips get, so a time on the fold and
+        # on the card agree. One for_showtimes() call for all of them.
+        # `can_buy` picks a film's button pair: with nothing purchasable its
+        # chips are information only and the fold falls back to the
+        # marquee's pair.
+        hero_films = get_hero_films()
+        hero_times = []
+        for film in hero_films:
+            for slot in film["upcoming"]:
                 slot["label"] = format_showtime_date(
                     slot["key"], weekday="short", today=today
                 )
-            hero_times = [t for slot in featured["upcoming"] for t in slot["times"]]
-            _add_ticket_state(hero_times)
-            featured["can_buy"] = any(
-                t["ticket_url"] and not t["sold_out"] for t in hero_times
+                hero_times.extend(slot["times"])
+            film["date_label"] = format_showtime_date(
+                film["date"], weekday="short", today=today
             )
-            for other in featured["others"]:
-                other["date_label"] = format_showtime_date(
-                    other["date"], weekday="short", today=today
-                )
-        ctx["featured"] = featured
+        _add_ticket_state(hero_times)
+        for film in hero_films:
+            film["can_buy"] = any(
+                t["ticket_url"] and not t["sold_out"]
+                for slot in film["upcoming"]
+                for t in slot["times"]
+            )
+        ctx["hero_films"] = hero_films
 
         date_keys = set()
         for movie in now_showing:

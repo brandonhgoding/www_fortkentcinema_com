@@ -1,112 +1,131 @@
 {% comment %}
-  The film hero: the first fold is the next showing (HomeView `featured`,
-  from get_featured_showtime). Markup order is the reading order on a phone:
-  poster, then title, then the film's showtimes, then the buttons.
+  The film hero: the first fold is the next showing (HomeView `hero_films`,
+  from get_hero_films, the next film first). One panel per film; Alpine
+  shows the one in `film`, the first before Alpine runs (the others are
+  x-cloak, and the <noscript> rule stacks them when nothing runs at all).
+  Markup order inside a panel is the reading order on a phone: poster,
+  then title, then the film's showtimes, then the buttons.
 
   The showtimes are the call to action: one row per date (HERO_DATES of
   them), each time the shared chip from partials/showtime_chip.html, so the
-  fold offers the same choice the listing does and never one checkout. The
-  other films playing this week are named under the buttons, each a link to
-  the listing, so one picture on the fold does not read as one film on.
+  fold offers the same choice the listing does and never one checkout.
+
+  The "Also showing" strip lists every film; Alpine hides the one on the
+  fold, so a click swaps the panel in place and the film that just left
+  takes the vacated slot. The links are real anchors to the panels, which
+  is the no-JavaScript path. Focus moves to the new panel's title so a
+  keyboard or screen-reader user lands on what changed.
 
   The cinema name stays the page's <h1>, as the lockup at the foot of the
   fold, so the home page's heading is still the cinema and not whichever
-  film is on; the film title is an <h2> styled as the headline.
+  film is on; each film title is an <h2> styled as the headline.
 
-  The backdrop is an <img>, not a CSS background, so it is the page's
-  largest paint and fetchpriority can pull it forward. A film with no
-  backdrop gets its poster blurred behind the scrim; one with neither keeps
-  the starfield. Styles: static/css/HeroFilm.css, inside the dark token
-  block Hero.css declares on .hero.
+  A panel's backdrop is an <img>, not a CSS background, absolutely placed
+  against the section (panels are not positioned), so the first one is the
+  page's largest paint and fetchpriority can pull it forward; the hidden
+  panels' artwork is lazy, so it loads on the click that shows it. A film
+  with no backdrop gets its poster blurred behind the scrim; one with
+  neither keeps the starfield. Styles: static/css/HeroFilm.css, inside the
+  dark token block Hero.css declares on .hero.
 {% endcomment %}
-<section class="hero hero--film" data-hero-idle>
+<section class="hero hero--film" data-hero-idle x-data="{ film: 0 }">
+  <noscript><style>.hero-film__panel[x-cloak] { display: revert !important; }</style></noscript>
   <div class="hero-background"></div>
-  {% if featured.backdrop %}
-  <img class="hero-film__backdrop" src="{{ featured.backdrop }}" alt="" fetchpriority="high" decoding="async" width="1280" height="720">
-  {% elif featured.poster %}
-  <img class="hero-film__backdrop hero-film__backdrop--poster" src="{{ featured.poster }}" alt="" fetchpriority="high" decoding="async" width="500" height="750">
-  {% else %}
-  <div class="hero-stars"></div>
-  {% endif %}
-  <div class="hero-film__scrim"></div>
-
-  <div class="hero-film__inner">
-    {% if featured.poster %}
-    <div class="hero-film__poster-wrap">
-      <img class="hero-film__poster" src="{{ featured.poster }}" alt="{{ featured.title }} poster" width="340" height="510" fetchpriority="high" decoding="async">
-    </div>
+  {% for featured in hero_films %}
+  <article class="hero-film__panel" id="hero-film-{{ forloop.counter }}"{% if not forloop.first %} x-cloak{% endif %} x-show="film === {{ forloop.counter0 }}">
+    {% if featured.backdrop %}
+    <img class="hero-film__backdrop" src="{{ featured.backdrop }}" alt="" {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %} decoding="async" width="1280" height="720">
+    {% elif featured.poster %}
+    <img class="hero-film__backdrop hero-film__backdrop--poster" src="{{ featured.poster }}" alt="" {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %} decoding="async" width="500" height="750">
+    {% else %}
+    <div class="hero-stars"></div>
     {% endif %}
+    <div class="hero-film__scrim"></div>
 
-    <div class="hero-film__copy">
-      <p class="hero-film__eyebrow"><span aria-hidden="true">&#9733;</span> Now showing <span aria-hidden="true">&#9733;</span></p>
-      <h2 class="hero-film__title">{{ featured.title }}</h2>
-      {% if featured.rating or featured.runtime %}
-      <p class="hero-film__meta">
-        {% if featured.rating %}<span><span class="hero-film__cert">{{ featured.rating }}</span></span>{% endif %}
-        {% if featured.runtime %}<span>{{ featured.runtime }}</span>{% endif %}
-      </p>
-      {% endif %}
-      {% if featured.description %}
-      <p class="hero-film__lede">{{ featured.description|truncatewords:25 }}</p>
+    <div class="hero-film__inner">
+      {% if featured.poster %}
+      <div class="hero-film__poster-wrap">
+        <img class="hero-film__poster" src="{{ featured.poster }}" alt="{{ featured.title }} poster" width="340" height="510" {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %} decoding="async">
+      </div>
       {% endif %}
 
-      <dl class="hero-film__dates" aria-label="Showtimes for {{ featured.title }}">
-        {% for slot in featured.upcoming %}
-        <div class="hero-film__row">
-          <dt class="hero-film__date">{{ slot.label }}</dt>
-          <dd class="hero-film__times">
-            {% for time in slot.times %}
-            {% include "partials/showtime_chip.html" with rating_class="hero-film__cert" %}
-            {% endfor %}
-          </dd>
-        </div>
-        {% endfor %}
-      </dl>
-
-      {% comment %}
-        With a time to buy the chips are the primary action and the buttons
-        are the quiet pair. With none (Square off, run not on sale, every
-        listed time sold out online or in person only) the chips are plain
-        type and the fold falls back to the pair the marquee has.
-      {% endcomment %}
-      <div class="hero-cta">
-        {% if featured.can_buy %}
-        <a href="#now-showing" class="btn btn-secondary">All Showtimes</a>
-        <a href="/membership/" class="btn btn-secondary">Join Membership</a>
-        {% else %}
-        <a href="#now-showing" class="btn btn-ticket">View Showtimes</a>
-        <a href="/membership/" class="btn btn-secondary">Join Membership</a>
+      <div class="hero-film__copy">
+        <p class="hero-film__eyebrow"><span aria-hidden="true">&#9733;</span> Now showing <span aria-hidden="true">&#9733;</span></p>
+        <h2 class="hero-film__title" tabindex="-1" x-ref="title{{ forloop.counter0 }}">{{ featured.title }}</h2>
+        {% if featured.rating or featured.runtime %}
+        <p class="hero-film__meta">
+          {% if featured.rating %}<span><span class="hero-film__cert">{{ featured.rating }}</span></span>{% endif %}
+          {% if featured.runtime %}<span>{{ featured.runtime }}</span>{% endif %}
+        </p>
         {% endif %}
-      </div>
+        {% if featured.description %}
+        <p class="hero-film__lede">{{ featured.description|truncatewords:25 }}</p>
+        {% endif %}
 
-      {% if member_count %}
-      <p class="hero-members">
-        <span class="hero-members-star" aria-hidden="true">&#9733;</span>
-        <span class="hero-members-count">{{ member_count }}</span>
-        member{{ member_count|pluralize }} help{{ member_count|pluralize:"s," }} to keep the lights on
-      </p>
-      {% endif %}
-
-      {% if featured.others %}
-      <div class="hero-film__also">
-        <p class="hero-film__also-label">Also showing</p>
-        <ul class="hero-film__also-list">
-          {% for other in featured.others %}
-          <li>
-            <a class="hero-film__also-item" href="#now-showing">
-              {% if other.poster %}<img class="hero-film__also-poster" src="{{ other.poster }}" alt="" width="48" height="72" loading="lazy" decoding="async">{% endif %}
-              <span class="hero-film__also-copy">
-                <span class="hero-film__also-title">{{ other.title }}</span>
-                <span class="hero-film__also-when">{{ other.date_label }} &middot; {{ other.time }}</span>
-              </span>
-            </a>
-          </li>
+        <dl class="hero-film__dates" aria-label="Showtimes for {{ featured.title }}">
+          {% for slot in featured.upcoming %}
+          <div class="hero-film__row">
+            <dt class="hero-film__date">{{ slot.label }}</dt>
+            <dd class="hero-film__times">
+              {% for time in slot.times %}
+              {% include "partials/showtime_chip.html" with rating_class="hero-film__cert" %}
+              {% endfor %}
+            </dd>
+          </div>
           {% endfor %}
-        </ul>
+        </dl>
+
+        {% comment %}
+          With a time to buy the chips are the primary action and the one
+          button is the quiet way to the full schedule. With none (Square
+          off, run not on sale, every listed time sold out online or in
+          person only) the chips are plain type and the button is the
+          primary one. No Join Membership here: the nav's Become a Member
+          button is in view on the fold.
+        {% endcomment %}
+        <div class="hero-cta">
+          {% if featured.can_buy %}
+          <a href="#now-showing" class="btn btn-secondary">All Showtimes</a>
+          {% else %}
+          <a href="#now-showing" class="btn btn-ticket">View Showtimes</a>
+          {% endif %}
+        </div>
       </div>
-      {% endif %}
     </div>
+  </article>
+  {% endfor %}
+
+  {% if hero_films|length > 1 %}
+  <div class="hero-film__also">
+    <p class="hero-film__also-label">Also showing</p>
+    <ul class="hero-film__also-list">
+      {% for other in hero_films %}
+      <li x-show="film !== {{ forloop.counter0 }}">
+        <a class="hero-film__also-item" href="#hero-film-{{ forloop.counter }}" @click.prevent="film = {{ forloop.counter0 }}; $nextTick(() => $refs.title{{ forloop.counter0 }}.focus())">
+          {% if other.poster %}<img class="hero-film__also-poster" src="{{ other.poster }}" alt="" width="48" height="72" loading="lazy" decoding="async">{% endif %}
+          <span class="hero-film__also-copy">
+            <span class="hero-film__also-title">{{ other.title }}</span>
+            <span class="hero-film__also-when">{{ other.date_label }} &middot; {{ other.time }}</span>
+          </span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
   </div>
+  {% endif %}
+
+  {% comment %}
+    Member count, once for the fold, centred over the lockup: it is the
+    cinema's line, not a film's, so it sits with the cinema's name rather
+    than in each panel. member_count comes from HomeView; nothing at zero.
+  {% endcomment %}
+  {% if member_count %}
+  <p class="hero-members hero-film__members">
+    <span class="hero-members-star" aria-hidden="true">&#9733;</span>
+    <span class="hero-members-count">{{ member_count }}</span>
+    member{{ member_count|pluralize }} help{{ member_count|pluralize:"s," }} to keep the lights on
+  </p>
+  {% endif %}
 
   <h1 class="hero-film__lockup">{{ site_config.cinema.name }} <span class="hero-film__lockup-tagline">{{ site_config.cinema.tagline }}</span></h1>
 </section>

@@ -1,4 +1,5 @@
-"""The home hero's featured showing: the next showing that has not started.
+"""The home hero's films: every film with a showing still to come, the next
+one first.
 
 Same pool as Now Showing (confirmed, listed, within the week), so the hero
 never names a film the listings below it do not.
@@ -10,7 +11,7 @@ from cinema.models import Showtime
 from django.test import TestCase
 from django.utils import timezone
 
-from web.services.cinema_data import get_featured_showtime
+from web.services.cinema_data import get_hero_films
 from web.tests.test_cinema_data import aware, make_engagement, make_film, make_screen
 
 
@@ -45,7 +46,7 @@ class FeaturedBase(TestCase):
 class FeaturedShowtimeTests(FeaturedBase):
     def test_describes_the_next_showing(self) -> None:
         st = self.show(1, 19)
-        out = get_featured_showtime(now=self.at(0, 12))
+        out = get_hero_films(now=self.at(0, 12))[0]
         self.assertEqual(out["showtime_id"], st.pk)
         self.assertEqual(out["title"], "Hocus Pocus")
         self.assertEqual(out["rating"], "PG")
@@ -60,24 +61,24 @@ class FeaturedShowtimeTests(FeaturedBase):
         # TMDB stores the w780 cut; a 1400px-wide fold wants w1280. Any other
         # host's URL is left alone.
         self.show(1, 19)
-        out = get_featured_showtime(now=self.at(0, 12))
+        out = get_hero_films(now=self.at(0, 12))[0]
         self.assertEqual(out["backdrop"], "https://image.tmdb.org/t/p/w1280/back.jpg")
         self.film.backdrop_url = "https://example.org/still.jpg"
         self.film.save()
-        out = get_featured_showtime(now=self.at(0, 12))
+        out = get_hero_films(now=self.at(0, 12))[0]
         self.assertEqual(out["backdrop"], "https://example.org/still.jpg")
 
     def test_earliest_upcoming_wins(self) -> None:
         self.show(2, 19)
         tonight = self.show(0, 19)
         self.show(0, 14)  # already started by 3 PM
-        out = get_featured_showtime(now=self.at(0, 15))
+        out = get_hero_films(now=self.at(0, 15))[0]
         self.assertEqual(out["showtime_id"], tonight.pk)
 
     def test_cancelled_showing_is_skipped(self) -> None:
         self.show(0, 19, is_cancelled=True)
         later = self.show(1, 19)
-        out = get_featured_showtime(now=self.at(0, 12))
+        out = get_hero_films(now=self.at(0, 12))[0]
         self.assertEqual(out["showtime_id"], later.pk)
 
     def test_unlisted_runs_are_skipped(self) -> None:
@@ -92,7 +93,7 @@ class FeaturedShowtimeTests(FeaturedBase):
         self.show(0, 17, eng=hidden)
         self.show(0, 18, eng=draft)
         listed = self.show(0, 19)
-        out = get_featured_showtime(now=self.at(0, 12))
+        out = get_hero_films(now=self.at(0, 12))[0]
         self.assertEqual(out["showtime_id"], listed.pk)
 
     def test_beyond_the_week_is_not_featured(self) -> None:
@@ -102,16 +103,16 @@ class FeaturedShowtimeTests(FeaturedBase):
             end=self.today + datetime.timedelta(days=9),
         )
         self.show(8, 19, eng=far)
-        self.assertIsNone(get_featured_showtime(now=self.at(0, 12)))
+        self.assertEqual(get_hero_films(now=self.at(0, 12)), [])
 
     def test_nothing_booked_is_none(self) -> None:
-        self.assertIsNone(get_featured_showtime(now=self.at(0, 12)))
+        self.assertEqual(get_hero_films(now=self.at(0, 12)), [])
 
     def test_event_title_names_the_night(self) -> None:
         self.eng.display_title = "Hocus Pocus (heckle night)"
         self.eng.save()
         self.show(1, 19)
-        out = get_featured_showtime(now=self.at(0, 12))
+        out = get_hero_films(now=self.at(0, 12))[0]
         self.assertEqual(out["title"], "Hocus Pocus (Heckle Night)")
 
 
@@ -126,7 +127,7 @@ class FeaturedShowtimeRowsTests(FeaturedBase):
         tomorrow = self.show(1, 19)
         self.show(2, 19)
         self.show(3, 19)  # a fourth date: the listing below covers it
-        out = get_featured_showtime(now=self.at(0, 15))
+        out = get_hero_films(now=self.at(0, 15))[0]
         self.assertEqual(
             [slot["key"] for slot in out["upcoming"]],
             [(self.today + datetime.timedelta(days=d)).isoformat() for d in (0, 1, 2)],
@@ -143,7 +144,7 @@ class FeaturedShowtimeRowsTests(FeaturedBase):
         self.assertIn("captions_note", first["times"][1])
         self.assertIn("iso", first["times"][0])
 
-    def test_other_films_this_week_with_their_next_showing(self) -> None:
+    def test_every_film_this_week_in_order_of_its_next_showing(self) -> None:
         self.show(0, 19)
         self.show(1, 19)
         later = make_engagement(
@@ -160,30 +161,32 @@ class FeaturedShowtimeRowsTests(FeaturedBase):
             start=self.today, end=self.today,
         )
         self.show(2, 19, eng=later)
+        self.show(2, 21, eng=later)
         self.show(0, 21, eng=sooner)
         self.show(0, 14, eng=over)  # its last showing already started
-        out = get_featured_showtime(now=self.at(0, 15))
+        films = get_hero_films(now=self.at(0, 15))
         self.assertEqual(
-            out["others"],
+            [(f["id"], f["title"]) for f in films],
             [
-                {
-                    "id": str(sooner.pk),
-                    "title": "There's Something About Mary",
-                    "poster": "",
-                    "date": self.today.isoformat(),
-                    "time": "9:00 PM",
-                },
-                {
-                    "id": str(later.pk),
-                    "title": "The Princess Bride",
-                    "poster": "https://img/pb.jpg",
-                    "date": (self.today + datetime.timedelta(days=2)).isoformat(),
-                    "time": "7:00 PM",
-                },
+                (str(self.eng.pk), "Hocus Pocus"),
+                (str(sooner.pk), "There's Something About Mary"),
+                (str(later.pk), "The Princess Bride"),
             ],
         )
+        # Each film carries its own rows, the same shape as the first.
+        mary, bride = films[1], films[2]
+        self.assertEqual(mary["poster"], "")
+        self.assertEqual(bride["poster"], "https://img/pb.jpg")
+        self.assertEqual(
+            [slot["key"] for slot in bride["upcoming"]],
+            [(self.today + datetime.timedelta(days=2)).isoformat()],
+        )
+        self.assertEqual(
+            [t["time"] for t in bride["upcoming"][0]["times"]], ["7:00 PM", "9:00 PM"]
+        )
+        self.assertEqual(mary["date"], self.today.isoformat())
+        self.assertEqual(mary["time"], "9:00 PM")
 
-    def test_alone_means_no_others(self) -> None:
+    def test_alone_is_a_list_of_one(self) -> None:
         self.show(0, 19)
-        out = get_featured_showtime(now=self.at(0, 15))
-        self.assertEqual(out["others"], [])
+        self.assertEqual(len(get_hero_films(now=self.at(0, 15))), 1)
