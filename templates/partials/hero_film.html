@@ -114,18 +114,7 @@
   </div>
   {% endif %}
 
-  {% comment %}
-    Member count, once for the fold, centred over the lockup: it is the
-    cinema's line, not a film's, so it sits with the cinema's name rather
-    than in each panel. member_count comes from HomeView; nothing at zero.
-  {% endcomment %}
-  {% if member_count %}
-  <p class="hero-members hero-film__members">
-    <span class="hero-members-star" aria-hidden="true">&#9733;</span>
-    <span class="hero-members-count">{{ member_count }}</span>
-    member{{ member_count|pluralize }} help{{ member_count|pluralize:"s," }} to keep the lights on
-  </p>
-  {% endif %}
+  {% include "partials/hero_members.html" with extra_class="hero-film__members" %}
 
   <h1 class="hero-film__lockup">{{ site_config.cinema.name }} <span class="hero-film__lockup-tagline">{{ site_config.cinema.tagline }}</span></h1>
 </section>

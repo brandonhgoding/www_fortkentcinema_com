@@ -1,0 +1,37 @@
+{% comment %}
+  The cinema's own line under the hero: the active-member count on the
+  left and the Google rating to its right, one flex row that wraps on a
+  phone. Both heroes include it (hero.html under the buttons, hero_film.html
+  over the lockup) so the two can't drift apart.
+
+  member_count comes from HomeView and renders nothing at zero: an empty
+  roster is not worth advertising. The chip is SITE_CONFIG["google_review"],
+  kept by hand like the phone number; None leaves it out. With neither, no
+  line at all. The star is the marquee subtitle's own ornament.
+
+  Nothing here goes into the JSON-LD: Google forbids a page marking up its
+  own listing's rating (a "self-serving" aggregateRating), so the chip is
+  for people only.
+{% endcomment %}
+{% with review=site_config.google_review %}
+{% if member_count or review %}
+<p class="hero-members{% if extra_class %} {{ extra_class }}{% endif %}">
+  {% if member_count %}
+  <span class="hero-members-line">
+    <span class="hero-members-star" aria-hidden="true">&#9733;</span>
+    <span class="hero-members-count">{{ member_count }}</span>
+    member{{ member_count|pluralize }} help{{ member_count|pluralize:"s," }} to keep the lights on
+  </span>
+  {% endif %}
+  {% if review %}
+  <a class="hero-google" href="{{ review.url }}" target="_blank" rel="noopener noreferrer"
+     data-track="google_review_click" data-track-location="hero">
+    <span class="hero-google-stars" aria-hidden="true">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+    <span class="hero-google-rating">{{ review.rating }}</span>
+    on Google
+    <span class="hero-google-count">({{ review.count }} review{{ review.count|pluralize }})</span>
+  </a>
+  {% endif %}
+</p>
+{% endif %}
+{% endwith %}

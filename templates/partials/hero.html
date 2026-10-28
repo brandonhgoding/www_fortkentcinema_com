@@ -52,19 +52,6 @@
     </a>
   </div>
 
-  {% comment %}
-    Active-member count, hung under Join Membership so it answers "who else
-    is in?" right where the question comes up. member_count comes from
-    HomeView. Renders nothing at zero: an empty roster is not worth
-    advertising. The star is the marquee subtitle's own ornament, borrowed
-    here instead of a corner badge that would fight the nav for the corner.
-  {% endcomment %}
-  {% if member_count %}
-  <p class="hero-members">
-    <span class="hero-members-star" aria-hidden="true">&#9733;</span>
-    <span class="hero-members-count">{{ member_count }}</span>
-    member{{ member_count|pluralize }} help{{ member_count|pluralize:"s," }} to keep the lights on
-  </p>
-  {% endif %}
+  {% include "partials/hero_members.html" %}
 </section>
 {% endif %}

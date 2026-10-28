@@ -158,6 +158,19 @@ SITE_CONFIG["seo"] = {
     "seat_count": sum(s["seats"] for s in SITE_CONFIG["cinema"]["screens"]),
 }
 
+# The Google rating, as the hero shows it beside the member count
+# (partials/hero_members.html). Kept by hand, like the phone number: a live
+# Places lookup would need a key, billing and a cache for one line of copy.
+# Update rating and count when the listing moves; None drops the chip. The
+# rating is a string so "4.9" stays "4.9" and never prints as 4.9000000001.
+# The link is the map pin, which opens the listing with its reviews.
+# Owner's figures, 2026-10-28.
+SITE_CONFIG["google_review"] = {
+    "rating": "4.9",
+    "count": 112,
+    "url": SITE_CONFIG["seo"]["map_url"],
+}
+
 # The rental policies, as questions.
 #
 # These were nine bullets inside a collapsed "POLICIES & INFORMATION"

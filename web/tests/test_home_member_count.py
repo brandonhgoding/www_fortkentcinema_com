@@ -141,7 +141,9 @@ class HomeMemberCountRenderTests(TestCase):
         self, _ns: mock.Mock, _cs: mock.Mock
     ) -> None:
         MembershipTerm.objects.all().delete()
-        self.assertNotIn("hero-members", self._html())
+        html = self._html()
+        self.assertNotIn("hero-members-count", html)
+        self.assertNotIn("keep the lights on", html)
 
     def test_star_is_hidden_from_screen_readers(
         self, _ns: mock.Mock, _cs: mock.Mock

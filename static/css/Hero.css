@@ -397,6 +397,14 @@
  * glows like one more bulb rather than a second headline. Gold is legible
  * here and only here (see the note at the top of this file). */
 .hero-members {
+  /* One row: the member sentence, then the Google chip to its right. It
+   * wraps when the two won't fit, and the chip drops to its own line. */
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  column-gap: var(--spacing-lg);
+  row-gap: 0.25em;
   z-index: 10;
   margin-top: var(--spacing-md);
   font-family: var(--font-heading);
@@ -416,7 +424,8 @@
   margin-right: 0.15em;
 }
 
-.hero-members-count {
+.hero-members-count,
+.hero-google-rating {
   font-style: normal;
   font-size: 1.5em;
   font-weight: 600;
@@ -425,6 +434,36 @@
   text-shadow:
     0 0 3px var(--neon-gold-inner),
     0 0 10px var(--color-gold);
+}
+
+/* The Google chip: the same italic copy as the member sentence, with the
+ * figure lit like the count so the two numbers read as a pair. It is a
+ * link to the listing; only the words underline, on hover and focus, so
+ * the stars and the figure stay as set. */
+.hero-google {
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.hero-google:hover,
+.hero-google:focus-visible {
+  text-decoration: underline;
+  text-decoration-color: var(--color-gold);
+  text-underline-offset: 0.2em;
+}
+
+.hero-google-stars {
+  font-style: normal;
+  font-size: 0.85em;
+  letter-spacing: 0.08em;
+  color: var(--color-gold);
+  margin-right: 0.2em;
+}
+
+.hero-google-count {
+  font-size: 0.85em;
+  opacity: 0.85;
 }
 
 /* ============================================
@@ -633,6 +672,9 @@
   /* One more line under the stacked buttons. Tighter than desktop so the
    * whole island still fits one screen on a 320x568 handset. */
   .hero-members {
+    flex-direction: column;
+    align-items: center;
+    row-gap: 0.35em;
     margin-top: var(--spacing-sm);
     font-size: 1rem;
   }
