@@ -90,6 +90,54 @@ def get_now_showing():
     return movies
 
 
+def _hero_backdrop(url):
+    """TMDB stores the w780 cut, which is soft stretched across a 1400px
+    fold; ask for w1280 instead. Any other host's URL is left as it is."""
+    if "image.tmdb.org" not in url:
+        return url
+    return url.replace("/t/p/w780/", "/t/p/w1280/")
+
+
+def get_featured_showtime(now=None):
+    """The home hero's showing: the next non-cancelled showtime that has not
+    started, from the same pool get_now_showing() lists (confirmed, shown in
+    the main listings, within the week), so the hero never names a film the
+    listings below it do not. None when nothing is booked."""
+    if now is None:
+        now = timezone.now()
+    today = _local_date(now)
+    week_out = today + datetime.timedelta(days=7)
+    showtime = (
+        Showtime.objects.filter(
+            is_cancelled=False,
+            starts_at__gte=now,
+            engagement__status="CONFIRMED",
+            engagement__show_in_main_listings=True,
+            engagement__start_date__lte=week_out,
+            engagement__end_date__gte=today,
+        )
+        .select_related("engagement")
+        .prefetch_related("engagement__engagement_films__film")
+        .order_by("starts_at", "pk")
+        .first()
+    )
+    if showtime is None:
+        return None
+    engagement = showtime.engagement
+    pf = engagement.primary_film
+    return {
+        "showtime_id": showtime.pk,
+        "title": listing_title(engagement.title or (pf.title if pf else "")),
+        "rating": (pf.rating if pf else "") or "",
+        "runtime": _format_runtime(pf.runtime_minutes if pf else None),
+        "description": (pf.description if pf else "") or "",
+        "poster": (pf.poster_url if pf else "") or "",
+        "backdrop": _hero_backdrop((pf.backdrop_url if pf else "") or ""),
+        "date": _local_date(showtime.starts_at).isoformat(),
+        "time": format_showtime(showtime.starts_at),
+    }
+
+
 def get_calendar_month(year, month):
     """Non-cancelled showtimes whose local day falls in the month, grouped by
     day-of-month (int), deduped per day by title. `month` is 0-based (0=Jan).

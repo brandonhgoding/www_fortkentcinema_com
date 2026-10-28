@@ -46,6 +46,7 @@ from web.services.cinema_data import (
     get_now_showing,
     get_coming_soon,
     get_calendar_month,
+    get_featured_showtime,
 )
 from web.services.heckle_night import get_heckle_nights
 from web.services.open_mic import upcoming_nights as upcoming_open_mics
@@ -98,12 +99,23 @@ class HomeView(TemplateView):
         ctx["member_count"] = Member.objects.active().count()
 
         # Hero marquee bulbs: 17 across top/bottom, 5 down each side (Hero.jsx).
+        # Only rendered when nothing is booked (see partials/hero.html).
         ctx["hero_top_bulbs"] = range(17)
         ctx["hero_side_bulbs"] = range(5)
 
         # Now Showing date navigation. Alpine only toggles which date is
         # visible, so every date + its label must be present in the DOM.
         today = today_eastern()
+
+        # Hero: the next showing, with the same ticket state the listing
+        # chips get, so Buy Tickets on the fold and on the chip agree.
+        featured = get_featured_showtime()
+        if featured is not None:
+            featured["date_label"] = format_showtime_date(
+                featured["date"], weekday="short", today=today
+            )
+            _add_ticket_state([featured])
+        ctx["featured"] = featured
 
         date_keys = set()
         for movie in now_showing:

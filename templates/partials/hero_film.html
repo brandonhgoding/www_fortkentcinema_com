@@ -1,0 +1,74 @@
+{% comment %}
+  The film hero: the first fold is the next showing (HomeView `featured`,
+  from get_featured_showtime). Markup order is the reading order on a phone:
+  poster, then title and showtime, then the buttons.
+
+  The cinema name stays the page's <h1>, as the lockup at the foot of the
+  fold, so the home page's heading is still the cinema and not whichever
+  film is on; the film title is an <h2> styled as the headline.
+
+  The backdrop is an <img>, not a CSS background, so it is the page's
+  largest paint and fetchpriority can pull it forward. A film with no
+  backdrop gets its poster blurred behind the scrim; one with neither keeps
+  the starfield. Styles: static/css/HeroFilm.css, inside the dark token
+  block Hero.css declares on .hero.
+{% endcomment %}
+<section class="hero hero--film" data-hero-idle>
+  <div class="hero-background"></div>
+  {% if featured.backdrop %}
+  <img class="hero-film__backdrop" src="{{ featured.backdrop }}" alt="" fetchpriority="high" decoding="async" width="1280" height="720">
+  {% elif featured.poster %}
+  <img class="hero-film__backdrop hero-film__backdrop--poster" src="{{ featured.poster }}" alt="" fetchpriority="high" decoding="async" width="500" height="750">
+  {% else %}
+  <div class="hero-stars"></div>
+  {% endif %}
+  <div class="hero-film__scrim"></div>
+
+  <div class="hero-film__inner">
+    {% if featured.poster %}
+    <div class="hero-film__poster-wrap">
+      <img class="hero-film__poster" src="{{ featured.poster }}" alt="{{ featured.title }} poster" width="340" height="510" fetchpriority="high" decoding="async">
+    </div>
+    {% endif %}
+
+    <div class="hero-film__copy">
+      <p class="hero-film__eyebrow"><span aria-hidden="true">&#9733;</span> Now showing <span aria-hidden="true">&#9733;</span></p>
+      <h2 class="hero-film__title">{{ featured.title }}</h2>
+      <p class="hero-film__meta">
+        <span class="hero-film__when">{{ featured.date_label }} &middot; {{ featured.time }}</span>
+        {% if featured.rating %}<span><span class="hero-film__cert">{{ featured.rating }}</span></span>{% endif %}
+        {% if featured.runtime %}<span>{{ featured.runtime }}</span>{% endif %}
+        {% if featured.sold_out %}<span class="hero-film__note">Sold out online</span>{% endif %}
+      </p>
+      {% if featured.description %}
+      <p class="hero-film__lede">{{ featured.description|truncatewords:25 }}</p>
+      {% endif %}
+
+      {% comment %}
+        Sold out online: no Buy button and no link to the ticket page,
+        the same rule as the listing chips (web/tests/test_home_tickets.py);
+        the note above says why, and the buttons fall back to the pair the
+        marquee has.
+      {% endcomment %}
+      <div class="hero-cta">
+        {% if featured.ticket_url and not featured.sold_out %}
+        <a href="{{ featured.ticket_url }}" class="btn btn-ticket">Buy Tickets</a>
+        <a href="#now-showing" class="btn btn-secondary">All Showtimes</a>
+        {% else %}
+        <a href="#now-showing" class="btn btn-ticket">View Showtimes</a>
+        <a href="/membership/" class="btn btn-secondary">Join Membership</a>
+        {% endif %}
+      </div>
+
+      {% if member_count %}
+      <p class="hero-members">
+        <span class="hero-members-star" aria-hidden="true">&#9733;</span>
+        <span class="hero-members-count">{{ member_count }}</span>
+        member{{ member_count|pluralize }} help{{ member_count|pluralize:"s," }} to keep the lights on
+      </p>
+      {% endif %}
+    </div>
+  </div>
+
+  <h1 class="hero-film__lockup">{{ site_config.cinema.name }} <span class="hero-film__lockup-tagline">{{ site_config.cinema.tagline }}</span></h1>
+</section>

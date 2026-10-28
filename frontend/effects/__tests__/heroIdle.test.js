@@ -53,3 +53,18 @@ describe('initHeroIdle', () => {
     expect(io.observed).toHaveLength(1);
   });
 });
+
+describe('initHeroIdle on the film hero', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('also pauses a hero that has no marquee', () => {
+    // The film hero carries data-hero-idle instead of data-neon: it has no
+    // bulbs to power on, but its grain still loops and should still pause.
+    document.body.innerHTML = '<section class="hero hero--film" data-hero-idle id="f"></section>';
+    const io = stubObserver();
+    initHeroIdle(document);
+    expect(io.observed).toEqual([document.getElementById('f')]);
+  });
+});

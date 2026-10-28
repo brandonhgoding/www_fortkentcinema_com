@@ -1078,7 +1078,7 @@ function er(e) {
   }).observe(e);
 }
 function tr(e = document) {
-  typeof IntersectionObserver == "function" && e.querySelectorAll("[data-neon]").forEach((t) => {
+  typeof IntersectionObserver == "function" && e.querySelectorAll("[data-neon], [data-hero-idle]").forEach((t) => {
     if (!t.dataset.heroIdleInit) {
       t.dataset.heroIdleInit = "1";
       try {
