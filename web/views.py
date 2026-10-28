@@ -107,14 +107,25 @@ class HomeView(TemplateView):
         # visible, so every date + its label must be present in the DOM.
         today = today_eastern()
 
-        # Hero: the next showing, with the same ticket state the listing
-        # chips get, so Buy Tickets on the fold and on the chip agree.
+        # Hero: the next film's own times, with the same ticket state the
+        # listing chips get, so a time on the fold and on the card agree.
+        # `can_buy` picks the button pair: with nothing purchasable the chips
+        # are information only and the fold falls back to the marquee's pair.
         featured = get_featured_showtime()
         if featured is not None:
-            featured["date_label"] = format_showtime_date(
-                featured["date"], weekday="short", today=today
+            for slot in featured["upcoming"]:
+                slot["label"] = format_showtime_date(
+                    slot["key"], weekday="short", today=today
+                )
+            hero_times = [t for slot in featured["upcoming"] for t in slot["times"]]
+            _add_ticket_state(hero_times)
+            featured["can_buy"] = any(
+                t["ticket_url"] and not t["sold_out"] for t in hero_times
             )
-            _add_ticket_state([featured])
+            for other in featured["others"]:
+                other["date_label"] = format_showtime_date(
+                    other["date"], weekday="short", today=today
+                )
         ctx["featured"] = featured
 
         date_keys = set()

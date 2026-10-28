@@ -1,8 +1,9 @@
 """The home hero shows the next showing; the marquee is the fallback.
 
 With a showing booked this week the first fold is that film: its backdrop,
-poster, title, date and time, and a Buy Tickets button to its own checkout
-page. With nothing booked the bulb marquee renders as it always has.
+poster, title, and its upcoming showtimes as the shared ticket chips, so the
+visitor picks a time on the fold. Other films this week are named under
+them. With nothing booked the bulb marquee renders as it always has.
 """
 
 import datetime
@@ -37,6 +38,11 @@ class HeroBase(TestCase):
     def home(self):
         return self.client.get(reverse("home")).content.decode()
 
+    def hero(self):
+        return re.search(
+            r'<section class="hero hero--film".*?</section>', self.home(), re.S
+        ).group(0)
+
     def booked(self):
         st = make_showtime(starts_at=in_two_days())
         film = st.engagement.primary_film
@@ -60,8 +66,6 @@ class FilmHeroTests(HeroBase):
         self.assertIn('class="hero hero--film"', html)
         self.assertNotIn('class="marquee-title"', html)
         self.assertIn('<h2 class="hero-film__title">Dune</h2>', html)
-        label = in_two_days().strftime("%a, %b %-d")
-        self.assertIn(f"{label} &middot; 7:00 PM", html)
         self.assertIn('<span class="hero-film__cert">PG-13</span>', html)
         self.assertIn("2h 35min", html)
 
@@ -90,26 +94,53 @@ class FilmHeroTests(HeroBase):
         self.assertTrue(lede.endswith("w24 …"), lede)
         self.assertNotIn("w25", lede)
 
-    def test_buy_tickets_goes_to_that_showing(self):
-        html = self.home()
+    def test_showtimes_are_the_call_to_action(self):
+        # The fold offers the film's times, each the same chip the listing
+        # uses, instead of one Buy Tickets button to one checkout.
+        late = self.st.engagement.showtimes.create(
+            screen=self.st.screen, starts_at=in_two_days(21)
+        )
+        hero = self.hero()
+        label = in_two_days().strftime("%a, %b %-d")
+        self.assertIn(f'<dt class="hero-film__date">{label}</dt>', hero)
         self.assertIn(
-            f'<a href="{self.buy_url}" class="btn btn-ticket">Buy Tickets</a>', html
+            f'<a class="showtime showtime--buy" href="{self.buy_url}">7:00 PM', hero
+        )
+        late_url = reverse("tickets:buy", args=[late.pk])
+        self.assertIn(
+            f'<a class="showtime showtime--buy" href="{late_url}">9:00 PM', hero
+        )
+        self.assertNotIn("Buy Tickets", hero)
+        self.assertIn(
+            '<a href="#now-showing" class="btn btn-secondary">All Showtimes</a>', hero
         )
         self.assertIn(
-            '<a href="#now-showing" class="btn btn-secondary">All Showtimes</a>', html
+            '<a href="/membership/" class="btn btn-secondary">Join Membership</a>', hero
         )
+
+    def test_rows_stop_at_three_dates(self):
+        for days in (3, 4, 5):
+            self.st.engagement.showtimes.create(
+                screen=self.st.screen,
+                starts_at=in_two_days() + datetime.timedelta(days=days - 2),
+            )
+        hero = self.hero()
+        self.assertEqual(hero.count('<dt class="hero-film__date">'), 3)
+        fifth = timezone.localdate() + datetime.timedelta(days=5)
+        self.assertNotIn(fifth.strftime("%a, %b %-d"), hero)
 
     def test_sold_out_online_says_so_and_does_not_link(self):
         # Same rule as the listing chip: the ticket page is not linked once
-        # the showing is sold out online, the fold just says so.
+        # the showing is sold out online, the chip just says so, and with
+        # nothing left to buy the buttons fall back to the marquee's pair.
         self.st.online_allowance = 1
         self.st.save()
         make_order(self.st, status="PAID")
-        html = self.home()
-        self.assertIn('<span class="hero-film__note">Sold out online</span>', html)
-        self.assertNotIn(f'href="{self.buy_url}"', html)
+        hero = self.hero()
+        self.assertIn('<span class="showtime__note">Sold out online</span>', hero)
+        self.assertNotIn(f'href="{self.buy_url}"', hero)
         self.assertIn(
-            '<a href="#now-showing" class="btn btn-ticket">View Showtimes</a>', html
+            '<a href="#now-showing" class="btn btn-ticket">View Showtimes</a>', hero
         )
 
     def test_member_line_stays(self):
@@ -122,6 +153,38 @@ class FilmHeroTests(HeroBase):
         )
         html = self.home()
         self.assertIn('<span class="hero-members-count">1</span>', html)
+
+
+@override_settings(**SQUARE_ON)
+class AlsoShowingTests(HeroBase):
+    def test_other_films_this_week_are_named(self):
+        self.st = self.booked()
+        make_live_item(self.st.engagement)
+        other = make_showtime(starts_at=in_two_days(21))
+        film = other.engagement.primary_film
+        film.title = "Hocus Pocus"
+        film.poster_url = "https://image.tmdb.org/t/p/w500/hp.jpg"
+        film.save()
+        hero = self.hero()
+        strip = re.search(
+            r'<div class="hero-film__also">.*?</div>\s*</div>', hero, re.S
+        ).group(0)
+        self.assertIn("Also showing", strip)
+        self.assertIn('<a class="hero-film__also-item" href="#now-showing">', strip)
+        self.assertIn('<span class="hero-film__also-title">Hocus Pocus</span>', strip)
+        label = in_two_days().strftime("%a, %b %-d")
+        self.assertIn(f"{label} &middot; 9:00 PM", strip)
+        self.assertIn(
+            '<img class="hero-film__also-poster"'
+            ' src="https://image.tmdb.org/t/p/w500/hp.jpg" alt=""',
+            strip,
+        )
+        # The other film's times are not offered on the fold: its own card is.
+        self.assertNotIn(reverse("tickets:buy", args=[other.pk]), hero)
+
+    def test_alone_means_no_strip(self):
+        self.booked()
+        self.assertNotIn("Also showing", self.hero())
 
 
 class FilmHeroWithoutSalesTests(HeroBase):
