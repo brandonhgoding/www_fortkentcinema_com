@@ -51,11 +51,20 @@
     linear-gradient(180deg, rgba(20, 22, 21, 0.55) 0%, rgba(20, 22, 21, 0) 25%, rgba(20, 22, 21, 0) 70%, rgba(20, 22, 21, 0.98) 100%);
 }
 
+/* One panel per film, unpositioned on purpose: each panel's backdrop and
+ * scrim are absolute against the section, so they fill the fold under the
+ * strip and the lockup as well as the panel's own copy. Alpine shows one
+ * panel; without it they stack, each with its own picture. */
+.hero-film__panel {
+  width: 100%;
+}
+
 .hero-film__inner {
   position: relative;
   z-index: 10;
   width: 100%;
   max-width: 1200px;
+  margin: 0 auto;
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
   gap: var(--spacing-2xl);
@@ -162,8 +171,16 @@
   align-items: center;
 }
 
-.hero--film .hero-members {
-  text-align: left;
+/* The member line sits at the foot of the fold with the lockup, centred,
+ * not in a panel's copy: it is the cinema's line, not the film's. */
+.hero-film__members {
+  position: relative;
+  margin-top: var(--spacing-xl);
+  text-align: center;
+}
+
+.hero-film__members + .hero-film__lockup {
+  margin-top: var(--spacing-sm);
 }
 
 /* The poster in the marquee's own frame: gold hairline, ink gap, warm
@@ -304,11 +321,16 @@
   font-size: 0.75em;
 }
 
-/* The other films this week: a quiet strip under the buttons, each a
- * thumbnail, the title and its next showing, linking to the listing where
- * its own times are. Says "there is more on" without a second picture. */
+/* The other films this week: a quiet strip under the panel, each a
+ * thumbnail, the title and its next showing. A click swaps the panel in
+ * place (the link is the no-JavaScript path to the stacked panel), so the
+ * fold is always the film the visitor asked about. */
 .hero-film__also {
-  margin-top: var(--spacing-lg);
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 1200px;
+  margin: var(--spacing-lg) auto 0;
   animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.45s both;
 }
 
@@ -455,6 +477,10 @@
 
   /* The strip stacks, items left-aligned with each other and the block
    * centred, instead of two centred lines of different lengths. */
+  .hero-film__also {
+    text-align: center;
+  }
+
   .hero-film__also-list {
     flex-direction: column;
     align-items: flex-start;
@@ -463,10 +489,6 @@
     margin: 0 auto;
   }
 
-
-  .hero--film .hero-members {
-    text-align: center;
-  }
 
   /* Tracked tighter than the desktop lockup so the tagline holds one line
    * on a 360px phone instead of breaking into three. */

@@ -103,27 +103,28 @@ def _hero_backdrop(url):
     return url.replace("/t/p/w780/", "/t/p/w1280/")
 
 
-# Dates the hero lists for the featured film. Beyond these the visitor is
-# one click from the full schedule, and a fourth row pushes the buttons off a
-# phone's first screen.
+# Dates the hero lists for each film. Beyond these the visitor is one click
+# from the full schedule, and a fourth row pushes the buttons off a phone's
+# first screen.
 HERO_DATES = 3
 
 
-def get_featured_showtime(now=None):
-    """The home hero's showing: the next non-cancelled showtime that has not
-    started, from the same pool get_now_showing() lists (confirmed, shown in
-    the main listings, within the week), so the hero never names a film the
-    listings below it do not. None when nothing is booked.
+def get_hero_films(now=None):
+    """The home hero's films: every film in the pool get_now_showing() lists
+    (confirmed, shown in the main listings, within the week) with a
+    non-cancelled showtime that has not started, in order of that next
+    showing, so the fold opens on the next thing on and can switch to the
+    rest. [] when nothing is booked.
 
-    `upcoming` is that film's own not-yet-started showtimes grouped by local
-    date, the first HERO_DATES dates, each time in the chip shape; `others`
-    is every other film in the pool with its next showing, in order of that
-    showing, so the fold can say what else is on."""
+    Each film carries `upcoming`: its own not-yet-started showtimes grouped
+    by local date, the first HERO_DATES dates, each time in the chip shape
+    (HomeView._add_ticket_state completes it); and `date`/`time`, its next
+    showing, for the strip that names the films not on the fold."""
     if now is None:
         now = timezone.now()
     today = _local_date(now)
     week_out = today + datetime.timedelta(days=7)
-    showtimes = list(
+    showtimes = (
         Showtime.objects.filter(
             is_cancelled=False,
             starts_at__gte=now,
@@ -136,45 +137,35 @@ def get_featured_showtime(now=None):
         .prefetch_related("engagement__engagement_films__film")
         .order_by("starts_at", "pk")
     )
-    if not showtimes:
-        return None
-    showtime = showtimes[0]
-    engagement = showtime.engagement
-    pf = engagement.primary_film
 
+    films = {}
     by_date = {}
-    others = {}
     for st in showtimes:
-        if st.engagement_id == engagement.pk:
-            key = _local_date(st.starts_at).isoformat()
-            by_date.setdefault(key, []).append(_time_entry(st))
-        elif st.engagement_id not in others:
-            other = st.engagement
-            opf = other.primary_film
-            others[st.engagement_id] = {
-                "id": str(other.pk),
-                "title": listing_title(other.title or (opf.title if opf else "")),
-                "poster": (opf.poster_url if opf else "") or "",
+        if st.engagement_id not in films:
+            engagement = st.engagement
+            pf = engagement.primary_film
+            films[st.engagement_id] = {
+                "id": str(engagement.pk),
+                "showtime_id": st.pk,
+                "title": listing_title(engagement.title or (pf.title if pf else "")),
+                "rating": (pf.rating if pf else "") or "",
+                "runtime": _format_runtime(pf.runtime_minutes if pf else None),
+                "description": (pf.description if pf else "") or "",
+                "poster": (pf.poster_url if pf else "") or "",
+                "backdrop": _hero_backdrop((pf.backdrop_url if pf else "") or ""),
                 "date": _local_date(st.starts_at).isoformat(),
                 "time": format_showtime(st.starts_at),
             }
+            by_date[st.engagement_id] = {}
+        key = _local_date(st.starts_at).isoformat()
+        by_date[st.engagement_id].setdefault(key, []).append(_time_entry(st))
 
-    return {
-        "showtime_id": showtime.pk,
-        "title": listing_title(engagement.title or (pf.title if pf else "")),
-        "rating": (pf.rating if pf else "") or "",
-        "runtime": _format_runtime(pf.runtime_minutes if pf else None),
-        "description": (pf.description if pf else "") or "",
-        "poster": (pf.poster_url if pf else "") or "",
-        "backdrop": _hero_backdrop((pf.backdrop_url if pf else "") or ""),
-        "date": _local_date(showtime.starts_at).isoformat(),
-        "time": format_showtime(showtime.starts_at),
-        "upcoming": [
-            {"key": key, "times": by_date[key]}
-            for key in sorted(by_date)[:HERO_DATES]
-        ],
-        "others": list(others.values()),
-    }
+    for pk, film in films.items():
+        dates = by_date[pk]
+        film["upcoming"] = [
+            {"key": key, "times": dates[key]} for key in sorted(dates)[:HERO_DATES]
+        ]
+    return list(films.values())
 
 
 def get_calendar_month(year, month):
