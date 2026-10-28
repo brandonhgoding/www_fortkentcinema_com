@@ -38,7 +38,7 @@ def meta_description(html):
 
 @mock.patch("web.views.get_calendar_month", return_value={})
 @mock.patch("web.views.get_coming_soon", return_value=[])
-@mock.patch("web.views.get_now_showing", return_value=[])
+@mock.patch("web.views.get_hero_films", return_value=[])
 class TitleAndDescriptionTests(TestCase):
     def test_membership_title_is_the_sitelink_label(self, *_):
         # Nav button, <title>, og:title and <h1> all read the same, as on

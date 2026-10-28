@@ -46,7 +46,7 @@ def one_member() -> None:
 
 @mock.patch.dict(SITE_CONFIG, {"google_review": REVIEW})
 @mock.patch("web.views.get_coming_soon", return_value=[])
-@mock.patch("web.views.get_now_showing", return_value=[])
+@mock.patch("web.views.get_hero_films", return_value=[])
 class MarqueeGoogleReviewTests(TestCase):
     """Nothing booked: the marquee hero."""
 

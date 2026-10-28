@@ -108,7 +108,8 @@ class BundleTests(TestCase):
             ".nav-logo",  # Nav.css
             ".footer",  # Footer.css
             ".hero",  # Hero.css
-            ".movie-card",  # MovieCard.css
+            ".showtime",  # ShowtimeChip.css
+            ".hero-film__panel",  # HeroFilm.css
             ".coming-",  # ComingSoon.css
             ".home-card",  # HomeSections.css
             ".tier-card",  # TierCard.css
@@ -185,7 +186,7 @@ class ImageLoadingTests(TestCase):
         cls.screen = Screen.objects.create(name="Screen 1", capacity=100)
         today = timezone.localdate()
 
-        # Two now-showing films: the first poster is above the fold, the second isn't.
+        # Two films this week: the first panel's poster shows, the second is hidden.
         cls.films = []
         for i in range(2):
             film = Film.objects.create(
@@ -207,18 +208,18 @@ class ImageLoadingTests(TestCase):
             )
             cls.films.append(film)
 
-    def test_first_now_showing_poster_is_eager_and_prioritised(self):
+    def test_first_hero_poster_is_eager_and_prioritised(self):
         """Lazy-loading an above-the-fold image DELAYS LCP — the opposite of the
         goal."""
         html = self.client.get(reverse("home")).content.decode()
-        posters = re.findall(r"<img[^>]+movie-poster-img[^>]*>", html)
+        posters = re.findall(r"<img[^>]+hero-film__poster[^>]*>", html)
         self.assertGreaterEqual(len(posters), 2)
         self.assertIn('fetchpriority="high"', posters[0])
         self.assertNotIn('loading="lazy"', posters[0])
 
-    def test_subsequent_now_showing_posters_are_lazy(self):
+    def test_hidden_panel_posters_are_lazy(self):
         html = self.client.get(reverse("home")).content.decode()
-        posters = re.findall(r"<img[^>]+movie-poster-img[^>]*>", html)
+        posters = re.findall(r"<img[^>]+hero-film__poster[^>]*>", html)
         self.assertIn('loading="lazy"', posters[1])
 
 

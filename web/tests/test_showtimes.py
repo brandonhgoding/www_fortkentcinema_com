@@ -17,16 +17,3 @@ class ShowtimeDateTests(SimpleTestCase):
         short = showtimes.format_showtime_date("2999-12-31", weekday="short", today="2000-01-01")
         self.assertRegex(short, r"^[A-Za-z]{3}, Dec 31$")
         self.assertNotEqual(short, long)
-
-    def test_upcoming_dates_filters_and_sorts(self):
-        today = "2999-01-01"
-        st = {"2000-01-01": ["6:00 PM"], "2999-12-31": ["9:00 PM"],
-              "2999-06-15": ["3:00 PM"], today: ["7:00 PM"]}
-        self.assertEqual(
-            showtimes.upcoming_dates(st, today=today),
-            [today, "2999-06-15", "2999-12-31"],
-        )
-
-    def test_upcoming_dates_bad_input(self):
-        for bad in (None, "nope", 123, []):
-            self.assertEqual(showtimes.upcoming_dates(bad, today="2000-01-01"), [])

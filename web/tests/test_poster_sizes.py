@@ -16,6 +16,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from web.templatetags.posters import poster_srcset, tmdb_size
+from web.tests.test_home_sections import hero_film
 
 W500 = "https://image.tmdb.org/t/p/w500/abc123.jpg"
 
@@ -48,31 +49,6 @@ class TmdbSizeFilterTests(TestCase):
         self.assertEqual(poster_srcset("/media/poster.jpg"), "")
 
 
-def movie(**over):
-    base = {
-        "id": "1",
-        "title": "Dune",
-        "rating": "PG-13",
-        "runtime": "2h 35min",
-        "genre": "Sci-fi",
-        "poster": W500,
-        "youtube_id": "",
-        "is_free_for_members": False,
-        "showtimes": {
-            "2999-01-15": [
-                {
-                    "time": "6:00 PM",
-                    "iso": "2999-01-15T18:00:00-05:00",
-                    "captions": "",
-                    "captions_label": "",
-                }
-            ]
-        },
-    }
-    base.update(over)
-    return base
-
-
 def coming(**over):
     base = {
         "id": "2",
@@ -97,28 +73,12 @@ def img_tags(html, css_class):
 
 @mock.patch("web.views.get_calendar_month", return_value={})
 class HomePosterMarkupTests(TestCase):
-    def render(self, now_showing=(), coming_soon=()):
+    def render(self, hero_films=(), coming_soon=()):
         with (
-            mock.patch("web.views.get_now_showing", return_value=list(now_showing)),
+            mock.patch("web.views.get_hero_films", return_value=list(hero_films)),
             mock.patch("web.views.get_coming_soon", return_value=list(coming_soon)),
         ):
             return self.client.get("/").content.decode()
-
-    def test_now_showing_poster_has_a_srcset_and_intrinsic_size(self, _cal):
-        html = self.render(now_showing=[movie()])
-        (tag,) = img_tags(html, "movie-poster-img")
-        self.assertIn('src="https://image.tmdb.org/t/p/w342/abc123.jpg"', tag)
-        self.assertIn("/t/p/w185/abc123.jpg 185w", tag)
-        self.assertIn("/t/p/w500/abc123.jpg 500w", tag)
-        self.assertNotIn("w780", tag)
-        # The poster is the card's full width under 1024px (the card caps at
-        # 340px) and a clamp(11.5rem, 38%, 15rem) column above it.
-        self.assertIn('sizes="(min-width: 1024px) 15rem, 340px"', tag)
-        # Intrinsic size of the src candidate, so the slot is reserved
-        # before the file arrives (the audit traced the home page's layout
-        # shift to this section).
-        self.assertIn('width="342"', tag)
-        self.assertIn('height="513"', tag)
 
     def test_coming_soon_poster_is_sized_for_its_120px_column(self, _cal):
         html = self.render(coming_soon=[coming()])
@@ -141,17 +101,10 @@ class HomePosterMarkupTests(TestCase):
             self.assertIn('sizes="60px"', tag)
             self.assertIn("185w", tag)
 
-    def test_non_tmdb_poster_renders_without_a_srcset(self, _cal):
-        html = self.render(now_showing=[movie(poster="/media/local.jpg")])
-        (tag,) = img_tags(html, "movie-poster-img")
-        self.assertIn('src="/media/local.jpg"', tag)
-        self.assertNotIn("srcset", tag)
-        self.assertNotIn("sizes=", tag)
-
     def test_schema_keeps_the_w500_poster(self, _cal):
         # Google's event guidelines want the large image; only the <img>
         # elements shrink.
-        html = self.render(now_showing=[movie()])
+        html = self.render(hero_films=[hero_film(poster=W500)])
         ld = html[html.index('"ScreeningEvent"') :]
         self.assertIn('"image": "https://image.tmdb.org/t/p/w500/abc123.jpg"', ld)
 

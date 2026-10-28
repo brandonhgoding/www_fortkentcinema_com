@@ -13,7 +13,7 @@ PRICE_35 = 'From <span class="home-membership__amount">$35</span> a year.'
 
 
 @mock.patch("web.views.get_coming_soon", return_value=[])
-@mock.patch("web.views.get_now_showing", return_value=[])
+@mock.patch("web.views.get_hero_films", return_value=[])
 class HomeMembershipBandTests(TestCase):
     def setUp(self) -> None:
         # Migrations seed the real tiers; these tests set their own prices.

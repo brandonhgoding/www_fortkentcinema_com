@@ -11,7 +11,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from web.services.cinema_data import get_now_showing
+from web.services.cinema_data import get_hero_films
 from web.tests.test_cinema_data import make_engagement, make_film, make_screen
 
 
@@ -48,12 +48,13 @@ class LanguageCaptionsTests(TestCase):
         self._set(language=Language.FRENCH, translation=Translation.SUBTITLED)
         self.assertEqual(self.eng.language_label, "French · English subtitles")
 
-    def test_now_showing_carries_label_and_captions(self) -> None:
+    def test_hero_film_carries_label_and_captions(self) -> None:
         self._set(language=Language.FRENCH, translation=Translation.DUBBED,
                   captions="OC")
-        movie = get_now_showing()[0]
+        movie = get_hero_films()[0]
         self.assertEqual(movie["language_label"], "French · Dubbed in English")
-        (times,) = movie["showtimes"].values()
+        (slot,) = movie["upcoming"]
+        times = slot["times"]
         self.assertEqual(times[0]["captions"], "OC")
         self.assertEqual(times[0]["captions_label"], "Open Captions")
         self.assertEqual(
@@ -63,28 +64,27 @@ class LanguageCaptionsTests(TestCase):
 
     def test_closed_captions_carry_no_note(self) -> None:
         self._set(captions="CC")
-        (times,) = get_now_showing()[0]["showtimes"].values()
-        self.assertEqual(times[0]["captions_note"], "")
+        (slot,) = get_hero_films()[0]["upcoming"]
+        self.assertEqual(slot["times"][0]["captions_note"], "")
 
     def test_home_shows_open_captions_chip_and_sentence(self) -> None:
         # The OC chip sits beside the time, as CC does, so the row of times
         # still scans as a row; the sentence under it says what the chip
-        # means, so nobody at the box office is asked. Both cards, and the
-        # hero's own row of times, which wears the hero's rating chip.
+        # means, so nobody at the box office is asked. The hero's row of
+        # times is the listing, and it wears the hero's rating chip.
         self._set(captions="OC")
         html = self.client.get(reverse("home")).content.decode()
         note = (
             '<span class="showtime__note">'
             "This showing will be played with open captions.</span>"
         )
-        self.assertEqual(html.count(note), 3)
-        for chip in ("movie-rating", "schedule-card__rating", "hero-film__cert"):
-            self.assertIn(
-                '<span class="showtime showtime--noted">7:00 PM '
-                f'<abbr class="{chip}" title="Open Captions" aria-hidden="true">'
-                "OC</abbr>" + note,
-                html,
-            )
+        self.assertEqual(html.count(note), 1)
+        self.assertIn(
+            '<span class="showtime showtime--noted">7:00 PM '
+            '<abbr class="hero-film__cert" title="Open Captions" aria-hidden="true">'
+            "OC</abbr>" + note,
+            html,
+        )
         # The sentence is the spoken label; a second sr-only "Open Captions"
         # would read it twice.
         self.assertNotIn('<span class="sr-only">Open Captions</span>', html)
@@ -93,18 +93,11 @@ class LanguageCaptionsTests(TestCase):
         self._set(language=Language.FRENCH, translation=Translation.SUBTITLED,
                   captions="CC")
         html = self.client.get(reverse("home")).content.decode()
-        self.assertIn('<span class="movie-rating">French · English subtitles</span>', html)
-        self.assertIn(
-            '<span class="schedule-card__rating">French · English subtitles</span>', html
-        )
+        self.assertIn('<span class="hero-film__lang">French · English subtitles</span>', html)
         # The abbr's tooltip is for the mouse; touch and screen readers get
         # the spelled-out label instead.
         self.assertIn(
-            '<abbr class="movie-rating" title="Closed Captions" aria-hidden="true">CC</abbr>'
-            '<span class="sr-only">Closed Captions</span>', html
-        )
-        self.assertIn(
-            '<abbr class="schedule-card__rating" title="Closed Captions" aria-hidden="true">CC</abbr>'
+            '<abbr class="hero-film__cert" title="Closed Captions" aria-hidden="true">CC</abbr>'
             '<span class="sr-only">Closed Captions</span>', html
         )
 
@@ -139,9 +132,8 @@ class RatingChipTests(TestCase):
         return self.client.get(reverse("home")).content.decode()
 
     def test_rated_film_shows_the_chip(self) -> None:
-        self.assertIn('<span class="movie-rating">PG-13</span>', self._home("PG-13"))
+        self.assertIn('<span class="hero-film__cert">PG-13</span>', self._home("PG-13"))
 
     def test_unrated_film_has_no_empty_chip(self) -> None:
         html = self._home("")
-        self.assertNotIn('<span class="movie-rating"></span>', html)
-        self.assertNotIn('<span class="schedule-card__rating"></span>', html)
+        self.assertNotIn('<span class="hero-film__cert"></span>', html)

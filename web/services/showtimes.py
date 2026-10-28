@@ -19,11 +19,3 @@ def format_showtime_date(date_str, weekday="long", *, today=None):
     # %A = full weekday, %a = abbreviated; %b = abbreviated month; %-d = day, no pad
     fmt = "%A, %b %-d" if weekday == "long" else "%a, %b %-d"
     return d.strftime(fmt)
-
-
-def upcoming_dates(showtimes, *, today=None):
-    if not isinstance(showtimes, dict):
-        return []
-    if today is None:
-        today = today_eastern()
-    return sorted(k for k in showtimes if k >= today)

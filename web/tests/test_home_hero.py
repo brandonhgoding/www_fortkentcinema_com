@@ -114,36 +114,37 @@ class FilmHeroTests(HeroBase):
             f'<a class="showtime showtime--buy" href="{late_url}">9:00 PM', hero
         )
         self.assertNotIn("Buy Tickets", hero)
-        self.assertIn(
-            '<a href="#now-showing" class="btn btn-secondary">All Showtimes</a>', hero
-        )
-        # The nav's Become a Member button is in view on the fold.
+        # The hero is the listing: no button to a schedule below, and the
+        # nav's Become a Member button is in view on the fold.
+        self.assertNotIn('href="#now-showing"', hero)
         self.assertNotIn("Join Membership", hero)
 
-    def test_rows_stop_at_three_dates(self):
+    def test_rows_past_three_dates_are_there_but_folded(self):
+        # Every date of the week renders (the hero is the listing); the
+        # fourth row on is folded behind the panel's toggle. The fold and
+        # the toggle are pinned in test_home_listing.py.
         for days in (3, 4, 5):
             self.st.engagement.showtimes.create(
                 screen=self.st.screen,
                 starts_at=in_two_days() + datetime.timedelta(days=days - 2),
             )
         hero = self.hero()
-        self.assertEqual(hero.count('<dt class="hero-film__date">'), 3)
+        self.assertEqual(hero.count('<dt class="hero-film__date">'), 4)
         fifth = timezone.localdate() + datetime.timedelta(days=5)
-        self.assertNotIn(fifth.strftime("%a, %b %-d"), hero)
+        self.assertIn(fifth.strftime("%a, %b %-d"), hero)
+        self.assertEqual(hero.count('x-show="expanded"'), 1)
+        self.assertIn("Show all 4 dates", hero)
 
     def test_sold_out_online_says_so_and_does_not_link(self):
-        # Same rule as the listing chip: the ticket page is not linked once
-        # the showing is sold out online, the chip just says so, and with
-        # nothing left to buy the buttons fall back to the marquee's pair.
+        # Same rule as the listing chip had: the ticket page is not linked
+        # once the showing is sold out online, the chip just says so.
         self.st.online_allowance = 1
         self.st.save()
         make_order(self.st, status="PAID")
         hero = self.hero()
         self.assertIn('<span class="showtime__note">Sold out online</span>', hero)
         self.assertNotIn(f'href="{self.buy_url}"', hero)
-        self.assertIn(
-            '<a href="#now-showing" class="btn btn-ticket">View Showtimes</a>', hero
-        )
+        self.assertNotIn("btn-ticket", hero)
 
     def test_member_line_sits_once_over_the_lockup(self):
         tier = MembershipTier.objects.get(slug="individual")
@@ -245,14 +246,15 @@ class AlsoShowingTests(HeroBase):
 
 
 class FilmHeroWithoutSalesTests(HeroBase):
-    def test_square_off_falls_back_to_the_old_buttons(self):
+    def test_square_off_leaves_plain_chips_and_no_buttons(self):
         self.booked()
         html = self.home()
         self.assertIn('class="hero hero--film"', html)
-        self.assertIn(
-            '<a href="#now-showing" class="btn btn-ticket">View Showtimes</a>', html
-        )
-        self.assertNotIn("Join Membership", self.hero())
+        hero = self.hero()
+        self.assertIn('<span class="showtime">7:00 PM</span>', hero)
+        self.assertNotIn("showtime--buy", hero)
+        self.assertNotIn("btn-ticket", hero)
+        self.assertNotIn("Join Membership", hero)
         self.assertNotIn("Buy Tickets", html)
 
     def test_poster_stands_in_for_a_missing_backdrop(self):

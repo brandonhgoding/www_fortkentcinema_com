@@ -7,26 +7,6 @@
   display: none !important;
 }
 
-/* Now Showing phone/desktop split.
- *
- * The SPA chose between the desktop date-nav grid and the phone schedule list
- * with a JS matchMedia('(max-width: 600px)') check and rendered only one. The
- * Django port renders BOTH and toggles them here, matching that breakpoint. */
-.schedule-list {
-  display: none;
-}
-
-@media (max-width: 600px) {
-  .date-nav,
-  .movies-grid {
-    display: none;
-  }
-
-  .schedule-list {
-    display: flex;
-  }
-}
-
 /* The SPA's phone-stripping gate is GONE, deliberately. DO NOT RESTORE IT.
  *
  * App.jsx only mounted Hero, the CTAs, and the Blog teaser above a 600px
@@ -43,6 +23,7 @@
  * split above uses. If a section looks
  * wrong on a phone, fix it there — hiding it is not a fix.
  *
- * NOTE: the Now Showing desktop/phone split above is a different thing and
- * stays. It swaps between two renderings of the same content; this rule
- * removed content outright. */
+ * NOTE: the Now Showing section that once followed the hero had its own
+ * desktop/phone split here, two renderings of one schedule. That section is
+ * gone (2026-10-28: the film hero is the listing), and so is the split; it
+ * was never the same thing as this rule, which removed content outright. */

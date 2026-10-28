@@ -35,7 +35,7 @@ class SponsorPageRemovedTests(TestCase):
         body = self.client.get("/llms.txt").content.decode().lower()
         self.assertNotIn("sponsor", body)
 
-    @mock.patch("web.views.get_now_showing", return_value=[])
+    @mock.patch("web.views.get_hero_films", return_value=[])
     @mock.patch("web.views.get_coming_soon", return_value=[])
     def test_coming_soon_empty_state_has_no_sponsor_link(self, *_):
         html = self.client.get(reverse("home")).content.decode().lower()

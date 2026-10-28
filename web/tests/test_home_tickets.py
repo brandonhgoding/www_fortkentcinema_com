@@ -108,8 +108,8 @@ class HomeTicketChipTests(TestCase):
             )
         with CaptureQueriesContext(connection) as three:
             html = self.home()
-        # Three times, each on the desktop card, the phone card and the hero.
-        self.assertEqual(html.count('class="showtime__buy"'), 3 * 3)
+        # Three times, each once: the hero is the listing.
+        self.assertEqual(html.count('class="showtime__buy"'), 3)
         self.assertEqual(len(three), len(one))
 
 

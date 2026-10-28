@@ -69,7 +69,7 @@ class NavMenuE2E(SeleniumTestCase):
     """
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing", return_value=[])
+    @mock.patch("web.views.get_hero_films", return_value=[])
     def test_mobile_menu_toggles(self, _ns, _cs):
         from selenium.webdriver.common.by import By
         from selenium.webdriver.support import expected_conditions as EC
@@ -157,7 +157,7 @@ class ComingSoonCalendarE2E(SeleniumTestCase):
 
     @mock.patch("web.views.get_calendar_month", return_value={})
     @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing", return_value=[])
+    @mock.patch("web.views.get_hero_films", return_value=[])
     def test_calendar_toggle_loads_calendar_fragment(self, _ns, _cs, _cal):
         from selenium.webdriver.common.by import By
         from selenium.webdriver.support import expected_conditions as EC
@@ -240,14 +240,14 @@ class AnalyticsClickE2E(SeleniumTestCase):
 
 
 class TrailerDialogE2E(SeleniumTestCase):
-    """The trailer overlays on Now Showing and Coming Soon behave as modal
+    """The trailer overlays on the film hero and Coming Soon behave as modal
     dialogs: announced as modal, focus goes to Close on open, stays inside
     while open, Escape closes, and focus returns to the poster that opened it.
     Without that a keyboard user is left on a poster behind the overlay, and a
     screen reader can wander the page underneath."""
 
     SECTIONS = {
-        "now showing": (".movie-poster--playable", ".now-trailer-overlay",
+        "now showing": (".hero-film__poster-wrap--playable", ".now-trailer-overlay",
                         ".now-trailer-close"),
         "coming soon": (".coming-movie-poster--playable", ".coming-trailer-overlay",
                         ".coming-trailer-close"),
