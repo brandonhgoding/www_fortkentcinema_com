@@ -1,4 +1,11 @@
 {% load static %}
+{% comment %}
+  Two heroes, one fold. With a showing booked this week the fold is that
+  film (hero_film.html); the bulb marquee below is the fallback for a week
+  with nothing booked, so the bulbs, the power-on and the cursor bulbs stay
+  and simply do not run most weeks. The marquee branch is unchanged.
+{% endcomment %}
+{% if featured %}{% include "partials/hero_film.html" %}{% else %}
 <section class="hero" data-neon data-cursor-bulbs>
   <div class="hero-background"></div>
   <div class="hero-stars"></div>
@@ -60,3 +67,4 @@
   </p>
   {% endif %}
 </section>
+{% endif %}

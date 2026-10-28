@@ -1,0 +1,289 @@
+/* THE FILM HERO — partials/hero_film.html.
+ *
+ * The next showing is the first fold: its backdrop is the ground, the type
+ * sits on a scrim of brand ink to the left, the poster hangs to the right.
+ * It is a `.hero`, so the dark token block Hero.css declares on .hero is
+ * inherited here: gold is legible, the glow tokens are on, .btn-ticket and
+ * .hero-members read exactly as they do on the marquee. This file only
+ * lays the fold out. The marquee's own rules (.marquee-*, .bulb) never
+ * match here, and nothing here matches the marquee.
+ */
+.hero--film {
+  /* Sized by content, capped by the viewport: the fold should end where
+   * the film ends, with Now Showing visible beneath on a tall screen. The
+   * 70px is the fixed nav. */
+  min-height: min(88vh, 820px);
+  padding: calc(70px + var(--spacing-xl)) var(--spacing-lg) var(--spacing-lg);
+  justify-content: center;
+}
+
+/* Artwork. An <img>, not a background, so the browser can treat it as the
+ * largest paint and start it early. Sits between the ink ground (-3) and
+ * the scrim (-1). */
+.hero-film__backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+  z-index: -2;
+  filter: saturate(0.85);
+}
+
+/* No backdrop: the poster, blown up and blurred, so there is still colour
+ * behind the scrim. Scaled past the edges so the blur has nothing to bleed
+ * from. */
+.hero-film__backdrop--poster {
+  filter: blur(18px) saturate(0.8);
+  transform: scale(1.12);
+}
+
+/* Solid ink on the left so the title sits on brand colour, fading to the
+ * picture on the right where the poster hangs; ink again at the foot so the
+ * fold hands off to Now Showing on a clean edge, not a cropped still. */
+.hero-film__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(90deg, rgba(20, 22, 21, 0.96) 0%, rgba(20, 22, 21, 0.86) 38%, rgba(20, 22, 21, 0.45) 62%, rgba(20, 22, 21, 0.25) 100%),
+    linear-gradient(180deg, rgba(20, 22, 21, 0.55) 0%, rgba(20, 22, 21, 0) 25%, rgba(20, 22, 21, 0) 70%, rgba(20, 22, 21, 0.98) 100%);
+}
+
+.hero-film__inner {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 1200px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+  gap: var(--spacing-2xl);
+  align-items: center;
+}
+
+/* Poster is first in the markup (phone reading order) and last on the
+ * desktop grid. */
+.hero-film__poster-wrap {
+  order: 2;
+  display: flex;
+  justify-content: center;
+}
+
+.hero-film__copy {
+  min-width: 0;
+  animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+}
+
+.hero-film__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7em;
+  margin: 0 0 var(--spacing-sm);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+}
+
+/* The headline. An <h2> (the cinema name keeps the <h1>, see the lockup)
+ * carrying the marquee title's neon core so the fold still reads as the
+ * same sign, just saying something different. */
+.hero-film__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(2.6rem, 7vw, 5.5rem);
+  line-height: 0.98;
+  letter-spacing: -0.01em;
+  color: var(--neon-gold-inner);
+  text-wrap: balance;
+  text-shadow:
+    0 0 4px var(--neon-gold-mid),
+    0 0 22px var(--neon-gold-outer),
+    0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+.hero-film__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em 0;
+  margin: var(--spacing-md) 0 0;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.hero-film__meta span + span::before {
+  content: '\00b7';
+  margin: 0 0.6em;
+  color: var(--color-gold);
+}
+
+.hero-film__when {
+  font-weight: 600;
+  color: var(--neon-gold-inner);
+}
+
+.hero-film__cert {
+  display: inline-block;
+  border: 1px solid var(--color-text-muted);
+  border-radius: var(--radius-sm);
+  padding: 0 0.35em;
+  font-family: var(--font-body);
+  font-size: 0.8em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  vertical-align: 0.1em;
+}
+
+.hero-film__note {
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+
+.hero-film__lede {
+  margin: var(--spacing-sm) 0 0;
+  max-width: 46ch;
+  font-family: var(--font-heading);
+  font-style: italic;
+  font-size: 1.3rem;
+  line-height: 1.45;
+  color: var(--color-text-muted);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.hero--film .hero-cta {
+  margin-top: var(--spacing-lg);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.hero--film .hero-members {
+  text-align: left;
+}
+
+/* The poster in the marquee's own frame: gold hairline, ink gap, warm
+ * gold inner line. The slight tilt is a one-sheet pinned in a lobby case. */
+.hero-film__poster {
+  display: block;
+  width: min(100%, 340px);
+  height: auto;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border: 1px solid var(--color-gold);
+  box-shadow:
+    inset 0 0 0 5px var(--color-bg-dark),
+    inset 0 0 0 6px var(--color-gold-warm),
+    0 30px 60px rgba(0, 0, 0, 0.7),
+    0 0 60px var(--neon-gold-far);
+  transform: rotate(-1.5deg);
+}
+
+/* The page's <h1>: name and tagline, small, where the marquee used to
+ * shout it. The nav already carries the real wordmark. */
+.hero-film__lockup {
+  position: relative;
+  z-index: 10;
+  margin: var(--spacing-xl) 0 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 0.78rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  opacity: 0.85;
+}
+
+/* The separator is drawn, not typed, so the phone layout can drop it when
+ * the tagline moves to its own line. */
+.hero-film__lockup-tagline::before {
+  content: '\00b7\00a0';
+}
+
+@media (max-width: 860px) {
+  .hero--film {
+    min-height: 0;
+    padding: calc(70px + var(--spacing-md)) var(--spacing-sm) var(--spacing-lg);
+  }
+
+  .hero-film__inner {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+
+  .hero-film__poster-wrap {
+    order: 0;
+  }
+
+  /* Smaller than the desktop one-sheet: on a phone the poster is a
+   * thumbnail above the title, and the whole fold, buttons included, has
+   * to fit one screen the way the marquee does. */
+  .hero-film__poster {
+    width: min(48vw, 200px);
+    transform: none;
+  }
+
+  /* One column: the picture is behind everything, so the scrim darkens
+   * from the top down instead of left to right. */
+  .hero-film__scrim {
+    background: linear-gradient(180deg, rgba(20, 22, 21, 0.6) 0%, rgba(20, 22, 21, 0.78) 45%, rgba(20, 22, 21, 0.98) 100%);
+  }
+
+  .hero-film__copy {
+    text-align: center;
+  }
+
+  .hero-film__meta {
+    justify-content: center;
+    font-size: 1.1rem;
+  }
+
+  .hero-film__lede {
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 1.1rem;
+  }
+
+  .hero--film .hero-cta {
+    justify-content: center;
+  }
+
+  .hero--film .hero-members {
+    text-align: center;
+  }
+
+  /* Tracked tighter than the desktop lockup so the tagline holds one line
+   * on a 360px phone instead of breaking into three. */
+  .hero-film__lockup {
+    letter-spacing: 0.16em;
+  }
+
+  .hero-film__lockup-tagline {
+    display: block;
+    margin-top: 0.4em;
+  }
+
+  .hero-film__lockup-tagline::before {
+    content: none;
+  }
+}
+
+/* Under 600px the synopsis goes: it repeats in the Now Showing card a
+ * screen down, and it is the line that pushes the buttons off the fold. */
+@media (max-width: 600px) {
+  .hero-film__lede {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-film__copy {
+    animation: none;
+    opacity: 1;
+  }
+}

@@ -1,4 +1,4 @@
-// Pauses the hero's looping animations while it is scrolled out of view.
+// Pauses a hero's looping animations while it is scrolled out of view.
 //
 // Hero.css pauses the grain, the twinkle and the bulb chase under
 // `.hero--offscreen`; this is the only thing that sets it. Without an
@@ -17,7 +17,9 @@ function attach(hero) {
 
 export function initHeroIdle(root = document) {
   if (typeof IntersectionObserver !== 'function') return;
-  root.querySelectorAll('[data-neon]').forEach((hero) => {
+  // [data-neon] is the marquee hero; [data-hero-idle] the film hero, which
+  // has no bulbs to power on but still loops its grain.
+  root.querySelectorAll('[data-neon], [data-hero-idle]').forEach((hero) => {
     if (hero.dataset.heroIdleInit) return;
     hero.dataset.heroIdleInit = '1';
     try {
