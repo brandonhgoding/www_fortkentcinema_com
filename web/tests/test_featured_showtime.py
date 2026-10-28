@@ -144,7 +144,7 @@ class FeaturedShowtimeRowsTests(FeaturedBase):
         self.assertEqual(len(third["times"]), 1)
         # The same time dict the listing chips get, captions included.
         self.assertEqual(first["times"][1]["captions"], "OC")
-        self.assertIn("captions_note", first["times"][1])
+        self.assertEqual(first["times"][1]["captions_label"], "Open Captions")
         self.assertIn("iso", first["times"][0])
 
     def test_every_film_this_week_in_order_of_its_next_showing(self) -> None:
