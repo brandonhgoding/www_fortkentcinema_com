@@ -14,7 +14,7 @@ from web.services.cinema_data import get_featured_showtime
 from web.tests.test_cinema_data import aware, make_engagement, make_film, make_screen
 
 
-class FeaturedShowtimeTests(TestCase):
+class FeaturedBase(TestCase):
     def setUp(self) -> None:
         self.screen = make_screen()
         self.today = timezone.localdate()
@@ -41,6 +41,8 @@ class FeaturedShowtimeTests(TestCase):
             starts_at=self.at(days, hour), **kw,
         )
 
+
+class FeaturedShowtimeTests(FeaturedBase):
     def test_describes_the_next_showing(self) -> None:
         st = self.show(1, 19)
         out = get_featured_showtime(now=self.at(0, 12))
@@ -111,3 +113,77 @@ class FeaturedShowtimeTests(TestCase):
         self.show(1, 19)
         out = get_featured_showtime(now=self.at(0, 12))
         self.assertEqual(out["title"], "Hocus Pocus (Heckle Night)")
+
+
+class FeaturedShowtimeRowsTests(FeaturedBase):
+    """The hero lists the film's own upcoming times by date, and the other
+    films playing this week, so the fold offers a choice, not one checkout."""
+
+    def test_lists_the_films_upcoming_times_by_date(self) -> None:
+        self.show(0, 14)  # already started by 3 PM: not offered
+        tonight = self.show(0, 19)
+        late = self.show(0, 21, captions="OC")
+        tomorrow = self.show(1, 19)
+        self.show(2, 19)
+        self.show(3, 19)  # a fourth date: the listing below covers it
+        out = get_featured_showtime(now=self.at(0, 15))
+        self.assertEqual(
+            [slot["key"] for slot in out["upcoming"]],
+            [(self.today + datetime.timedelta(days=d)).isoformat() for d in (0, 1, 2)],
+        )
+        first, second, third = out["upcoming"]
+        self.assertEqual(
+            [(t["showtime_id"], t["time"]) for t in first["times"]],
+            [(tonight.pk, "7:00 PM"), (late.pk, "9:00 PM")],
+        )
+        self.assertEqual([t["showtime_id"] for t in second["times"]], [tomorrow.pk])
+        self.assertEqual(len(third["times"]), 1)
+        # The same time dict the listing chips get, captions included.
+        self.assertEqual(first["times"][1]["captions"], "OC")
+        self.assertIn("captions_note", first["times"][1])
+        self.assertIn("iso", first["times"][0])
+
+    def test_other_films_this_week_with_their_next_showing(self) -> None:
+        self.show(0, 19)
+        self.show(1, 19)
+        later = make_engagement(
+            self.screen,
+            [make_film("The Princess Bride", poster_url="https://img/pb.jpg")],
+            start=self.today, end=self.today + datetime.timedelta(days=6),
+        )
+        sooner = make_engagement(
+            self.screen, [make_film("There's Something About Mary")],
+            start=self.today, end=self.today + datetime.timedelta(days=6),
+        )
+        over = make_engagement(
+            self.screen, [make_film("Over")],
+            start=self.today, end=self.today,
+        )
+        self.show(2, 19, eng=later)
+        self.show(0, 21, eng=sooner)
+        self.show(0, 14, eng=over)  # its last showing already started
+        out = get_featured_showtime(now=self.at(0, 15))
+        self.assertEqual(
+            out["others"],
+            [
+                {
+                    "id": str(sooner.pk),
+                    "title": "There's Something About Mary",
+                    "poster": "",
+                    "date": self.today.isoformat(),
+                    "time": "9:00 PM",
+                },
+                {
+                    "id": str(later.pk),
+                    "title": "The Princess Bride",
+                    "poster": "https://img/pb.jpg",
+                    "date": (self.today + datetime.timedelta(days=2)).isoformat(),
+                    "time": "7:00 PM",
+                },
+            ],
+        )
+
+    def test_alone_means_no_others(self) -> None:
+        self.show(0, 19)
+        out = get_featured_showtime(now=self.at(0, 15))
+        self.assertEqual(out["others"], [])

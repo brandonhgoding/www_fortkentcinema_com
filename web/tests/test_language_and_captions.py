@@ -69,15 +69,16 @@ class LanguageCaptionsTests(TestCase):
     def test_home_shows_open_captions_chip_and_sentence(self) -> None:
         # The OC chip sits beside the time, as CC does, so the row of times
         # still scans as a row; the sentence under it says what the chip
-        # means, so nobody at the box office is asked. Both cards.
+        # means, so nobody at the box office is asked. Both cards, and the
+        # hero's own row of times, which wears the hero's rating chip.
         self._set(captions="OC")
         html = self.client.get(reverse("home")).content.decode()
         note = (
             '<span class="showtime__note">'
             "This showing will be played with open captions.</span>"
         )
-        self.assertEqual(html.count(note), 2)
-        for chip in ("movie-rating", "schedule-card__rating"):
+        self.assertEqual(html.count(note), 3)
+        for chip in ("movie-rating", "schedule-card__rating", "hero-film__cert"):
             self.assertIn(
                 '<span class="showtime showtime--noted">7:00 PM '
                 f'<abbr class="{chip}" title="Open Captions" aria-hidden="true">'

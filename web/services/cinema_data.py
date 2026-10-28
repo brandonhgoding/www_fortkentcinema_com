@@ -32,6 +32,24 @@ def _format_runtime(minutes):
     return f"{h}h {m}min"
 
 
+def _time_entry(st):
+    """One listed showtime, the shape partials/showtime_chip.html reads and
+    HomeView._add_ticket_state() completes. Shared by the Now Showing cards
+    and the hero's own rows so a time cannot look different in the two."""
+    return {
+        "showtime_id": st.pk,
+        "time": format_showtime(st.starts_at),
+        # Offset-aware ISO-8601 for the home page's schema.org
+        # ScreeningEvent.startDate (partials/home_jsonld.html).
+        "iso": st.starts_at.astimezone(CINEMA_TZ).isoformat(),
+        "captions": st.captions or "",
+        "captions_label": st.get_captions_display() if st.captions else "",
+        # Open captions are burned into the picture, so the whole room reads
+        # them: worth a sentence, not a two-letter chip.
+        "captions_note": OPEN_CAPTIONS_NOTE if st.captions == "OC" else "",
+    }
+
+
 def get_now_showing():
     """Confirmed, visible engagements active in the next 7 days, each with its
     non-cancelled showtimes grouped by local date. Only movies with at least
@@ -53,20 +71,7 @@ def get_now_showing():
         showtimes_by_date = {}
         for st in engagement.showtimes.filter(is_cancelled=False):
             local_date = _local_date(st.starts_at).isoformat()
-            showtimes_by_date.setdefault(local_date, []).append(
-                {
-                    "showtime_id": st.pk,
-                    "time": format_showtime(st.starts_at),
-                    # Offset-aware ISO-8601 for the home page's schema.org
-                    # ScreeningEvent.startDate (partials/home_jsonld.html).
-                    "iso": st.starts_at.astimezone(CINEMA_TZ).isoformat(),
-                    "captions": st.captions or "",
-                    "captions_label": st.get_captions_display() if st.captions else "",
-                    # Open captions are burned into the picture, so the whole
-                    # room reads them: worth a sentence, not a two-letter chip.
-                    "captions_note": OPEN_CAPTIONS_NOTE if st.captions == "OC" else "",
-                }
-            )
+            showtimes_by_date.setdefault(local_date, []).append(_time_entry(st))
         if not showtimes_by_date:
             continue
         movies.append(
@@ -98,16 +103,27 @@ def _hero_backdrop(url):
     return url.replace("/t/p/w780/", "/t/p/w1280/")
 
 
+# Dates the hero lists for the featured film. Beyond these the visitor is
+# one click from the full schedule, and a fourth row pushes the buttons off a
+# phone's first screen.
+HERO_DATES = 3
+
+
 def get_featured_showtime(now=None):
     """The home hero's showing: the next non-cancelled showtime that has not
     started, from the same pool get_now_showing() lists (confirmed, shown in
     the main listings, within the week), so the hero never names a film the
-    listings below it do not. None when nothing is booked."""
+    listings below it do not. None when nothing is booked.
+
+    `upcoming` is that film's own not-yet-started showtimes grouped by local
+    date, the first HERO_DATES dates, each time in the chip shape; `others`
+    is every other film in the pool with its next showing, in order of that
+    showing, so the fold can say what else is on."""
     if now is None:
         now = timezone.now()
     today = _local_date(now)
     week_out = today + datetime.timedelta(days=7)
-    showtime = (
+    showtimes = list(
         Showtime.objects.filter(
             is_cancelled=False,
             starts_at__gte=now,
@@ -119,12 +135,30 @@ def get_featured_showtime(now=None):
         .select_related("engagement")
         .prefetch_related("engagement__engagement_films__film")
         .order_by("starts_at", "pk")
-        .first()
     )
-    if showtime is None:
+    if not showtimes:
         return None
+    showtime = showtimes[0]
     engagement = showtime.engagement
     pf = engagement.primary_film
+
+    by_date = {}
+    others = {}
+    for st in showtimes:
+        if st.engagement_id == engagement.pk:
+            key = _local_date(st.starts_at).isoformat()
+            by_date.setdefault(key, []).append(_time_entry(st))
+        elif st.engagement_id not in others:
+            other = st.engagement
+            opf = other.primary_film
+            others[st.engagement_id] = {
+                "id": str(other.pk),
+                "title": listing_title(other.title or (opf.title if opf else "")),
+                "poster": (opf.poster_url if opf else "") or "",
+                "date": _local_date(st.starts_at).isoformat(),
+                "time": format_showtime(st.starts_at),
+            }
+
     return {
         "showtime_id": showtime.pk,
         "title": listing_title(engagement.title or (pf.title if pf else "")),
@@ -135,6 +169,11 @@ def get_featured_showtime(now=None):
         "backdrop": _hero_backdrop((pf.backdrop_url if pf else "") or ""),
         "date": _local_date(showtime.starts_at).isoformat(),
         "time": format_showtime(showtime.starts_at),
+        "upcoming": [
+            {"key": key, "times": by_date[key]}
+            for key in sorted(by_date)[:HERO_DATES]
+        ],
+        "others": list(others.values()),
     }
 
 
