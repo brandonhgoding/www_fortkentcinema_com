@@ -362,3 +362,12 @@
 .home-story__all {
   margin: var(--spacing-lg) 0 0;
 }
+
+/* The empty week (partials/home_no_showtimes.html): the section under the
+ * marquee that keeps the #now-showing anchor when nothing is booked. */
+.no-showtimes {
+  text-align: center;
+  padding: var(--spacing-2xl);
+  color: var(--color-cream-muted);
+  font-size: 1.1rem;
+}

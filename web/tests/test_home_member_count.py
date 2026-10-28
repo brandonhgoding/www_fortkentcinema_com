@@ -18,7 +18,7 @@ from audience.models import Member, MembershipTerm, MembershipTier
 
 
 @mock.patch("web.views.get_coming_soon", return_value=[])
-@mock.patch("web.views.get_now_showing", return_value=[])
+@mock.patch("web.views.get_hero_films", return_value=[])
 class HomeMemberCountTests(TestCase):
     def setUp(self) -> None:
         self.today = timezone.localdate()
@@ -96,7 +96,7 @@ class HomeMemberCountTests(TestCase):
 
 
 @mock.patch("web.views.get_coming_soon", return_value=[])
-@mock.patch("web.views.get_now_showing", return_value=[])
+@mock.patch("web.views.get_hero_films", return_value=[])
 class HomeMemberCountRenderTests(TestCase):
     def setUp(self) -> None:
         today = timezone.localdate()

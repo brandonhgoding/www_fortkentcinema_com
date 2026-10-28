@@ -69,6 +69,43 @@ def movie(**over):
     return base
 
 
+def _time(pk, time, iso):
+    return {
+        "showtime_id": pk, "time": time, "iso": iso,
+        "captions": "", "captions_label": "", "captions_note": "",
+    }
+
+
+def hero_film(**over):
+    """A film as get_hero_films() shapes it, for mocking the hero."""
+    base = {
+        "id": "1",
+        "showtime_id": 1,
+        "title": "Dune",
+        "rating": "PG-13",
+        "runtime": "2h 35min",
+        "description": "",
+        "poster": "d.jpg",
+        "backdrop": "",
+        "date": "2999-01-15",
+        "time": "6:00 PM",
+        "youtube_id": "abc",
+        "language_label": "",
+        "is_free_for_members": False,
+        "upcoming": [
+            {
+                "key": "2999-01-15",
+                "times": [
+                    _time(1, "6:00 PM", "2999-01-15T18:00:00-05:00"),
+                    _time(2, "9:00 PM", "2999-01-15T21:00:00-05:00"),
+                ],
+            }
+        ],
+    }
+    base.update(over)
+    return base
+
+
 class SectionCompositionTests(TestCase):
     """The page is a plain list of sections now."""
 
@@ -76,7 +113,7 @@ class SectionCompositionTests(TestCase):
         return self.client.get(reverse("home")).content.decode()
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing", return_value=[])
+    @mock.patch("web.views.get_hero_films", return_value=[])
     def test_section_ornaments_are_gone(self, _ns, _cs):
         """Two decorative devices were removed from between and beneath the
         sections, each in every layer it touched:
@@ -97,7 +134,7 @@ class SectionCompositionTests(TestCase):
         self.assertNotIn("fx-divider", html)
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing", return_value=[])
+    @mock.patch("web.views.get_hero_films", return_value=[])
     def test_sections_appear_once_each_in_order(self, _ns, _cs):
         seq = section_sequence(self.home())
         self.assertEqual(
@@ -106,7 +143,7 @@ class SectionCompositionTests(TestCase):
         self.assertEqual(seq[0], "hero")
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing", return_value=[])
+    @mock.patch("web.views.get_hero_films", return_value=[])
     def test_section_order_ends_with_from_the_booth(self, _ns, _cs):
         html = self.home()
         seq = section_sequence(html)
@@ -124,14 +161,14 @@ class SectionCompositionTests(TestCase):
         self.assertNotIn("cta-pair", html)
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing", return_value=[])
+    @mock.patch("web.views.get_hero_films", return_value=[])
     def test_from_the_booth_is_the_last_section_before_the_footer(self, _ns, _cs):
         main = main_content(self.home())
         last = main.rindex("<section")
         self.assertIn('id="from-the-booth"', main[last : last + 200])
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing", return_value=[])
+    @mock.patch("web.views.get_hero_films", return_value=[])
     def test_every_section_has_one_flat_ground(self, _ns, _cs):
         """The class-marker inventory below the hero: each <section> opts into
         the shared .home-section vocabulary with exactly one ground modifier,
@@ -167,20 +204,20 @@ class ShowtimeChipTests(TestCase):
     promised a purchase that cannot happen."""
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing")
+    @mock.patch("web.views.get_hero_films")
     def test_showtimes_are_spans_not_buttons(self, ns, _cs):
-        ns.return_value = [movie()]
+        ns.return_value = [hero_film()]
         html = self.client.get(reverse("home")).content.decode()
         self.assertNotIn('<button class="showtime"', html)
-        # Desktop movie card and the phone schedule card both render the times.
-        self.assertGreaterEqual(html.count('<span class="showtime">'), 4)
+        # The hero's row renders both times.
+        self.assertEqual(html.count('<span class="showtime">'), 2)
         self.assertIn('<span class="showtime">6:00 PM</span>', html)
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing")
+    @mock.patch("web.views.get_hero_films")
     def test_class_name_is_unchanged(self, ns, _cs):
-        """The interface with static/css/MovieCard.css."""
-        ns.return_value = [movie()]
+        """The interface with static/css/HeroFilm.css."""
+        ns.return_value = [hero_film()]
         html = self.client.get(reverse("home")).content.decode()
         self.assertIn('class="showtime"', html)
 
@@ -305,7 +342,7 @@ class TelLinkTests(TestCase):
 
     @mock.patch("web.views.get_calendar_month", return_value={})
     @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing", return_value=[])
+    @mock.patch("web.views.get_hero_films", return_value=[])
     def test_every_tel_link_comes_from_the_config(self, *_):
         with mock.patch.dict(SITE_CONFIG["cinema"], phone_e164="+19995550100",
                              phone="(999) 555-0100"):
@@ -320,7 +357,7 @@ class TelLinkTests(TestCase):
 
 class EmptyStateTests(TestCase):
     @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing", return_value=[])
+    @mock.patch("web.views.get_hero_films", return_value=[])
     def test_now_showing_empty_state_offers_somewhere_to_go(self, _ns, _cs):
         html = self.client.get(reverse("home")).content.decode()
         # Through the links list: the signup form's honeypot has its own </div>.
@@ -332,7 +369,7 @@ class EmptyStateTests(TestCase):
         self.assertIn("#coming-soon", empty)
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing", return_value=[])
+    @mock.patch("web.views.get_hero_films", return_value=[])
     def test_coming_soon_empty_state_is_not_a_blank_void(self, _ns, _cs):
         html = self.client.get(reverse("home")).content.decode()
         self.assertIn('class="coming-empty"', html)
@@ -341,9 +378,9 @@ class EmptyStateTests(TestCase):
         self.assertIn(reverse("blog_list"), empty)
 
     @mock.patch("web.views.get_coming_soon")
-    @mock.patch("web.views.get_now_showing")
+    @mock.patch("web.views.get_hero_films")
     def test_empty_states_stay_out_of_the_way_when_there_is_content(self, ns, cs):
-        ns.return_value = [movie()]
+        ns.return_value = [hero_film()]
         cs.return_value = [
             {
                 "id": "5",
@@ -556,7 +593,6 @@ class GetInvolvedTests(TestCase):
         self.assertIn("See what&rsquo;s next &rarr;", card)
 
 
-
 class HomeTypeAndGroundTests(TestCase):
     """Three heading sizes below the hero, from tokens only, and no ornament
     left on Coming Soon. Read from the source sheets, since the bundle is
@@ -569,8 +605,6 @@ class HomeTypeAndGroundTests(TestCase):
     HEADINGS = {
         "global.css": [".section-title"],
         "HomeSections.css": [".home-membership__title", ".home-card__title"],
-        "MovieCard.css": [".movie-title"],
-        "MovieScheduleCard.css": [".schedule-card__title"],
         "ComingSoon.css": [".coming-movie-title"],
     }
 
@@ -596,11 +630,9 @@ class HomeTypeAndGroundTests(TestCase):
         every breakpoint that sets a gap."""
         rows = {
             "HomeSections.css": ".home-cards",
-            "NowShowing.css": ".movies-grid",
             "ComingSoon.css": ".coming-movies-grid",
         }
-        rows_schedule = ("NowShowing.css", ".schedule-list")
-        for sheet, selector in list(rows.items()) + [rows_schedule]:
+        for sheet, selector in rows.items():
             css = re.sub(r"/\*.*?\*/", "", (self.CSS / sheet).read_text(), flags=re.S)
             gaps = [
                 g.strip()
@@ -705,16 +737,19 @@ class ScreeningEventSchemaTests(TestCase):
                       html.split("@graph")[0])
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing", return_value=[])
+    @mock.patch("web.views.get_hero_films", return_value=[])
     def test_no_block_when_nothing_is_booked(self, _ns, _cs):
         self.assertIsNone(self.events())
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing")
+    @mock.patch("web.views.get_hero_films")
     def test_showtimes_without_an_iso_start_are_skipped_not_fatal(self, ns, _cs):
         """Older fixtures and callers hand the view time dicts with no iso;
         an event with no startDate is worse than no event."""
-        ns.return_value = [movie()]
+        film = hero_film()
+        for time in film["upcoming"][0]["times"]:
+            del time["iso"]
+        ns.return_value = [film]
         self.assertEqual(self.client.get(reverse("home")).status_code, 200)
         self.assertIsNone(self.events())
 

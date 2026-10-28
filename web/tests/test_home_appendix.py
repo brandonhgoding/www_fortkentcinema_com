@@ -14,31 +14,14 @@ from django.test import TestCase
 from django.urls import reverse
 
 from web.constants import SITE_CONFIG, TICKET_PRICES
-from web.tests.test_home_sections import movie
+from web.tests.test_home_sections import hero_film, movie
 
 
 @mock.patch("web.views.get_coming_soon", return_value=[movie(id="2", title="Alpha")])
-@mock.patch("web.views.get_now_showing", return_value=[movie()])
+@mock.patch("web.views.get_hero_films", return_value=[hero_film()])
 class HomeMarkupTests(TestCase):
     def home(self):
         return self.client.get(reverse("home")).content.decode()
-
-    def test_day_switcher_is_a_labelled_group_that_announces_the_day(self, *_):
-        html = self.home()
-        self.assertRegex(
-            html, r'<div class="date-nav" role="group" aria-label="Choose a day">'
-        )
-        self.assertRegex(
-            html, r'<span class="date-nav__current"[^>]*aria-live="polite"'
-        )
-
-    def test_film_cards_show_without_javascript(self, *_):
-        """Alpine strips x-cloak; with no JavaScript nothing does, and every
-        card stayed display:none. The overlay must stay hidden all the same."""
-        noscript = re.search(r"<noscript>(.*?)</noscript>", self.home(), re.S)
-        self.assertIsNotNone(noscript)
-        self.assertIn("#now-showing .movie-card[x-cloak]", noscript.group(1))
-        self.assertNotIn("overlay", noscript.group(1))
 
     def test_view_toggle_says_which_view_is_on(self, *_):
         html = self.home()
@@ -49,9 +32,14 @@ class HomeMarkupTests(TestCase):
         """Some screen readers spell all-caps words letter by letter, and
         search snippets reuse the source text. CSS does the capitals."""
         html = self.home()
-        self.assertIn(f'<h1 class="marquee-title">{SITE_CONFIG["cinema"]["name"]}</h1>', html)
+        name = SITE_CONFIG["cinema"]["name"]
+        self.assertIn(f'<h1 class="hero-film__lockup">{name} ', html)
         self.assertIn(SITE_CONFIG["cinema"]["tagline"].replace("'", "&#x27;"), html)
-        self.assertIn('<h2 class="section-title">Now Showing</h2>', html)
+        self.assertIn(
+            '<p class="hero-film__eyebrow"><span aria-hidden="true">&#9733;</span>'
+            " Now showing",
+            html,
+        )
         self.assertIn('<h2 class="section-title">Coming Soon</h2>', html)
 
     def test_meta_description_carries_quotable_facts(self, *_):

@@ -5,6 +5,8 @@ from unittest import mock
 
 from django.test import TestCase
 from django.urls import reverse
+
+from web.tests.test_home_sections import _time, hero_film
 from django.contrib.staticfiles.finders import find
 
 from blog.models import BlogAuthor, BlogCategory, BlogPost
@@ -90,58 +92,44 @@ class BaseChromeTests(TestCase):
 
 class HomeViewDataTests(TestCase):
     @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing", return_value=[])
+    @mock.patch("web.views.get_hero_films", return_value=[])
     def test_context_has_movie_lists(self, _ns, _cs):
         resp = self.client.get(reverse("home"))
         self.assertEqual(resp.status_code, 200)
-        self.assertIn("now_showing", resp.context)
+        self.assertIn("hero_films", resp.context)
         self.assertIn("coming_soon", resp.context)
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing", return_value=[])
+    @mock.patch("web.views.get_hero_films", return_value=[])
     def test_home_meta_overrides(self, _ns, _cs):
         html = self.client.get(reverse("home")).content.decode()
         self.assertIn("Movies in the St. John Valley", html)  # home <title>/og:title
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing")
-    def test_now_showing_renders_movie_and_dates(self, ns, _cs):
-        ns.return_value = [{
-            "id": "1", "title": "Dune", "rating": "PG-13", "runtime": "2h 35min",
-            "genre": "", "poster": "d.jpg", "youtube_id": "abc",
-            "is_free_for_members": True,
-            "showtimes": {"2999-01-15": [{"time": "6:00 PM", "captions": "", "captions_label": ""}], "2999-01-16": [{"time": "7:00 PM", "captions": "", "captions_label": ""}]},
-        }]
+    @mock.patch("web.views.get_hero_films")
+    def test_hero_renders_the_film_and_every_date(self, ns, _cs):
+        ns.return_value = [hero_film(
+            is_free_for_members=True,
+            upcoming=[
+                {"key": "2999-01-15",
+                 "times": [_time(1, "6:00 PM", "2999-01-15T18:00:00-05:00")]},
+                {"key": "2999-01-16",
+                 "times": [_time(2, "7:00 PM", "2999-01-16T19:00:00-05:00")]},
+            ],
+        )]
         html = self.client.get(reverse("home")).content.decode()
-        self.assertIn("now-showing", html)          # section id
-        self.assertIn("Dune", html)                  # movie title
-        self.assertIn("6:00 PM", html)               # a showtime rendered into DOM
-        self.assertIn("7:00 PM", html)               # both dates' times server-rendered
-        self.assertIn("Free for Members", html)      # free banner
-        self.assertIn('data-spotlight', html)        # spotlight grid hook
-        self.assertIn('data-neon', html)             # hero neon hook
-        self.assertIn('data-cursor-bulbs', html)     # hero cursor bulbs hook
-
-    @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing")
-    def test_movie_with_only_past_showtimes_has_no_broken_nav_or_card(self, ns, _cs):
-        # A movie whose only showtime is in the past has no upcoming dates:
-        # the desktop date-nav must not render (it would be empty/broken),
-        # and the phone schedule-list must not render an empty card for it.
-        ns.return_value = [{
-            "id": "1", "title": "Past Movie", "rating": "PG-13", "runtime": "2h",
-            "genre": "", "poster": "p.jpg", "youtube_id": "",
-            "is_free_for_members": False,
-            "showtimes": {"2000-01-01": [{"time": "6:00 PM", "captions": "", "captions_label": ""}]},
-        }]
-        html = self.client.get(reverse("home")).content.decode()
-        self.assertNotIn("date-nav__current", html)
-        self.assertNotIn("Past Movie", html)
-        self.assertIn("No showtimes available.", html)
+        self.assertIn('id="now-showing"', html)          # the anchor, on the hero
+        self.assertIn('class="hero hero--film"', html)
+        self.assertIn("Dune", html)                      # movie title
+        self.assertIn("6:00 PM", html)                   # a showtime rendered into DOM
+        self.assertIn("7:00 PM", html)                   # both dates server-rendered
+        self.assertIn("Free for Members", html)          # the ribbon
+        self.assertIn('data-hero-idle', html)            # hero idle hook
+        self.assertNotIn('data-neon', html)              # the marquee's hooks stay off
 
 
 class ComingSoonTests(TestCase):
-    @mock.patch("web.views.get_now_showing", return_value=[])
+    @mock.patch("web.views.get_hero_films", return_value=[])
     @mock.patch("web.views.get_coming_soon")
     def test_coming_soon_grid_renders(self, cs, _ns):
         cs.return_value = [{
@@ -199,7 +187,7 @@ class CalendarTests(TestCase):
         self.assertIn(reverse("calendar_month", args=[y + 1, 0]), html2)
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing", return_value=[])
+    @mock.patch("web.views.get_hero_films", return_value=[])
     def test_home_has_view_toggle(self, _ns, _cs):
         html = self.client.get(reverse("home")).content.decode()
         self.assertIn("coming-view-toggle", html)
@@ -261,7 +249,7 @@ class CalendarTests(TestCase):
 
 class HomeIntegrationTests(TestCase):
     @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing", return_value=[])
+    @mock.patch("web.views.get_hero_films", return_value=[])
     def test_full_home_composition_order(self, _ns, _cs):
         html = self.client.get(reverse("home")).content.decode()
         # The hero, then the five sections below it, each rendered once.
@@ -296,13 +284,13 @@ class BlogTeaserTests(TestCase):
         )
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing", return_value=[])
+    @mock.patch("web.views.get_hero_films", return_value=[])
     def test_recent_post_renders_on_home(self, _ns, _cs):
         html = self.client.get(reverse("home")).content.decode()
         self.assertIn("Fort Kent Cinema Turns 90", html)
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing", return_value=[])
+    @mock.patch("web.views.get_hero_films", return_value=[])
     def test_recent_post_renders_as_a_home_card(self, _ns, _cs):
         # The From the booth post cards are home cards, not the /blog/ list
         # card: category and date eyebrow, the title as the link, the
@@ -314,7 +302,7 @@ class BlogTeaserTests(TestCase):
         self.assertIn("By Jane Doe", html)
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_now_showing", return_value=[])
+    @mock.patch("web.views.get_hero_films", return_value=[])
     def test_teaser_shows_three_newest_posts(self, _ns, _cs):
         # From the booth carries the three newest posts, one row of three. Newest first, the rest dropped.
         for i in range(8):
@@ -430,5 +418,5 @@ class StaticAssetsTests(TestCase):
 
     def test_component_css_present(self):
         # Representative sample of the ported component/page sheets.
-        for name in ("css/Hero.css", "css/Nav.css", "css/Footer.css", "css/NowShowing.css"):
+        for name in ("css/Hero.css", "css/Nav.css", "css/Footer.css", "css/HeroFilm.css"):
             self.assertIsNotNone(find(name), f"missing static asset: {name}")

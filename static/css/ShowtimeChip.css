@@ -1,0 +1,121 @@
+/* THE SHOWTIME CHIP — partials/showtime_chip.html.
+ *
+ * One time, in one of four states (purchasable, sold out online, in-person
+ * only, information only). These are the base rules, written for the old
+ * Now Showing cards; the film hero (HeroFilm.css) is the only place a chip
+ * renders on the home page now and restyles them as pills under
+ * .hero--film. The ticket page and the other listings keep these as they
+ * are. */
+/* Showtimes are INFORMATION, not controls.
+
+   These were <button class="showtime"> carrying cursor:pointer, a hover fill
+   and a :focus-visible ring — three separate promises that tapping one buys a
+   ticket. At the time there was no online ticketing path at all: no
+   ticket URL on the Showtime model, no booking link in any template, no JS
+   bound to .showtime, and the only Square link on the site was the gift card.
+   Tickets were sold at the door. The markup became a <span>, and the
+   interactive affordances are deliberately gone with it.
+
+   Do NOT restore cursor:pointer, :hover or :focus-visible on .showtime. The
+   hover fill was a false affordance, not decoration, and a <span> is not
+   focusable so the ring could never have shown for a keyboard user anyway.
+   Online sales have since landed (2026-10): a showing that can be bought
+   online is an <a class="showtime showtime--buy"> instead, and the states
+   live on that modifier below — together, never on the plain chip.
+
+   The chip went too (2026-10 audit): even without the hover, a tinted box
+   with a border still read as a button on a phone, and people tapped it.
+   The times are now set as plain type — bold, tabular, spaced apart — and
+   partials/ticket_info.html sits above them to say how to actually buy.
+
+   Styled here but used by BOTH movie_card.html and movie_schedule_card.html.
+   MovieScheduleCard.css deliberately carries no .showtime override, so this
+   rule is the whole story for both. */
+.showtime {
+  /* Block-level so a wrapped row of times keeps its gap. */
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.5px;
+  /* Times wrap onto two or three rows on a phone; tabular figures keep the
+     digits the same width so the rows read as a column of times. */
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--color-text);
+}
+
+/* A showing on sale online (partials/showtime_chip.html). Same type as the
+   plain time so the row still reads as a schedule; the accent colour, the
+   "Buy" tag and the hover/focus states are what say "tap me". The block
+   padding takes the tap target to about 44px without changing the type. */
+.showtime--buy {
+  padding: 0.6rem 0;
+  color: var(--color-gold);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.showtime--buy:hover {
+  color: var(--color-gold-light);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.showtime--buy:focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* The small "Buy" tag after the time. inline-block keeps the link's hover
+   underline off it. */
+.showtime__buy {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-gold);
+  color: var(--color-on-accent);
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  line-height: 1.4;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.showtime--buy:hover .showtime__buy {
+  background: var(--color-gold-light);
+}
+
+/* CC / OC after a time, wearing the rating chip (.movie-rating here,
+   .schedule-card__rating on the phone card). The chip's border marks it, so
+   the browser's dotted <abbr> underline goes; the title still names it. */
+.showtime abbr {
+  text-decoration: none;
+  vertical-align: middle;
+}
+
+/* An open-captioned showing keeps its OC chip beside the time, so a row of
+   times still scans as a row and OC lines up with CC, and then says what the
+   chip means in a sentence underneath. The time stays bold; the note is
+   quiet body text, and it may wrap, so the item gives up nowrap and takes a
+   width of its own. The sentence is the spoken label: the chip is
+   aria-hidden and the sr-only text CC gets is left out here. */
+.showtime--noted {
+  white-space: normal;
+  /* Wide enough for the sentence to sit on one line at 0.85rem; a 16rem cap
+     left "captions." orphaned on a line of its own on every card. The card
+     itself clamps this on a phone. */
+  max-width: 24rem;
+}
+
+.showtime__note {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.35;
+  color: var(--color-gold);
+}

@@ -1,6 +1,5 @@
 import calendar
 import datetime
-import json
 
 from django.core import signing
 from django.core.exceptions import ValidationError
@@ -43,7 +42,6 @@ from web.forms import AdInquiryForm, RentalInquiryForm
 from web.list_signup import start_signup
 from web.services.cinema_data import (
     CINEMA_TZ,
-    get_now_showing,
     get_coming_soon,
     get_calendar_month,
     get_hero_films,
@@ -53,7 +51,6 @@ from web.services.open_mic import upcoming_nights as upcoming_open_mics
 from web.services.showtimes import (
     today_eastern,
     format_showtime_date,
-    upcoming_dates,
 )
 from web.services import voting as vote_service
 
@@ -64,8 +61,6 @@ class HomeView(TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
 
-        now_showing = get_now_showing()
-        ctx["now_showing"] = now_showing
         coming_soon = get_coming_soon()
         ctx["coming_soon"] = coming_soon
 
@@ -103,17 +98,12 @@ class HomeView(TemplateView):
         ctx["hero_top_bulbs"] = range(17)
         ctx["hero_side_bulbs"] = range(5)
 
-        # Now Showing date navigation. Alpine only toggles which date is
-        # visible, so every date + its label must be present in the DOM.
         today = today_eastern()
 
         # Hero: every film with a showing to come, the next one on the fold
         # and the rest a click away, each with its own times carrying the
-        # same ticket state the listing chips get, so a time on the fold and
-        # on the card agree. One for_showtimes() call for all of them.
-        # `can_buy` picks a film's button pair: with nothing purchasable its
-        # chips are information only and the fold falls back to the
-        # marquee's pair.
+        # ticket state the chips read. The hero is the listing, so this is
+        # the one place a time renders. One for_showtimes() call for all.
         hero_films = get_hero_films()
         hero_times = []
         for film in hero_films:
@@ -126,37 +116,7 @@ class HomeView(TemplateView):
                 film["date"], weekday="short", today=today
             )
         _add_ticket_state(hero_times)
-        for film in hero_films:
-            film["can_buy"] = any(
-                t["ticket_url"] and not t["sold_out"]
-                for slot in film["upcoming"]
-                for t in slot["times"]
-            )
         ctx["hero_films"] = hero_films
-
-        date_keys = set()
-        for movie in now_showing:
-            for date in upcoming_dates(movie.get("showtimes"), today=today):
-                date_keys.add(date)
-            # Per-movie upcoming dates (key/label/times) for the schedule cards
-            # and the per-date showtime blocks in the desktop movie card.
-            ups = upcoming_dates(movie.get("showtimes"), today=today)
-            movie["upcoming"] = [
-                {
-                    "key": d,
-                    "label": format_showtime_date(d, weekday="short", today=today),
-                    "times": movie["showtimes"][d],
-                }
-                for d in ups
-            ]
-            movie["dates_json"] = json.dumps(ups)
-
-        _add_ticket_state(
-            time
-            for movie in now_showing
-            for slot in movie["upcoming"]
-            for time in slot["times"]
-        )
 
         # One schema.org ScreeningEvent per upcoming showtime, flattened here
         # so partials/home_jsonld.html is a single loop with one forloop.last.
@@ -164,31 +124,17 @@ class HomeView(TemplateView):
         # skipped: an event with no startDate is worse than no event.
         ctx["ns_events"] = [
             {
-                "movie": movie,
+                "movie": film,
                 "iso": time["iso"],
                 "ticket_url": time["ticket_url"],
                 "sold_out": time["sold_out"],
                 "in_person": time["in_person"],
             }
-            for movie in now_showing
-            for slot in movie["upcoming"]
+            for film in hero_films
+            for slot in film["upcoming"]
             for time in slot["times"]
             if time.get("iso")
         ]
-
-        ns_dates = sorted(date_keys)
-        ns_dates_labeled = [
-            {"key": d, "label": format_showtime_date(d, today=today)} for d in ns_dates
-        ]
-        today_index = ns_dates.index(today) if today in ns_dates else 0
-
-        ctx["ns_dates"] = ns_dates
-        ctx["ns_today_index"] = today_index
-        ctx["ns_dates_json"] = json.dumps(ns_dates)
-        ctx["ns_labels_json"] = json.dumps([d["label"] for d in ns_dates_labeled])
-        ctx["ns_today_label"] = (
-            ns_dates_labeled[today_index]["label"] if ns_dates_labeled else ""
-        )
 
         return ctx
 

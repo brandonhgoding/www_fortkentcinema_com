@@ -6,7 +6,8 @@ from django.utils import timezone
 
 from web.services.cinema_data import (
     _format_runtime,
-    get_now_showing,
+    get_calendar_month,
+    get_coming_soon,
 )
 
 
@@ -41,93 +42,6 @@ class FormatRuntimeTests(TestCase):
         self.assertEqual(_format_runtime(40), "40min")
         self.assertEqual(_format_runtime(60), "1h")
         self.assertEqual(_format_runtime(100), "1h 40min")
-
-
-class NowShowingTests(TestCase):
-    def setUp(self) -> None:
-        self.screen = make_screen()
-        self.film = make_film("Dune", runtime_minutes=155, rating="PG-13",
-                              synopsis="Paul goes to the desert.",
-                              poster_url="http://p/d.jpg", youtube_id="yt1")
-        self.today = timezone.localdate()
-
-    def test_active_engagement_grouped_by_date(self) -> None:
-        eng = make_engagement(self.screen, [self.film],
-                              start=self.today, end=self.today + datetime.timedelta(days=3))
-        d = self.today
-        Showtime.objects.create(engagement=eng, starts_at=aware(d.year, d.month, d.day, 13, 0))
-        Showtime.objects.create(engagement=eng, starts_at=aware(d.year, d.month, d.day, 19, 0))
-        d2 = self.today + datetime.timedelta(days=1)
-        Showtime.objects.create(engagement=eng, starts_at=aware(d2.year, d2.month, d2.day, 19, 0))
-        out = get_now_showing()
-        self.assertEqual(len(out), 1)
-        m = out[0]
-        self.assertEqual(m["title"], "Dune")
-        self.assertEqual(m["rating"], "PG-13")
-        self.assertEqual(m["runtime"], "2h 35min")
-        self.assertEqual(m["genre"], "")
-        self.assertEqual(m["synopsis"], "Paul goes to the desert.")
-        self.assertEqual(m["poster"], "http://p/d.jpg")
-        self.assertEqual(m["youtube_id"], "yt1")
-        self.assertEqual(sorted(m["showtimes"].keys()), [d.isoformat(), d2.isoformat()])
-        self.assertEqual(
-            [t["time"] for t in m["showtimes"][d.isoformat()]], ["1:00 PM", "7:00 PM"]
-        )
-
-    def test_synopsis_falls_back_to_overview(self) -> None:
-        # The card prints Film.description, so a film we never wrote a synopsis
-        # for still shows the TMDB blurb rather than an empty column.
-        film = make_film("Arrival", overview="Heptapods land.")
-        eng = make_engagement(self.screen, [film], start=self.today,
-                              end=self.today + datetime.timedelta(days=1))
-        Showtime.objects.create(
-            engagement=eng,
-            starts_at=aware(self.today.year, self.today.month, self.today.day, 19, 0),
-        )
-        out = [m for m in get_now_showing() if m["title"] == "Arrival"]
-        self.assertEqual(out[0]["synopsis"], "Heptapods land.")
-
-    def test_hidden_engagement_excluded(self) -> None:
-        eng = make_engagement(self.screen, [self.film],
-                              start=self.today, end=self.today + datetime.timedelta(days=3), show=False)
-        Showtime.objects.create(engagement=eng, starts_at=aware(self.today.year, self.today.month, self.today.day, 19, 0))
-        self.assertEqual(get_now_showing(), [])
-
-    def test_out_of_window_excluded(self) -> None:
-        far = self.today + datetime.timedelta(days=30)
-        eng = make_engagement(self.screen, [self.film], start=far, end=far + datetime.timedelta(days=2))
-        Showtime.objects.create(engagement=eng, starts_at=aware(far.year, far.month, far.day, 19, 0))
-        self.assertEqual(get_now_showing(), [])
-
-    def test_only_cancelled_showtimes_dropped(self) -> None:
-        eng = make_engagement(self.screen, [self.film],
-                              start=self.today, end=self.today + datetime.timedelta(days=3))
-        Showtime.objects.create(engagement=eng,
-                                starts_at=aware(self.today.year, self.today.month, self.today.day, 19, 0),
-                                is_cancelled=True)
-        self.assertEqual(get_now_showing(), [])
-
-    def test_free_for_members_flag(self) -> None:
-        eng = make_engagement(self.screen, [self.film],
-                              start=self.today, end=self.today + datetime.timedelta(days=3),
-                              free_for_members=True)
-        Showtime.objects.create(engagement=eng, starts_at=aware(self.today.year, self.today.month, self.today.day, 19, 0))
-        out = get_now_showing()
-        self.assertTrue(out[0]["is_free_for_members"])
-
-    def test_free_for_members_off_by_default_for_classics(self) -> None:
-        eng = make_engagement(self.screen, [self.film], start=self.today,
-                              end=self.today + datetime.timedelta(days=3),
-                              kind="CLASSIC")
-        Showtime.objects.create(
-            engagement=eng,
-            starts_at=aware(self.today.year, self.today.month, self.today.day, 19, 0),
-        )
-        out = get_now_showing()
-        self.assertFalse(out[0]["is_free_for_members"])
-
-
-from web.services.cinema_data import get_coming_soon
 
 
 class ComingSoonTests(TestCase):
@@ -181,9 +95,6 @@ class ComingSoonTests(TestCase):
         self.assertEqual(get_coming_soon()[0]["release_date"], expected)
 
 
-from web.services.cinema_data import get_calendar_month
-
-
 class CalendarMonthTests(TestCase):
     def setUp(self) -> None:
         self.screen = make_screen()
@@ -226,35 +137,3 @@ class CalendarMonthTests(TestCase):
         self.eng.save()
         Showtime.objects.create(engagement=self.eng, starts_at=aware(2026, 6, 4, 19, 0))
         self.assertIn(4, get_calendar_month(2026, 5))
-
-
-class NowShowingIsoTests(TestCase):
-    def test_each_showtime_carries_an_offset_aware_iso_start(self) -> None:
-        """schema.org ScreeningEvent.startDate needs the wall-clock time with
-        its UTC offset, not the display string the chips render."""
-        from web.services.cinema_data import CINEMA_TZ
-
-        screen = make_screen()
-        film = make_film("Dune")
-        today = timezone.localdate()
-        eng = make_engagement(screen, [film], start=today, end=today)
-        st = Showtime.objects.create(
-            engagement=eng, starts_at=aware(today.year, today.month, today.day, 19, 30)
-        )
-        (m,) = get_now_showing()
-        (slot,) = m["showtimes"].values()
-        self.assertEqual(slot[0]["iso"], st.starts_at.astimezone(CINEMA_TZ).isoformat())
-        self.assertRegex(slot[0]["iso"], r"[+-]\d\d:\d\d$")
-
-    def test_time_dict_carries_showtime_id(self) -> None:
-        """The home view looks up online availability by showtime pk."""
-        screen = make_screen()
-        film = make_film("Dune")
-        today = timezone.localdate()
-        eng = make_engagement(screen, [film], start=today, end=today)
-        st = Showtime.objects.create(
-            engagement=eng, starts_at=aware(today.year, today.month, today.day, 19, 30)
-        )
-        (m,) = get_now_showing()
-        (slot,) = m["showtimes"].values()
-        self.assertEqual(slot[0]["showtime_id"], st.pk)

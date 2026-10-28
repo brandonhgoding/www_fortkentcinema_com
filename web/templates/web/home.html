@@ -13,11 +13,14 @@ and what it costs. Prices from TICKET_PRICES, like the ticket line.{% endcomment
 
 {% block content %}
   {% comment %}
-    The hero, then up to five sections in order of weight, asserted by
+    The hero, then up to four sections in order of weight, asserted by
     web/tests/test_pages.py::test_full_home_composition_order and
-    web/tests/test_home_sections.py:
+    web/tests/test_home_sections.py. The hero is the listing (the film
+    hero carries the week's showtimes and the #now-showing anchor); in a
+    week with nothing booked the marquee is the fold and a slim section
+    under it keeps that anchor with the empty state (test_home_listing.py):
 
-      now-showing   tier 1   what is playing
+      now-showing   (empty week only) nothing booked, somewhere to go
       membership    featured the one big ask, on the blue band
       coming-soon   tier 2   what is playing later
       get-involved  tier 3   open mic, Heckle Night, advertise: one row of cards
@@ -28,7 +31,7 @@ and what it costs. Prices from TICKET_PRICES, like the ticket line.{% endcomment
   {% endcomment %}
 
   {% include "partials/hero.html" %}
-  {% include "partials/now_showing.html" %}
+  {% if not hero_films %}{% include "partials/home_no_showtimes.html" %}{% endif %}
   {% include "partials/home_membership.html" %}
   {% include "partials/coming_soon.html" %}
   {% include "partials/home_get_involved.html" %}

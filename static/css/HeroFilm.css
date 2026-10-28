@@ -41,7 +41,8 @@
 
 /* Solid ink on the left so the title sits on brand colour, fading to the
  * picture on the right where the poster hangs; ink again at the foot so the
- * fold hands off to Now Showing on a clean edge, not a cropped still. */
+ * fold hands off to the membership band on a clean edge, not a cropped
+ * still. */
 .hero-film__scrim {
   position: absolute;
   inset: 0;
@@ -72,11 +73,69 @@
 }
 
 /* Poster is first in the markup (phone reading order) and last on the
- * desktop grid. */
+ * desktop grid. The wrap is the poster's box, sized to it and tilted with
+ * it, so the ribbon and the play badge sit on the one-sheet and not on the
+ * column around it. */
 .hero-film__poster-wrap {
   order: 2;
+  position: relative;
+  width: min(100%, 340px);
+  justify-self: center;
+  transform: rotate(-1.5deg);
+}
+
+/* With a trailer the poster is the button; the badge says so and the
+ * "Watch trailer" text button under the copy says so in words. */
+.hero-film__poster-wrap--playable {
+  cursor: pointer;
+}
+
+.hero-film__poster-wrap--playable:focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 6px;
+}
+
+.hero-film__play {
+  position: absolute;
+  inset: 0;
   display: flex;
+  align-items: center;
   justify-content: center;
+  pointer-events: none;
+}
+
+.hero-film__play svg {
+  width: 64px;
+  height: 64px;
+  opacity: 0.85;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
+  transition: opacity var(--transition-base), transform var(--transition-base);
+}
+
+.hero-film__poster-wrap--playable:hover .hero-film__play svg,
+.hero-film__poster-wrap--playable:focus-visible .hero-film__play svg {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* "Free for Members", the ribbon the listing card wore, pinned to the
+ * poster's top-left over the frame. Ink on the accent fill, never the
+ * cream alias (see the note that used to sit on .movie-free-banner). */
+.hero-film__ribbon {
+  position: absolute;
+  top: 14px;
+  left: -4px;
+  z-index: 3;
+  padding: 0.3rem 0.75rem;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-family: var(--font-condensed);
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border-radius: 0 3px 3px 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
 }
 
 .hero-film__copy {
@@ -137,7 +196,8 @@
   color: var(--neon-gold-inner);
 }
 
-.hero-film__cert {
+.hero-film__cert,
+.hero-film__lang {
   display: inline-block;
   border: 1px solid var(--color-text-muted);
   border-radius: var(--radius-sm);
@@ -165,10 +225,66 @@
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-.hero--film .hero-cta {
-  margin-top: var(--spacing-lg);
-  flex-wrap: wrap;
+/* The text way to the trailer, under the copy. */
+.hero-film__trailer {
+  display: inline-flex;
   align-items: center;
+  gap: 0.5em;
+  margin: var(--spacing-sm) 0 0;
+  padding: 0.35rem 0;
+  min-height: 44px;
+  background: transparent;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  cursor: pointer;
+}
+
+.hero-film__trailer:hover {
+  color: var(--color-gold-light);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.hero-film__trailer:focus-visible,
+.hero-film__more:focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+/* Rows past the third sit behind this, the same words the phone schedule
+ * card used. Quiet: the three rows above it are the call to action. */
+.hero-film__more {
+  display: block;
+  min-height: 44px;
+  margin-top: var(--spacing-xs);
+  padding: 0.35rem 0;
+  background: transparent;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  color: var(--color-gold);
+  cursor: pointer;
+}
+
+.hero-film__more:hover {
+  color: var(--color-gold-light);
+  text-decoration: underline;
+}
+
+/* The ticket line (TicketInfo.css) closes the panel, under the rows it
+ * explains: left with the copy, smaller, and no bottom margin to the
+ * strip. */
+.hero--film .ticket-info {
+  max-width: 44rem;
+  margin: var(--spacing-md) 0 0;
+  font-size: 0.9rem;
+  text-align: left;
 }
 
 /* The member line sits at the foot of the fold with the lockup, centred,
@@ -187,7 +303,7 @@
  * gold inner line. The slight tilt is a one-sheet pinned in a lobby case. */
 .hero-film__poster {
   display: block;
-  width: min(100%, 340px);
+  width: 100%;
   height: auto;
   aspect-ratio: 2 / 3;
   object-fit: cover;
@@ -197,7 +313,6 @@
     inset 0 0 0 6px var(--color-gold-warm),
     0 30px 60px rgba(0, 0, 0, 0.7),
     0 0 60px var(--neon-gold-far);
-  transform: rotate(-1.5deg);
 }
 
 /* The page's <h1>: name and tagline, small, where the marquee used to
@@ -410,9 +525,9 @@
   }
 
   /* Smaller than the desktop one-sheet: on a phone the poster is a
-   * thumbnail above the title, and the whole fold, buttons included, has
-   * to fit one screen the way the marquee does. */
-  .hero-film__poster {
+   * thumbnail above the title, and the fold has to fit one screen the way
+   * the marquee does. */
+  .hero-film__poster-wrap {
     transform: none;
   }
 
@@ -437,15 +552,40 @@
     font-size: 1.1rem;
   }
 
-  .hero--film .hero-cta {
-    justify-content: center;
+  /* Three rows have to fit on one phone screen with the poster: date and
+   * pills on one centred line, everything a size down, and the poster a
+   * smaller thumbnail than the one-film fold had. */
+  .hero-film__poster-wrap {
+    width: min(42vw, 170px);
   }
 
-  /* Three rows have to fit above the buttons on one phone screen, with
-   * the poster: date and pills on one centred line, everything a size
-   * down, and the poster a smaller thumbnail than the one-film fold had. */
-  .hero-film__poster {
-    width: min(42vw, 170px);
+  .hero-film__play svg {
+    width: 44px;
+    height: 44px;
+  }
+
+  .hero-film__ribbon {
+    top: 8px;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+  }
+
+  .hero-film__more,
+  .hero-film__trailer {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Centred under the rows; the "where to pay" sentence may wrap here, it
+   * is wider than a phone, while the prices keep their one-item lines. */
+  .hero--film .ticket-info {
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+  }
+
+  .hero--film .ticket-info__where > * {
+    white-space: normal;
   }
 
   .hero-film__row {
@@ -510,7 +650,7 @@
  * takes its own, the same on every row, and the poster gives back the
  * height. */
 @media (max-width: 380px) {
-  .hero-film__poster {
+  .hero-film__poster-wrap {
     width: 38vw;
   }
 
@@ -520,13 +660,73 @@
   }
 }
 
-/* Under 600px the synopsis goes: it repeats in the Now Showing card a
- * screen down, and it is the line that pushes the buttons off the fold. */
+/* Under 600px the synopsis goes: it is the line that pushes the showtimes
+ * off the first screen. */
 @media (max-width: 600px) {
   .hero-film__lede {
     display: none;
   }
+
+  .now-trailer-content {
+    width: 95vw;
+  }
+
+  .now-trailer-close {
+    top: -40px;
+  }
 }
+
+/* The trailer dialog, one for the fold (the markup is at the foot of
+ * hero_film.html). Coming Soon has its own, .coming-trailer-*. */
+/* Trailer overlay */
+.now-trailer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.now-trailer-content {
+  position: relative;
+  width: 90vw;
+  max-width: 960px;
+}
+
+.now-trailer-close {
+  position: absolute;
+  top: -44px;
+  right: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 0;
+  opacity: 0.8;
+  transition: opacity var(--transition-base);
+}
+
+.now-trailer-close:hover {
+  opacity: 1;
+}
+
+.now-trailer-player {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 */
+}
+
+.now-trailer-player iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: var(--radius-md);
+}
+
 
 @media (prefers-reduced-motion: reduce) {
   .hero-film__copy,

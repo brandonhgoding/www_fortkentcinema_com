@@ -20,7 +20,7 @@ from web.constants import (
 
 @mock.patch("web.views.get_calendar_month", return_value={})
 @mock.patch("web.views.get_coming_soon", return_value=[])
-@mock.patch("web.views.get_now_showing", return_value=[])
+@mock.patch("web.views.get_hero_films", return_value=[])
 class LlmsTxtTests(TestCase):
     def get(self):
         response = self.client.get("/llms.txt")

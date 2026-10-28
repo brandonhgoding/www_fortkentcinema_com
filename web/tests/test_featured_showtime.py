@@ -7,7 +7,7 @@ never names a film the listings below it do not.
 
 import datetime
 
-from cinema.models import Showtime
+from cinema.models import Language, Showtime, Translation
 from django.test import TestCase
 from django.utils import timezone
 
@@ -126,13 +126,16 @@ class FeaturedShowtimeRowsTests(FeaturedBase):
         late = self.show(0, 21, captions="OC")
         tomorrow = self.show(1, 19)
         self.show(2, 19)
-        self.show(3, 19)  # a fourth date: the listing below covers it
+        self.show(3, 19)  # a fourth date: the hero is the whole listing now
         out = get_hero_films(now=self.at(0, 15))[0]
         self.assertEqual(
             [slot["key"] for slot in out["upcoming"]],
-            [(self.today + datetime.timedelta(days=d)).isoformat() for d in (0, 1, 2)],
+            [
+                (self.today + datetime.timedelta(days=d)).isoformat()
+                for d in (0, 1, 2, 3)
+            ],
         )
-        first, second, third = out["upcoming"]
+        first, second, third, _fourth = out["upcoming"]
         self.assertEqual(
             [(t["showtime_id"], t["time"]) for t in first["times"]],
             [(tonight.pk, "7:00 PM"), (late.pk, "9:00 PM")],
@@ -186,6 +189,41 @@ class FeaturedShowtimeRowsTests(FeaturedBase):
         )
         self.assertEqual(mary["date"], self.today.isoformat())
         self.assertEqual(mary["time"], "9:00 PM")
+
+    def test_lists_every_date_of_the_week(self) -> None:
+        """The hero is the listing now: nothing caps the rows. Seven dates
+        of a week-long run all come through, in order."""
+        for day in range(7):
+            self.show(day, 19)
+        out = get_hero_films(now=self.at(0, 15))[0]
+        self.assertEqual(len(out["upcoming"]), 7)
+        self.assertEqual(
+            [slot["key"] for slot in out["upcoming"]],
+            [(self.today + datetime.timedelta(days=d)).isoformat() for d in range(7)],
+        )
+
+    def test_carries_the_trailer_language_and_free_flag(self) -> None:
+        """What the listing card used to show and the fold did not: the
+        trailer id, the language label, and the free-for-members ribbon."""
+        self.film.youtube_id = "yt123"
+        self.film.save()
+        self.eng.language = Language.FRENCH
+        self.eng.translation = Translation.SUBTITLED
+        self.eng.is_free_for_members = True
+        self.eng.save()
+        self.show(0, 19)
+        out = get_hero_films(now=self.at(0, 15))[0]
+        self.assertEqual(out["youtube_id"], "yt123")
+        self.assertEqual(out["language_label"], self.eng.language_label)
+        self.assertNotEqual(out["language_label"], "")
+        self.assertTrue(out["is_free_for_members"])
+
+    def test_plain_english_film_without_a_trailer(self) -> None:
+        self.show(0, 19)
+        out = get_hero_films(now=self.at(0, 15))[0]
+        self.assertEqual(out["youtube_id"], "")
+        self.assertEqual(out["language_label"], "")
+        self.assertFalse(out["is_free_for_members"])
 
     def test_alone_is_a_list_of_one(self) -> None:
         self.show(0, 19)

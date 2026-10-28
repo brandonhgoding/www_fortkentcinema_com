@@ -1,14 +1,25 @@
 {% comment %}
   The film hero: the first fold is the next showing (HomeView `hero_films`,
-  from get_hero_films, the next film first). One panel per film; Alpine
+  from get_hero_films, the next film first), and since 2026-10-28 it is the
+  listing too: the Now Showing section is gone, so the fold carries the
+  week's showtimes, the trailer, the ticket line and the #now-showing
+  anchor the nav and the other pages point at. One panel per film; Alpine
   shows the one in `film`, the first before Alpine runs (the others are
   x-cloak, and the <noscript> rule stacks them when nothing runs at all).
   Markup order inside a panel is the reading order on a phone: poster,
-  then title, then the film's showtimes, then the buttons.
+  then title, then the film's showtimes, then the ticket line.
 
-  The showtimes are the call to action: one row per date (HERO_DATES of
-  them), each time the shared chip from partials/showtime_chip.html, so the
-  fold offers the same choice the listing does and never one checkout.
+  The showtimes are the call to action: one row per date, every date of
+  the week, each time the shared chip from partials/showtime_chip.html, so
+  the fold offers the same choice the listing did and never one checkout.
+  Rows past the third fold behind a per-panel "Show all N dates" toggle so
+  a seven-night run does not push the rest of the fold off a phone; the
+  <noscript> rule shows every row when nothing runs.
+
+  The poster is the trailer button when the film has one, with the play
+  badge the listing card wore, and a "Watch trailer" text button under the
+  copy names it for anyone who would not try the picture. One dialog for
+  the fold, after the panels; Coming Soon keeps its own.
 
   The "Also showing" strip lists every film; Alpine hides the one on the
   fold, so a click swaps the panel in place and the film that just left
@@ -28,8 +39,9 @@
   neither keeps the starfield. Styles: static/css/HeroFilm.css, inside the
   dark token block Hero.css declares on .hero.
 {% endcomment %}
-<section class="hero hero--film" data-hero-idle x-data="{ film: 0 }">
-  <noscript><style>.hero-film__panel[x-cloak] { display: revert !important; }</style></noscript>
+<section class="hero hero--film" id="now-showing" data-hero-idle x-data="{ film: 0, trailer: null }"
+         x-effect="document.body.style.overflow = trailer ? 'hidden' : ''">
+  <noscript><style>.hero-film__panel[x-cloak], .hero-film__row[x-cloak] { display: revert !important; }</style></noscript>
   <div class="hero-background"></div>
   {% for featured in hero_films %}
   <article class="hero-film__panel" id="hero-film-{{ forloop.counter }}"{% if not forloop.first %} x-cloak{% endif %} x-show="film === {{ forloop.counter0 }}">
@@ -44,27 +56,45 @@
 
     <div class="hero-film__inner">
       {% if featured.poster %}
+      {% if featured.youtube_id %}
+      <div class="hero-film__poster-wrap hero-film__poster-wrap--playable" role="button" tabindex="0" aria-label="Watch {{ featured.title }} trailer" data-track="trailer_play" data-track-film="{{ featured.title }}" @click="trailer = { title: '{{ featured.title|escapejs }}', youtube_id: '{{ featured.youtube_id|escapejs }}' }" @keydown.enter.prevent="trailer = { title: '{{ featured.title|escapejs }}', youtube_id: '{{ featured.youtube_id|escapejs }}' }" @keydown.space.prevent="trailer = { title: '{{ featured.title|escapejs }}', youtube_id: '{{ featured.youtube_id|escapejs }}' }">
+      {% else %}
       <div class="hero-film__poster-wrap">
+      {% endif %}
+        {% if featured.is_free_for_members %}<span class="hero-film__ribbon">Free for Members</span>{% endif %}
         <img class="hero-film__poster" src="{{ featured.poster }}" alt="{{ featured.title }} poster" width="340" height="510" {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %} decoding="async">
+        {% if featured.youtube_id %}
+        <span class="hero-film__play" aria-hidden="true"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="23" fill="rgba(0,0,0,0.6)" stroke="white" stroke-width="2" /><polygon points="19,14 19,34 35,24" fill="white" /></svg></span>
+        {% endif %}
       </div>
       {% endif %}
 
       <div class="hero-film__copy">
         <p class="hero-film__eyebrow"><span aria-hidden="true">&#9733;</span> Now showing <span aria-hidden="true">&#9733;</span></p>
         <h2 class="hero-film__title" tabindex="-1" x-ref="title{{ forloop.counter0 }}">{{ featured.title }}</h2>
-        {% if featured.rating or featured.runtime %}
+        {% if featured.rating or featured.runtime or featured.language_label %}
         <p class="hero-film__meta">
           {% if featured.rating %}<span><span class="hero-film__cert">{{ featured.rating }}</span></span>{% endif %}
           {% if featured.runtime %}<span>{{ featured.runtime }}</span>{% endif %}
+          {% if featured.language_label %}<span><span class="hero-film__lang">{{ featured.language_label }}</span></span>{% endif %}
         </p>
         {% endif %}
         {% if featured.description %}
         <p class="hero-film__lede">{{ featured.description|truncatewords:25 }}</p>
         {% endif %}
+        {% if featured.youtube_id %}
+        <button class="hero-film__trailer" type="button" data-track="trailer_play" data-track-film="{{ featured.title }}" @click="trailer = { title: '{{ featured.title|escapejs }}', youtube_id: '{{ featured.youtube_id|escapejs }}' }"><span aria-hidden="true">&#9654;</span> Watch trailer</button>
+        {% endif %}
 
+        {% comment %}
+          `expanded` is scoped to this box, not the panel: a nested x-data on
+          the <article> would hide the title's x-ref from the strip's click
+          handler in the section scope, and the focus move would break.
+        {% endcomment %}
+        <div class="hero-film__schedule" x-data="{ expanded: false }">
         <dl class="hero-film__dates" aria-label="Showtimes for {{ featured.title }}">
           {% for slot in featured.upcoming %}
-          <div class="hero-film__row">
+          <div class="hero-film__row"{% if forloop.counter0 >= 3 %} x-show="expanded" x-cloak{% endif %}>
             <dt class="hero-film__date">{{ slot.label }}</dt>
             <dd class="hero-film__times">
               {% for time in slot.times %}
@@ -74,22 +104,12 @@
           </div>
           {% endfor %}
         </dl>
-
-        {% comment %}
-          With a time to buy the chips are the primary action and the one
-          button is the quiet way to the full schedule. With none (Square
-          off, run not on sale, every listed time sold out online or in
-          person only) the chips are plain type and the button is the
-          primary one. No Join Membership here: the nav's Become a Member
-          button is in view on the fold.
-        {% endcomment %}
-        <div class="hero-cta">
-          {% if featured.can_buy %}
-          <a href="#now-showing" class="btn btn-secondary">All Showtimes</a>
-          {% else %}
-          <a href="#now-showing" class="btn btn-ticket">View Showtimes</a>
-          {% endif %}
+        {% if featured.upcoming|length > 3 %}
+        <button class="hero-film__more" type="button" @click="expanded = !expanded" :aria-expanded="expanded"><span x-text="expanded ? 'Show fewer dates' : 'Show all {{ featured.upcoming|length }} dates'">Show all {{ featured.upcoming|length }} dates</span></button>
+        {% endif %}
         </div>
+
+        {% include "partials/ticket_info.html" %}
       </div>
     </div>
   </article>
@@ -117,4 +137,36 @@
   {% include "partials/hero_members.html" with extra_class="hero-film__members" %}
 
   <h1 class="hero-film__lockup">{{ site_config.cinema.name }} <span class="hero-film__lockup-tagline">{{ site_config.cinema.tagline }}</span></h1>
+
+  {% comment %}
+  A modal: focus moves to Close on open and is pulled back there if it lands
+  behind the overlay; Escape closes; focus returns to the poster that opened
+  it. Escape can't reach the page while the YouTube player itself has focus;
+  Close still works then.
+  {% endcomment %}
+  <div class="now-trailer-overlay" x-cloak x-show="trailer" role="dialog" aria-modal="true"
+       :aria-label="(trailer ? trailer.title : '') + ' trailer'"
+       x-data="{ opener: null }"
+       x-init="$watch('trailer', t => t
+         ? (opener = document.activeElement, $nextTick(() => $refs.close.focus()))
+         : opener && opener.focus())"
+       @keydown.escape.window="trailer = null"
+       @focusin.window="trailer && !$el.contains($event.target) && $refs.close.focus()">
+    <div class="now-trailer-content">
+      <button class="now-trailer-close" x-ref="close" @click="trailer = null" aria-label="Close trailer">
+        <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+          <line x1="4" y1="4" x2="20" y2="20" stroke="white" stroke-width="2.5" stroke-linecap="round" />
+          <line x1="20" y1="4" x2="4" y2="20" stroke="white" stroke-width="2.5" stroke-linecap="round" />
+        </svg>
+      </button>
+      <div class="now-trailer-player">
+        <iframe
+          :src="trailer ? 'https://www.youtube-nocookie.com/embed/' + trailer.youtube_id + '?autoplay=1&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3' : ''"
+          :title="(trailer ? trailer.title : '') + ' trailer'"
+          allow="autoplay; encrypted-media"
+          allowfullscreen>
+        </iframe>
+      </div>
+    </div>
+  </div>
 </section>

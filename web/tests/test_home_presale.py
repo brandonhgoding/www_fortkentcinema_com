@@ -17,7 +17,7 @@ SQUARE = "https://square.link/u/EYztfLV6"
 
 
 @mock.patch("web.views.get_coming_soon", return_value=[])
-@mock.patch("web.views.get_now_showing", return_value=[])
+@mock.patch("web.views.get_hero_films", return_value=[])
 class HomePresaleGoneTests(TestCase):
     def test_home_has_no_presale_before_the_old_deadline(self, *_):
         with mock.patch("web.views.today_eastern", return_value="2026-10-23"):

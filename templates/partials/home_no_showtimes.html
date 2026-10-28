@@ -1,0 +1,37 @@
+{% comment %}
+  The week with nothing booked. The marquee is the fold (partials/hero.html)
+  and this is the section under it, keeping the #now-showing anchor the
+  marquee's View Showtimes button, the nav and the other pages point at.
+  In a booked week the film hero carries that anchor and this never renders.
+
+  This used to be one flat sentence and a dead end. The home page carries
+  almost all of this site's search clicks, so whatever stands here when
+  nothing is booked is indexable content: it should say what is true and
+  then hand the visitor somewhere to go.
+{% endcomment %}
+<section class="home-section home-section--raised" id="now-showing">
+  <div class="section-container">
+    <div class="no-showtimes">
+      <p class="no-showtimes__lead">No showtimes available.</p>
+      <p class="no-showtimes__body">
+        The screen is dark between bookings. New runs go up here as soon as
+        they are confirmed, and we post every one to Facebook first.
+      </p>
+      {% include "partials/list_signup.html" with list_signup_location="home_empty" list_signup_lead="Get an email the moment new runs are booked." %}
+      <ul class="no-showtimes__links">
+        <li><a href="#coming-soon">See what is coming soon</a></li>
+        {% if site_config.social.facebook %}
+        <li>
+          <a href="{{ site_config.social.facebook }}"
+             target="_blank" rel="noopener noreferrer"
+             data-track="facebook_click" data-track-location="now_showing_empty">
+            Follow us on Facebook
+          </a>
+        </li>
+        {% endif %}
+        <li><a href="/membership/">Join the Cinema Club</a></li>
+        <li><a href="/history/">Read the history, back to 1917</a></li>
+      </ul>
+    </div>
+  </div>
+</section>
