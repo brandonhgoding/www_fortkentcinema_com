@@ -57,37 +57,24 @@ class LanguageCaptionsTests(TestCase):
         times = slot["times"]
         self.assertEqual(times[0]["captions"], "OC")
         self.assertEqual(times[0]["captions_label"], "Open Captions")
-        self.assertEqual(
-            times[0]["captions_note"],
-            "This showing will be played with open captions.",
-        )
+        # The chip is the whole of it: no sentence rides along.
+        self.assertNotIn("captions_note", times[0])
 
-    def test_closed_captions_carry_no_note(self) -> None:
-        self._set(captions="CC")
-        (slot,) = get_hero_films()[0]["upcoming"]
-        self.assertEqual(slot["times"][0]["captions_note"], "")
-
-    def test_home_shows_open_captions_chip_and_sentence(self) -> None:
-        # The OC chip sits beside the time, as CC does, so the row of times
-        # still scans as a row; the sentence under it says what the chip
-        # means, so nobody at the box office is asked. The hero's row of
-        # times is the listing, and it wears the hero's rating chip.
+    def test_home_shows_open_captions_chip_only(self) -> None:
+        # The OC chip sits beside the time exactly as CC does, so the row of
+        # times scans as a row and keeps one height. The hero's row of times
+        # is the listing, and it wears the hero's rating chip; the sr-only
+        # label spells the chip out for screen readers, as CC gets.
         self._set(captions="OC")
         html = self.client.get(reverse("home")).content.decode()
-        note = (
-            '<span class="showtime__note">'
-            "This showing will be played with open captions.</span>"
-        )
-        self.assertEqual(html.count(note), 1)
         self.assertIn(
-            '<span class="showtime showtime--noted">7:00 PM '
+            '<span class="showtime">7:00 PM '
             '<abbr class="hero-film__cert" title="Open Captions" aria-hidden="true">'
-            "OC</abbr>" + note,
+            'OC</abbr><span class="sr-only">Open Captions</span></span>',
             html,
         )
-        # The sentence is the spoken label; a second sr-only "Open Captions"
-        # would read it twice.
-        self.assertNotIn('<span class="sr-only">Open Captions</span>', html)
+        self.assertNotIn("open captions", html)
+        self.assertNotIn("showtime--noted", html)
 
     def test_home_shows_label_and_caption_chip(self) -> None:
         self._set(language=Language.FRENCH, translation=Translation.SUBTITLED,

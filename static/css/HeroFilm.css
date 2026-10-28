@@ -415,8 +415,8 @@
   color: var(--color-gold);
 }
 
-/* Sold out / in-person / open captions: the note goes beside the time
- * inside the pill, not under it, so a row of pills keeps one height. */
+/* Sold out / in-person: the note goes beside the time inside the pill, not
+ * under it, so a row of pills keeps one height. */
 .hero--film .showtime--noted {
   max-width: none;
 }

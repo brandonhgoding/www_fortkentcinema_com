@@ -72,7 +72,7 @@ def movie(**over):
 def _time(pk, time, iso):
     return {
         "showtime_id": pk, "time": time, "iso": iso,
-        "captions": "", "captions_label": "", "captions_note": "",
+        "captions": "", "captions_label": "",
     }
 
 

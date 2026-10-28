@@ -88,7 +88,7 @@ class HomeTicketChipTests(TestCase):
         self.assertNotIn("Sold out online", html)
         self.assertIn('<span class="showtime">7:00 PM</span>', html)
 
-    def test_open_captions_note_survives_on_a_buy_link(self):
+    def test_open_captions_chip_survives_on_a_buy_link(self):
         self.st.captions = "OC"
         self.st.save()
         html = self.home()
@@ -96,8 +96,11 @@ class HomeTicketChipTests(TestCase):
             r'<a class="showtime[^"]*" href="%s">.*?</a>' % self.buy_url, html, re.S
         )
         self.assertIsNotNone(link)
-        self.assertIn("showtime--noted", link.group(0))
-        self.assertIn('class="showtime__note"', link.group(0))
+        self.assertIn(">OC</abbr>", link.group(0))
+        self.assertIn('<span class="sr-only">Open Captions</span>', link.group(0))
+        # The chip alone: no sentence, so the pill keeps the row's height.
+        self.assertNotIn("showtime--noted", link.group(0))
+        self.assertNotIn("showtime__note", link.group(0))
 
     def test_chip_count_does_not_add_queries(self):
         with CaptureQueriesContext(connection) as one:

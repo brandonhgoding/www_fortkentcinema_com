@@ -14,6 +14,8 @@ from cinema.models import Engagement, Showtime
 
 from web.services.titles import listing_title
 
+# The ticket page's one-line note (tickets/views.py). The listing chips say
+# OC with a spelled-out screen-reader label instead.
 OPEN_CAPTIONS_NOTE = "This showing will be played with open captions."
 
 
@@ -43,9 +45,6 @@ def _time_entry(st):
         "iso": st.starts_at.astimezone(CINEMA_TZ).isoformat(),
         "captions": st.captions or "",
         "captions_label": st.get_captions_display() if st.captions else "",
-        # Open captions are burned into the picture, so the whole room reads
-        # them: worth a sentence, not a two-letter chip.
-        "captions_note": OPEN_CAPTIONS_NOTE if st.captions == "OC" else "",
     }
 
 
