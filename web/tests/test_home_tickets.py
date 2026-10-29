@@ -154,3 +154,161 @@ class HomeScreeningOfferTests(TestCase):
         offers = self.offers()
         self.assertEqual(offers["url"], "http://testserver/#now-showing")
         self.assertEqual(offers["availability"], "https://schema.org/InStock")
+
+
+def in_days(days, hour=19):
+    day = timezone.localdate() + datetime.timedelta(days=days)
+    return datetime.datetime.combine(
+        day, datetime.time(hour, 0), tzinfo=ZoneInfo("America/New_York")
+    )
+
+
+def coming_soon_showtime(days=21, hour=19, **over):
+    """A showing of a run that starts `days` out: past the hero's week, so
+    its only listing is the Coming Soon card."""
+    st = make_showtime(starts_at=in_days(days, hour), **over)
+    day = timezone.localdate() + datetime.timedelta(days=days)
+    st.engagement.start_date = day
+    st.engagement.end_date = day + datetime.timedelta(days=6)
+    st.engagement.save()
+    return st
+
+
+def coming_soon_section(html):
+    return html[html.index('id="coming-soon"'):]
+
+
+@override_settings(**SQUARE_ON)
+class ComingSoonTicketChipTests(TestCase):
+    """A run beyond the hero's week sells from its Coming Soon card: a
+    "Showtimes & tickets" button opens a dialog listing the run's showtimes
+    as the same chips the hero uses. The card itself stays as it was."""
+
+    def setUp(self):
+        self.st = coming_soon_showtime()
+        make_live_item(self.st.engagement)
+        self.buy_url = reverse("tickets:buy", args=[self.st.pk])
+
+    def home(self):
+        return self.client.get(reverse("home")).content.decode()
+
+    def dialog(self, html):
+        """The run's ticket dialog, by its anchor id."""
+        card = coming_soon_section(html)
+        start = card.index('id="coming-tickets-1"')
+        return card[start : card.index("</div>\n", card.index("ticket-info", start))]
+
+    def test_the_card_has_a_button_that_is_the_dialog_anchor(self):
+        card = coming_soon_section(self.home())
+        self.assertIn(
+            '<a class="coming-movie-tickets" href="#coming-tickets-1"', card
+        )
+        self.assertIn("Showtimes &amp; tickets", card)
+
+    def test_the_chips_live_in_the_dialog_not_the_card_body(self):
+        html = self.home()
+        card = coming_soon_section(html)
+        body = card[: card.index('id="coming-tickets-1"')]
+        self.assertNotIn(self.buy_url, body)
+        dialog = self.dialog(html)
+        self.assertIn(
+            f'<a class="showtime showtime--buy" href="{self.buy_url}"', dialog
+        )
+        self.assertIn('<span class="showtime__buy">Buy</span>', dialog)
+
+    def test_the_dialog_names_the_date_of_each_row(self):
+        dialog = self.dialog(self.home())
+        day = timezone.localdate() + datetime.timedelta(days=21)
+        self.assertIn(day.strftime("%a, %b %-d"), dialog)
+
+    def test_the_dialog_is_a_labelled_modal_with_a_close_button(self):
+        dialog = self.dialog(self.home())
+        self.assertIn('role="dialog"', dialog)
+        self.assertIn('aria-modal="true"', dialog)
+        self.assertIn('aria-labelledby="coming-tickets-1-title"', dialog)
+        self.assertIn('id="coming-tickets-1-title"', dialog)
+        self.assertIn('aria-label="Close"', dialog)
+        self.assertIn("ticket-info", dialog)
+
+    def test_every_date_is_listed_with_no_fold(self):
+        for days in (22, 23, 24):
+            make_showtime_for(self.st, days)
+        dialog = self.dialog(self.home())
+        self.assertEqual(dialog.count('class="showtime__buy"'), 4)
+        self.assertNotIn("Show all", dialog)
+
+    def test_sold_out_chip_is_plain_with_note(self):
+        self.st.online_allowance = 1
+        self.st.save()
+        make_order(self.st, status="PAID")
+        dialog = self.dialog(self.home())
+        self.assertNotIn(self.buy_url, dialog)
+        self.assertIn("Sold out online", dialog)
+
+    def test_disabled_square_leaves_plain_chips(self):
+        with override_settings(SQUARE_ACCESS_TOKEN=""):
+            dialog = self.dialog(self.home())
+        self.assertNotIn(self.buy_url, dialog)
+        self.assertIn('<span class="showtime">7:00 PM</span>', dialog)
+
+    def test_a_run_with_no_showtimes_has_no_button_and_no_dialog(self):
+        self.st.delete()
+        card = coming_soon_section(self.home())
+        self.assertNotIn("coming-movie-tickets", card)
+        self.assertNotIn('id="coming-tickets-1"', card)
+
+    def test_without_javascript_the_dialogs_show_inline(self):
+        # The button is an anchor to the dialog's id, and a noscript rule
+        # shows the hidden dialogs in place under the grid.
+        card = coming_soon_section(self.home())
+        self.assertIn("<noscript><style>.coming-tickets-overlay[x-cloak]", card)
+
+    def test_more_chips_do_not_add_queries(self):
+        with CaptureQueriesContext(connection) as one:
+            self.home()
+        for days in (22, 23):
+            make_showtime_for(self.st, days)
+        with CaptureQueriesContext(connection) as three:
+            html = self.home()
+        self.assertEqual(coming_soon_section(html).count('class="showtime__buy"'), 3)
+        self.assertEqual(len(three), len(one))
+
+    def test_the_offer_points_at_the_ticket_page(self):
+        (event,) = screening_events(self.home())
+        self.assertEqual(event["offers"]["url"], "http://testserver" + self.buy_url)
+        self.assertEqual(event["offers"]["availability"], "https://schema.org/InStock")
+
+    def test_a_run_in_the_hero_and_coming_soon_is_marked_up_once(self):
+        # Starts the day after tomorrow: within the hero's week and, starting
+        # tomorrow or later, on a Coming Soon card too. One event, not two.
+        near = coming_soon_showtime(days=2)
+        make_live_item(near.engagement, prefix="near-")
+        events = screening_events(self.home())
+        urls = sorted(e["offers"]["url"] for e in events)
+        self.assertEqual(
+            urls,
+            sorted(
+                "http://testserver" + reverse("tickets:buy", args=[pk])
+                for pk in (self.st.pk, near.pk)
+            ),
+        )
+
+
+def make_showtime_for(st, days, hour=19):
+    """Another showing of `st`'s run, `days` out at `hour`."""
+    from cinema.models import Showtime
+
+    return Showtime.objects.create(
+        engagement=st.engagement, screen=st.screen, starts_at=in_days(days, hour)
+    )
+
+
+@override_settings(**SQUARE_ON)
+class ComingSoonClosedOfferTests(TestCase):
+    def test_a_closed_offer_points_at_coming_soon_not_the_hero(self):
+        # No live Square item: sales closed, the door still sells it. The run
+        # is past the hero's week, so the offer names the card's section.
+        coming_soon_showtime()
+        (event,) = screening_events(self.client.get(reverse("home")).content.decode())
+        self.assertEqual(event["offers"]["url"], "http://testserver/#coming-soon")
+        self.assertEqual(event["offers"]["availability"], "https://schema.org/InStock")

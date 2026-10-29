@@ -1,7 +1,12 @@
 {% load posters %}
 <section class="coming-soon home-section home-section--alt" id="coming-soon"
-         x-data="{ trailer: null, view: 'grid' }"
-         x-effect="document.body.style.overflow = trailer ? 'hidden' : ''">
+         x-data="{ trailer: null, view: 'grid', tickets: null }"
+         x-effect="document.body.style.overflow = (trailer || tickets !== null) ? 'hidden' : ''">
+  {% comment %}
+    No JavaScript: the ticket dialogs (below the grid) show in place, and the
+    card's "Showtimes & tickets" link is a plain anchor to its dialog.
+  {% endcomment %}
+  <noscript><style>.coming-tickets-overlay[x-cloak] { display: block !important; position: static; padding: 0; margin-top: var(--spacing-md); background: none; } .coming-tickets-overlay[x-cloak] .coming-tickets { max-width: none; max-height: none; } .coming-tickets-overlay[x-cloak] .coming-tickets__close { display: none; }</style></noscript>
   <div class="section-container">
     <div class="section-header">
       <h2 class="section-title">Coming Soon</h2>
@@ -83,6 +88,16 @@
           <p class="coming-movie-date">{{ movie.release_date|upper }}</p>
           <h3 class="coming-movie-title">{{ movie.title }}</h3>
           <p class="coming-movie-genre">{{ movie.genre }}</p>
+          {% comment %}
+            Once the run has showtimes, the way to buy: opens the run's
+            ticket dialog (after the grid). An anchor to it, so the no-JS
+            path is a jump to the same rows shown in place.
+          {% endcomment %}
+          {% if movie.upcoming %}
+          <a class="coming-movie-tickets" href="#coming-tickets-{{ forloop.counter }}"
+             data-track="coming_soon_tickets" data-track-film="{{ movie.title }}"
+             @click.prevent="tickets = {{ forloop.counter0 }}">Showtimes &amp; tickets</a>
+          {% endif %}
         </div>
       </article>
       {% empty %}
@@ -115,6 +130,61 @@
       </div>
       {% endfor %}
     </div>
+
+    {% comment %}
+    One ticket dialog per run with showtimes: the run's dates, each time the
+    shared chip from partials/showtime_chip.html, so a run past the hero's
+    week sells from here with the hero's states (Buy, sold out online,
+    in-person only, plain). Same modal mechanics as the trailer dialog below:
+    focus moves to Close on open and is pulled back if it lands behind the
+    overlay; Escape or the scrim closes; focus returns to the card's link.
+    Each dialog watches the section's `tickets` for its own index.
+    {% endcomment %}
+    {% for movie in coming_soon %}
+    {% if movie.upcoming %}
+    <div class="coming-tickets-overlay" id="coming-tickets-{{ forloop.counter }}" x-cloak
+         x-show="tickets === {{ forloop.counter0 }}"
+         role="dialog" aria-modal="true" aria-labelledby="coming-tickets-{{ forloop.counter }}-title"
+         x-data="{ opener: null }"
+         x-init="$watch('tickets', t => t === {{ forloop.counter0 }}
+           ? (opener = document.activeElement, $nextTick(() => $refs.close.focus()))
+           : opener && (opener.focus(), opener = null))"
+         @keydown.escape.window="tickets === {{ forloop.counter0 }} && (tickets = null)"
+         @focusin.window="tickets === {{ forloop.counter0 }} && !$el.contains($event.target) && $refs.close.focus()"
+         @click.self="tickets = null">
+      <div class="coming-tickets">
+        <button class="coming-tickets__close" type="button" x-ref="close" @click="tickets = null" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+            <line x1="4" y1="4" x2="20" y2="20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+            <line x1="20" y1="4" x2="4" y2="20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+          </svg>
+        </button>
+        <div class="coming-tickets__head">
+          {% if movie.poster %}
+          <img class="coming-tickets__poster" src="{{ movie.poster|tmdb_size:'w185' }}" width="185" height="278" alt="" loading="lazy" decoding="async" />
+          {% endif %}
+          <div>
+            <p class="coming-tickets__eyebrow">Opens {{ movie.release_date }}</p>
+            <h3 class="coming-tickets__title" id="coming-tickets-{{ forloop.counter }}-title">{{ movie.title }}</h3>
+          </div>
+        </div>
+        <dl class="coming-tickets__dates" aria-label="Showtimes for {{ movie.title }}">
+          {% for slot in movie.upcoming %}
+          <div class="coming-tickets__row">
+            <dt class="coming-tickets__date">{{ slot.label }}</dt>
+            <dd class="coming-tickets__times">
+              {% for time in slot.times %}
+              {% include "partials/showtime_chip.html" with rating_class="coming-tickets__cert" %}
+              {% endfor %}
+            </dd>
+          </div>
+          {% endfor %}
+        </dl>
+        {% include "partials/ticket_info.html" %}
+      </div>
+    </div>
+    {% endif %}
+    {% endfor %}
 
     {% comment %}
     Calendar view. Lazily loads the initial month via HTMX the first time it is
