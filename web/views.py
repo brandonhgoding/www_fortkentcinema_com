@@ -312,6 +312,12 @@ class CalendarMonthView(TemplateView):
         # place in this list. Past days' showings are gone, so their posters
         # stay plain, as do hidden runs' (no times). One for_showtimes() call
         # for every chip in the month.
+        #
+        # The dialog id names the date, not the day of the month: the arrows
+        # swap this fragment with HTMX, which settles attributes between old
+        # and new elements that share an id, and a dialog Alpine had hidden
+        # in the old month would come back visible, with no way to close it,
+        # under a repeated id.
         dialogs = []
         times = []
         for cell in cells:
@@ -321,7 +327,7 @@ class CalendarMonthView(TemplateView):
             for i, movie in enumerate(cell["movies"]):
                 if not movie.get("times"):
                     continue
-                movie["dialog_id"] = f"calendar-times-{cell['day']}-{i}"
+                movie["dialog_id"] = f"calendar-times-{date.isoformat()}-{i}"
                 movie["dialog_key"] = len(dialogs)
                 movie["date_label"] = format_showtime_date(
                     date.isoformat(), weekday="short", today=today
