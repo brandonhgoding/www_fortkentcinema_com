@@ -307,6 +307,33 @@ class CalendarMonthView(TemplateView):
                 }
             )
 
+        # A poster on today or a later day opens that day's times for the
+        # film: one dialog each (partials/times_dialog.html), keyed by its
+        # place in this list. Past days' showings are gone, so their posters
+        # stay plain, as do hidden runs' (no times). One for_showtimes() call
+        # for every chip in the month.
+        dialogs = []
+        times = []
+        for cell in cells:
+            if cell["day"] is None or cell["is_past"] or not cell["movies"]:
+                continue
+            date = first.replace(day=cell["day"])
+            for i, movie in enumerate(cell["movies"]):
+                if not movie.get("times"):
+                    continue
+                movie["dialog_id"] = f"calendar-times-{cell['day']}-{i}"
+                movie["dialog_key"] = len(dialogs)
+                movie["date_label"] = format_showtime_date(
+                    date.isoformat(), weekday="short", today=today
+                )
+                # The dialog's eyebrow names the day in full; its one row
+                # needs no label of its own.
+                movie["eyebrow"] = date.strftime("%A, %B %-d")
+                movie["rows"] = [{"label": "", "times": movie["times"]}]
+                dialogs.append(movie)
+                times.extend(movie["times"])
+        _add_ticket_state(times)
+
         # Prev/next (year, 0-based month), wrapping December<->January.
         prev_month = (month - 1) % 12
         prev_year = year - 1 if month == 0 else year
@@ -320,6 +347,7 @@ class CalendarMonthView(TemplateView):
                 "month_label": first.strftime("%B %Y").upper(),
                 "month_name": first.strftime("%B"),
                 "cells": cells,
+                "dialogs": dialogs,
                 "films": films,
                 "prev_year": prev_year,
                 "prev_month": prev_month,

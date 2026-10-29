@@ -124,6 +124,12 @@ def get_calendar_month(year, month):
     day-of-month (int), deduped per day by title. `month` is 0-based (0=Jan).
     Returns {} for an empty month.
 
+    Each day's film carries `times`: that day's showtimes for the title (two
+    runs of one title on one day merge), in the chip shape, so a poster can
+    open the day's times (CalendarMonthView completes the ticket state). A
+    run hidden from the main listings keeps its poster but lists no times:
+    its ticket page 404s them.
+
     Only runs that were actually announced: a DRAFT booking's showtimes are
     not cancelled one by one, so without the status filter an unannounced
     booking would appear here. ENDED stays in, so past months still show
@@ -145,16 +151,18 @@ def get_calendar_month(year, month):
         pf = st.engagement.primary_film
         title = pf.title if pf else ""
         movies = data.setdefault(day, [])
-        if any(m["title"] == title for m in movies):
-            continue
-        movies.append(
-            {
+        movie = next((m for m in movies if m["title"] == title), None)
+        if movie is None:
+            movie = {
                 "id": str(st.id),
                 "title": title,
                 "poster": (pf.poster_url if pf else "") or "",
                 "youtube_id": (pf.youtube_id if pf else "") or "",
+                "times": [],
             }
-        )
+            movies.append(movie)
+        if st.engagement.show_in_main_listings:
+            movie["times"].append(_time_entry(st))
     return data
 
 
