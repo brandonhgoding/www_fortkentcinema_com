@@ -1,10 +1,10 @@
 {% comment %}
-schema.org ScreeningEvent per upcoming showtime in Now Showing, so the home
-page says what is playing and when, not only that the cinema exists (the
-MovieTheater block in base.html). Mirrors partials/movie_jsonld.html.
+schema.org ScreeningEvent per listed showtime, on the hero or a Coming Soon
+card, so the home page says what is playing and when, not only that the
+cinema exists (the MovieTheater block in base.html).
 
-Every film and time here is one the Now Showing section renders; nothing is
-marked up that a visitor cannot see. ns_events comes from HomeView.
+Every film and time here is one the page renders; nothing is marked up that
+a visitor cannot see. ns_events comes from HomeView, each showtime once.
 
 The events sit inside an @graph object rather than a bare JSON array: the
 test helpers that walk every ld+json block call .get("@type") on each one,
@@ -14,8 +14,9 @@ address inline.
 
 The offer follows the chip (HomeView._add_ticket_state): a showing on sale
 online points at its ticket page, InStock; one sold out online keeps that URL
-and says SoldOut; with online sales closed it points at Now Showing, InStock,
-since the door still sells it.
+and says SoldOut; with online sales closed it points at the section that
+lists the showing (the hero, or a Coming Soon card for a run past the hero's
+week), InStock, since the door still sells it.
 {% endcomment %}
 {% if ns_events %}
 <script type="application/ld+json">
@@ -54,7 +55,7 @@ since the door still sells it.
         "highPrice": "{{ ticket_prices.adult }}",
         "priceCurrency": "USD",
         "availability": "https://schema.org/{% if ev.sold_out %}SoldOut{% elif ev.in_person %}InStoreOnly{% else %}InStock{% endif %}",
-        "url": "{{ request.scheme }}://{{ request.get_host }}{% if ev.ticket_url %}{{ ev.ticket_url }}{% else %}/#now-showing{% endif %}"
+        "url": "{{ request.scheme }}://{{ request.get_host }}{% if ev.ticket_url %}{{ ev.ticket_url }}{% else %}{{ ev.section_url }}{% endif %}"
       }
     }{% if not forloop.last %},{% endif %}
 {% endfor %}

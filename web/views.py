@@ -115,28 +115,60 @@ class HomeView(TemplateView):
             film["date_label"] = format_showtime_date(
                 film["date"], weekday="short", today=today
             )
-        _add_ticket_state(hero_times)
         ctx["hero_films"] = hero_films
 
-        # One schema.org ScreeningEvent per upcoming showtime, flattened here
+        # Coming Soon: a run past the hero's week sells from its card, which
+        # lists the run's showtimes as the same chips. Their ticket state
+        # comes from the one for_showtimes() call the hero's chips use.
+        coming_times = []
+        for card in coming_soon:
+            # A card without the key (hand-built fixtures) has no rows.
+            for slot in card.get("upcoming", ()):
+                slot["label"] = format_showtime_date(
+                    slot["key"], weekday="short", today=today
+                )
+                coming_times.extend(slot["times"])
+        _add_ticket_state(hero_times + coming_times)
+
+        # One schema.org ScreeningEvent per listed showtime, flattened here
         # so partials/home_jsonld.html is a single loop with one forloop.last.
-        # A time dict with no "iso" (older fixtures, hand-built callers) is
-        # skipped: an event with no startDate is worse than no event.
-        ctx["ns_events"] = [
-            {
-                "movie": film,
-                "iso": time["iso"],
-                "ticket_url": time["ticket_url"],
-                "sold_out": time["sold_out"],
-                "in_person": time["in_person"],
-            }
-            for film in hero_films
-            for slot in film["upcoming"]
-            for time in slot["times"]
-            if time.get("iso")
-        ]
+        # A run starting within the week is on the fold and on a Coming Soon
+        # card; its showtimes are marked up once. A time dict with no "iso"
+        # (older fixtures, hand-built callers) is skipped: an event with no
+        # startDate is worse than no event.
+        ctx["ns_events"] = _screening_events(
+            [(film, "/#now-showing") for film in hero_films]
+            + [(card, "/#coming-soon") for card in coming_soon]
+        )
 
         return ctx
+
+
+def _screening_events(listed):
+    """ScreeningEvent dicts for `listed` (film dict, section URL) pairs, in
+    order, each showtime once. `section_url` is the offer's URL when online
+    sales are closed: the section that lists the showing, where the door
+    prices are."""
+    seen = set()
+    events = []
+    for film, section_url in listed:
+        for slot in film.get("upcoming", ()):
+            for time in slot["times"]:
+                pk = time.get("showtime_id")
+                if not time.get("iso") or (pk is not None and pk in seen):
+                    continue
+                seen.add(pk)
+                events.append(
+                    {
+                        "movie": film,
+                        "iso": time["iso"],
+                        "ticket_url": time["ticket_url"],
+                        "sold_out": time["sold_out"],
+                        "in_person": time["in_person"],
+                        "section_url": section_url,
+                    }
+                )
+    return events
 
 
 def _add_ticket_state(times):

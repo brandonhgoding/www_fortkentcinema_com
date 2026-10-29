@@ -158,10 +158,18 @@ def get_calendar_month(year, month):
     return data
 
 
-def get_coming_soon():
+def get_coming_soon(now=None):
     """Confirmed engagements starting tomorrow+, deduped by film set (a double
-    feature is a distinct set)."""
-    today = timezone.localdate()
+    feature is a distinct set).
+
+    Each card carries `upcoming`: the not-yet-started, non-cancelled showtimes
+    of every run the card stands for (runs of one film set collapse into one
+    card, so their showtimes merge), grouped by local date, each time in the
+    chip shape (HomeView._add_ticket_state completes it). That is how a run
+    beyond the hero's week sells tickets. [] when none are entered yet."""
+    if now is None:
+        now = timezone.now()
+    today = _local_date(now)
     tomorrow = today + datetime.timedelta(days=1)
 
     engagements = (
@@ -170,18 +178,18 @@ def get_coming_soon():
         .order_by("start_date")
     )
 
-    seen = set()
-    movies = []
+    cards = {}
+    runs_by_key = {}
     for engagement in engagements:
         films = engagement.ordered_films
         ids = sorted(f.id for f in films)
         key = ",".join(str(i) for i in ids) if ids else engagement.title
-        if key in seen:
+        runs_by_key.setdefault(key, []).append(engagement.pk)
+        if key in cards:
             continue
-        seen.add(key)
 
         pf = engagement.primary_film
-        movies.append(
+        cards[key] = (
             {
                 "id": str(engagement.id),
                 "title": listing_title(
@@ -200,4 +208,36 @@ def get_coming_soon():
                 "is_free_for_members": bool(engagement.is_free_for_members),
             }
         )
-    return movies
+
+    by_run = _upcoming_by_engagement(
+        [pk for pks in runs_by_key.values() for pk in pks], now
+    )
+    for key, card in cards.items():
+        dates = {}
+        for pk in runs_by_key[key]:
+            for date_key, times in by_run.get(pk, {}).items():
+                dates.setdefault(date_key, []).extend(times)
+        card["upcoming"] = [
+            {"key": date_key, "times": dates[date_key]} for date_key in sorted(dates)
+        ]
+    return list(cards.values())
+
+
+def _upcoming_by_engagement(engagement_ids, now):
+    """engagement pk -> {local date iso -> [chip-shaped times]} for the
+    not-yet-started, non-cancelled showtimes of those runs, one query. A run
+    hidden from the main listings keeps its card but lists no showtimes: the
+    ticket page 404s them, as the hero and the phone line leave them out."""
+    showtimes = Showtime.objects.filter(
+        engagement_id__in=engagement_ids,
+        engagement__show_in_main_listings=True,
+        is_cancelled=False,
+        starts_at__gte=now,
+    ).order_by("starts_at", "pk")
+    out = {}
+    for st in showtimes:
+        dates = out.setdefault(st.engagement_id, {})
+        dates.setdefault(_local_date(st.starts_at).isoformat(), []).append(
+            _time_entry(st)
+        )
+    return out
