@@ -138,9 +138,20 @@ class BuyPageTests(ViewTestCase):
         self.assertIn("3 left online", self.get(self.st))
 
     def test_captions_note(self):
+        # The page has no OC chip, so the sentence carries it alone, boxed as
+        # a notice above the form where it cannot be missed.
         self.st.captions = "OC"
         self.st.save()
-        self.assertIn("open captions", self.get(self.st))
+        self.assertIn(
+            '<div class="ticket-page__notice" role="note">'
+            "This showing will be played with open captions.</div>",
+            self.get(self.st),
+        )
+
+    def test_closed_captions_show_no_notice(self):
+        self.st.captions = "CC"
+        self.st.save()
+        self.assertNotIn("ticket-page__notice", self.get(self.st))
 
     def test_closed_sentences(self):
         door = "Online tickets aren't available for this show. Buy at the door."
