@@ -229,3 +229,66 @@ class ComingSoonScheduleTests(TestCase):
         ids = [t["showtime_id"] for row in card["upcoming"] for t in row["times"]]
         self.assertEqual(ids, [kept.pk])
         self.assertNotIn(past.pk, ids)
+
+
+class CalendarMonthTimesTests(TestCase):
+    """Each day's film entry on the calendar carries `times`: that day's
+    showtimes for the film in the chip shape, so a poster can open the
+    day's times. Cancelled showtimes and runs hidden from the main listings
+    get none, as on the Coming Soon card."""
+
+    def setUp(self) -> None:
+        self.screen = make_screen()
+        self.film = make_film("Dune")
+        self.eng = make_engagement(self.screen, [self.film],
+                                   start=datetime.date(2026, 6, 1),
+                                   end=datetime.date(2026, 6, 30))
+
+    def _day(self, d):
+        return get_calendar_month(2026, 5)[d]
+
+    def test_times_of_the_day_in_order(self) -> None:
+        late = Showtime.objects.create(
+            engagement=self.eng, starts_at=aware(2026, 6, 4, 19)
+        )
+        early = Showtime.objects.create(
+            engagement=self.eng, starts_at=aware(2026, 6, 4, 13), captions="OC"
+        )
+        (movie,) = self._day(4)
+        self.assertEqual(
+            [t["showtime_id"] for t in movie["times"]], [early.pk, late.pk]
+        )
+        self.assertEqual(movie["times"][0]["time"], "1:00 PM")
+        self.assertEqual(movie["times"][0]["captions"], "OC")
+        self.assertEqual(movie["times"][0]["captions_label"], "Open Captions")
+
+    def test_two_runs_of_one_title_merge_their_times_on_the_day(self) -> None:
+        other = make_engagement(self.screen, [self.film],
+                                start=datetime.date(2026, 6, 1),
+                                end=datetime.date(2026, 6, 30))
+        a = Showtime.objects.create(
+            engagement=self.eng, starts_at=aware(2026, 6, 4, 13)
+        )
+        b = Showtime.objects.create(
+            engagement=other, starts_at=aware(2026, 6, 4, 19)
+        )
+        (movie,) = self._day(4)
+        self.assertEqual([t["showtime_id"] for t in movie["times"]], [a.pk, b.pk])
+
+    def test_cancelled_showtimes_are_left_out(self) -> None:
+        Showtime.objects.create(
+            engagement=self.eng, starts_at=aware(2026, 6, 4, 13), is_cancelled=True
+        )
+        kept = Showtime.objects.create(
+            engagement=self.eng, starts_at=aware(2026, 6, 4, 19)
+        )
+        (movie,) = self._day(4)
+        self.assertEqual([t["showtime_id"] for t in movie["times"]], [kept.pk])
+
+    def test_a_hidden_run_is_on_the_calendar_with_no_times(self) -> None:
+        self.eng.show_in_main_listings = False
+        self.eng.save()
+        Showtime.objects.create(engagement=self.eng, starts_at=aware(2026, 6, 4, 19))
+        (movie,) = self._day(4)
+        self.assertEqual(movie["title"], "Dune")
+        self.assertEqual(movie["times"], [])

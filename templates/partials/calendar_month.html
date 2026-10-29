@@ -13,8 +13,14 @@ use a Sunday-first weekday so the grid aligns with the SPA's Date.getDay().
 Trailer modal deviation: the SPA opened the section-level trailer modal when a
 day poster had a youtube_id. That modal's Alpine state lives on the parent
 <section>, and wiring it reliably across the HTMX fragment boundary is fragile,
-so (per the brief) calendar posters render as non-interactive images with a
-`title` tooltip instead.
+so calendar posters do not open it.
+
+A poster on today or a later day is instead a button that opens that day's
+times for the film (CalendarMonthView gives it `dialog_id`/`dialog_key`): the
+shared ticket dialog from partials/times_dialog.html, rendered after the grid
+inside this fragment, keyed by `open` on the fragment's own Alpine scope, so a
+month swap carries nothing across the boundary. Past days and runs hidden from
+the main listings keep a plain image with a `title` tooltip.
 
 The key ("Showing in October") names each film once with its dates and links
 it to the film page; the posters in the grid are too small to identify on
@@ -23,7 +29,8 @@ posters (`film` is the hovered film's index; Alpine picks up the swapped-in
 fragment on its own). From 1200px the key sits beside the grid, below that
 under it.
 {% endcomment %}
-<div class="coming-calendar" x-data="{ film: null }">
+<div class="coming-calendar" x-data="{ film: null, open: null }"
+     x-effect="document.body.style.overflow = open !== null ? 'hidden' : ''">
   <div class="coming-calendar-body">
     <div class="coming-calendar-main">
       <div class="coming-calendar-nav">
@@ -73,6 +80,18 @@ under it.
           {% if cell.movies %}
           <div class="coming-calendar-cell__movies">
             {% for movie in cell.movies %}
+            {% if movie.dialog_id %}
+            <button class="coming-calendar-cell__poster coming-calendar-cell__poster--times" type="button" title="{{ movie.title }}"
+                    aria-label="Times for {{ movie.title }} on {{ movie.date_label }}" aria-controls="{{ movie.dialog_id }}"
+                    @click="open = {{ movie.dialog_key }}"
+                    :class="{ 'coming-calendar-cell__poster--dimmed': film !== null && film !== {{ movie.film_index }} }">
+              {% if movie.poster %}
+              <img src="{{ movie.poster|tmdb_size:'w92' }}" alt="" loading="lazy" decoding="async" class="coming-calendar-cell__img" />
+              {% else %}
+              <div class="coming-calendar-cell__placeholder">&#127916;</div>
+              {% endif %}
+            </button>
+            {% else %}
             <div class="coming-calendar-cell__poster" title="{{ movie.title }}"
                  :class="{ 'coming-calendar-cell__poster--dimmed': film !== null && film !== {{ movie.film_index }} }">
               {% if movie.poster %}
@@ -81,6 +100,7 @@ under it.
               <div class="coming-calendar-cell__placeholder">&#127916;</div>
               {% endif %}
             </div>
+            {% endif %}
             {% endfor %}
           </div>
           {% endif %}
@@ -113,4 +133,8 @@ under it.
       {% endif %}
     </aside>
   </div>
+
+  {% for movie in dialogs %}
+  {% include "partials/times_dialog.html" with dialog_id=movie.dialog_id dialog_var="open" dialog_key=movie.dialog_key poster=movie.poster eyebrow=movie.eyebrow title=movie.title rows=movie.rows %}
+  {% endfor %}
 </div>

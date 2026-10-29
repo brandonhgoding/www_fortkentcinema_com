@@ -1,0 +1,59 @@
+{% load posters %}
+{% comment %}
+  One ticket dialog: a film's showtimes as the shared chips from
+  partials/showtime_chip.html (Buy, sold out online, in-person only, plain),
+  with the prices-and-where-to-pay line under them. Used by the Coming Soon
+  card (every date of a run) and the calendar (one day of a film), so the two
+  cannot drift.
+
+  The caller's Alpine scope holds which dialog is open: `dialog_var` is that
+  variable's name and `dialog_key` the integer this dialog answers to. Same
+  modal mechanics as the trailer dialog: focus moves to Close on open and is
+  pulled back if it lands behind the overlay; Escape or the scrim closes;
+  focus returns to whatever opened it.
+
+  Context: dialog_id, dialog_var, dialog_key, poster, eyebrow, title, rows
+  (each {label, times}; a row with no label, the calendar's single day, is
+  just its times).
+{% endcomment %}
+<div class="coming-tickets-overlay" id="{{ dialog_id }}" x-cloak
+     x-show="{{ dialog_var }} === {{ dialog_key }}"
+     role="dialog" aria-modal="true" aria-labelledby="{{ dialog_id }}-title"
+     x-data="{ opener: null }"
+     x-init="$watch('{{ dialog_var }}', t => t === {{ dialog_key }}
+       ? (opener = document.activeElement, $nextTick(() => $refs.close.focus()))
+       : opener && (opener.focus(), opener = null))"
+     @keydown.escape.window="{{ dialog_var }} === {{ dialog_key }} && ({{ dialog_var }} = null)"
+     @focusin.window="{{ dialog_var }} === {{ dialog_key }} && !$el.contains($event.target) && $refs.close.focus()"
+     @click.self="{{ dialog_var }} = null">
+  <div class="coming-tickets">
+    <button class="coming-tickets__close" type="button" x-ref="close" @click="{{ dialog_var }} = null" aria-label="Close">
+      <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+        <line x1="4" y1="4" x2="20" y2="20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+        <line x1="20" y1="4" x2="4" y2="20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+      </svg>
+    </button>
+    <div class="coming-tickets__head">
+      {% if poster %}
+      <img class="coming-tickets__poster" src="{{ poster|tmdb_size:'w185' }}" width="185" height="278" alt="" loading="lazy" decoding="async" />
+      {% endif %}
+      <div>
+        <p class="coming-tickets__eyebrow">{{ eyebrow }}</p>
+        <h3 class="coming-tickets__title" id="{{ dialog_id }}-title">{{ title }}</h3>
+      </div>
+    </div>
+    <dl class="coming-tickets__dates" aria-label="Showtimes for {{ title }}">
+      {% for slot in rows %}
+      <div class="coming-tickets__row">
+        {% if slot.label %}<dt class="coming-tickets__date">{{ slot.label }}</dt>{% endif %}
+        <dd class="coming-tickets__times">
+          {% for time in slot.times %}
+          {% include "partials/showtime_chip.html" with rating_class="coming-tickets__cert" %}
+          {% endfor %}
+        </dd>
+      </div>
+      {% endfor %}
+    </dl>
+    {% include "partials/ticket_info.html" %}
+  </div>
+</div>

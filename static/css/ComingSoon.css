@@ -377,6 +377,13 @@
   text-align: left;
 }
 
+/* The where-to-pay sentence is one unbreakable item on the hero; in a
+ * phone-width dialog it would run out of the panel, so it may wrap here.
+ * The street and the phone number after it stay whole. */
+.coming-tickets .ticket-info__where > span:first-child {
+  white-space: normal;
+}
+
 /* Calendar View
  *
  * The grid used to stop at 900px, centred, with posters a fixed 48px: on a
@@ -522,6 +529,20 @@
   overflow: hidden;
   background: var(--color-bg-dark);
   transition: opacity var(--transition-base);
+}
+
+/* A poster that opens the day's times: a button with the image's look. */
+.coming-calendar-cell__poster--times {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+}
+
+.coming-calendar-cell__poster--times:focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 2px;
 }
 
 /* Pointing at a film in the key quiets every other film. */
