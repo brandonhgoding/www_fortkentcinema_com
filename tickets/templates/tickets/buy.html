@@ -25,11 +25,17 @@
           {% if movie.language_label %}<span>{{ movie.language_label }}</span>{% endif %}
         </p>
         <p class="ticket-page__when">{{ day }} at {{ time }}, {{ showtime.screen.name }}</p>
-        {% if movie.captions_note %}
-          <p class="ticket-page__note">{{ movie.captions_note }}</p>
-        {% endif %}
       </div>
     </header>
+
+    {% comment %}
+      Open captions change the viewing, so the sentence gets a notice box of
+      its own above the form rather than a muted line beside the poster. A
+      note, not an alert: it is part of the page, not something that happened.
+    {% endcomment %}
+    {% if movie.captions_note %}
+      <div class="ticket-page__notice" role="note">{{ movie.captions_note }}</div>
+    {% endif %}
 
     {% if availability.purchasable %}
       {% comment %}
