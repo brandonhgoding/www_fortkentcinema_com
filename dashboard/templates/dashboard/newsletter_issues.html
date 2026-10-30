@@ -1,0 +1,61 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+{% block title %}Thursday Email · LeprinceOS{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{% static 'dashboard/css/polls.css' %}" />{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Thursday Email</h1>
+      <p class="page-subtitle">
+        The weekend's showtimes, sent to the mailing list every Thursday at 10 AM.
+        Nothing to press: a week with no showtimes is skipped.
+      </p>
+    </div>
+  </div>
+
+  {% if rows %}
+    <div class="tableWrapper">
+    <table class="table">
+      <thead>
+        <tr><th>Week</th><th>Status</th><th>Recipients</th><th>Sent</th><th>Failed</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td>{{ row.issue.week_of|date:"M j, Y" }}</td>
+          <td>
+            <span class="status-badge {{ row.badge }}">{{ row.issue.get_status_display }}</span>
+            {% if row.issue.skip_reason %}<span class="muted">{{ row.issue.skip_reason }}</span>{% endif %}
+          </td>
+          <td>{{ row.issue.recipient_count }}</td>
+          <td>{{ row.issue.sent_count }}</td>
+          <td>{{ row.issue.failed_count }}</td>
+          <td>{% if row.issue.html %}<a href="{% url 'dashboard:newsletter_issue_preview' row.issue.pk %}" target="_blank" rel="noopener">Preview</a>{% endif %}</td>
+        </tr>
+        {% if row.failed %}
+        <tr>
+          <td colspan="6">
+            <details>
+              <summary>{{ row.failed|length }} failed</summary>
+              <ul>
+                {% for d in row.failed %}
+                <li>{{ d.subscriber.email }}{% if d.error %} &mdash; {{ d.error }}{% endif %}</li>
+                {% endfor %}
+              </ul>
+            </details>
+          </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <h3 class="empty-state-title">Nothing Sent Yet</h3>
+      <p class="empty-state-description">The first Thursday email will show up here once it goes out.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

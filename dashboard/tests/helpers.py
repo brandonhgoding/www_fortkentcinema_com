@@ -74,6 +74,8 @@ SPEC_PERMISSIONS = frozenset(
         "blog.view_blogpost",
         "blog.view_blogauthor",  # template gating only
         "blog.view_blogcategory",  # template gating only
+        # newsletter
+        "newsletter.view_issue",
         "blog.add_blogpost",
         "blog.change_blogpost",
         "blog.delete_blogpost",

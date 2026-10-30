@@ -128,6 +128,8 @@ PERMISSION_TABLE: list[tuple[str, dict, str, str | tuple[str, ...]]] = [
     ("square_sale_retry", {"pk": 999999}, "post", "boxoffice.change_membershipsale"),
     ("subscribers", {}, "get", "audience.view_subscriber"),
     ("subscribers_export", {}, "get", "audience.view_subscriber"),
+    ("newsletter_issues", {}, "get", "newsletter.view_issue"),
+    ("newsletter_issue_preview", {"pk": 999999}, "get", "newsletter.view_issue"),
     ("blog", {}, "get", "blog.view_blogpost"),
     ("blog_post_preview", {"pk": UUID_NONE}, "get", "blog.view_blogpost"),
     ("blog_post_create", {}, "get", "blog.add_blogpost"),
