@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Unsubscribe | Fort Kent Cinema{% endblock %}
+
+{% comment %}
+The page the email's Unsubscribe link opens. Opening it only asks; the
+button posts to the same URL, because mail scanners open links and must
+not be able to remove anyone. Context: state (ask, done), masked.
+{% endcomment %}
+{% block robots %}noindex, nofollow{% endblock %}
+
+{% block content %}
+<div class="thanks-page">
+  <div class="thanks-container">
+    {% if state == "ask" %}
+      <p>Unsubscribe <strong>{{ masked }}</strong> from the Thursday showtimes email?</p>
+      <form method="post">
+        <button type="submit" class="thanks-cta">Unsubscribe</button>
+      </form>
+    {% else %}
+      <p role="status">You're off the list.</p>
+      <p><a href="/#coming-soon">Changed your mind? Rejoin</a></p>
+    {% endif %}
+    <div class="thanks-actions">
+      <a href="{% url 'home' %}" class="thanks-cta">&larr; Back to the cinema</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
