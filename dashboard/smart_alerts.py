@@ -18,7 +18,8 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
                        square_membership_failures: int = 0,
                        ticket_failures: int = 0,
                        nearly_sold_out=(),
-                       cancelled_with_orders=()) -> list[dict]:
+                       cancelled_with_orders=(),
+                       thursday_email_missed: bool = False) -> list[dict]:
     """Server-side port of the React useSmartAlerts hook.
 
     engagements: iterable of Engagement (all engagements).
@@ -94,6 +95,14 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
             "perm": "phone.view_voicemail",
             "message": f"You have {new_voicemails} new {unit}",
             "url": reverse("dashboard:voicemails") + "?status=NEW",
+        })
+
+    if thursday_email_missed:
+        alerts.append({
+            "id": "thursday-email-missed", "type": "warning",
+            "perm": "newsletter.view_issue",
+            "message": "Last Thursday's email did not go out",
+            "url": reverse("dashboard:newsletter_issues"),
         })
 
     if square_pull_status == "FAILED":

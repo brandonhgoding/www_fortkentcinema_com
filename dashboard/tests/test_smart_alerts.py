@@ -359,3 +359,19 @@ class AlertPermTests(TestCase):
                 if alert["id"].startswith(prefix)
             )
             self.assertEqual(alert["perm"], expected, alert["id"])
+
+
+class ThursdayEmailAlertTests(TestCase):
+    def test_missed_thursday_email_alert(self) -> None:
+        today = datetime.date(2026, 11, 6)
+        alerts = build_smart_alerts([], 1, today, thursday_email_missed=True)
+        alert = {a["id"]: a for a in alerts}["thursday-email-missed"]
+        self.assertEqual(alert["perm"], "newsletter.view_issue")
+        self.assertEqual(alert["type"], "warning")
+        self.assertEqual(alert["message"], "Last Thursday's email did not go out")
+        self.assertEqual(alert["url"], reverse("dashboard:newsletter_issues"))
+
+    def test_no_alert_when_not_missed(self) -> None:
+        today = datetime.date(2026, 11, 6)
+        ids = [a["id"] for a in build_smart_alerts([], 1, today)]
+        self.assertNotIn("thursday-email-missed", ids)

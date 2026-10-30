@@ -45,6 +45,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.generic import TemplateView, View
+from newsletter import alerts as newsletter_alerts
 from phone.models import Voicemail, VoicemailStatus
 from tickets import alerts as ticket_alerts
 from tickets.availability import for_showtimes
@@ -153,6 +154,9 @@ class HomeView(StaffRequiredMixin, TemplateView):
                         ticket_alerts.nearly_sold_out(now) if can_orders else ()),
                     cancelled_with_orders=(
                         ticket_alerts.cancelled_with_orders() if can_orders else ()),
+                    thursday_email_missed=(
+                        newsletter_alerts.missed(today)
+                        if user.has_perm("newsletter.view_issue") else False),
                 )
                 if user.has_perm(alert["perm"])
             ],
