@@ -22,7 +22,6 @@ from cinema.models import (
     Showtime,
     Vote,
 )
-from tickets import availability
 from web.constants import (
     AD_ARTWORK_DEADLINE_DAY,
     AD_SLIDE_PRICE,
@@ -48,6 +47,7 @@ from web.services.cinema_data import (
 )
 from web.services.heckle_night import get_heckle_nights
 from web.services.open_mic import upcoming_nights as upcoming_open_mics
+from web.services.ticket_state import add_ticket_state
 from web.services.showtimes import (
     today_eastern,
     format_showtime_date,
@@ -128,7 +128,7 @@ class HomeView(TemplateView):
                     slot["key"], weekday="short", today=today
                 )
                 coming_times.extend(slot["times"])
-        _add_ticket_state(hero_times + coming_times)
+        add_ticket_state(hero_times + coming_times)
 
         # One schema.org ScreeningEvent per listed showtime, flattened here
         # so partials/home_jsonld.html is a single loop with one forloop.last.
@@ -169,34 +169,6 @@ def _screening_events(listed):
                     }
                 )
     return events
-
-
-def _add_ticket_state(times):
-    """Give each listed time dict its online-ticket state, in place.
-
-    `ticket_url` is the buy page when the showing can sell now, and is kept
-    when it is sold out online (the JSON-LD offer still names the page);
-    otherwise it is "". `sold_out` is True only for a sold-out showing;
-    `in_person` only for a showing whose online allowance is 0 on purpose.
-    One for_showtimes() call for every chip: database only, never Square.
-    """
-    times = list(times)
-    ids = [t["showtime_id"] for t in times if t.get("showtime_id")]
-    showtimes = Showtime.objects.filter(pk__in=ids).select_related(
-        "engagement", "screen"
-    )
-    states = availability.for_showtimes(
-        showtimes, timezone.now(), square_enabled=square_enabled()
-    )
-    for time in times:
-        state = states.get(time.get("showtime_id"))
-        sold_out = state is not None and state.reason == "sold_out"
-        has_page = state is not None and (state.purchasable or sold_out)
-        time["ticket_url"] = (
-            reverse("tickets:buy", args=[time["showtime_id"]]) if has_page else ""
-        )
-        time["sold_out"] = sold_out
-        time["in_person"] = state is not None and state.reason == "in_person"
 
 
 def _initial_calendar_month(coming_soon):
@@ -338,7 +310,7 @@ class CalendarMonthView(TemplateView):
                 movie["rows"] = [{"label": "", "times": movie["times"]}]
                 dialogs.append(movie)
                 times.extend(movie["times"])
-        _add_ticket_state(times)
+        add_ticket_state(times)
 
         # Prev/next (year, 0-based month), wrapping December<->January.
         prev_month = (month - 1) % 12
