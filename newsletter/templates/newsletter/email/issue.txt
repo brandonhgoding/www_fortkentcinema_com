@@ -1,0 +1,28 @@
+{% autoescape off %}THIS WEEKEND AT THE CINEMA
+{% for film in films %}
+{{ film.title }}{% if film.rating or film.runtime %} ({% if film.rating %}{{ film.rating }}{% endif %}{% if film.rating and film.runtime %}, {% endif %}{% if film.runtime %}{{ film.runtime }}{% endif %}){% endif %}{% if film.is_free_for_members %} - Free for Members{% endif %}
+{% for day in film.days %}  {{ day.label }}
+{% for time in day.times %}{% if time.ticket_url %}    {{ time.time }} - Buy:
+{{ time.ticket_url }}
+{% elif time.sold_out %}    {{ time.time }} - Sold out online
+{% elif time.in_person %}    {{ time.time }} - In-person purchase only
+{% else %}    {{ time.time }}
+{% endif %}{% endfor %}{% endfor %}{% endfor %}{% if coming_soon %}
+COMING SOON
+{% for card in coming_soon %}  {{ card.title }} - Opens {{ card.opens }}
+{% endfor %}{{ coming_soon_url }}
+{% endif %}{% if post %}
+FROM THE BOOTH
+  {{ post.title }}{% if post.subtitle %} - {{ post.subtitle }}{% endif %}
+{{ post.url }}
+{% endif %}
+${{ ticket_prices.adult }} adults, ${{ ticket_prices.senior }} seniors, ${{ ticket_prices.child }} kids, ${{ ticket_prices.matinee }} matinees ({{ ticket_prices.matinee_until|time:"g A" }} or earlier), ${{ ticket_prices.member }} members.
+Buy online from the links above, or pay at the box office.
+
+{{ cinema.name }}
+{{ cinema.address.street }}, {{ cinema.address.city }}, {{ cinema.address.state }} {{ cinema.address.zip }}
+{{ cinema.phone }}
+
+You get this because you asked for the weekend's showtimes every Thursday.
+Unsubscribe: {{ unsubscribe_url }}
+{% endautoescape %}

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<body style="margin: 0; padding: 16px; background: #f4f4f4; font-family: Arial, Helvetica, sans-serif; color: #1a1a1a; line-height: 1.5;">
+  <div style="max-width: 600px; margin: 0 auto; background: #ffffff; padding: 24px;">
+    <p style="margin: 0 0 4px; font-size: 13px; color: #666; text-transform: uppercase; letter-spacing: 1px;">{{ cinema.name }}</p>
+    <h1 style="margin: 0 0 20px; font-size: 24px;">This weekend at the Cinema</h1>
+
+    {% for film in films %}
+    <table role="presentation" cellpadding="0" cellspacing="0" style="width: 100%; margin: 0 0 24px; border-top: 1px solid #e5e5e5; padding-top: 16px;">
+      <tr>
+        {% if film.poster %}
+        <td style="width: 120px; vertical-align: top; padding: 16px 16px 0 0;">
+          <img src="{{ film.poster }}" width="120" alt="{{ film.title }}" style="display: block; width: 120px; height: auto; border: 0;">
+        </td>
+        {% endif %}
+        <td style="vertical-align: top; padding-top: 16px;">
+          <h2 style="margin: 0 0 4px; font-size: 20px;">{{ film.title }}</h2>
+          {% if film.rating or film.runtime %}
+          <p style="margin: 0 0 8px; font-size: 13px; color: #666;">{% if film.rating %}{{ film.rating }}{% endif %}{% if film.rating and film.runtime %} &middot; {% endif %}{% if film.runtime %}{{ film.runtime }}{% endif %}</p>
+          {% endif %}
+          {% if film.is_free_for_members %}
+          <p style="margin: 0 0 8px; font-size: 13px; font-weight: bold; color: #b3261e;">Free for Members</p>
+          {% endif %}
+          {% for day in film.days %}
+          <p style="margin: 0 0 6px;">
+            <strong>{{ day.label }}</strong><br>
+            {% for time in day.times %}{% if time.ticket_url %}<a href="{{ time.ticket_url }}" style="color: #b3261e; font-weight: bold;">{{ time.time }} &middot; Buy</a>{% elif time.sold_out %}{{ time.time }} <span style="color: #666;">Sold out online</span>{% elif time.in_person %}{{ time.time }} <span style="color: #666;">In-person purchase only</span>{% else %}{{ time.time }}{% endif %}{% if not forloop.last %} &nbsp;|&nbsp; {% endif %}{% endfor %}
+          </p>
+          {% endfor %}
+        </td>
+      </tr>
+    </table>
+    {% endfor %}
+
+    {% if coming_soon %}
+    <h2 style="margin: 0 0 8px; font-size: 18px; border-top: 1px solid #e5e5e5; padding-top: 16px;">Coming Soon</h2>
+    {% for card in coming_soon %}
+    <p style="margin: 0 0 4px;"><a href="{{ coming_soon_url }}" style="color: #1a1a1a; font-weight: bold;">{{ card.title }}</a> <span style="color: #666;">&middot; Opens {{ card.opens }}</span></p>
+    {% endfor %}
+    <p style="margin: 12px 0 24px;"></p>
+    {% endif %}
+
+    {% if post %}
+    <h2 style="margin: 0 0 8px; font-size: 18px; border-top: 1px solid #e5e5e5; padding-top: 16px;">From the Booth</h2>
+    <p style="margin: 0 0 24px;"><a href="{{ post.url }}" style="color: #1a1a1a; font-weight: bold;">{{ post.title }}</a>{% if post.subtitle %}<br><span style="color: #666;">{{ post.subtitle }}</span>{% endif %}</p>
+    {% endif %}
+
+    <p style="margin: 0 0 8px; font-size: 13px; color: #666; border-top: 1px solid #e5e5e5; padding-top: 16px;">
+      ${{ ticket_prices.adult }} adults &middot; ${{ ticket_prices.senior }} seniors &middot; ${{ ticket_prices.child }} kids &middot;
+      ${{ ticket_prices.matinee }} matinees ({{ ticket_prices.matinee_until|time:"g A" }} or earlier) &middot;
+      <a href="{{ site_url }}/membership/" style="color: #666;">${{ ticket_prices.member }} members</a>
+    </p>
+    <p style="margin: 0 0 8px; font-size: 13px; color: #666;">
+      Buy online from the links above, or pay at the box office.<br>
+      {{ cinema.name }}, {{ cinema.address.street }}, {{ cinema.address.city }}, {{ cinema.address.state }} {{ cinema.address.zip }} &middot; {{ cinema.phone }}
+    </p>
+    <p style="margin: 0; font-size: 13px; color: #666;">
+      You get this because you asked for the weekend's showtimes every Thursday.
+      <a href="{{ unsubscribe_url }}" style="color: #666;">Unsubscribe</a>
+    </p>
+  </div>
+</body>
+</html>
