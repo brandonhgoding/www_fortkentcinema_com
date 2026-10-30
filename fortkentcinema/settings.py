@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "boxoffice.apps.BoxofficeConfig",
     "tickets.apps.TicketsConfig",
     "join.apps.JoinConfig",
+    "newsletter.apps.NewsletterConfig",
     "rest_framework",
     "corsheaders",
     "axes",
