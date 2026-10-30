@@ -24,7 +24,7 @@
           {% for day in film.days %}
           <p style="margin: 0 0 6px;">
             <strong>{{ day.label }}</strong><br>
-            {% for time in day.times %}{% if time.ticket_url %}<a href="{{ time.ticket_url }}" style="color: #b3261e; font-weight: bold;">{{ time.time }} &middot; Buy</a>{% elif time.sold_out %}{{ time.time }} <span style="color: #666;">Sold out online</span>{% elif time.in_person %}{{ time.time }} <span style="color: #666;">In-person purchase only</span>{% else %}{{ time.time }}{% endif %}{% if not forloop.last %} &nbsp;|&nbsp; {% endif %}{% endfor %}
+            {% for time in day.times %}{% if time.sold_out %}{{ time.time }} <span style="color: #666;">Sold out online</span>{% elif time.in_person %}{{ time.time }} <span style="color: #666;">In-person purchase only</span>{% elif time.ticket_url %}<a href="{{ time.ticket_url }}" style="color: #b3261e; font-weight: bold;">{{ time.time }} &middot; Buy</a>{% else %}{{ time.time }}{% endif %}{% if not forloop.last %} &nbsp;|&nbsp; {% endif %}{% endfor %}
           </p>
           {% endfor %}
         </td>

@@ -19,7 +19,6 @@ from cinema import voting as vote_engine
 from cinema.models import (
     Poll,
     PollStatus,
-    Showtime,
     Vote,
 )
 from web.constants import (

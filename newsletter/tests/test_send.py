@@ -7,6 +7,7 @@ from unittest import mock
 
 from django.core import mail
 from django.test import TestCase, override_settings
+from django.utils import timezone
 
 from audience.models import Subscriber
 from newsletter.links import unsubscribe_url
@@ -65,10 +66,26 @@ class SendIssueTests(TestCase):
         self.assertEqual(
             (issue.recipient_count, issue.sent_count, issue.failed_count), (2, 2, 0)
         )
-        self.assertEqual(issue.finished_at, SEND_TIME)
+        self.assertIsNotNone(issue.finished_at)
         for delivery in issue.deliveries.all():
             self.assertEqual(delivery.status, Delivery.Status.SENT)
-            self.assertEqual(delivery.sent_at, SEND_TIME)
+            self.assertIsNotNone(delivery.sent_at)
+
+    def test_one_smtp_connection_for_the_whole_run(self):
+        with mock.patch(
+            "django.core.mail.backends.locmem.EmailBackend.open", return_value=True
+        ) as opened:
+            send_issue(THURSDAY, SEND_TIME)
+        self.assertEqual(opened.call_count, 1)
+        self.assertEqual(len(mail.outbox), 2)
+
+    def test_stamps_use_the_wall_clock_not_the_content_clock(self):
+        before = timezone.now()
+        issue = send_issue(THURSDAY, SEND_TIME)
+        after = timezone.now()
+        self.assertTrue(before <= issue.finished_at <= after)
+        for delivery in issue.deliveries.all():
+            self.assertTrue(before <= delivery.sent_at <= after)
 
     def test_body_carries_recipients_own_token(self):
         send_issue(THURSDAY, SEND_TIME)
@@ -103,7 +120,7 @@ class SendIssueTests(TestCase):
         issue = send_issue(THURSDAY, SEND_TIME)
         self.assertEqual(issue.status, Issue.Status.SKIPPED)
         self.assertEqual(issue.skip_reason, "no showtimes")
-        self.assertEqual(issue.finished_at, SEND_TIME)
+        self.assertIsNotNone(issue.finished_at)
         self.assertEqual(issue.deliveries.count(), 0)
         self.assertEqual(mail.outbox, [])
 

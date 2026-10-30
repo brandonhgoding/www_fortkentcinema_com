@@ -146,6 +146,20 @@ class ContentTests(TestCase):
         self.assertTrue(time["sold_out"])
         self.assertTrue(time["ticket_url"].endswith(f"/tickets/{st.pk}/"))
 
+    @override_settings(**SQUARE_ON)
+    def test_sold_out_renders_as_sold_out_not_buy(self):
+        from newsletter.render import render_issue
+
+        st = self.showtime(6, 19, online_allowance=1)
+        make_live_item(self.run)
+        make_order(st, status="PAID")
+        html, text = render_issue(build_context(self.now))
+        self.assertIn("Sold out online", html)
+        self.assertIn("Sold out online", text)
+        self.assertNotIn("Buy</a>", html)
+        self.assertNotIn("- Buy:", text)
+        self.assertNotIn(f"/tickets/{st.pk}/", html)
+
     def test_film_fields(self):
         self.showtime(6, 19)
         film = build_context(self.now)["films"][0]

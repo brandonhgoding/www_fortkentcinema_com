@@ -58,7 +58,7 @@ def render_for(issue: Issue, now: datetime.datetime) -> bool:
         if not issue.deliveries.exists():
             issue.status = Issue.Status.SKIPPED
             issue.skip_reason = "no showtimes"
-            issue.finished_at = now
+            issue.finished_at = timezone.now()
             issue.save(update_fields=["status", "skip_reason", "finished_at"])
         return False
     issue.html, issue.text = render_issue(context)
@@ -90,14 +90,14 @@ def _deliver(message: EmailMultiAlternatives) -> None:
     message.send()
 
 
-def _recount(issue: Issue, now: datetime.datetime, *, final: bool) -> None:
+def _recount(issue: Issue, *, final: bool) -> None:
     rows = issue.deliveries
     issue.recipient_count = rows.count()
     issue.sent_count = rows.filter(status=Delivery.Status.SENT).count()
     issue.failed_count = rows.filter(status=Delivery.Status.FAILED).count()
     if final:
         issue.status = Issue.Status.SENT
-        issue.finished_at = now
+        issue.finished_at = timezone.now()
     else:
         issue.status = (
             Issue.Status.FAILED if issue.sent_count == 0 else Issue.Status.SENDING
@@ -106,7 +106,11 @@ def _recount(issue: Issue, now: datetime.datetime, *, final: bool) -> None:
 
 
 def send_issue(week_of: datetime.date, now: datetime.datetime | None = None) -> Issue:
-    """Send (or resume) the week's email to every active subscriber."""
+    """Send (or resume) the week's email to every active subscriber.
+
+    `now` is the content clock (which showtimes are still ahead, ticket
+    states); sent_at and finished_at are stamped with the wall clock, so a
+    re-send of a past week records when it really went out."""
     if now is None:
         now = timezone.now()
     issue, _ = Issue.objects.get_or_create(week_of=week_of)
@@ -130,6 +134,9 @@ def send_issue(week_of: datetime.date, now: datetime.datetime | None = None) -> 
     )
     connection = mail.get_connection()
     try:
+        # One login for the whole run: without open(), the SMTP backend
+        # connects and quits again for every message.
+        connection.open()
         for delivery in pending:
             message = message_for(issue, delivery, connection)
             try:
@@ -140,19 +147,19 @@ def send_issue(week_of: datetime.date, now: datetime.datetime | None = None) -> 
                 delivery.save(update_fields=["status", "error"])
                 continue
             except CONNECTION_ERRORS:
-                _recount(issue, now, final=False)
+                _recount(issue, final=False)
                 log.error(
                     "Thursday email %s interrupted after %d of %d; cron will resume",
                     week_of, issue.sent_count, issue.recipient_count,
                 )
                 raise
             delivery.status = Delivery.Status.SENT
-            delivery.sent_at = now
+            delivery.sent_at = timezone.now()
             delivery.save(update_fields=["status", "sent_at"])
     finally:
         connection.close()
 
-    _recount(issue, now, final=True)
+    _recount(issue, final=True)
     if issue.failed_count:
         log.error(
             "Thursday email %s: %d of %d deliveries failed",

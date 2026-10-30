@@ -2,10 +2,10 @@
 {% for film in films %}
 {{ film.title }}{% if film.rating or film.runtime %} ({% if film.rating %}{{ film.rating }}{% endif %}{% if film.rating and film.runtime %}, {% endif %}{% if film.runtime %}{{ film.runtime }}{% endif %}){% endif %}{% if film.is_free_for_members %} - Free for Members{% endif %}
 {% for day in film.days %}  {{ day.label }}
-{% for time in day.times %}{% if time.ticket_url %}    {{ time.time }} - Buy:
-{{ time.ticket_url }}
-{% elif time.sold_out %}    {{ time.time }} - Sold out online
+{% for time in day.times %}{% if time.sold_out %}    {{ time.time }} - Sold out online
 {% elif time.in_person %}    {{ time.time }} - In-person purchase only
+{% elif time.ticket_url %}    {{ time.time }} - Buy:
+{{ time.ticket_url }}
 {% else %}    {{ time.time }}
 {% endif %}{% endfor %}{% endfor %}{% endfor %}{% if coming_soon %}
 COMING SOON

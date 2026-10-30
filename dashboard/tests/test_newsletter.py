@@ -67,6 +67,24 @@ class IssueListTests(TestCase):
         self.assertIn("x@example.com", html)
         self.assertIn("550 no such user", html)
 
+    def test_list_loads_only_failed_deliveries(self):
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        issue = Issue.objects.create(week_of=WEEK, status=Issue.Status.SENT)
+        for i in range(3):
+            sub, _ = Subscriber.objects.record(f"ok{i}@example.com", source="site")
+            Delivery.objects.create(
+                issue=issue, subscriber=sub, status=Delivery.Status.SENT
+            )
+        with CaptureQueriesContext(connection) as ctx:
+            self.client.get(self.url)
+        delivery_sql = [
+            q["sql"] for q in ctx.captured_queries if "newsletter_delivery" in q["sql"]
+        ]
+        self.assertTrue(delivery_sql)
+        self.assertTrue(all("failed" in sql for sql in delivery_sql), delivery_sql)
+
     def test_sidebar_link(self):
         html = self.client.get(reverse("dashboard:home")).content.decode()
         self.assertIn(self.url, html)

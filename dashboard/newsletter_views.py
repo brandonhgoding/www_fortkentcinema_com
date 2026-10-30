@@ -1,6 +1,7 @@
 """Staff view of the Thursday email: one row per week, and a preview of the
 stored body. Read-only: the send is automatic (the owner's call, 2026-10-30)."""
 
+from django.db.models import Prefetch
 from django.http import Http404, HttpResponse
 from django.shortcuts import render
 from django.views import View
@@ -22,16 +23,22 @@ class IssueListView(StaffRequiredMixin, View):
     permission_required = "newsletter.view_issue"
 
     def get(self, request):
-        rows = []
-        for issue in Issue.objects.prefetch_related("deliveries__subscriber"):
-            rows.append({
+        # Only the failures come along: a year of sent rows stays in the DB.
+        failed = Prefetch(
+            "deliveries",
+            queryset=Delivery.objects.filter(
+                status=Delivery.Status.FAILED
+            ).select_related("subscriber"),
+            to_attr="failed",
+        )
+        rows = [
+            {
                 "issue": issue,
                 "badge": BADGE.get(issue.status, ""),
-                "failed": [
-                    d for d in issue.deliveries.all()
-                    if d.status == Delivery.Status.FAILED
-                ],
-            })
+                "failed": issue.failed,
+            }
+            for issue in Issue.objects.prefetch_related(failed)
+        ]
         return render(request, "dashboard/newsletter_issues.html", {"rows": rows})
 
 

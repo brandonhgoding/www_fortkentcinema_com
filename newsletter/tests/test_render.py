@@ -22,7 +22,10 @@ def context(**over):
                         "times": [
                             {"time": "10:15 AM", "ticket_url": BUY,
                              "sold_out": False, "in_person": False},
-                            {"time": "7:00 PM", "ticket_url": "",
+                            # The builder keeps the page URL on a sold-out
+                            # showing (the JSON-LD offer wants it); the
+                            # email must still not link it.
+                            {"time": "7:00 PM", "ticket_url": BUY + "?x",
                              "sold_out": True, "in_person": False},
                         ],
                     },
@@ -83,6 +86,13 @@ class RenderTests(SimpleTestCase):
         self.assertIn('<img src="http://p/a.jpg"', html)
         self.assertIn("$4 members", html)
         self.assertIn("13 Hall Street", html)
+
+    def test_sold_out_showing_never_links(self):
+        html, text = render_issue(context())
+        self.assertNotIn(BUY + "?x", html)
+        self.assertNotIn(BUY + "?x", text)
+        self.assertEqual(html.count("Buy</a>"), 1)
+        self.assertEqual(text.count("- Buy:"), 1)
 
     def test_text_names_every_showtime_the_html_does(self):
         _, text = render_issue(context())
