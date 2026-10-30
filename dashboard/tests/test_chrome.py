@@ -60,6 +60,7 @@ class ChromeTests(TestCase):
                 "Rental Inquiries",
                 "Screens",
                 "Subscribers",
+                "Thursday Email",
                 "Voicemails",
             ],
         )
