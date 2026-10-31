@@ -60,7 +60,7 @@ class DashboardAuthTests(TestCase):
 
     def test_named_routes_resolve(self) -> None:
         self.assertEqual(reverse("dashboard:home"), "/dashboard/")
-        self.assertEqual(reverse("dashboard:screens"), "/dashboard/screens")
+        self.assertEqual(reverse("dashboard:members"), "/dashboard/members")
         self.assertEqual(reverse("dashboard:engagements"), "/dashboard/engagements")
 
 
@@ -101,7 +101,7 @@ class DashboardPermissionTests(TestCase):
 
     def test_make_staff_default_holds_every_dashboard_permission(self) -> None:
         user = make_staff()
-        self.assertTrue(user.has_perm("cinema.view_screen"))
+        self.assertTrue(user.has_perm("cinema.view_engagement"))
         self.assertTrue(user.has_perm("phone.delete_voicemail"))
         self.assertTrue(user.has_perm("boxoffice.view_salespull"))
         self.assertTrue(user.has_perm("blog.view_blogauthor"))

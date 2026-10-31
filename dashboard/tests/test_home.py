@@ -32,11 +32,9 @@ class HomeViewTests(TestCase):
     def test_counts(self) -> None:
         make_eng(self.screen, self.film, status="CONFIRMED")
         make_eng(self.screen, self.film, status="DRAFT")
-        Screen.objects.create(name="Screen 2", capacity=60)
         resp = self.client.get(reverse("dashboard:home"))
         ctx = resp.context
         self.assertEqual(ctx["active_engagements_count"], 1)   # only CONFIRMED
-        self.assertEqual(ctx["screens_count"], 2)
 
     def test_today_showtimes_tz_correct(self) -> None:
         eng = make_eng(self.screen, self.film)
@@ -96,7 +94,6 @@ class HomeRenderTests(TestCase):
     def test_cards_and_links(self) -> None:
         html = self.client.get(reverse("dashboard:home")).content.decode()
         self.assertIn(reverse("dashboard:engagements"), html)
-        self.assertIn(reverse("dashboard:screens"), html)
         self.assertIn("summaryGrid", html)
 
     def test_today_showtimes_table(self) -> None:

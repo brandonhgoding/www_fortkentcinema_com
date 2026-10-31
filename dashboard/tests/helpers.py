@@ -16,10 +16,6 @@ SPEC_PERMISSIONS = frozenset(
     {
         # cinema
         "cinema.view_showtime",  # template/home gating only, no view declares it
-        "cinema.view_screen",
-        "cinema.add_screen",
-        "cinema.change_screen",
-        "cinema.delete_screen",
         "cinema.view_film",
         "cinema.add_film",
         "cinema.view_engagement",

@@ -25,10 +25,6 @@ UUID_NONE = uuid.UUID(int=0)
 # check runs in dispatch before any lookup, so 403 proves denial and 404
 # proves the gate opened.
 PERMISSION_TABLE: list[tuple[str, dict, str, str | tuple[str, ...]]] = [
-    ("screens", {}, "get", "cinema.view_screen"),
-    ("screen_create", {}, "get", "cinema.add_screen"),
-    ("screen_edit", {"pk": 999999}, "get", "cinema.change_screen"),
-    ("screen_delete", {"pk": 999999}, "post", "cinema.delete_screen"),
     ("film_search", {}, "get", "cinema.view_film"),
     ("film_search_tmdb", {}, "get", "cinema.add_film"),
     ("film_from_tmdb", {}, "post", "cinema.add_film"),

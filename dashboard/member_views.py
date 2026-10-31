@@ -191,7 +191,7 @@ class MemberDeleteView(StaffRequiredMixin, View):
     permission_required = "audience.delete_member"
 
     def post(self, request, pk):
-        # No ProtectedError guard, unlike Screens: a person entered by
+        # No ProtectedError guard: a person entered by
         # mistake should be removable, and their terms only describe them.
         get_object_or_404(Member, pk=pk).delete()
         return _member_list_response(request, "Member deleted")
