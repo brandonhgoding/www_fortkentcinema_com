@@ -66,12 +66,12 @@ class HomeMarkupTests(TestCase):
 
 
 class CssCapitalsTests(TestCase):
-    def test_marquee_capitals_come_from_css(self):
+    def test_lockup_capitals_come_from_css(self):
         bundle = Path(settings.BASE_DIR) / "static" / "css" / "bundle.css"
         if not bundle.exists():
             self.skipTest("bundle.css not built")
         css = bundle.read_text()
-        for selector in (".marquee-title", ".marquee-subtitle"):
+        for selector in (".hero-film__lockup",):
             rules = re.findall(re.escape(selector) + r"\{([^}]*)\}", css)
             self.assertTrue(
                 any("text-transform:uppercase" in r for r in rules),

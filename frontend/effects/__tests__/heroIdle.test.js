@@ -21,7 +21,7 @@ function stubObserver() {
 
 describe('initHeroIdle', () => {
   beforeEach(() => {
-    document.body.innerHTML = '<section class="hero" data-neon id="h"></section>';
+    document.body.innerHTML = '<section class="hero hero--empty" data-hero-idle id="h"></section>';
   });
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -59,12 +59,17 @@ describe('initHeroIdle on the film hero', () => {
     vi.unstubAllGlobals();
   });
 
-  it('also pauses a hero that has no marquee', () => {
-    // The film hero carries data-hero-idle instead of data-neon: it has no
-    // bulbs to power on, but its grain still loops and should still pause.
+  it('pauses the film hero too', () => {
     document.body.innerHTML = '<section class="hero hero--film" data-hero-idle id="f"></section>';
     const io = stubObserver();
     initHeroIdle(document);
     expect(io.observed).toEqual([document.getElementById('f')]);
+  });
+
+  it('ignores the retired marquee hook', () => {
+    document.body.innerHTML = '<section class="hero" data-neon></section>';
+    const io = stubObserver();
+    initHeroIdle(document);
+    expect(io.observed).toEqual([]);
   });
 });

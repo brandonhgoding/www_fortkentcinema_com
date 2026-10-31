@@ -1,7 +1,7 @@
 """The hero's animations stop for visitors who ask for reduced motion.
 
 WCAG 2.2.2: anything that moves on its own for more than five seconds needs a
-way to stop. The bulb chase, twinkle and grain loop forever.
+way to stop. The twinkle and grain loop forever.
 
 This checks the built bundle rather than the source sheets because the bug it
 guards against lived in the cascade: global.css had a reduced-motion block for

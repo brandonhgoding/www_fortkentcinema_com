@@ -1,14 +1,12 @@
-"""The hero's three looping animations pause once the hero scrolls away.
+"""The hero's looping animations pause once the hero scrolls away.
 
-The grain, the twinkle and the 44-bulb chase run forever (WCAG-wise they
+The grain and the twinkle run forever (WCAG-wise they
 stop under reduced motion, see test_reduced_motion). For everyone else they
 kept painting while the visitor read the showtimes two screens down; the
 audit's trace put 8 of the home page's 12.5 main-thread seconds in style,
 layout and paint. effects.js marks the hero `hero--offscreen` when it
 leaves the viewport, and the bundle pauses the loops under that class.
 """
-
-import re
 
 from django.test import SimpleTestCase
 
@@ -35,7 +33,6 @@ class HeroIdleCssTests(SimpleTestCase):
         for selector in (
             ".hero--offscreen:before",
             ".hero--offscreen .hero-stars",
-            ".hero--offscreen .bulb:after",
         ):
             with self.subTest(selector=selector):
                 self.assertIn(selector, paused)
@@ -49,60 +46,23 @@ class HeroIdleCssTests(SimpleTestCase):
             i
             for i, (m, s, d) in enumerate(self.rules)
             if m == "" and any(x.startswith("animation:") for x in d)
-            and s & {".hero:before", ".hero-stars", ".bulb:after"}
+            and s & {".hero:before", ".hero-stars"}
         )
-        # effects.css already pauses .hero--pre-show .bulb for the power-on
-        # sequence; only the offscreen rule is under test here.
         first_pause = min(
             i
             for i, (m, s, d) in enumerate(self.rules)
-            if m == "" and PAUSED in d and ".hero--offscreen .bulb:after" in s
+            if m == "" and PAUSED in d and ".hero--offscreen .hero-stars" in s
         )
         self.assertGreater(first_pause, last_animation)
         self.assertTrue(order)
 
 
-class BulbChaseCostTests(SimpleTestCase):
-    """The chase crossfades a lit pseudo-element instead of animating paint.
+class MarqueeGoneTests(SimpleTestCase):
+    """The bulb marquee was removed 2026-10-31; none of its CSS ships."""
 
-    bulb-chase animated box-shadow and a gradient on all 44 bulbs, so every
-    frame repainted every bulb: the audit's trace put most of the hero's
-    cost there, and pausing off screen (above) cannot help while the hero
-    is the first thing on screen. Opacity on its own layer is composited,
-    not painted. The look is the same two states, dim and lit, crossfaded.
-    """
-
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.css = (CSS_DIR / "bundle.css").read_text()
-        cls.rules = parse_rules(cls.css)
-
-    def keyframes(self, name):
-        match = re.search(r"@keyframes %s\{(.*?)\}\}" % re.escape(name), self.css)
-        return match.group(1) + "}" if match else None
-
-    def test_the_glow_keyframes_only_animate_opacity(self):
-        body = self.keyframes("bulb-glow")
-        self.assertIsNotNone(body, "no bulb-glow keyframes in the bundle")
-        props = set(re.findall(r"([a-z-]+):", body))
-        self.assertEqual(props, {"opacity"})
-
-    def test_the_old_paint_heavy_chase_is_gone(self):
-        self.assertIsNone(self.keyframes("bulb-chase"))
-
-    def test_the_bulb_itself_no_longer_loops(self):
-        for media, selectors, decls in self.rules:
-            if media == "" and selectors == {".bulb"}:
-                self.assertFalse(
-                    [d for d in decls if d.startswith("animation:")], decls
-                )
-
-    def test_the_glow_runs_on_the_pseudo_element(self):
-        found = [
-            d
-            for m, s, d in self.rules
-            if m == "" and ".bulb:after" in s
-            and any(x.startswith("animation:bulb-glow") for x in d)
-        ]
-        self.assertTrue(found)
+    def test_no_bulb_or_marquee_rules_in_the_bundle(self):
+        css = (CSS_DIR / "bundle.css").read_text()
+        for gone in (".bulb", ".marquee-", "@keyframes bulb-", "hero--pre-show",
+                     "curtain-reveal"):
+            with self.subTest(gone=gone):
+                self.assertNotIn(gone, css)

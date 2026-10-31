@@ -252,9 +252,10 @@ class HomeIntegrationTests(TestCase):
     @mock.patch("web.views.get_hero_films", return_value=[])
     def test_full_home_composition_order(self, _ns, _cs):
         html = self.client.get(reverse("home")).content.decode()
-        # The hero, then the five sections below it, each rendered once.
+        # The empty-week fold (the hero, carrying #now-showing), then the
+        # four sections below it, each rendered once.
         markers = (
-            'class="hero"', 'id="now-showing"', 'id="membership"',
+            'class="hero hero--empty"', 'id="now-showing"', 'id="membership"',
             'id="coming-soon"', 'id="get-involved"', 'id="from-the-booth"',
         )
         for marker in markers:
