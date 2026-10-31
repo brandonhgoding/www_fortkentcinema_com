@@ -13,7 +13,7 @@
 
   {% include "dashboard/_alerts.html" %}
 
-  {% if not perms.cinema.view_engagement and not perms.cinema.view_showtime and not perms.cinema.view_screen and not perms.boxoffice.view_salespull %}
+  {% if not perms.cinema.view_engagement and not perms.cinema.view_showtime and not perms.boxoffice.view_salespull %}
   <p class="page-subtitle">You don't have access to any dashboard sections yet. Ask an administrator for access.</p>
   {% endif %}
 
@@ -29,13 +29,6 @@
     <div class="card"><div class="cardBody">
       <p class="cardLabel">Today's Showtimes</p>
       <p class="cardValue">{{ today_showtimes_count }}</p>
-    </div></div>
-    {% endif %}
-    {% if perms.cinema.view_screen %}
-    <div class="card"><div class="cardBody">
-      <p class="cardLabel">Screens</p>
-      <p class="cardValue">{{ screens_count }}</p>
-      <a href="{% url 'dashboard:screens' %}" class="cardLink">Manage &rarr;</a>
     </div></div>
     {% endif %}
     {% if sales_panel %}

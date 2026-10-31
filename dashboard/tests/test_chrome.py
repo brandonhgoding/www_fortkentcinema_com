@@ -43,7 +43,6 @@ class ChromeTests(TestCase):
                 "Members",
                 "Memberships",
                 "Rental Inquiries",
-                "Screens",
                 "Subscribers",
                 "Voicemails",
             ],
@@ -65,23 +64,22 @@ class ChromeTests(TestCase):
         self.assertIn("staffer@example.com", html)
 
     def test_active_nav_marked(self) -> None:
-        html = self.client.get(reverse("dashboard:screens")).content.decode()
-        # the Screens link carries the active class on its own page
-        self.assertRegex(html, r'href="/dashboard/screens"[^>]*class="[^"]*\bactive\b')
+        html = self.client.get(reverse("dashboard:members")).content.decode()
+        # the Members link carries the active class on its own page
+        self.assertRegex(html, r'href="/dashboard/members"[^>]*class="[^"]*\bactive\b')
 
     def test_sidebar_shows_only_viewable_sections(self) -> None:
         from phone.models import Voicemail
 
         Voicemail.objects.create(recording_sid="RE-badge")
-        make_staff(email="box@example.com", perms=("cinema.view_screen",))
+        make_staff(email="box@example.com", perms=("audience.view_member",))
         self.client.login(username="box@example.com", password="pw12345")
         html = self.client.get(reverse("dashboard:home")).content.decode()
-        self.assertIn(f'href="{reverse("dashboard:screens")}"', html)
+        self.assertIn(f'href="{reverse("dashboard:members")}"', html)
         for name in (
             "ad_inquiries",
             "blog",
             "engagements",
-            "members",
             "tiers",
             "rental_inquiries",
             "subscribers",
@@ -107,7 +105,6 @@ class ChromeTests(TestCase):
             "members",
             "tiers",
             "rental_inquiries",
-            "screens",
             "subscribers",
             "voicemails",
         ):
