@@ -70,8 +70,13 @@ class RobotsTxtTests(TestCase):
 
     def test_private_areas_disallowed(self):
         body = self.robots()
-        for path in ["/admin/", "/api/", "/dashboard/", "/login", "/logout/"]:
+        for path in ["/admin/", "/dashboard/", "/login", "/logout/"]:
             self.assertIn(f"Disallow: {path}", body)
+
+    def test_removed_api_is_not_disallowed(self):
+        """The DRF API went 2026-10-31. Left crawlable so Google sees its
+        old URLs 404 and drops them."""
+        self.assertNotIn("Disallow: /api", self.robots())
 
     def test_calendar_is_not_disallowed(self):
         """Deliberate. A disallowed URL is never fetched, so Google would never

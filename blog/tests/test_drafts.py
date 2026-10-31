@@ -54,9 +54,3 @@ class DraftVisibilityTests(TestCase):
         body = self.client.get("/sitemap.xml").content.decode()
         self.assertIn(f"/blog/{self.live.slug}", body)
         self.assertNotIn(f"/blog/{self.draft.slug}", body)
-
-    def test_api_hides_drafts(self):
-        resp = self.client.get("/api/posts/")
-        slugs = [p["slug"] for p in resp.json()["results"]]
-        self.assertEqual(slugs, [self.live.slug])
-        self.assertEqual(self.client.get(f"/api/posts/{self.draft.slug}/").status_code, 404)
