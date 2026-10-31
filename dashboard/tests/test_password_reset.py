@@ -183,6 +183,7 @@ class PasswordResetTests(TestCase):
 @override_settings(
     AXES_ENABLED=True,
     AUTHENTICATION_BACKENDS=[
+        "accounts.backends.IpLockoutBackend",
         "axes.backends.AxesStandaloneBackend",
         "django.contrib.auth.backends.ModelBackend",
     ],

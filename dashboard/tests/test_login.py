@@ -5,6 +5,12 @@ from django.utils import timezone
 from django.test import TestCase, override_settings
 from dashboard.tests.helpers import make_staff
 
+PRODUCTION_BACKENDS = [
+    "accounts.backends.IpLockoutBackend",
+    "axes.backends.AxesStandaloneBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
 
 class LoginTests(TestCase):
     def setUp(self) -> None:
@@ -51,10 +57,7 @@ class LoginTests(TestCase):
 
 @override_settings(
     AXES_ENABLED=True,
-    AUTHENTICATION_BACKENDS=[
-        "axes.backends.AxesStandaloneBackend",
-        "django.contrib.auth.backends.ModelBackend",
-    ],
+    AUTHENTICATION_BACKENDS=PRODUCTION_BACKENDS,
 )
 class LoginLockoutTests(TestCase):
     """Password guessing against staff accounts was bounded only by the
@@ -133,10 +136,6 @@ class StaffNextTests(TestCase):
         self.assertEqual(resp["Location"], "/dashboard/members")
 
 
-PRODUCTION_BACKENDS = [
-    "axes.backends.AxesStandaloneBackend",
-    "django.contrib.auth.backends.ModelBackend",
-]
 UNVERIFIED = "Please confirm your email first. We can send a new link."
 
 
@@ -221,10 +220,7 @@ class MemberSignInTests(TestCase):
 
 @override_settings(
     AXES_ENABLED=True,
-    AUTHENTICATION_BACKENDS=[
-        "axes.backends.AxesStandaloneBackend",
-        "django.contrib.auth.backends.ModelBackend",
-    ],
+    AUTHENTICATION_BACKENDS=PRODUCTION_BACKENDS,
 )
 class LoginIpCapTests(TestCase):
     """The axes lockout is per (email, address), so one address trying one
@@ -276,6 +272,30 @@ class LoginIpCapTests(TestCase):
         with mock.patch("time.time", return_value=later):
             resp = self.attempt("staffer@example.com", "pw12345")
         self.assertEqual(resp.status_code, 302)
+
+    def test_admin_login_is_locked_too(self) -> None:
+        # The admin's own sign-in form checks passwords through the same
+        # backends; the cap must hold there, not only on /login.
+        self.spray(settings.LOGIN_IP_FAILURE_LIMIT)
+        resp = self.client.post(
+            "/admin/login/",
+            {"username": "staffer@example.com", "password": "pw12345"},
+            REMOTE_ADDR=self.IP,
+        )
+        self.assertEqual(resp.status_code, 429)
+        self.assertIn("Too many sign-in attempts", resp.content.decode())
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_spraying_through_the_admin_form_locks_the_address(self) -> None:
+        for i in range(settings.LOGIN_IP_FAILURE_LIMIT):
+            self.client.post(
+                "/admin/login/",
+                {"username": f"member{i}@example.com", "password": "Winter2026!"},
+                REMOTE_ADDR=self.IP,
+            )
+        self.assertEqual(
+            self.attempt("staffer@example.com", "pw12345").status_code, 429
+        )
 
     def test_no_address_means_no_cap(self) -> None:
         # gunicorn behind nginx without X-Real-IP: nothing to count against.
