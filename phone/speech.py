@@ -157,6 +157,5 @@ def hours_and_prices_speech() -> str:
         f"Matinees, for shows starting at {_clock(p['matinee_until'])} or earlier, "
         f"are ${p['matinee']}. "
         f"Members pay ${p['member']} for any show, and some shows are free "
-        f"for members. "
-        f"You can also buy tickets ahead of time at {WEBSITE}."
+        f"for members."
     )

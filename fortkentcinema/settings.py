@@ -52,7 +52,6 @@ INSTALLED_APPS = [
     "audience.apps.AudienceConfig",
     "phone.apps.PhoneConfig",
     "boxoffice.apps.BoxofficeConfig",
-    "tickets.apps.TicketsConfig",
     "join.apps.JoinConfig",
     "axes",
 ]
@@ -340,8 +339,10 @@ SQUARE_ENVIRONMENT = config("SQUARE_ENVIRONMENT", default="sandbox")
 SQUARE_WEBHOOK_SIGNATURE_KEY = config("SQUARE_WEBHOOK_SIGNATURE_KEY", default="")
 SQUARE_WEBHOOK_URL = config("SQUARE_WEBHOOK_URL", default="")
 
-# Online tickets: the scheme and host for the link Square sends buyers back to.
+# The scheme and host for the link Square sends membership buyers back to.
 # A setting, like SQUARE_WEBHOOK_URL: build_absolute_uri() is wrong behind nginx.
+# (Named for the online tickets it first served; kept so the deployed env
+# needs no change.)
 TICKETS_BASE_URL = config("TICKETS_BASE_URL", default="")
 
 # Nightly flash-gross emails (boxoffice app). Who receives them lives in the

@@ -1,26 +1,8 @@
 {% comment %}
-One showtime chip, shared by movie_card.html and movie_schedule_card.html so
-the two views of the same schedule cannot drift. `rating_class` is the
-caller's chip class for CC/OC (movie-rating or schedule-card__rating).
-
-Four states, from HomeView._add_ticket_state:
-- sold out online: the plain chip with "Sold out online" in the note slot. No
-  link: the ticket page would only say the same thing.
-- in-person purchase only (online allowance set to 0): the same plain chip
-  with "In-person purchase only" in the note slot, and no link.
-- purchasable: an <a> to the ticket page that keeps the chip's look, with a
-  small "Buy" cue, so the card still reads as a schedule.
-- anything else (Square off, run not on sale, past the cutoff): the plain
-  chip, information only; ticket_info.html says how to pay at the door.
-CC/OC wear the rating chip after the time in every state, with the label
-spelled out sr-only for screen readers.
+One showtime chip, shared by the hero, the Coming Soon and calendar dialogs,
+so every view of the same schedule reads alike. `rating_class` is the
+caller's chip class for CC/OC. Information only: tickets are bought at the
+box office, which ticket_info.html says. CC/OC wear the rating chip after
+the time, with the label spelled out sr-only for screen readers.
 {% endcomment %}
-{% if time.sold_out %}
-<span class="showtime showtime--noted">{{ time.time }}{% if time.captions %} <abbr class="{{ rating_class }}" title="{{ time.captions_label }}" aria-hidden="true">{{ time.captions }}</abbr><span class="sr-only">{{ time.captions_label }}</span>{% endif %}<span class="showtime__note">Sold out online</span></span>
-{% elif time.in_person %}
-<span class="showtime showtime--noted">{{ time.time }}{% if time.captions %} <abbr class="{{ rating_class }}" title="{{ time.captions_label }}" aria-hidden="true">{{ time.captions }}</abbr><span class="sr-only">{{ time.captions_label }}</span>{% endif %}<span class="showtime__note">In-person purchase only</span></span>
-{% elif time.ticket_url %}
-<a class="showtime showtime--buy" href="{{ time.ticket_url }}">{{ time.time }} <span class="showtime__buy">Buy</span>{% if time.captions %} <abbr class="{{ rating_class }}" title="{{ time.captions_label }}" aria-hidden="true">{{ time.captions }}</abbr><span class="sr-only">{{ time.captions_label }}</span>{% endif %}</a>
-{% else %}
 <span class="showtime">{{ time.time }}{% if time.captions %} <abbr class="{{ rating_class }}" title="{{ time.captions_label }}" aria-hidden="true">{{ time.captions }}</abbr><span class="sr-only">{{ time.captions_label }}</span>{% endif %}</span>
-{% endif %}

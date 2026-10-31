@@ -19,10 +19,8 @@ from cinema import voting as vote_engine
 from cinema.models import (
     Poll,
     PollStatus,
-    Showtime,
     Vote,
 )
-from tickets import availability
 from web.constants import (
     AD_ARTWORK_DEADLINE_DAY,
     AD_SLIDE_PRICE,
@@ -96,34 +94,27 @@ class HomeView(TemplateView):
         today = today_eastern()
 
         # Hero: every film with a showing to come, the next one on the fold
-        # and the rest a click away, each with its own times carrying the
-        # ticket state the chips read. The hero is the listing, so this is
-        # the one place a time renders. One for_showtimes() call for all.
+        # and the rest a click away, each with its own times. The hero is
+        # the listing, so this is the one place a time renders.
         hero_films = get_hero_films()
-        hero_times = []
         for film in hero_films:
             for slot in film["upcoming"]:
                 slot["label"] = format_showtime_date(
                     slot["key"], weekday="short", today=today
                 )
-                hero_times.extend(slot["times"])
             film["date_label"] = format_showtime_date(
                 film["date"], weekday="short", today=today
             )
         ctx["hero_films"] = hero_films
 
-        # Coming Soon: a run past the hero's week sells from its card, which
-        # lists the run's showtimes as the same chips. Their ticket state
-        # comes from the one for_showtimes() call the hero's chips use.
-        coming_times = []
+        # Coming Soon: a run past the hero's week lists its showtimes in a
+        # dialog off its card, as the same chips.
         for card in coming_soon:
             # A card without the key (hand-built fixtures) has no rows.
             for slot in card.get("upcoming", ()):
                 slot["label"] = format_showtime_date(
                     slot["key"], weekday="short", today=today
                 )
-                coming_times.extend(slot["times"])
-        _add_ticket_state(hero_times + coming_times)
 
         # One schema.org ScreeningEvent per listed showtime, flattened here
         # so partials/home_jsonld.html is a single loop with one forloop.last.
@@ -141,9 +132,8 @@ class HomeView(TemplateView):
 
 def _screening_events(listed):
     """ScreeningEvent dicts for `listed` (film dict, section URL) pairs, in
-    order, each showtime once. `section_url` is the offer's URL when online
-    sales are closed: the section that lists the showing, where the door
-    prices are."""
+    order, each showtime once. `section_url` is the offer's URL: the section
+    that lists the showing, where the door prices are."""
     seen = set()
     events = []
     for film, section_url in listed:
@@ -157,41 +147,10 @@ def _screening_events(listed):
                     {
                         "movie": film,
                         "iso": time["iso"],
-                        "ticket_url": time["ticket_url"],
-                        "sold_out": time["sold_out"],
-                        "in_person": time["in_person"],
                         "section_url": section_url,
                     }
                 )
     return events
-
-
-def _add_ticket_state(times):
-    """Give each listed time dict its online-ticket state, in place.
-
-    `ticket_url` is the buy page when the showing can sell now, and is kept
-    when it is sold out online (the JSON-LD offer still names the page);
-    otherwise it is "". `sold_out` is True only for a sold-out showing;
-    `in_person` only for a showing whose online allowance is 0 on purpose.
-    One for_showtimes() call for every chip: database only, never Square.
-    """
-    times = list(times)
-    ids = [t["showtime_id"] for t in times if t.get("showtime_id")]
-    showtimes = Showtime.objects.filter(pk__in=ids).select_related(
-        "engagement", "screen"
-    )
-    states = availability.for_showtimes(
-        showtimes, timezone.now(), square_enabled=square_enabled()
-    )
-    for time in times:
-        state = states.get(time.get("showtime_id"))
-        sold_out = state is not None and state.reason == "sold_out"
-        has_page = state is not None and (state.purchasable or sold_out)
-        time["ticket_url"] = (
-            reverse("tickets:buy", args=[time["showtime_id"]]) if has_page else ""
-        )
-        time["sold_out"] = sold_out
-        time["in_person"] = state is not None and state.reason == "in_person"
 
 
 def _initial_calendar_month(coming_soon):
@@ -305,8 +264,7 @@ class CalendarMonthView(TemplateView):
         # A poster on today or a later day opens that day's times for the
         # film: one dialog each (partials/times_dialog.html), keyed by its
         # place in this list. Past days' showings are gone, so their posters
-        # stay plain, as do hidden runs' (no times). One for_showtimes() call
-        # for every chip in the month.
+        # stay plain, as do hidden runs' (no times).
         #
         # The dialog id names the date, not the day of the month: the arrows
         # swap this fragment with HTMX, which settles attributes between old
@@ -314,7 +272,6 @@ class CalendarMonthView(TemplateView):
         # in the old month would come back visible, with no way to close it,
         # under a repeated id.
         dialogs = []
-        times = []
         for cell in cells:
             if cell["day"] is None or cell["is_past"] or not cell["movies"]:
                 continue
@@ -332,8 +289,6 @@ class CalendarMonthView(TemplateView):
                 movie["eyebrow"] = date.strftime("%A, %B %-d")
                 movie["rows"] = [{"label": "", "times": movie["times"]}]
                 dialogs.append(movie)
-                times.extend(movie["times"])
-        _add_ticket_state(times)
 
         # Prev/next (year, 0-based month), wrapping December<->January.
         prev_month = (month - 1) % 12

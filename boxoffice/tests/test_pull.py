@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 
 from boxoffice.gateway import GatewayError, OrderData, OrderLine, Tender
 from boxoffice.models import SaleLine, SalesPull, SquareVariation
+from boxoffice.spec import ONLINE_REFERENCE_PREFIX
 from boxoffice.pull import (
     business_date, day_bounds, mark_refunded, pull_day, recompute_show_dates,
 )
@@ -12,9 +13,6 @@ from boxoffice.sync import live_item, push
 from boxoffice.tests.fakes import FakeGateway
 from cinema.models import Engagement, EngagementFilm, Film, Screen, Showtime
 from django.test import SimpleTestCase, TestCase, override_settings
-from tickets.models import TicketOrder
-from tickets.spec import checkout_spec
-from tickets.tests.factories import make_order
 
 LOGGER = "boxoffice.pull"
 DAY = datetime.date(2026, 10, 9)
@@ -334,26 +332,28 @@ class PullDayTests(TestCase):
     # dates such a sale by when the buyer paid.
 
     def link_order(self, quantity: int = 2):
-        """A website order with its payment link made; (ticket order, Square id)."""
+        """A website payment-link order, not yet paid; (showtime, Square id)."""
         showtime = Showtime.objects.create(
             engagement=self.eng, screen=self.eng.screen,
             starts_at=at_eastern(2026, 10, 11, 19, 0))
-        ticket_order = make_order(showtime, lines={"adult": quantity})
-        link = self.gw.create_payment_link(
-            checkout_spec(ticket_order, {"adult": self.adult_id}))
-        ticket_order.square_order_id = link.order_id
-        ticket_order.save(update_fields=["square_order_id"])
-        return ticket_order, link.order_id
+        order_id = f"SQ-{len(self.gw.orders) + 1}"
+        self.gw.orders.append(OrderData(
+            order_id=order_id, closed_at=None,
+            lines=(line(f"{order_id}-0", "Dune", "Adult", self.adult_id,
+                        quantity, 800 * quantity),),
+            reference_id=f"{ONLINE_REFERENCE_PREFIX}{order_id}",
+            showtime_id=showtime.pk))
+        return showtime, order_id
 
     def test_paid_payment_link_order_is_stored_on_its_payment_day(self) -> None:
-        ticket_order, order_id = self.link_order(quantity=2)
+        showtime, order_id = self.link_order(quantity=2)
         self.gw.pay(order_id, paid_at=at_eastern(2026, 10, 9, 12, 0))
         pull = pull_day(DAY, self.gw)
         self.assertEqual((pull.status, pull.orders, pull.lines), ("OK", 1, 1))
         stored = SaleLine.objects.get(order_id=order_id)
         self.assertEqual(stored.business_date, DAY)
         self.assertIsNone(stored.closed_at)
-        self.assertEqual(stored.showtime, ticket_order.showtime)
+        self.assertEqual(stored.showtime, showtime)
         self.assertEqual((stored.engagement_id, stored.quantity, stored.gross_cents),
                          (self.eng.pk, 2, 1600))
         self.eng.refresh_from_db()
@@ -389,27 +389,6 @@ class PullDayTests(TestCase):
         stored = SaleLine.objects.get()
         self.assertEqual((stored.business_date, stored.closed_at), (DAY, closed_at))
 
-    def test_pull_counts_paid_online_orders_missing_from_the_ledger(self) -> None:
-        # The guard for the day Square stops returning our paid orders: a
-        # website order paid on the day with no ledger line after the pull.
-        showtime = Showtime.objects.create(
-            engagement=self.eng, screen=self.eng.screen,
-            starts_at=at_eastern(2026, 10, 11, 19, 0))
-        make_order(showtime, status="PAID", square_order_id="SQ-GONE",
-                   paid_at=at_eastern(2026, 10, 9, 12, 0))
-        make_order(showtime, status="PAID", square_order_id="SQ-OTHER-DAY",
-                   paid_at=at_eastern(2026, 10, 10, 12, 0))
-        with self.assertLogs(LOGGER, "WARNING") as logs:
-            pull = pull_day(DAY, self.gw)
-        self.assertEqual((pull.status, pull.missing_online), ("OK", 1))
-        self.assertIn("SQ-GONE", logs.output[0])
-
-    def test_stored_online_orders_are_not_missing(self) -> None:
-        _, order_id = self.link_order()
-        self.gw.pay(order_id, paid_at=at_eastern(2026, 10, 9, 12, 0))
-        pull = pull_day(DAY, self.gw)
-        self.assertEqual((pull.status, pull.missing_online), ("OK", 0))
-
     def test_long_register_names_are_cut_to_the_ledger_columns(self) -> None:
         # Square allows 512-character item and 255-character variation names;
         # the ledger holds 200 and 80, and Postgres refuses longer (SQLite,
@@ -422,24 +401,8 @@ class PullDayTests(TestCase):
         self.assertEqual((len(stored.item_name), len(stored.variation_name)),
                          (200, 80))
 
-    def test_refunded_online_order_is_marked_on_the_next_pull(self) -> None:
-        # The refund may land after the lookback stopped re-pulling the sale
-        # day; the pull still derives the mark from the order's status so a
-        # re-pull never undoes it.
-        ticket_order, order_id = self.link_order(quantity=2)
-        self.gw.pay(order_id, paid_at=at_eastern(2026, 10, 9, 12, 0))
-        pull_day(DAY, self.gw)
-        TicketOrder.objects.filter(pk=ticket_order.pk).update(status="REFUNDED")
-        pull_day(DAY, self.gw)
-        stored = SaleLine.objects.get(order_id=order_id)
-        self.assertEqual((stored.quantity, stored.gross_cents,
-                          stored.refunded_quantity, stored.refunded_cents),
-                         (2, 1600, 2, 1600))
-        self.eng.refresh_from_db()
-        self.assertEqual(self.eng.admissions, 0)
-
     def test_mark_refunded_zeroes_the_lines_and_admissions_at_once(self) -> None:
-        ticket_order, order_id = self.link_order(quantity=2)
+        _, order_id = self.link_order(quantity=2)
         self.gw.pay(order_id, paid_at=at_eastern(2026, 10, 9, 12, 0))
         pull_day(DAY, self.gw)
         self.eng.refresh_from_db()
@@ -453,9 +416,8 @@ class PullDayTests(TestCase):
         mark_refunded("SQ-NOT-PULLED-YET")  # nothing to mark, no error
 
     def test_pull_works_without_a_website_source(self) -> None:
-        # The ledger does not depend on the tickets app: with nothing
-        # registered, lines are stored, nothing is refunded, and the
-        # missing-online guard has nothing to compare against.
+        # With nothing registered, lines are stored, nothing is refunded,
+        # and the missing-online guard has nothing to compare against.
         _, order_id = self.link_order()
         self.gw.pay(order_id, paid_at=at_eastern(2026, 10, 9, 12, 0))
         with mock.patch("boxoffice.pull.website", None):

@@ -41,10 +41,6 @@ SPEC_PERMISSIONS = frozenset(
         "cinema.change_rentalinquiry",
         "cinema.view_adinquiry",
         "cinema.change_adinquiry",
-        # tickets
-        "tickets.view_ticketorder",
-        "tickets.change_ticketorder",
-        "tickets.refund_ticketorder",  # custom: Meta.permissions on TicketOrder
         # audience
         "audience.view_member",
         "audience.add_member",

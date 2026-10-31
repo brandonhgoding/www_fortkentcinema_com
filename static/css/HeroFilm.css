@@ -387,48 +387,6 @@
   color: var(--color-text);
 }
 
-.hero--film .showtime--buy {
-  border-color: var(--color-gold);
-  color: var(--color-gold);
-  box-shadow: 0 0 8px var(--neon-gold-far);
-  transition: background var(--transition-base), color var(--transition-base),
-    box-shadow var(--transition-base);
-}
-
-.hero--film .showtime--buy:hover {
-  background: var(--color-gold);
-  color: var(--color-on-accent);
-  text-decoration: none;
-  box-shadow: 0 0 20px var(--color-gold-glow);
-}
-
-.hero--film .showtime__buy {
-  margin-left: 0;
-  padding: 0.1rem 0.4rem;
-  font-size: 0.65rem;
-}
-
-.hero--film .showtime--buy:hover .showtime__buy {
-  background: var(--color-on-accent);
-  color: var(--color-gold);
-}
-
-/* Sold out / in-person: the note goes beside the time inside the pill, not
- * under it, so a row of pills keeps one height. */
-.hero--film .showtime--noted {
-  max-width: none;
-}
-
-.hero--film .showtime__note {
-  display: inline;
-  font-size: 0.85em;
-  color: var(--color-text-muted);
-}
-
-.hero--film .showtime__note::before {
-  content: '\00b7\00a0';
-}
-
 /* CC / OC after a time in the hero wear the rating chip the meta line uses. */
 .hero--film .showtime .hero-film__cert {
   font-size: 0.75em;
@@ -606,10 +564,6 @@
   .hero--film .showtime {
     padding: 0.4rem 0.55rem;
     font-size: 0.9rem;
-  }
-
-  .hero--film .showtime__buy {
-    font-size: 0.6rem;
   }
 
   /* The strip stacks, items left-aligned with each other and the block

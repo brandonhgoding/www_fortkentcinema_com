@@ -20,8 +20,9 @@ logger = logging.getLogger(__name__)
 class WebsiteOrders(Protocol):
     """What the website knows about its own Square orders.
 
-    The tickets app registers an implementation at startup; the ledger never
-    imports it. Which showtime an order was for comes from the order itself
+    An app may register an implementation at startup; the ledger never
+    imports it. (The online tickets app, removed 2026-10-31, was the only
+    one; with none registered the ledger skips these checks.) Which showtime an order was for comes from the order itself
     (Square carries our metadata back), so only what Square cannot say is
     asked here.
     """

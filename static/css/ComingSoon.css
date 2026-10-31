@@ -351,10 +351,6 @@
   gap: 0.6rem;
 }
 
-.coming-tickets .showtime--noted {
-  max-width: 100%;
-}
-
 /* CC / OC after a time, the same small bordered chip the hero wears. */
 .coming-tickets__cert {
   display: inline-block;

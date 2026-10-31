@@ -1,8 +1,9 @@
-"""Home page showtime chips and ScreeningEvent offers for online tickets.
+"""Home page showtime chips, the Coming Soon showtimes dialog, and the
+ScreeningEvent markup.
 
-A purchasable showing's chip links to its ticket page with a "Buy" cue; a
-showing sold out online keeps a plain chip with a note; anything else (Square
-off, run not pushed, past the cutoff) stays the plain chip it always was.
+Every chip is information only (tickets are bought at the box office). A run
+beyond the hero's week lists its times in a dialog off its Coming Soon card.
+Each showing is one ScreeningEvent whose offer names the section that lists it.
 """
 
 import datetime
@@ -11,18 +12,14 @@ import re
 from zoneinfo import ZoneInfo
 
 from django.db import connection
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
-from tickets.tests.factories import make_live_item, make_order, make_showtime
+from cinema.tests.factories import make_showtime
 
-SQUARE_ON = {
-    "SQUARE_ACCESS_TOKEN": "t",
-    "SQUARE_LOCATION_ID": "L",
-    "SQUARE_TICKET_CATEGORY_ID": "C",
-}
+CHIP = '<span class="showtime">'
 
 
 def screening_events(html):
@@ -43,64 +40,24 @@ def in_two_days(hour=19):
     )
 
 
-@override_settings(**SQUARE_ON)
-class HomeTicketChipTests(TestCase):
+class HomeChipTests(TestCase):
     def setUp(self):
         self.st = make_showtime(starts_at=in_two_days())
-        make_live_item(self.st.engagement)
-        self.buy_url = reverse("tickets:buy", args=[self.st.pk])
 
     def home(self):
         return self.client.get(reverse("home")).content.decode()
 
-    def test_purchasable_chip_is_a_link(self):
-        html = self.home()
-        self.assertIn(f'<a class="showtime showtime--buy" href="{self.buy_url}"', html)
-        self.assertIn('<span class="showtime__buy">Buy</span>', html)
-        self.assertNotIn("Sold out online", html)
+    def test_chip_is_the_plain_time(self):
+        self.assertIn(f"{CHIP}7:00 PM</span>", self.home())
 
-    def test_sold_out_chip_is_plain_with_note(self):
-        self.st.online_allowance = 1
-        self.st.save()
-        make_order(self.st, status="PAID")
-        html = self.home()
-        # The JSON-LD offer still names the ticket page; the chip must not.
-        self.assertNotIn(f'href="{self.buy_url}"', html)
-        self.assertIn('<span class="showtime__note">Sold out online</span>', html)
-        self.assertNotIn('class="showtime__buy"', html)
-
-    def test_in_person_only_chip_is_plain_with_note(self):
-        self.st.online_allowance = 0
-        self.st.save()
-        html = self.home()
-        self.assertNotIn(self.buy_url, html)
-        self.assertIn(
-            '<span class="showtime__note">In-person purchase only</span>', html
-        )
-        self.assertNotIn("Sold out online", html)
-        self.assertNotIn('class="showtime__buy"', html)
-
-    @override_settings(SQUARE_ACCESS_TOKEN="")
-    def test_disabled_square_leaves_plain_chips(self):
-        html = self.home()
-        self.assertNotIn(self.buy_url, html)
-        self.assertNotIn("showtime--buy", html)
-        self.assertNotIn("Sold out online", html)
-        self.assertIn('<span class="showtime">7:00 PM</span>', html)
-
-    def test_open_captions_chip_survives_on_a_buy_link(self):
+    def test_open_captions_chip_carries_the_badge(self):
         self.st.captions = "OC"
         self.st.save()
-        html = self.home()
-        link = re.search(
-            r'<a class="showtime[^"]*" href="%s">.*?</a>' % self.buy_url, html, re.S
-        )
-        self.assertIsNotNone(link)
-        self.assertIn(">OC</abbr>", link.group(0))
-        self.assertIn('<span class="sr-only">Open Captions</span>', link.group(0))
-        # The chip alone: no sentence, so the pill keeps the row's height.
-        self.assertNotIn("showtime--noted", link.group(0))
-        self.assertNotIn("showtime__note", link.group(0))
+        chip = re.search(r'<span class="showtime">7:00 PM.*?</span></span>',
+                         self.home(), re.S)
+        self.assertIsNotNone(chip)
+        self.assertIn(">OC</abbr>", chip.group(0))
+        self.assertIn('<span class="sr-only">Open Captions</span>', chip.group(0))
 
     def test_chip_count_does_not_add_queries(self):
         with CaptureQueriesContext(connection) as one:
@@ -112,48 +69,16 @@ class HomeTicketChipTests(TestCase):
         with CaptureQueriesContext(connection) as three:
             html = self.home()
         # Three times, each once: the hero is the listing.
-        self.assertEqual(html.count('class="showtime__buy"'), 3)
+        self.assertEqual(html.count(CHIP), 3)
         self.assertEqual(len(three), len(one))
 
 
-@override_settings(**SQUARE_ON)
 class HomeScreeningOfferTests(TestCase):
-    def setUp(self):
-        self.st = make_showtime(starts_at=in_two_days())
-        self.buy_url = "http://testserver" + reverse("tickets:buy", args=[self.st.pk])
-
-    def offers(self):
+    def test_offer_is_in_stock_and_points_at_now_showing(self):
+        make_showtime(starts_at=in_two_days())
         (event,) = screening_events(self.client.get(reverse("home")).content.decode())
-        return event["offers"]
-
-    def test_purchasable_offer_points_at_the_ticket_page(self):
-        make_live_item(self.st.engagement)
-        offers = self.offers()
-        self.assertEqual(offers["url"], self.buy_url)
-        self.assertEqual(offers["availability"], "https://schema.org/InStock")
-
-    def test_sold_out_offer_is_sold_out_and_keeps_the_url(self):
-        make_live_item(self.st.engagement)
-        self.st.online_allowance = 1
-        self.st.save()
-        make_order(self.st, status="PAID")
-        offers = self.offers()
-        self.assertEqual(offers["url"], self.buy_url)
-        self.assertEqual(offers["availability"], "https://schema.org/SoldOut")
-
-    def test_in_person_only_offer_is_in_store_only(self):
-        make_live_item(self.st.engagement)
-        self.st.online_allowance = 0
-        self.st.save()
-        offers = self.offers()
-        self.assertEqual(offers["url"], "http://testserver/#now-showing")
-        self.assertEqual(offers["availability"], "https://schema.org/InStoreOnly")
-
-    def test_closed_offer_keeps_the_now_showing_url(self):
-        # No live Square item for the run: sales are closed, not sold out.
-        offers = self.offers()
-        self.assertEqual(offers["url"], "http://testserver/#now-showing")
-        self.assertEqual(offers["availability"], "https://schema.org/InStock")
+        self.assertEqual(event["offers"]["url"], "http://testserver/#now-showing")
+        self.assertEqual(event["offers"]["availability"], "https://schema.org/InStock")
 
 
 def in_days(days, hour=19):
@@ -178,16 +103,13 @@ def coming_soon_section(html):
     return html[html.index('id="coming-soon"'):]
 
 
-@override_settings(**SQUARE_ON)
-class ComingSoonTicketChipTests(TestCase):
-    """A run beyond the hero's week sells from its Coming Soon card: a
-    "Showtimes & tickets" button opens a dialog listing the run's showtimes
+class ComingSoonShowtimesDialogTests(TestCase):
+    """A run beyond the hero's week lists its times from its Coming Soon
+    card: a "Showtimes" button opens a dialog listing the run's showtimes
     as the same chips the hero uses. The card itself stays as it was."""
 
     def setUp(self):
         self.st = coming_soon_showtime()
-        make_live_item(self.st.engagement)
-        self.buy_url = reverse("tickets:buy", args=[self.st.pk])
 
     def home(self):
         return self.client.get(reverse("home")).content.decode()
@@ -208,12 +130,8 @@ class ComingSoonTicketChipTests(TestCase):
         html = self.home()
         card = coming_soon_section(html)
         body = card[: card.index('id="coming-tickets-1"')]
-        self.assertNotIn(self.buy_url, body)
-        dialog = self.dialog(html)
-        self.assertIn(
-            f'<a class="showtime showtime--buy" href="{self.buy_url}"', dialog
-        )
-        self.assertIn('<span class="showtime__buy">Buy</span>', dialog)
+        self.assertNotIn(CHIP, body)
+        self.assertIn(f"{CHIP}7:00 PM</span>", self.dialog(html))
 
     def test_the_dialog_names_the_date_of_each_row(self):
         dialog = self.dialog(self.home())
@@ -233,22 +151,8 @@ class ComingSoonTicketChipTests(TestCase):
         for days in (22, 23, 24):
             make_showtime_for(self.st, days)
         dialog = self.dialog(self.home())
-        self.assertEqual(dialog.count('class="showtime__buy"'), 4)
+        self.assertEqual(dialog.count(CHIP), 4)
         self.assertNotIn("Show all", dialog)
-
-    def test_sold_out_chip_is_plain_with_note(self):
-        self.st.online_allowance = 1
-        self.st.save()
-        make_order(self.st, status="PAID")
-        dialog = self.dialog(self.home())
-        self.assertNotIn(self.buy_url, dialog)
-        self.assertIn("Sold out online", dialog)
-
-    def test_disabled_square_leaves_plain_chips(self):
-        with override_settings(SQUARE_ACCESS_TOKEN=""):
-            dialog = self.dialog(self.home())
-        self.assertNotIn(self.buy_url, dialog)
-        self.assertIn('<span class="showtime">7:00 PM</span>', dialog)
 
     def test_a_run_with_no_showtimes_has_no_button_and_no_dialog(self):
         self.st.delete()
@@ -269,27 +173,26 @@ class ComingSoonTicketChipTests(TestCase):
             make_showtime_for(self.st, days)
         with CaptureQueriesContext(connection) as three:
             html = self.home()
-        self.assertEqual(coming_soon_section(html).count('class="showtime__buy"'), 3)
+        self.assertEqual(coming_soon_section(html).count(CHIP), 3)
         self.assertEqual(len(three), len(one))
 
-    def test_the_offer_points_at_the_ticket_page(self):
+    def test_the_offer_points_at_coming_soon_not_the_hero(self):
+        # The run is past the hero's week, so the offer names the card's
+        # section.
         (event,) = screening_events(self.home())
-        self.assertEqual(event["offers"]["url"], "http://testserver" + self.buy_url)
+        self.assertEqual(event["offers"]["url"], "http://testserver/#coming-soon")
         self.assertEqual(event["offers"]["availability"], "https://schema.org/InStock")
 
     def test_a_run_in_the_hero_and_coming_soon_is_marked_up_once(self):
         # Starts the day after tomorrow: within the hero's week and, starting
-        # tomorrow or later, on a Coming Soon card too. One event, not two.
-        near = coming_soon_showtime(days=2)
-        make_live_item(near.engagement, prefix="near-")
+        # tomorrow or later, on a Coming Soon card too. One event, not two,
+        # and it names the hero.
+        coming_soon_showtime(days=2)
         events = screening_events(self.home())
         urls = sorted(e["offers"]["url"] for e in events)
         self.assertEqual(
             urls,
-            sorted(
-                "http://testserver" + reverse("tickets:buy", args=[pk])
-                for pk in (self.st.pk, near.pk)
-            ),
+            ["http://testserver/#coming-soon", "http://testserver/#now-showing"],
         )
 
 
@@ -300,14 +203,3 @@ def make_showtime_for(st, days, hour=19):
     return Showtime.objects.create(
         engagement=st.engagement, screen=st.screen, starts_at=in_days(days, hour)
     )
-
-
-@override_settings(**SQUARE_ON)
-class ComingSoonClosedOfferTests(TestCase):
-    def test_a_closed_offer_points_at_coming_soon_not_the_hero(self):
-        # No live Square item: sales closed, the door still sells it. The run
-        # is past the hero's week, so the offer names the card's section.
-        coming_soon_showtime()
-        (event,) = screening_events(self.client.get(reverse("home")).content.decode())
-        self.assertEqual(event["offers"]["url"], "http://testserver/#coming-soon")
-        self.assertEqual(event["offers"]["availability"], "https://schema.org/InStock")

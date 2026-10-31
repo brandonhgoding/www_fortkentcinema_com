@@ -35,7 +35,7 @@ def square_webhook(request: HttpRequest) -> HttpResponse:
     ``payment.created`` usually arrives APPROVED and ``payment.updated`` brings
     COMPLETED; either is accepted once COMPLETED.
 
-    Registered handlers (the tickets app's) get the payment first; the
+    Registered handlers (none since online tickets went) get the payment first; the
     membership handler runs only when none claims it. Square retries anything
     but a 2xx. process_order records its own failures on the sale row, so a
     well-formed event gets a 200, except a 503 when a retry could help: the

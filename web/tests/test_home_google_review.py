@@ -10,7 +10,7 @@ import datetime
 from decimal import Decimal
 from unittest import mock
 
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
@@ -18,12 +18,6 @@ from audience.models import Member, MembershipTerm, MembershipTier
 
 from web.constants import SITE_CONFIG
 from web.tests.test_home_hero import HeroBase
-
-SQUARE_ON = {
-    "SQUARE_ACCESS_TOKEN": "t",
-    "SQUARE_LOCATION_ID": "L",
-    "SQUARE_TICKET_CATEGORY_ID": "C",
-}
 
 REVIEW = {
     "rating": "4.9",
@@ -118,7 +112,6 @@ class EmptyFoldGoogleReviewTests(TestCase):
         self.assertNotIn("aggregateRating", self._html())
 
 
-@override_settings(**SQUARE_ON)
 @mock.patch.dict(SITE_CONFIG, {"google_review": REVIEW})
 class FilmHeroGoogleReviewTests(HeroBase):
     """A showing booked this week: the film fold."""

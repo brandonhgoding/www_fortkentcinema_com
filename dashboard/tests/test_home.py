@@ -6,7 +6,6 @@ from cinema.models import Engagement, EngagementFilm, Film, Screen, Showtime
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
-from tickets.tests.factories import make_order
 from dashboard.tests.helpers import make_staff
 
 
@@ -129,8 +128,8 @@ class HomeRenderTests(TestCase):
     @override_settings(SQUARE_ACCESS_TOKEN="tok", SQUARE_LOCATION_ID="",
                        SQUARE_TICKET_CATEGORY_ID="C")
     def test_sales_panel_hidden_when_misconfigured(self) -> None:
-        # The public site hides Buy links on a blank id; the dashboard must
-        # agree that Square is off rather than go by the token alone.
+        # Square is off when any of its settings is blank; the dashboard
+        # must agree rather than go by the token alone.
         html = self.client.get(reverse("dashboard:home")).content.decode()
         self.assertNotIn("Yesterday's Sales", html)
         self.assertNotIn("No sales pulled yet", html)
@@ -163,33 +162,6 @@ class HomeRenderTests(TestCase):
         html = self.client.get(reverse("dashboard:home")).content.decode()
         self.assertIn("1 Square membership sale needs attention", html)
 
-    def test_home_today_panel_shows_online_count(self) -> None:
-        eng = make_eng(self.screen, self.film)
-        st = Showtime.objects.create(
-            engagement=eng, starts_at=self._local(timezone.localdate(), 23, 30))
-        make_order(st, status="PAID", lines={"adult": 2, "child": 1})
-        make_order(st, status="EXPIRED", lines={"adult": 4})
-        html = self.client.get(reverse("dashboard:home")).content.decode()
-        self.assertIn("<th>Online</th>", html)
-        # Table cell and phone card line.
-        self.assertEqual(html.count("3 online"), 2)
-
-    def test_online_ticket_alerts(self) -> None:
-        eng = make_eng(self.screen, self.film)
-        tomorrow = timezone.localdate() + datetime.timedelta(days=1)
-        soon = Showtime.objects.create(
-            engagement=eng, starts_at=self._local(tomorrow, 19), online_allowance=10)
-        make_order(soon, status="PAID", lines={"adult": 9})
-        gone = Showtime.objects.create(
-            engagement=eng, starts_at=self._local(tomorrow, 14), is_cancelled=True)
-        make_order(gone, status="PAID", square_payment_id="PAY-1")
-        make_order(gone, status="FAILED")
-        html = self.client.get(reverse("dashboard:home")).content.decode()
-        self.assertIn("1 online ticket order needs attention", html)
-        self.assertIn("Dune at 7:00 PM is nearly sold out online (9 of 10)", html)
-        self.assertIn(
-            "Dune at 2:00 PM is cancelled with 1 unrefunded online order", html)
-
 
 class HomePermissionTests(TestCase):
     def _login(self, perms):
@@ -212,7 +184,7 @@ class HomePermissionTests(TestCase):
         # The home alerts partial; base.html's toast container is always there.
         self.assertNotIn("x-data=\"{ shown: true }\"", html)
 
-    def test_box_office_user_sees_tickets_only(self) -> None:
+    def test_showtime_viewer_sees_today_table_only(self) -> None:
         from phone.models import Voicemail
         screen = Screen.objects.create(name="Screen 1", capacity=100)
         film = Film.objects.create(title="Dune", runtime_minutes=155)
@@ -221,12 +193,10 @@ class HomePermissionTests(TestCase):
         Voicemail.objects.create(recording_sid="RE1")
         start = timezone.make_aware(datetime.datetime.combine(
             timezone.localdate(), datetime.time(23, 30)))
-        st = Showtime.objects.create(engagement=eng, starts_at=start)
-        make_order(st, status="FAILED")
-        self._login(("tickets.view_ticketorder", "cinema.view_showtime"))
+        Showtime.objects.create(engagement=eng, starts_at=start)
+        self._login(("cinema.view_showtime",))
         html = self.client.get(reverse("dashboard:home")).content.decode()
         self.assertIn("Today's Showtimes", html)
-        self.assertIn("1 online ticket order needs attention", html)
         self.assertNotIn("new voicemail", html)
         self.assertNotIn("don't have access", html.replace("&#x27;", "'"))
         self.assertNotIn("draft", html)

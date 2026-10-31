@@ -12,7 +12,6 @@ from boxoffice.tests.fakes import FakeGateway
 from django.http import HttpResponse
 from django.test import TestCase, override_settings
 from django.urls import reverse
-from tickets.tests.factories import make_order, make_showtime
 
 KEY = "test-signature-key"
 URL = "https://www.fortkentcinema.com/boxoffice/square/webhook/"
@@ -134,45 +133,17 @@ class DispatchTests(WebhookTestCase):
         self.assertEqual(resp.status_code, 200)
         self.process.assert_called_once_with("O9")
 
-    def test_completed_payment_reaches_tickets(self):
-        # The tickets app registers its handler at startup; boxoffice does
-        # not import it.
-        with mock.patch("tickets.orders.confirm_payment") as cp:
-            post(self.client, event(order_id="SQ1"))
-        cp.assert_called_once()
-        self.assertEqual(cp.call_args.args[:2], ("SQ1", "P1"))
-        self.assertEqual(cp.call_args.kwargs,
-                         {"paid_at": PAID_AT, "amount_cents": None})
-
-    def test_payment_amount_reaches_tickets(self):
-        with mock.patch("tickets.orders.confirm_payment") as cp:
-            post(self.client, event(order_id="SQ1", amount=1600))
-        self.assertEqual(cp.call_args.kwargs["amount_cents"], 1600)
-
-    def test_payment_for_less_than_the_order_total_is_not_confirmed(self):
-        st = make_showtime()
-        order = make_order(st, square_order_id="SQ1")
-        with self.assertLogs("tickets.orders", "ERROR"):
-            resp = post(self.client, event(order_id="SQ1", amount=100))
+    def test_claimed_payment_skips_the_membership_handler(self):
+        handler = mock.MagicMock(return_value=True)
+        with mock.patch("boxoffice.payment_events._handlers", [handler]):
+            resp = post(self.client, event(order_id="SQ1", amount=1600))
         self.assertEqual(resp.status_code, 200)
-        order.refresh_from_db()
-        self.assertEqual(order.status, "PENDING")
-        self.assertIn("100", order.error)
+        handler.assert_called_once_with("SQ1", "P1", PAID_AT, 1600)
         self.process.assert_not_called()
-
-    def test_ticket_order_skips_the_membership_handler(self):
-        st = make_showtime()
-        make_order(st, square_order_id="SQ1")
-        with mock.patch("tickets.orders.confirm_payment", return_value=object()) as cp:
-            resp = post(self.client, event(order_id="SQ1"))
-        self.assertEqual(resp.status_code, 200)
-        self.process.assert_not_called()
-        cp.assert_called_once()
-        self.assertEqual(cp.call_args.args[:2], ("SQ1", "P1"))
 
     def test_handler_crash_still_records_the_membership_and_asks_for_retry(self):
         def crash(order_id, payment_id, paid_at, amount_cents):
-            raise RuntimeError("tickets down")
+            raise RuntimeError("handler down")
 
         with mock.patch("boxoffice.payment_events._handlers", [crash]), \
                 self.assertLogs("boxoffice.payment_events", "ERROR"), \
@@ -267,21 +238,6 @@ class EndToEndTests(TestCase):
         MembershipTier.objects.filter(slug="individual").update(
             square_variation_id=INDIVIDUAL)
 
-    def test_signed_event_pays_a_ticket_order_once(self):
-        # No mocks between Square's bytes and the buyer's inbox; the replay
-        # Square sends after a slow 200 must not email a second ticket.
-        from django.core import mail
-        order = make_order(make_showtime(), square_order_id="O1")
-        first = post(self.client, event("O1"))
-        replay = post(self.client, event("O1"))
-        self.assertEqual((first.status_code, replay.status_code), (200, 200))
-        order.refresh_from_db()
-        self.assertEqual((order.status, order.square_payment_id, order.paid_at),
-                         ("PAID", "P1", PAID_AT))
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertIn(order.number, mail.outbox[0].body)
-        self.assertFalse(MembershipSale.objects.exists())
-
     def test_signed_event_creates_the_member(self):
         gw = FakeGateway()
         gw.orders.append(OrderData(
@@ -335,8 +291,8 @@ def dispute_event(payment_id="P1", state="EVIDENCE_REQUIRED",
 
 @override_settings(SQUARE_WEBHOOK_SIGNATURE_KEY=KEY, SQUARE_WEBHOOK_URL=URL)
 class ReversalTests(WebhookTestCase):
-    """A refund or chargeback made outside the site must still reach the apps
-    that issued the ticket, or the buyer keeps a ticket nobody paid for."""
+    """A refund or chargeback made outside the site is offered to the
+    registered handlers, keyed by the payment it reverses."""
 
     def setUp(self):
         super().setUp()
@@ -372,7 +328,7 @@ class ReversalTests(WebhookTestCase):
         self.refunds.assert_not_called()
 
     def test_refund_handler_crash_asks_for_retry(self):
-        self.refunds.side_effect = RuntimeError("tickets down")
+        self.refunds.side_effect = RuntimeError("handler down")
         with self.assertLogs("boxoffice.payment_events", "ERROR"), \
                 self.assertLogs("django.request", "ERROR"):
             resp = post(self.client, refund_event())
@@ -396,21 +352,3 @@ class ReversalTests(WebhookTestCase):
         resp = post(self.client, dispute_event(payment_id=None))
         self.assertEqual(resp.status_code, 400)
         self.disputes.assert_not_called()
-
-
-@override_settings(SQUARE_WEBHOOK_SIGNATURE_KEY=KEY, SQUARE_WEBHOOK_URL=URL)
-class ReversalEndToEndTests(TestCase):
-    def setUp(self):
-        self.enterContext(patch_logger())
-
-    def test_signed_refund_event_voids_the_ticket_once(self):
-        from django.core import mail
-        order = make_order(make_showtime(), status="PAID", square_order_id="O1",
-                           square_payment_id="P1", lines={"adult": 2})
-        first = post(self.client, refund_event(amount=1600))
-        replay = post(self.client, refund_event(amount=1600))
-        self.assertEqual((first.status_code, replay.status_code), (200, 200))
-        order.refresh_from_db()
-        self.assertEqual((order.status, order.refunded_at), ("REFUNDED", REFUNDED_AT))
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(mail.outbox[0].subject[:9], "Refunded:")

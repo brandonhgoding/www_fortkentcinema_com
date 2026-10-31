@@ -267,8 +267,7 @@ class HoursAndPricesSpeechTests(TestCase):
             "45 minutes before every show. "
             "Tickets are $8 for adults, $7 for seniors, and $6 for children. "
             "Matinees, for shows starting at 4:00 PM or earlier, are $5. "
-            "Members pay $4 for any show, and some shows are free for members. "
-            "You can also buy tickets ahead of time at fort kent cinema dot com.",
+            "Members pay $4 for any show, and some shows are free for members.",
         )
 
     def test_reads_the_live_prices(self) -> None:
