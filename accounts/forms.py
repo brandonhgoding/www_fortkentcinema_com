@@ -6,16 +6,22 @@ from django.contrib.auth.forms import (
     PasswordResetForm,
     UsernameField,
 )
-from django.contrib.auth import get_user_model, password_validation
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 
 from accounts.client_ip import bucket
 from accounts.managers import normalise
-from accounts.verification import ip_allowed
+from accounts import throttle
+
+# One connection may ask for this many reset emails an hour.
+RESET_IP_CAP = 5
+RESET_IP_WINDOW = 3600
 
 
-UNVERIFIED_MESSAGE = "Please confirm your email first. We can send a new link."
+def ip_allowed(ip: str) -> bool:
+    """Count this request against the address's hourly cap (ip is the
+    client_ip.bucket() of the request)."""
+    return throttle.bump(f"password-reset:ip:{ip}", RESET_IP_WINDOW) <= RESET_IP_CAP
 
 
 class EmailAuthenticationForm(AuthenticationForm):
@@ -38,29 +44,33 @@ class EmailAuthenticationForm(AuthenticationForm):
         "invalid_login": "Invalid email or password.",
     }
 
-    unverified = False
-
     def confirm_login_allowed(self, user) -> None:
-        """Runs only once the password was right, so saying the address is
-        unconfirmed gives nothing away. Staff are exempt from confirming."""
+        """Runs only once the password was right. Only staff sign in; any
+        other account gets the same reply as a wrong password, so the page
+        says nothing about which addresses have accounts."""
         super().confirm_login_allowed(user)
-        if not user.is_staff and user.email_verified_at is None:
-            self.unverified = True
-            raise ValidationError(UNVERIFIED_MESSAGE, code="unverified")
+        if not user.is_staff:
+            raise ValidationError(
+                self.error_messages["invalid_login"], code="invalid_login"
+            )
 
 
 class EmailPasswordResetForm(PasswordResetForm):
     """Asks for the email to send a reset link to. An address is sent at most
     one link per PASSWORD_RESET_TIMEOUT, so nobody can flood a staff inbox and
     each address has only one live link at a time, and one connection gets
-    the same hourly cap as registering. Known or not, the page answers the
-    same way."""
+    an hourly cap. Only staff accounts get links. Known or not, the page
+    answers the same way."""
 
     email = forms.EmailField(
         label="Email",
         max_length=254,
         widget=forms.EmailInput(attrs={"autofocus": True, "autocomplete": "email"}),
     )
+
+    def get_users(self, email):
+        # Only staff sign in, so only staff get a link.
+        return (user for user in super().get_users(email) if user.is_staff)
 
     def save(self, *args, request=None, **kwargs) -> None:
         # The honeypot "website" field, as on the site's other forms: hidden
@@ -79,51 +89,6 @@ class EmailPasswordResetForm(PasswordResetForm):
         key = "password-reset:" + email
         if cache.add(key, True, settings.PASSWORD_RESET_TIMEOUT):
             super().save(*args, request=request, **kwargs)
-
-
-class ResendForm(forms.Form):
-    """Asks for the address to send a fresh confirmation link to. "website"
-    is the honeypot, as on the site's other forms."""
-
-    email = forms.EmailField(
-        label="Email",
-        max_length=254,
-        widget=forms.EmailInput(attrs={"autocomplete": "email"}),
-    )
-    website = forms.CharField(required=False)
-
-    def clean_email(self) -> str:
-        return normalise(self.cleaned_data["email"])
-
-
-class RegisterForm(ResendForm):
-    """Email, a password twice (checked as Django's SetPasswordForm does),
-    and the honeypot."""
-
-    error_messages = {"password_mismatch": "The two password fields didn’t match."}
-
-    password1 = forms.CharField(
-        label="Password",
-        strip=False,
-        widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
-    )
-    password2 = forms.CharField(
-        label="Password again",
-        strip=False,
-        widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
-    )
-
-    def clean_password2(self) -> str:
-        password1 = self.cleaned_data.get("password1")
-        password2 = self.cleaned_data.get("password2")
-        if password1 and password2 and password1 != password2:
-            raise ValidationError(
-                self.error_messages["password_mismatch"], code="password_mismatch"
-            )
-        # An unsaved user lets the similarity validator compare the email.
-        candidate = get_user_model()(email=self.cleaned_data.get("email", ""))
-        password_validation.validate_password(password2, user=candidate)
-        return password2
 
 
 class DashboardPasswordChangeForm(PasswordChangeForm):

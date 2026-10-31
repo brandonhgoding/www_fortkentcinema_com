@@ -10,7 +10,7 @@ BEFORE = ("accounts", "0001_initial")
 AFTER = ("accounts", "0002_email_login")
 
 
-LATEST = ("accounts", "0004_user_email_verified_at")
+LATEST = ("accounts", "0005_drop_email_verified_at")
 
 
 def migrate_to(target):

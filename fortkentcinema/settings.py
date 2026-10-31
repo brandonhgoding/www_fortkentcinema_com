@@ -181,7 +181,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # host needs no forwarded header, because nginx passes the real Host header
 # through (`proxy_set_header Host $http_host`). X-Forwarded-Host is never
 # read: proxy_params does not set it, so it would arrive from the visitor,
-# and the links in password-reset and verification emails are built from
+# and the links in password-reset emails are built from
 # the request host (accounts security audit 2026-10-24, L1).
 USE_PROXY_HEADERS = config("USE_PROXY_HEADERS", default=False, cast=bool)
 if USE_PROXY_HEADERS:
@@ -203,7 +203,7 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = config(
 SECURE_HSTS_PRELOAD = config("SECURE_HSTS_PRELOAD", default=False, cast=bool)
 
 
-# The default cache holds the sign-in and registration throttles (accounts
+# The default cache holds the sign-in and password-reset throttles (accounts
 # app) and short TMDB search results. gunicorn runs several workers and
 # recycles each after ~1000 requests, so an in-process cache would give every
 # throttle one counter per worker, reset at random: a database table is
@@ -220,10 +220,10 @@ CACHES = {
         else {
             "BACKEND": "django.core.cache.backends.db.DatabaseCache",
             "LOCATION": "django_cache",
-            # Throttle rows (accounts/throttle.py, verification.py, forms.py)
+            # Throttle rows (accounts/throttle.py, forms.py)
             # live here. Past MAX_ENTRIES the backend deletes the
             # lowest-sorting third of keys, and "login:ip:*" sorts first, so
-            # Django's default of 300 would let a burst of reset or register
+            # Django's default of 300 would let a burst of reset
             # requests clear the sign-in counters. Rows are small.
             "OPTIONS": {"MAX_ENTRIES": 5000},
         }

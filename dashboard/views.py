@@ -1,7 +1,6 @@
 import datetime
 import json
 
-from audience.models import LinkRequestStatus, MembershipLinkRequest
 from boxoffice.gateway import GatewayError, square_enabled
 from boxoffice.models import MembershipSale, SquareItem
 from boxoffice.pull import recompute_show_dates
@@ -51,20 +50,12 @@ from tickets.availability import for_showtimes
 from tickets.models import TicketOrder
 
 from .forms import EngagementForm, ScreenForm
-from .member_home import MemberHomeView
 from .mixins import StaffRequiredMixin
 from .smart_alerts import build_smart_alerts
 
 
 class HomeView(StaffRequiredMixin, TemplateView):
     template_name = "dashboard/home.html"
-
-    def dispatch(self, request, *args, **kwargs):
-        # Signed-in non-staff (members) get their own home; staff and
-        # anonymous visitors keep the existing gate.
-        if request.user.is_authenticated and not request.user.is_staff:
-            return MemberHomeView.as_view()(request, *args, **kwargs)
-        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -128,11 +119,6 @@ class HomeView(StaffRequiredMixin, TemplateView):
                     new_ad_inquiries=(
                         AdInquiry.objects.filter(status=InquiryStatus.NEW).count()
                         if user.has_perm("cinema.view_adinquiry") else 0),
-                    new_link_requests=(
-                        MembershipLinkRequest.objects.filter(
-                            status=LinkRequestStatus.NEW).count()
-                        if user.has_perm("audience.view_membershiplinkrequest")
-                        else 0),
                     new_voicemails=(
                         Voicemail.objects.filter(status=VoicemailStatus.NEW).count()
                         if user.has_perm("phone.view_voicemail") else 0),

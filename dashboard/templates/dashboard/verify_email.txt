@@ -1,6 +1,0 @@
-{% autoescape off %}Thanks for signing up with Fort Kent Cinema. Confirm your email address with this link:
-
-{{ url }}
-
-It will ask for the password you chose when you signed up, and it expires in 24 hours. If you didn't sign up, you can ignore this email.
-{% endautoescape %}

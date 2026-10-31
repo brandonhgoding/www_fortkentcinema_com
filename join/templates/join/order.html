@@ -52,13 +52,6 @@
         <p class="ticket-page__film">{{ tier_name }} membership</p>
         <p class="ticket-page__when">Your membership runs {{ started_on }} through {{ expires_on }}.</p>
         <p>There's no card to carry. Give your name at the box office.</p>
-        <p class="ticket-page__small">
-          {% if mine %}
-            <a href="/dashboard/">See your membership</a>
-          {% else %}
-            Want to see your membership online? <a href="{{ register_url }}">Create an account with {{ order.email }}</a>.
-          {% endif %}
-        </p>
         <p class="ticket-page__small">Order {{ order.number }}</p>
       </section>
     {% elif state == "pending" %}

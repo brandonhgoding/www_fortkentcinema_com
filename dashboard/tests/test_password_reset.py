@@ -107,16 +107,6 @@ class PasswordResetTests(TestCase):
         self.request_link_from("s5@example.com", "203.0.113.10")
         self.assertEqual(len(mail.outbox), 6)
 
-    def test_reset_shares_the_register_connection_cap(self) -> None:
-        for i in range(5):
-            self.client.post(
-                "/register/resend",
-                {"email": f"r{i}@example.com"},
-                REMOTE_ADDR="203.0.113.9",
-            )
-        self.request_link_from("staffer@example.com", "203.0.113.9")
-        self.assertEqual(len(mail.outbox), 0)
-
     def test_following_the_link_sets_a_new_password(self) -> None:
         self.request_link()
         resp = self.client.get(self.link_in(mail.outbox[0]), follow=True)
@@ -213,25 +203,12 @@ class PasswordResetLockoutTests(TestCase):
         self.assertEqual((resp.status_code, resp["Location"]), (302, "/dashboard/"))
 
 
-class MemberResetTests(TestCase):
-    def test_account_with_unusable_password_gets_no_reset_email(self):
+class NonStaffResetTests(TestCase):
+    def test_non_staff_account_gets_no_reset_email(self):
         cache.clear()
-        get_user_model().objects.create_user("member@example.com", password=None)
-        self.client.post("/password-reset", {"email": "member@example.com"})
-        self.assertEqual(len(mail.outbox), 0)
-
-
-class MemberVerifiedByResetTests(TestCase):
-    def test_reset_marks_member_verified(self):
-        cache.clear()
-        user = get_user_model().objects.create_user(
+        get_user_model().objects.create_user(
             "member@example.com", "oldpass-12345", is_staff=False
         )
-        self.assertIsNone(user.email_verified_at)
-        self.client.post("/password-reset", {"email": "member@example.com"})
-        self.assertEqual(len(mail.outbox), 1)
-        link = re.search(r"http://testserver(/password-reset/\S+)", mail.outbox[0].body)
-        resp = self.client.get(link.group(1), follow=True)
-        self.client.post(resp.redirect_chain[-1][0], NEW_PASSWORD)
-        user.refresh_from_db()
-        self.assertIsNotNone(user.email_verified_at)
+        resp = self.client.post("/password-reset", {"email": "member@example.com"})
+        self.assertRedirects(resp, "/password-reset/sent", fetch_redirect_response=False)
+        self.assertEqual(len(mail.outbox), 0)
