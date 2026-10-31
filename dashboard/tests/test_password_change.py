@@ -3,7 +3,6 @@ import re
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 
-from accounts.tests.factories import make_user
 from dashboard.tests.helpers import make_staff
 
 User = get_user_model()
@@ -91,20 +90,4 @@ class PasswordChangeTests(TestCase):
         self.assertTrue(resp["Location"].startswith("/login"))
 
     def test_sidebar_links_to_the_page(self) -> None:
-        self.assertContains(self.client.get("/dashboard/"), f'href="{URL}"')
-
-
-class MemberPasswordChangeTests(TestCase):
-    """Non-staff members use the same page from their membership home."""
-
-    def setUp(self) -> None:
-        self.user = make_user(email="member@example.com", password=OLD)
-        self.client.force_login(self.user)
-
-    def test_member_can_change_password(self) -> None:
-        resp = self.client.post(URL, change())
-        self.assertEqual(resp.status_code, 302)
-        self.assertTrue(User.objects.get(pk=self.user.pk).check_password(NEW))
-
-    def test_member_home_sidebar_links_to_the_page(self) -> None:
         self.assertContains(self.client.get("/dashboard/"), f'href="{URL}"')

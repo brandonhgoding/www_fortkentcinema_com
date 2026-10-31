@@ -13,8 +13,7 @@ from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.utils import timezone
 
-from accounts import lockout, throttle, verification
-from accounts.tests.factories import make_user
+from accounts import forms, lockout, throttle
 from accounts.tests.test_migrate_cache_table import DB_CACHE
 
 
@@ -59,13 +58,13 @@ class DatabaseCacheCounterTests(TestCase):
             self.assertEqual(throttle.count("k"), 0)
             self.assertEqual(throttle.bump("k", 3600), 1)
 
-    def test_register_ip_cap_holds_for_the_hour(self):
-        for _ in range(verification.IP_CAP):
-            self.assertTrue(verification.ip_allowed("203.0.113.9"))
+    def test_reset_ip_cap_holds_for_the_hour(self):
+        for _ in range(forms.RESET_IP_CAP):
+            self.assertTrue(forms.ip_allowed("203.0.113.9"))
         with later(6 * 60):
-            self.assertFalse(verification.ip_allowed("203.0.113.9"))
-        with later(verification.IP_WINDOW + 1):
-            self.assertTrue(verification.ip_allowed("203.0.113.9"))
+            self.assertFalse(forms.ip_allowed("203.0.113.9"))
+        with later(forms.RESET_IP_WINDOW + 1):
+            self.assertTrue(forms.ip_allowed("203.0.113.9"))
 
     def test_login_ip_lock_holds_for_the_cooloff(self):
         request = mock.Mock(META={"REMOTE_ADDR": "203.0.113.9"})
@@ -75,12 +74,3 @@ class DatabaseCacheCounterTests(TestCase):
             self.assertTrue(lockout.ip_locked(request))
         with later(settings.AXES_COOLOFF_TIME.total_seconds() + 1):
             self.assertFalse(lockout.ip_locked(request))
-
-    def test_verify_link_lock_holds_for_the_cooloff(self):
-        user = make_user("ann@example.com", is_staff=False)
-        for _ in range(settings.AXES_FAILURE_LIMIT):
-            verification.record_wrong_password(user)
-        with later(6 * 60):
-            self.assertTrue(verification.link_locked(user))
-        with later(settings.AXES_COOLOFF_TIME.total_seconds() + 1):
-            self.assertFalse(verification.link_locked(user))

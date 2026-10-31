@@ -2,7 +2,7 @@
 
 import datetime
 
-from audience.models import Member, MembershipTier
+from audience.models import MembershipTier
 from boxoffice.gateway import get_gateway, square_enabled
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
@@ -59,7 +59,7 @@ class JoinView(View):
 
     def get(self, request, slug):
         tier = self._tier(slug)
-        form = JoinForm(initial=self._initial(request))
+        form = JoinForm()
         return self._render(request, tier, form, square_on=square_enabled())
 
     def post(self, request, slug):
@@ -90,17 +90,6 @@ class JoinView(View):
         return get_object_or_404(
             MembershipTier.objects.prefetch_related("benefits"),
             slug=slug, show_on_membership_page=True)
-
-    def _initial(self, request) -> dict:
-        """A signed-in visitor's email, and their roster names when known."""
-        user = request.user
-        if not user.is_authenticated:
-            return {}
-        initial = {"email": user.email}
-        member = Member.objects.filter(email=user.email).first()
-        if member is not None:
-            initial.update(first_name=member.first_name, last_name=member.last_name)
-        return initial
 
     def _render(self, request, tier, form, *, square_on, error=""):
         context = {
@@ -135,7 +124,6 @@ class OrderView(View):
                 and order.created_at <= now - RECOVER_AFTER):
             recover_pending(order, gateway=get_gateway())
         term = order.term
-        user = request.user
         context = {
             "order": order,
             "tier": order.tier,
@@ -144,7 +132,5 @@ class OrderView(View):
             "started_on": _day(term.started_on) if term else "",
             "expires_on": _day(term.expires_on) if term else "",
             "renewal": bool(term) and term.member.terms.count() > 1,
-            "mine": user.is_authenticated and user.email.lower() == order.email,
-            "register_url": reverse("register"),
         }
         return render(request, "join/order.html", context)

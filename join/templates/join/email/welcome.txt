@@ -8,7 +8,6 @@ Good from {{ started_on }} through {{ expires_on }}
 
 There's no card to carry. Give your name at the box office.
 
-See your membership online: create an account with this email at {{ register_url }}
 Your order: {{ url }}
 
 Fort Kent Cinema

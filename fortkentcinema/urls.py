@@ -12,10 +12,7 @@ from accounts.forms import EmailPasswordResetForm
 from accounts.views import (
     ChangePasswordView,
     LockoutClearingPasswordResetConfirmView,
-    RegisterView,
-    ResendVerificationView,
     SignInView,
-    VerifyEmailView,
 )
 from django.contrib.auth.views import (
     LogoutView,
@@ -60,17 +57,6 @@ urlpatterns = [
         "login",
         SignInView.as_view(),
         name="login",
-    ),
-    path("register", RegisterView.as_view(), name="register"),
-    path(
-        "register/resend",
-        ResendVerificationView.as_view(),
-        name="register_resend",
-    ),
-    path(
-        "register/verify/<str:token>",
-        VerifyEmailView.as_view(),
-        name="verify_email",
     ),
     path("logout/", LogoutView.as_view(next_page="/login"), name="logout"),
     path("password-change", ChangePasswordView.as_view(), name="password_change"),

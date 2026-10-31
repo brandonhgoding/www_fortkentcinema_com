@@ -3,7 +3,7 @@
 nginx's proxy_params forwards Host, X-Real-IP, X-Forwarded-For and
 X-Forwarded-Proto. It does not set X-Forwarded-Host, so that header arrives
 from the visitor; Django must not read it, or the links in password-reset
-and verification emails could be pointed at a host the visitor chose.
+emails could be pointed at a host the visitor chose.
 """
 
 from django.core import mail
@@ -34,7 +34,7 @@ class ForgedForwardedHostTests(TestCase):
     emailed links away from the host nginx actually received."""
 
     def test_reset_link_uses_the_host_nginx_forwarded(self):
-        make_user("ann@example.com", "pw-1-long-enough")
+        make_user("ann@example.com", "pw-1-long-enough", is_staff=True)
         self.client.post(
             "/password-reset",
             {"email": "ann@example.com"},
@@ -43,19 +43,4 @@ class ForgedForwardedHostTests(TestCase):
         )
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn("://www.fortkentcinema.com/password-reset/", mail.outbox[0].body)
-        self.assertNotIn("evil.example", mail.outbox[0].body)
-
-    def test_verification_link_uses_the_host_nginx_forwarded(self):
-        self.client.post(
-            "/register",
-            {
-                "email": "new@example.com",
-                "password1": "Brand-new-passphrase-7",
-                "password2": "Brand-new-passphrase-7",
-            },
-            HTTP_HOST="www.fortkentcinema.com",
-            HTTP_X_FORWARDED_HOST="evil.example",
-        )
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertIn("://www.fortkentcinema.com/register/verify/", mail.outbox[0].body)
         self.assertNotIn("evil.example", mail.outbox[0].body)

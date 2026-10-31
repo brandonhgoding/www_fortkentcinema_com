@@ -22,7 +22,6 @@ def welcome_context(order: MembershipOrder) -> dict:
         "expires_on": _day(term.expires_on),
         # More than one term: the buyer was a member already.
         "renewal": term.member.terms.count() > 1,
-        "register_url": base_url() + reverse("register"),
         "url": base_url() + reverse("join:order", args=[order.token]),
         "cinema": SITE_CONFIG["cinema"],
     }

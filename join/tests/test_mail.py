@@ -16,7 +16,6 @@ class WelcomeEmailTests(TestCase):
         for text in [
             "Hi Ann,", "You're a member.", order.number, "Individual membership",
             "Good from Oct 26, 2026 through Oct 25, 2027",
-            "https://www.fortkentcinema.com/register",
             f"https://www.fortkentcinema.com/membership/order/{order.token}/",
             "13 Hall Street",
         ]:

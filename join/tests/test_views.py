@@ -2,8 +2,7 @@ import datetime
 import html as html_lib
 from unittest import mock
 
-from accounts.tests.factories import make_user
-from audience.models import Member, MembershipTier
+from audience.models import MembershipTier
 from boxoffice.gateway import GatewayError
 from boxoffice.tests.fakes import FakeGateway
 from django.test import TestCase, override_settings
@@ -81,19 +80,6 @@ class JoinPageTests(ViewTestCase):
                       "the box office before any show.", html)
         self.assertNotIn('name="email"', html)
 
-    def test_signed_in_member_is_prefilled(self):
-        Member.objects.create(first_name="Marguerite", last_name="Ouellette",
-                              email="m.o@example.com")
-        self.client.force_login(make_user("m.o@example.com", "pw12345", is_staff=False))
-        html = self.get("individual")
-        for s in ['value="Marguerite"', 'value="Ouellette"', 'value="m.o@example.com"']:
-            self.assertIn(s, html)
-
-    def test_signed_in_non_member_gets_only_the_email(self):
-        self.client.force_login(make_user("new@example.com", "pw12345", is_staff=False))
-        html = self.get("individual")
-        self.assertIn('value="new@example.com"', html)
-
 
 class JoinPostTests(ViewTestCase):
     def test_post_redirects_to_square(self):
@@ -142,18 +128,14 @@ class OrderPageTests(ViewTestCase):
         html = self.page(order)
         for s in ["Welcome, Ann", "Individual membership",
                   "Your membership runs Oct 26, 2026 through Oct 25, 2027.",
-                  "Create an account with ann@example.com", 'href="/register"',
                   "'purchase'", "value: 60", 'content="noindex, nofollow"']:
             self.assertIn(s, html)
         self.assertNotIn("You're renewed", html)
 
-    def test_paid_renewal_for_the_signed_in_member(self):
+    def test_paid_renewal(self):
         order = paid_order(earlier_term=True)
-        self.client.force_login(make_user("ann@example.com", "pw12345", is_staff=False))
         html = self.page(order)
         self.assertIn("You're renewed", html)
-        self.assertIn('href="/dashboard/"', html)
-        self.assertNotIn("Create an account", html)
 
     def test_pending_refreshes_then_waits(self):
         order = make_order(square_checkout_url="https://square.link/u/9")
