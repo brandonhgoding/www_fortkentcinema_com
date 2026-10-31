@@ -21,6 +21,8 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 
+from accounts import throttle
+
 logger = logging.getLogger(__name__)
 
 SALT = "accounts.verify-email"
@@ -66,15 +68,7 @@ def ip_allowed(ip: str | None) -> bool:
     """Count this request against the IP's hourly cap."""
     if ip is None:
         return True
-    key = f"register:ip:{ip}"
-    cache.add(key, 0, IP_WINDOW)
-    try:
-        count = cache.incr(key)
-    except ValueError:
-        # The key expired between add and incr: start a fresh window.
-        cache.add(key, 1, IP_WINDOW)
-        count = 1
-    return count <= IP_CAP
+    return throttle.bump(f"register:ip:{ip}", IP_WINDOW) <= IP_CAP
 
 
 def claim_address(email: str) -> datetime | None:
@@ -95,17 +89,13 @@ def link_locked(user) -> bool:
     """True once the account's link took AXES_FAILURE_LIMIT wrong passwords
     within AXES_COOLOFF_TIME: the same brake as the sign-in form, so the
     link is not a second place to guess the password."""
-    return (cache.get(_failures_key(user)) or 0) >= settings.AXES_FAILURE_LIMIT
+    return throttle.count(_failures_key(user)) >= settings.AXES_FAILURE_LIMIT
 
 
 def record_wrong_password(user) -> None:
-    key = _failures_key(user)
-    ttl = int(settings.AXES_COOLOFF_TIME.total_seconds())
-    cache.add(key, 0, ttl)
-    try:
-        cache.incr(key)
-    except ValueError:
-        cache.add(key, 1, ttl)
+    throttle.bump(
+        _failures_key(user), int(settings.AXES_COOLOFF_TIME.total_seconds())
+    )
 
 
 def send_verification(request, user) -> None:

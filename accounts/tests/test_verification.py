@@ -95,19 +95,13 @@ class VerificationThrottleTests(TestCase):
         self.assertTrue(verification.ip_allowed("203.0.113.10"))
         self.assertTrue(verification.ip_allowed(None))
 
-    def test_ip_counter_survives_key_expiring_mid_count(self):
-        real_incr = cache.incr
-        calls = []
-
-        def flaky(key, *args, **kwargs):
-            if not calls:
-                calls.append(key)
-                cache.delete(key)
-            return real_incr(key, *args, **kwargs)
-
-        with mock.patch.object(cache, "incr", side_effect=flaky):
+    def test_ip_cap_lifts_after_the_hour(self):
+        for _ in range(5):
+            verification.ip_allowed("203.0.113.9")
+        with mock.patch("time.time", return_value=time.time() + 3599):
+            self.assertFalse(verification.ip_allowed("203.0.113.9"))
+        with mock.patch("time.time", return_value=time.time() + 3601):
             self.assertTrue(verification.ip_allowed("203.0.113.9"))
-        self.assertEqual(cache.get("register:ip:203.0.113.9"), 1)
 
     def test_cache_keys_use_register_prefix(self):
         verification.ip_allowed("203.0.113.9")
