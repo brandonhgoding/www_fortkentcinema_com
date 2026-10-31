@@ -11,7 +11,8 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError
 
 from accounts.client_ip import bucket
-from accounts.verification import ip_allowed, normalise
+from accounts.managers import normalise
+from accounts.verification import ip_allowed
 
 
 UNVERIFIED_MESSAGE = "Please confirm your email first. We can send a new link."

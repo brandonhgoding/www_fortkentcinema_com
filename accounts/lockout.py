@@ -2,6 +2,7 @@ from django.conf import settings
 
 from accounts import throttle
 from accounts.client_ip import bucket
+from accounts.managers import normalise
 
 
 def lockout_username(request, credentials: dict | None) -> str:
@@ -12,7 +13,7 @@ def lockout_username(request, credentials: dict | None) -> str:
         raw = credentials["username"]
     else:
         raw = request.POST.get("username", "") if request is not None else ""
-    return str(raw).strip().lower()
+    return normalise(raw)
 
 
 def _ip_key(ip: str) -> str:

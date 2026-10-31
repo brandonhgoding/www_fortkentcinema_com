@@ -9,6 +9,7 @@ from django.test import RequestFactory, TestCase
 from django.utils import timezone
 
 from accounts import verification
+from accounts.managers import normalise
 from accounts.tests.factories import make_user
 from dashboard.tests.helpers import make_staff
 
@@ -73,9 +74,11 @@ class VerificationTokenTests(TestCase):
         self.assertIsNone(verification.read_token("garbage"))
 
     def test_normalise(self):
-        self.assertEqual(
-            verification.normalise(" Ann@Example.com "), "ann@example.com"
-        )
+        # The one rule every stored, counted and looked-up address goes
+        # through; blanks are what a model with no address holds.
+        self.assertEqual(normalise(" Ann@Example.com "), "ann@example.com")
+        self.assertEqual(normalise(None), "")
+        self.assertEqual(normalise(""), "")
 
 
 class VerificationThrottleTests(TestCase):
