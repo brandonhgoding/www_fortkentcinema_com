@@ -15,7 +15,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core import signing
 from django.core.cache import cache
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMessage, get_connection
 from django.utils.crypto import salted_hmac
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -123,3 +123,15 @@ def send_already_registered(request, email: str) -> None:
         EmailMessage(subject, body, to=[email]).send()
     except Exception:
         logger.exception("Could not send an already-registered notice")
+
+
+def pay_for_a_send() -> None:
+    """Open and close the mail connection without sending: the cost of a
+    send (connect, TLS, login) for a branch that sends nothing, so the
+    response takes as long either way and says nothing about the address."""
+    try:
+        connection = get_connection()
+        connection.open()
+        connection.close()
+    except Exception:
+        logger.exception("Could not open the mail connection")

@@ -150,14 +150,19 @@ class ResendVerificationView(_GatedEmailView):
     def act(self, request, form, email):
         user = get_user_model().objects.filter(email__iexact=email).first()
         if (
-            user is not None
-            and user.is_active
-            and not user.is_staff
-            and user.email_verified_at is None
+            user is None
+            or not user.is_active
+            or user.is_staff
+            or user.email_verified_at is not None
         ):
-            user.date_joined = timezone.now()
-            user.save(update_fields=["date_joined"])
-            verification.send_verification(request, user)
+            # Nothing to send; pay for the SMTP round trip anyway so the
+            # response time does not say this address has no unconfirmed
+            # account (RegisterView hashes for the same reason).
+            verification.pay_for_a_send()
+            return
+        user.date_joined = timezone.now()
+        user.save(update_fields=["date_joined"])
+        verification.send_verification(request, user)
 
 
 @method_decorator(never_cache, name="dispatch")
