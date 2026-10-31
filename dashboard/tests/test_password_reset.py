@@ -94,6 +94,36 @@ class PasswordResetTests(TestCase):
         self.request_link()
         self.assertEqual(len(mail.outbox), 2)
 
+    def test_unknown_address_leaves_no_cache_row(self) -> None:
+        # The cache is a 300-row table that culls its lowest keys first, so
+        # unknown addresses must not be able to fill it.
+        self.request_link("nobody@example.com")
+        self.assertIsNone(cache.get("password-reset:nobody@example.com"))
+        self.request_link()
+        self.assertIsNotNone(cache.get("password-reset:staffer@example.com"))
+
+    def request_link_from(self, email: str, ip: str):
+        return self.client.post("/password-reset", {"email": email}, REMOTE_ADDR=ip)
+
+    def test_sixth_request_from_one_connection_in_an_hour_sends_nothing(self):
+        for i in range(6):
+            make_staff(email=f"s{i}@example.com", password="pw12345")
+        for i in range(6):
+            self.request_link_from(f"s{i}@example.com", "203.0.113.9")
+        self.assertEqual(len(mail.outbox), 5)
+        self.request_link_from("s5@example.com", "203.0.113.10")
+        self.assertEqual(len(mail.outbox), 6)
+
+    def test_reset_shares_the_register_connection_cap(self) -> None:
+        for i in range(5):
+            self.client.post(
+                "/register/resend",
+                {"email": f"r{i}@example.com"},
+                REMOTE_ADDR="203.0.113.9",
+            )
+        self.request_link_from("staffer@example.com", "203.0.113.9")
+        self.assertEqual(len(mail.outbox), 0)
+
     def test_following_the_link_sets_a_new_password(self) -> None:
         self.request_link()
         resp = self.client.get(self.link_in(mail.outbox[0]), follow=True)
