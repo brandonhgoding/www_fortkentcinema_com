@@ -78,15 +78,14 @@ class NavigationConfigTests(TestCase):
                 "Buy Ad Space",
                 "Century Theatre in Fort Kent",
                 "From the Booth",
-                "Member sign in",
                 "Rent the Cinema",
-                "You Choose",
             ],
         )
 
-    def test_footer_links_member_sign_in(self):
+    def test_footer_does_not_send_visitors_to_the_staff_sign_in(self):
+        # Only staff sign in since the member portal went (2026-10-31).
         html = footer_html(self.client.get("/").content.decode())
-        self.assertIn('href="/login"', html)
+        self.assertNotIn('href="/login"', html)
 
     def test_rentals_link_lives_in_the_footer(self):
         # The owner's call on 2026-10-14: /rentals/ had no internal link
@@ -107,12 +106,6 @@ class NavigationConfigTests(TestCase):
         events = html[html.index(">Events</h2>") :]
         events = events[: events.index("</nav>")]
         self.assertNotIn("<ul", events)
-
-    def test_vote_href_omits_the_trailing_slash(self):
-        # urls.py defines path("vote", ...) bare, unlike every other section
-        # page. APPEND_SLASH cannot rescue this one: /vote/ 404s outright.
-        self.assertIn("/vote", footer_destinations())
-        self.assertNotIn("/vote/", footer_destinations())
 
 
 class NavigationRenderTests(TestCase):

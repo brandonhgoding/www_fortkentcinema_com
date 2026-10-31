@@ -111,14 +111,17 @@ class RentalInquiryTests(TestCase):
         )
         self.assertEqual(RentalInquiry.objects.get().ip, "203.0.113.9")
 
-    def test_malformed_forwarded_header_does_not_500(self):
+    def test_a_forwarded_header_is_not_trusted(self):
+        # X-Forwarded-For is the visitor's to forge; the address comes from
+        # REMOTE_ADDR (nginx's X-Real-IP in production).
         response = self.client.post(
             reverse("rentals_inquire"),
             self.payload(),
-            HTTP_X_FORWARDED_FOR="not-an-ip",
+            HTTP_X_FORWARDED_FOR="198.51.100.1",
+            REMOTE_ADDR="203.0.113.9",
         )
         self.assertEqual(response.status_code, 302)
-        self.assertIsNone(RentalInquiry.objects.get().ip)
+        self.assertEqual(RentalInquiry.objects.get().ip, "203.0.113.9")
 
     def test_get_redirects_to_the_page(self):
         response = self.client.get(reverse("rentals_inquire"))

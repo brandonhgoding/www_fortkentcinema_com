@@ -1,26 +1,17 @@
 import calendar
 import datetime
 
-from django.core import signing
-from django.core.exceptions import ValidationError
-from django.core.validators import MaxLengthValidator, validate_email
 from django.db.models import Min
-from django.http import Http404, HttpResponseBadRequest
-from django.shortcuts import get_object_or_404, redirect, render
+from django.http import Http404
+from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils import timezone
-from django.views import View
 from django.views.generic import TemplateView
 
-from audience.models import Member, MembershipTier, Subscriber
+from accounts.client_ip import request_ip
+from audience.models import Member, MembershipTier
 from blog.models import BlogPost
 from boxoffice.gateway import square_enabled
-from cinema import voting as vote_engine
-from cinema.models import (
-    Poll,
-    PollStatus,
-    Vote,
-)
 from web.constants import (
     AD_ARTWORK_DEADLINE_DAY,
     AD_SLIDE_PRICE,
@@ -37,7 +28,6 @@ from web.constants import (
     RENTALS_FAQ,
 )
 from web.forms import AdInquiryForm, RentalInquiryForm
-from web.list_signup import start_signup
 from web.services.cinema_data import (
     CINEMA_TZ,
     get_coming_soon,
@@ -50,7 +40,6 @@ from web.services.showtimes import (
     today_eastern,
     format_showtime_date,
 )
-from web.services import voting as vote_service
 
 
 class HomeView(TemplateView):
@@ -342,7 +331,7 @@ class RentalInquiryView(RentalsView):
 
         if form.is_valid():
             inquiry = form.save(commit=False)
-            inquiry.ip = vote_engine.client_ip(request)
+            inquiry.ip = request_ip(request)
             inquiry.save()
             return redirect(sent_url)
 
@@ -392,7 +381,7 @@ class AdInquiryView(AdvertiseView):
 
         if form.is_valid():
             inquiry = form.save(commit=False)
-            inquiry.ip = vote_engine.client_ip(request)
+            inquiry.ip = request_ip(request)
             inquiry.save()
             return redirect(sent_url)
 
@@ -482,267 +471,6 @@ class ThanksView(TemplateView):
         slug = self.request.GET.get("tier", "")
         ctx["tier"] = MembershipTier.objects.filter(slug=slug).first()
         return ctx
-
-
-# Signs the vote behind the mailing-list ask on the thanks screen, so the
-# only address that can be subscribed is the one that just voted. A day is
-# plenty: the ask is answered on the spot or not at all.
-_SUBSCRIBE_SALT = "vote-subscribe"
-_SUBSCRIBE_MAX_AGE = 60 * 60 * 24
-
-# Signs the vote just cast so the next ballot can reuse its address without
-# asking again: the thanks screen puts it in the inline ballot for the next
-# round and on the links to the rounds after that. It is a convenience, not
-# an identity: a bad or stale token just means typing the address again.
-# Separate salt from the subscribe token, so one can never stand in for the
-# other. A day, like the subscribe token: nobody chains rounds across days.
-_VOTER_SALT = "vote-voter"
-_VOTER_MAX_AGE = 60 * 60 * 24
-
-
-def _voter_token(vote) -> str:
-    return signing.dumps(vote.pk, salt=_VOTER_SALT)
-
-
-def _voter_from_token(raw) -> Vote | None:
-    """The vote a carry token names, or None for anything but a good one.
-
-    None covers a missing, forged or expired token, a vote since deleted,
-    and a vote with no address (cast before the address was required): in
-    every case the ballot falls back to asking for the address.
-    """
-    if not raw:
-        return None
-    try:
-        vote_pk = signing.loads(raw, salt=_VOTER_SALT, max_age=_VOTER_MAX_AGE)
-    except signing.BadSignature:
-        return None
-    vote = Vote.objects.filter(pk=vote_pk).first()
-    if vote is None or not vote.email:
-        return None
-    return vote
-
-
-def _vote_context(
-    poll=None, vote=None, message="", form=None, subscribed=False, voter=None
-):
-    """Shared context for every rendering of the vote panel.
-
-    `vote` is the ballot just cast. `form` carries a rejected ballot back
-    to the template: what was typed and why it was refused, so nobody has
-    to fill it in twice. `subscribed` is True once the thanks screen's
-    mailing-list ask has been accepted. `voter` is an earlier vote whose
-    address the ballot on this page should reuse; after a vote it is the
-    vote itself, so the next round's ballot already knows the address.
-    """
-    ctx = vote_service.resolve_vote_page(poll=poll, vote=vote)
-    ctx["message"] = message
-    ctx["form"] = form or {}
-    ctx["subscribed"] = subscribed
-    # The vote just cast outranks the one that carried the address here: same
-    # address, but a fresh signature, so a long chain never runs out the clock.
-    voter = vote or voter
-    ctx["voter"] = voter
-    ctx["voter_token"] = _voter_token(voter) if voter else ""
-    # The ask appears only for an address we have never heard from: not on
-    # the list, and not someone who opted out, who must not be asked again.
-    ctx["offer_subscribe"] = bool(
-        vote
-        and vote.email
-        and not subscribed
-        and not Subscriber.objects.filter(email=vote.email).exists()
-    )
-    ctx["subscribe_token"] = (
-        signing.dumps(vote.pk, salt=_SUBSCRIBE_SALT) if ctx["offer_subscribe"] else ""
-    )
-    return ctx
-
-
-def _pk_or_none(raw):
-    """An integer primary key from POST data, or None for blank or junk."""
-    try:
-        return int(raw)
-    except (TypeError, ValueError):
-        return None
-
-
-def _clean_ballot_email(raw: str) -> str:
-    """The address as we store it, or a ValidationError.
-
-    validate_email allows 320 characters; the column holds 254, and Postgres
-    refuses the INSERT rather than truncating it.
-    """
-    email = (raw or "").strip()
-    validate_email(email)
-    MaxLengthValidator(Vote.EMAIL_MAX_LENGTH)(email)
-    return email.lower()
-
-
-class VoteView(View):
-    """/vote — the stable URL for whatever is being voted on.
-
-    This is the link pasted into Facebook, so it must stay valid across every
-    round. One open round shows its ballot here; several show a list, each
-    linking to its own /vote/<slug>, which is also where past rounds live.
-    """
-
-    def get(self, request):
-        return render(request, "web/vote.html", _vote_context())
-
-
-class VoteArchiveView(View):
-    """/vote/<slug> — a specific round, open or decided.
-
-    An open round renders its ballot here too, since more than one can be
-    open and each needs a link of its own.
-    """
-
-    def get(self, request, slug):
-        poll = get_object_or_404(Poll, slug=slug)
-        if poll.status == PollStatus.DRAFT or not poll.has_started():
-            raise Http404("No such poll.")
-        # ?voter=<token> arrives from the thanks screen of another round and
-        # saves typing the address again. Anything else is simply ignored.
-        voter = _voter_from_token(request.GET.get("voter"))
-        return render(request, "web/vote.html", _vote_context(poll=poll, voter=voter))
-
-
-class VoteCastView(View):
-    """POST /vote/cast — record one ballot.
-
-    The ballot asks for an email address, required: it is what keeps a
-    round to one vote per person. The address stays on the vote and is
-    reached, if at all, through the dashboard's per-poll export. It does
-    not join the mailing list; that is a separate opt-in. Nothing in this
-    project sends mail yet, so the copy never promises a cadence.
-
-    The address comes typed in `email`, or carried by `token`: the signed
-    vote from a round just voted in, so the next ballot does not ask again.
-    The token wins when both are present, because it is the one the ballot
-    showed as "voting as"; a token that fails to verify falls back to the
-    plain ballot with a note, never a 400, since it was only a convenience.
-
-    HTMX gets the swapped panel back. A plain form POST gets the whole page
-    with the same panel: there is no cookie to carry "you voted" across a
-    redirect, and a refresh that re-submits is harmless, since the address
-    rule refuses it.
-    """
-
-    def post(self, request):
-        # The ballot names its round: several can be open at once.
-        poll = Poll.objects.filter(pk=_pk_or_none(request.POST.get("poll"))).first()
-        # A draft, or a round scheduled but not yet open, is not public: the
-        # same nothing /vote/<slug> gives, so naming it here reveals nothing
-        # (not even "wrong option" versus "right option").
-        if poll is None or poll.status == PollStatus.DRAFT or not poll.has_started():
-            return HttpResponseBadRequest("Unknown poll.")
-        # Parsed like the poll id: junk is a 400, not a ValueError from the
-        # ORM (a 500, and an error email, for anyone who posts "abc").
-        option_id = _pk_or_none(request.POST.get("option"))
-        if option_id is None:
-            return HttpResponseBadRequest("No option selected.")
-
-        # Honeypot. A real person never fills this in; bots fill everything.
-        # Answered like a success so the bot learns nothing.
-        if request.POST.get("website"):
-            return self._respond(request, poll)
-
-        raw_email = request.POST.get("email") or ""
-        form = {"option": option_id, "email": raw_email.strip()}
-
-        voter = None
-        raw_token = request.POST.get("token") or ""
-        if raw_token:
-            voter = _voter_from_token(raw_token)
-            if voter is None:
-                return self._respond(
-                    request,
-                    poll,
-                    message=(
-                        "That link has expired — please enter your email "
-                        "to cast this vote."
-                    ),
-                    form=form,
-                )
-            email = voter.email
-        else:
-            try:
-                email = _clean_ballot_email(raw_email)
-            except ValidationError:
-                form["error"] = "That doesn't look like a valid email address."
-                return self._respond(request, poll, form=form)
-
-        option = poll.options.filter(pk=option_id).first()
-        if option is None:
-            return HttpResponseBadRequest("Unknown option.")
-
-        message = ""
-        vote = None
-        try:
-            vote = vote_engine.cast_vote(poll, option, email)
-        except vote_engine.EmailAlreadyVoted:
-            # Said at the top of the panel, not as a field error: it is an
-            # answer, not a typo to fix. The ballot stays filled in case they
-            # meant a different address.
-            return self._respond(
-                request,
-                poll,
-                message=(
-                    "Sorry — you only get one vote per round, and that "
-                    "email address has already cast one."
-                ),
-                form=form,
-                voter=voter,
-            )
-        except vote_engine.PollNotOpen:
-            message = "Voting has closed for this round."
-        except vote_engine.OptionMismatch:
-            return HttpResponseBadRequest("Unknown option.")
-
-        return self._respond(request, poll, vote=vote, message=message, voter=voter)
-
-    @staticmethod
-    def _respond(request, poll, vote=None, message="", form=None, voter=None):
-        ctx = _vote_context(
-            poll=poll, vote=vote, message=message, form=form, voter=voter
-        )
-        if request.headers.get("HX-Request"):
-            return render(request, "partials/vote_panel.html", ctx)
-        return render(request, "web/vote.html", ctx)
-
-
-class VoteSubscribeView(View):
-    """POST /vote/subscribe — the mailing-list ask on the thanks screen.
-
-    The ballot itself promises no email, so joining the list is a separate,
-    explicit yes, confirmed by email before it takes effect. The request
-    carries a signed vote id rather than an address: the only address that
-    can be added is the one that just voted, and nobody can subscribe
-    someone else by posting their email.
-    """
-
-    SOURCE = "poll_vote"
-
-    def post(self, request):
-        try:
-            vote_pk = signing.loads(
-                request.POST.get("token", ""),
-                salt=_SUBSCRIBE_SALT,
-                max_age=_SUBSCRIBE_MAX_AGE,
-            )
-        except signing.BadSignature:
-            return HttpResponseBadRequest("That link has expired.")
-        vote = Vote.objects.filter(pk=vote_pk).select_related("poll").first()
-        if vote is None or not vote.email:
-            return HttpResponseBadRequest("Unknown vote.")
-
-        # Idempotent, and never re-adds an address that opted out. The
-        # address only joins once its owner follows the emailed link.
-        start_signup(request, vote.email, source=self.SOURCE, poll=vote.poll)
-        ctx = _vote_context(poll=vote.poll, vote=vote, subscribed=True)
-        if request.headers.get("HX-Request"):
-            return render(request, "partials/vote_panel.html", ctx)
-        return render(request, "web/vote.html", ctx)
 
 
 class HistoryView(TemplateView):

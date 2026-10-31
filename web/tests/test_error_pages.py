@@ -2,7 +2,8 @@
 
 The audit found /nope rendered Django's bare default: Times on white, no
 navigation, no viewport meta. And /movies/<slug>/ and /vote/ — the slashed
-forms every other section page uses — landed there.
+forms every other section page uses — landed there. (Both now redirect
+home: see test_legacy_redirects.)
 """
 
 from pathlib import Path
@@ -53,20 +54,3 @@ class ServerErrorPageTests(SimpleTestCase):
         self.assertIn('name="viewport"', html)
         self.assertIn('href="/"', html)
         self.assertIn(SITE_CONFIG["cinema"]["phone"], html)
-
-
-class TrailingSlashTests(TestCase):
-    def test_vote_with_a_slash_redirects(self):
-        response = self.client.get("/vote/")
-        self.assertRedirects(
-            response, reverse("vote"), status_code=301, fetch_redirect_response=False
-        )
-
-    def test_vote_archive_with_a_slash_redirects(self):
-        response = self.client.get("/vote/some-poll/")
-        self.assertRedirects(
-            response,
-            reverse("vote_archive", args=["some-poll"]),
-            status_code=301,
-            fetch_redirect_response=False,
-        )

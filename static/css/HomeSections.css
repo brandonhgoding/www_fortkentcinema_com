@@ -59,7 +59,7 @@
   grid-auto-flow: column;
   /* 28rem is wider than a card in a full row at any width (a row of three
    * in the 1336px container is 429px), so full rows still fill the width.
-   * It only stops a sparse row (no posts, no open poll) from stretching one
+   * It only stops a sparse row (no posts) from stretching one
    * or two cards across the whole section. */
   grid-auto-columns: minmax(0, 28rem);
   justify-content: start;

@@ -478,10 +478,6 @@ class GetInvolvedTests(TestCase):
         )
 
     def test_cards_are_open_mic_then_heckle_night(self):
-        from cinema.models import Poll, PollStatus
-
-        # An open round no longer puts a vote card here.
-        Poll.objects.create(title="Round One", status=PollStatus.OPEN)
         section = self.section()
         self.assertEqual(section.count("home-card "), 3)
         self.assertLess(section.index("open-mic-cta"), section.index("heckle-night-cta"))

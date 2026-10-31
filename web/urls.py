@@ -1,5 +1,4 @@
 from django.urls import path
-from django.views.generic import RedirectView
 
 from .list_signup import ListConfirmView, ListSignupView
 from .views import (
@@ -14,10 +13,6 @@ from .views import (
     RentalInquiryView,
     RentalsView,
     ThanksView,
-    VoteArchiveView,
-    VoteCastView,
-    VoteSubscribeView,
-    VoteView,
 )
 
 urlpatterns = [
@@ -43,21 +38,6 @@ urlpatterns = [
         "subscribe/confirm/<str:token>",
         ListConfirmView.as_view(),
         name="list_confirm",
-    ),
-    # /vote/cast and /vote/subscribe must precede /vote/<slug>, or "cast"
-    # would be matched as a poll slug.
-    path("vote", VoteView.as_view(), name="vote"),
-    path("vote/cast", VoteCastView.as_view(), name="vote_cast"),
-    path("vote/subscribe", VoteSubscribeView.as_view(), name="vote_subscribe"),
-    path("vote/<slug:slug>", VoteArchiveView.as_view(), name="vote_archive"),
-    # The canonical vote and movie URLs have no trailing slash, but people
-    # type and share them with one — every section page has one. APPEND_SLASH
-    # only adds slashes, so without these the slashed forms were hard 404s.
-    # Same treatment as /blog/<slug>/ in blog/urls_site.py.
-    path("vote/", RedirectView.as_view(pattern_name="vote", permanent=True)),
-    path(
-        "vote/<slug:slug>/",
-        RedirectView.as_view(pattern_name="vote_archive", permanent=True),
     ),
     path(
         "calendar/<int:year>/<int:month>/",

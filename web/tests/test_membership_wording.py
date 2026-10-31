@@ -40,7 +40,6 @@ class JoinOnlineOrAtTheBoxOfficeTests(TestCase):
             "</section>", 1)[0]
         self.assertIn('href="#tiers"', final)
 
-    def test_tiers_section_links_members_to_sign_in(self):
-        tiers = self.html.split('class="membership-tiers"', 1)[1].split(
-            "</section>", 1)[0]
-        self.assertIn('href="/login"', tiers)
+    def test_page_does_not_send_members_to_the_staff_sign_in(self):
+        # Only staff sign in since the member portal went (2026-10-31).
+        self.assertNotIn('href="/login"', self.html)

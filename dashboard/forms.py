@@ -8,7 +8,7 @@ from audience.models import (
     MembershipTier,
 )
 from blog.models import BlogAuthor, BlogCategory, BlogPost
-from cinema.models import Engagement, Poll, Screen
+from cinema.models import Engagement, Screen
 from django import forms
 from django.db.models import Q
 from django.utils import timezone
@@ -79,26 +79,6 @@ class EngagementForm(forms.ModelForm):
         self.fields["screen"].empty_label = "Select a screen"
         for name in ("start_date", "end_date"):
             self.fields[name].input_formats = ["%Y-%m-%d"]
-
-
-class PollForm(forms.ModelForm):
-    class Meta:
-        model = Poll
-        fields = ["title", "blurb", "opens_at", "closes_at", "results_visible"]
-        widgets = {
-            "title": forms.TextInput(attrs={"class": "input"}),
-            "blurb": forms.Textarea(attrs={"class": "input", "rows": 3}),
-            "opens_at": forms.DateTimeInput(
-                attrs={"class": "input", "type": "datetime-local"}
-            ),
-            "closes_at": forms.DateTimeInput(
-                attrs={"class": "input", "type": "datetime-local"}
-            ),
-        }
-        labels = {
-            "blurb": "Blurb (shown above the ballot)",
-            "results_visible": "Show running tallies while voting is open",
-        }
 
 
 class MemberForm(forms.ModelForm):

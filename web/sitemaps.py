@@ -2,7 +2,7 @@ import datetime
 
 from audience.models import MembershipBenefit, MembershipTier
 from blog.models import BlogPost
-from cinema.models import Engagement, Poll, PollStatus
+from cinema.models import Engagement
 from django.contrib.sitemaps import Sitemap
 from django.db.models import Max
 from django.urls import reverse
@@ -30,7 +30,6 @@ STATIC_PAGE_LASTMOD = {
     "open_mic": datetime.date(2026, 9, 23),
     "history": datetime.date(2026, 8, 25),
     "blog_list": datetime.date(2026, 7, 13),
-    "vote": datetime.date(2026, 8, 20),
 }
 
 
@@ -48,7 +47,6 @@ class StaticViewSitemap(Sitemap):
             "open_mic",
             "history",
             "blog_list",
-            "vote",
         ]
 
     def location(self, name):
@@ -108,18 +106,3 @@ class BlogPostSitemap(Sitemap):
 
     def lastmod(self, obj):
         return obj.post_date
-
-
-class PollSitemap(Sitemap):
-    changefreq = "monthly"
-    priority = 0.5
-
-    def items(self):
-        # Only decided rounds. A draft is not public, and an open round is
-        # reached from /vote, which is already in the sitemap.
-        return Poll.objects.filter(
-            status__in=(PollStatus.CLOSED, PollStatus.ANNOUNCED)
-        )
-
-    def location(self, obj):
-        return reverse("vote_archive", kwargs={"slug": obj.slug})
