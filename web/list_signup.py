@@ -19,9 +19,8 @@ from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 
+from accounts.client_ip import request_ip
 from audience.models import Subscriber, SubscriberStatus
-from cinema.models import Poll
-from cinema.voting import client_ip
 from web.constants import SITE_CONFIG
 
 logger = logging.getLogger(__name__)
@@ -62,24 +61,16 @@ def load_confirm_token(token: str) -> tuple[Subscriber, datetime] | None:
     return subscriber, issued_at
 
 
-def _body(request, subscriber: Subscriber, poll: Poll | None = None) -> str:
+def _body(request, subscriber: Subscriber) -> str:
     cinema = SITE_CONFIG["cinema"]
     link = request.build_absolute_uri(
         reverse("list_confirm", args=[confirm_token(subscriber)])
     )
-    if poll is not None:
-        # A voter was asked "want to hear what won?", so say that back.
-        intro = (
-            f'Thanks for voting in "{poll.title}".\n'
-            "Click below to confirm you'd like to hear what won, plus the "
-            "weekend's showtimes from Fort Kent Cinema by email every Thursday."
-        )
-    else:
-        intro = (
-            "Click below to confirm you'd like the weekend's showtimes from "
-            "Fort Kent Cinema by email every Thursday. The first one is on its "
-            "way soon."
-        )
+    intro = (
+        "Click below to confirm you'd like the weekend's showtimes from "
+        "Fort Kent Cinema by email every Thursday. The first one is on its "
+        "way soon."
+    )
     return (
         f"{intro}\n\n"
         f"{link}\n\n"
@@ -88,13 +79,8 @@ def _body(request, subscriber: Subscriber, poll: Poll | None = None) -> str:
     )
 
 
-def send_confirmation(
-    request, subscriber: Subscriber, poll: Poll | None = None
-) -> bool:
-    """Email the confirm link; True if it went out.
-
-    ``poll`` is the round a voter just voted in, for the voter's wording.
-    """
+def send_confirmation(request, subscriber: Subscriber) -> bool:
+    """Email the confirm link; True if it went out."""
     now = timezone.now()
     previous = subscriber.confirmation_sent_at
     # Claim the send before making it. request_signup only read the send
@@ -112,7 +98,7 @@ def send_confirmation(
         return False
     try:
         EmailMessage(
-            SUBJECT, _body(request, subscriber, poll), to=[subscriber.email]
+            SUBJECT, _body(request, subscriber), to=[subscriber.email]
         ).send()
     except Exception:
         logger.exception(
@@ -126,12 +112,12 @@ def send_confirmation(
     return True
 
 
-def start_signup(request, email: str, source: str, poll: Poll | None = None) -> None:
+def start_signup(request, email: str, source: str) -> None:
     subscriber = Subscriber.objects.request_signup(
-        email, source=source, ip=client_ip(request)
+        email, source=source, ip=request_ip(request)
     )
     if subscriber is not None:
-        send_confirmation(request, subscriber, poll)
+        send_confirmation(request, subscriber)
 
 
 class _SignupForm(forms.Form):

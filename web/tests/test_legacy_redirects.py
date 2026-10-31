@@ -130,6 +130,16 @@ class LegacyPageRedirectTests(TestCase):
         resp = self.client.get("/events/silents-synced-a-woman-of-the-world/")
         self.assertRedirects(resp, "/", status_code=301, target_status_code=200)
 
+    def test_vote_pages_redirect_home(self):
+        """The film vote was retired 2026-10-31. /vote and the past rounds'
+        /vote/<slug> pages were in the sitemap, so they must not 404."""
+        for path in ("/vote", "/vote/", "/vote/october-picks", "/vote/october-picks/"):
+            with self.subTest(path=path):
+                resp = self.client.get(path)
+                self.assertRedirects(
+                    resp, "/", status_code=301, target_status_code=200
+                )
+
 
 class LegacyRedirectsDoNotShadowLiveRoutesTests(TestCase):
     def test_modern_blog_routes_still_resolve(self):

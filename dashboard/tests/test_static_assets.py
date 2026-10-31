@@ -77,7 +77,7 @@ class DrawerFormPatternTests(TestCase):
 
     def test_the_drawer_forms_are_the_ones_we_know(self) -> None:
         # So that a new drawer form is counted, and gets the checks below.
-        self.assertEqual(len(self.DRAWER_FORMS), 12, [p.name for p in self.DRAWER_FORMS])
+        self.assertEqual(len(self.DRAWER_FORMS), 10, [p.name for p in self.DRAWER_FORMS])
 
     def test_footer_is_cancel_then_the_primary_submit_for_the_form(self) -> None:
         for path in self.DRAWER_FORMS:

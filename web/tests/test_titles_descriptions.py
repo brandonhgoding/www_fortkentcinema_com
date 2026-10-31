@@ -24,7 +24,6 @@ SECTION_PAGES = (
     "open_mic",
     "history",
     "blog_list",
-    "vote",
 )
 
 

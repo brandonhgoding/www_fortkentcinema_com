@@ -27,7 +27,6 @@ from django.views.generic import TemplateView
 from web.redirects import legacy_urlpatterns
 from web.sitemaps import (
     BlogPostSitemap,
-    PollSitemap,
     StaticViewSitemap,
 )
 from web.views import LlmsTxtView
@@ -35,7 +34,6 @@ from web.views import LlmsTxtView
 sitemaps = {
     "static": StaticViewSitemap,
     "posts": BlogPostSitemap,
-    "polls": PollSitemap,
 }
 
 urlpatterns = [

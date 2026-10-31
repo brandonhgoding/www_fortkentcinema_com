@@ -65,13 +65,14 @@ SITE_CONFIG = {
     # deleted. The owner kept the heading; the footer renders it alone until
     # this has links again (same shape as footer_navigation).
     "footer_events": [],
-    # The footer's link column, on every page. Blog, Film Vote and History
-    # moved here from the nav's "More" menu on 2026-10-13, and "More" went
-    # with them. Rentals joined on 2026-10-14 (the owner's call).
+    # The footer's link column, on every page. Blog and History moved here
+    # from the nav's "More" menu on 2026-10-13, and "More" went with them.
+    # Rentals joined on 2026-10-14 (the owner's call). The film vote and the
+    # member sign-in links went on 2026-10-31.
     "footer_navigation": [
         # Alphabetical by label (the owner's call). "note" renders as a
         # second line inside the same link, saying what a name like "From
-        # the Booth" or "You Choose" doesn't on its own. Rentals and
+        # the Booth" doesn't on its own. Rentals and
         # advertising carry the same label as the nav and their page title.
         {
             "label": "Buy Ad Space",
@@ -89,22 +90,9 @@ SITE_CONFIG = {
             "href": "/blog/",
         },
         {
-            "label": "Member sign in",
-            "note": "See your membership",
-            "href": "/login",
-        },
-        {
             "label": "Rent the Cinema",
             "note": "Rent the whole theater",
             "href": "/rentals/",
-        },
-        # Bare, unlike the section pages around it — urls.py defines
-        # path("vote", ...) without a slash. APPEND_SLASH only adds
-        # slashes, so /vote/ is a hard 404, not a recoverable 301.
-        {
-            "label": "You Choose",
-            "note": "Vote to help us pick the films",
-            "href": "/vote",
         },
     ],
 }

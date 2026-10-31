@@ -53,6 +53,13 @@ legacy_urlpatterns = [
         RedirectView.as_view(url="/", permanent=True),
         name="legacy_movie_detail",
     ),
+    # The film vote was retired 2026-10-31. /vote and the past rounds'
+    # /vote/<slug> pages were in the sitemap, so they redirect rather than 404.
+    re_path(
+        r"^vote(?:/[-a-zA-Z0-9_]+)?/?$",
+        RedirectView.as_view(url="/", permanent=True),
+        name="legacy_vote",
+    ),
     # Classic Movie Night was discontinued 2026-08-14 and /classics/ removed.
     # The page carried its own ranking history, so it redirects rather than 404s.
     re_path(
