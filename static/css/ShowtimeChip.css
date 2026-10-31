@@ -1,11 +1,8 @@
 /* THE SHOWTIME CHIP — partials/showtime_chip.html.
  *
- * One time, in one of four states (purchasable, sold out online, in-person
- * only, information only). These are the base rules, written for the old
- * Now Showing cards; the film hero (HeroFilm.css) is the only place a chip
- * renders on the home page now and restyles them as pills under
- * .hero--film. The ticket page and the other listings keep these as they
- * are. */
+ * One time, information only. These are the base rules, written for the old
+ * Now Showing cards; the film hero (HeroFilm.css) restyles them as pills
+ * under .hero--film. */
 /* Showtimes are INFORMATION, not controls.
 
    These were <button class="showtime"> carrying cursor:pointer, a hover fill
@@ -19,9 +16,7 @@
    Do NOT restore cursor:pointer, :hover or :focus-visible on .showtime. The
    hover fill was a false affordance, not decoration, and a <span> is not
    focusable so the ring could never have shown for a keyboard user anyway.
-   Online sales have since landed (2026-10): a showing that can be bought
-   online is an <a class="showtime showtime--buy"> instead, and the states
-   live on that modifier below — together, never on the plain chip.
+   (Online sales came and went in 2026-10; tickets are sold at the door.)
 
    The chip went too (2026-10 audit): even without the hover, a tinted box
    with a border still read as a button on a phone, and people tapped it.
@@ -46,72 +41,10 @@
   color: var(--color-text);
 }
 
-/* A showing on sale online (partials/showtime_chip.html). Same type as the
-   plain time so the row still reads as a schedule; the accent colour, the
-   "Buy" tag and the hover/focus states are what say "tap me". The block
-   padding takes the tap target to about 44px without changing the type. */
-.showtime--buy {
-  padding: 0.6rem 0;
-  color: var(--color-gold);
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.showtime--buy:hover {
-  color: var(--color-gold-light);
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-}
-
-.showtime--buy:focus-visible {
-  outline: 3px solid var(--color-gold);
-  outline-offset: 2px;
-  border-radius: var(--radius-sm);
-}
-
-/* The small "Buy" tag after the time. inline-block keeps the link's hover
-   underline off it. */
-.showtime__buy {
-  display: inline-block;
-  margin-left: 0.35rem;
-  padding: 0.1rem 0.4rem;
-  border-radius: var(--radius-sm);
-  background: var(--color-gold);
-  color: var(--color-on-accent);
-  font-size: 0.75rem;
-  letter-spacing: 1px;
-  line-height: 1.4;
-  text-transform: uppercase;
-  vertical-align: middle;
-}
-
-.showtime--buy:hover .showtime__buy {
-  background: var(--color-gold-light);
-}
-
 /* CC / OC after a time, wearing the rating chip (.movie-rating here,
    .schedule-card__rating on the phone card). The chip's border marks it, so
    the browser's dotted <abbr> underline goes; the title still names it. */
 .showtime abbr {
   text-decoration: none;
   vertical-align: middle;
-}
-
-/* A sold-out or in-person-only showing keeps its time bold and says why in
-   quiet body text underneath; the note may wrap, so the item gives up nowrap
-   and takes a width of its own. */
-.showtime--noted {
-  white-space: normal;
-  /* Wide enough for a note to sit on one line at 0.85rem. The card itself
-     clamps this on a phone. */
-  max-width: 24rem;
-}
-
-.showtime__note {
-  display: block;
-  font-size: 0.85rem;
-  font-weight: 500;
-  letter-spacing: 0;
-  line-height: 1.35;
-  color: var(--color-gold);
 }

@@ -1,15 +1,14 @@
 <div id="showtime-list">
-  {% if showtime_rows %}
+  {% if showtimes %}
   <div class="tableWrapper">
     <table class="table">
-      <thead><tr><th>Date &amp; Time</th><th>Screen</th><th>Captions</th><th>Online</th><th>Status</th><th>Actions</th></tr></thead>
+      <thead><tr><th>Date &amp; Time</th><th>Screen</th><th>Captions</th><th>Status</th><th>Actions</th></tr></thead>
       <tbody>
-        {% for row in showtime_rows %}{% with st=row.st %}
+        {% for st in showtimes %}
         <tr class="{% if st.is_cancelled %}cancelledRow{% endif %}">
           <td class="dateTimeCell">{{ st.starts_at|date:"D, M j, Y" }} at {{ st.starts_at|date:"g:i A" }}</td>
           <td>{{ st.screen.name }}</td>
           <td>{% if st.captions %}<span class="captionsBadge">{{ st.captions }}</span>{% else %}<span class="noCaptions">—</span>{% endif %}</td>
-          <td>{% if perms.tickets.view_ticketorder %}<a href="{% url 'dashboard:showtime_orders' st.pk %}">{{ row.sold }}</a>{% else %}{{ row.sold }}{% endif %} / {{ row.allowance }}</td>
           <td>{% if st.is_cancelled %}<span class="status-badge status-cancelled">Cancelled</span>{% else %}<span class="status-badge status-active">Active</span>{% endif %}</td>
           <td>
             <div class="actions">
@@ -23,12 +22,12 @@
             </div>
           </td>
         </tr>
-        {% endwith %}{% endfor %}
+        {% endfor %}
       </tbody>
     </table>
   </div>
   <div class="cardList">
-    {% for row in showtime_rows %}{% with st=row.st %}
+    {% for st in showtimes %}
     <div class="card {% if st.is_cancelled %}cardCancelled{% endif %}">
       <div class="cardHeader">
         <div class="cardDateTime">{{ st.starts_at|date:"D, M j, Y" }} at {{ st.starts_at|date:"g:i A" }}</div>
@@ -37,8 +36,7 @@
           {% if st.captions %}<span class="captionsBadge">{{ st.captions }}</span>{% endif %}
         </div>
       </div>
-      <div class="cardBody"><div class="cardDetail"><span class="cardLabel">Screen</span><span class="cardValue">{{ st.screen.name }}</span></div>
-        <div class="cardDetail"><span class="cardLabel">Online</span><span class="cardValue">{% if perms.tickets.view_ticketorder %}<a href="{% url 'dashboard:showtime_orders' st.pk %}">{{ row.sold }}</a>{% else %}{{ row.sold }}{% endif %} / {{ row.allowance }}</span></div></div>
+      <div class="cardBody"><div class="cardDetail"><span class="cardLabel">Screen</span><span class="cardValue">{{ st.screen.name }}</span></div></div>
       <div class="cardActions">
         {% if perms.cinema.change_showtime %}
         <button class="btn btn-secondary btn-sm" hx-get="{% url 'dashboard:showtime_edit' st.pk %}" hx-target="#drawer-content" @click="$store.drawer.show('Edit Showtime')">Edit</button>
@@ -49,7 +47,7 @@
         {% endif %}
       </div>
     </div>
-    {% endwith %}{% endfor %}
+    {% endfor %}
   </div>
   {% else %}
   <div class="empty-state">

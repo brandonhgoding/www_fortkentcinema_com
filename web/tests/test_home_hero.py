@@ -1,8 +1,8 @@
 """The home hero shows the films on this week; the empty fold is the fallback.
 
 With a showing booked this week the first fold is the next film on: its
-backdrop, poster, title, and its upcoming showtimes as the shared ticket
-chips, so the visitor picks a time on the fold. The other films this week
+backdrop, poster, title, and its upcoming showtimes as the shared
+showtime chips, so the visitor sees the times on the fold. The other films this week
 are one panel each, hidden until picked from the "Also showing" strip.
 With nothing booked the same dark fold holds the empty state.
 """
@@ -12,21 +12,14 @@ import re
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
 from audience.models import Member, MembershipTerm, MembershipTier
 
-from tickets.tests.factories import make_live_item, make_order, make_showtime
+from cinema.tests.factories import make_showtime
 from web.constants import SITE_CONFIG
-
-SQUARE_ON = {
-    "SQUARE_ACCESS_TOKEN": "t",
-    "SQUARE_LOCATION_ID": "L",
-    "SQUARE_TICKET_CATEGORY_ID": "C",
-}
-
 
 def in_two_days(hour=19):
     day = timezone.localdate() + datetime.timedelta(days=2)
@@ -55,12 +48,9 @@ class HeroBase(TestCase):
         return st
 
 
-@override_settings(**SQUARE_ON)
 class FilmHeroTests(HeroBase):
     def setUp(self):
         self.st = self.booked()
-        make_live_item(self.st.engagement)
-        self.buy_url = reverse("tickets:buy", args=[self.st.pk])
 
     def test_fold_is_the_next_film(self):
         html = self.home()
@@ -98,20 +88,15 @@ class FilmHeroTests(HeroBase):
 
     def test_showtimes_are_the_call_to_action(self):
         # The fold offers the film's times, each the same chip the listing
-        # uses, instead of one Buy Tickets button to one checkout.
-        late = self.st.engagement.showtimes.create(
+        # uses.
+        self.st.engagement.showtimes.create(
             screen=self.st.screen, starts_at=in_two_days(21)
         )
         hero = self.hero()
         label = in_two_days().strftime("%a, %b %-d")
         self.assertIn(f'<dt class="hero-film__date">{label}</dt>', hero)
-        self.assertIn(
-            f'<a class="showtime showtime--buy" href="{self.buy_url}">7:00 PM', hero
-        )
-        late_url = reverse("tickets:buy", args=[late.pk])
-        self.assertIn(
-            f'<a class="showtime showtime--buy" href="{late_url}">9:00 PM', hero
-        )
+        self.assertIn('<span class="showtime">7:00 PM</span>', hero)
+        self.assertIn('<span class="showtime">9:00 PM</span>', hero)
 
     def test_rows_past_three_dates_are_there_but_folded(self):
         # Every date of the week renders (the hero is the listing); the
@@ -129,16 +114,6 @@ class FilmHeroTests(HeroBase):
         self.assertEqual(hero.count('x-show="expanded"'), 1)
         self.assertIn("Show all 4 dates", hero)
 
-    def test_sold_out_online_says_so_and_does_not_link(self):
-        # Same rule as the listing chip had: the ticket page is not linked
-        # once the showing is sold out online, the chip just says so.
-        self.st.online_allowance = 1
-        self.st.save()
-        make_order(self.st, status="PAID")
-        hero = self.hero()
-        self.assertIn('<span class="showtime__note">Sold out online</span>', hero)
-        self.assertNotIn(f'href="{self.buy_url}"', hero)
-
     def test_member_line_sits_once_over_the_lockup(self):
         tier = MembershipTier.objects.get(slug="individual")
         member = Member.objects.create(first_name="A", last_name="B", email="a@b.c")
@@ -154,18 +129,15 @@ class FilmHeroTests(HeroBase):
         self.assertLess(line, hero.index('<h1 class="hero-film__lockup">'))
 
 
-@override_settings(**SQUARE_ON)
 class AlsoShowingTests(HeroBase):
     def setUp(self):
         self.st = self.booked()
-        make_live_item(self.st.engagement)
         self.other = make_showtime(starts_at=in_two_days(21))
         film = self.other.engagement.primary_film
         film.title = "Hocus Pocus"
         film.poster_url = "https://image.tmdb.org/t/p/w500/hp.jpg"
         film.backdrop_url = "https://image.tmdb.org/t/p/w780/hpb.jpg"
         film.save()
-        make_live_item(self.other.engagement, prefix="hp-")
 
     def panels(self):
         return re.findall(
@@ -202,9 +174,12 @@ class AlsoShowingTests(HeroBase):
         )
 
     def test_each_panel_offers_its_own_times(self):
-        hero = self.hero()
-        self.assertIn(reverse("tickets:buy", args=[self.st.pk]), hero)
-        self.assertIn(reverse("tickets:buy", args=[self.other.pk]), hero)
+        first, second = re.findall(
+            r'<article class="hero-film__panel".*?</article>', self.hero(), re.S
+        )
+        self.assertIn('<span class="showtime">7:00 PM</span>', first)
+        self.assertNotIn("9:00 PM", first)
+        self.assertIn('<span class="showtime">9:00 PM</span>', second)
 
     def test_strip_links_to_the_other_panels(self):
         # Every film is in the strip; Alpine hides the one on the fold. The
@@ -237,15 +212,7 @@ class AlsoShowingTests(HeroBase):
         self.assertEqual(len(self.panels()), 1)
 
 
-class FilmHeroWithoutSalesTests(HeroBase):
-    def test_square_off_leaves_plain_chips_and_no_buttons(self):
-        self.booked()
-        html = self.home()
-        self.assertIn('class="hero hero--film"', html)
-        hero = self.hero()
-        self.assertIn('<span class="showtime">7:00 PM</span>', hero)
-        self.assertNotIn("showtime--buy", hero)
-
+class FilmHeroArtworkTests(HeroBase):
     def test_poster_stands_in_for_a_missing_backdrop(self):
         st = self.booked()
         film = st.engagement.primary_film

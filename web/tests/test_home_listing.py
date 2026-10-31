@@ -12,11 +12,11 @@ import re
 from unittest import mock
 
 from cinema.models import Language, Translation
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from web.tests.test_home_hero import SQUARE_ON, HeroBase, in_two_days
+from web.tests.test_home_hero import HeroBase, in_two_days
 
 
 def section(html, section_id):
@@ -25,7 +25,6 @@ def section(html, section_id):
     return html[start : html.index("</section>", at) + len("</section>")]
 
 
-@override_settings(**SQUARE_ON)
 class HeroIsTheListingTests(HeroBase):
     def setUp(self):
         self.st = self.booked()
@@ -138,7 +137,6 @@ class HeroIsTheListingTests(HeroBase):
         self.assertIn('"image": "https://image.tmdb.org/t/p/w500/p.jpg"', ld)
 
 
-@override_settings(**SQUARE_ON)
 class HeroTrailerTests(HeroBase):
     def setUp(self):
         self.st = self.booked()

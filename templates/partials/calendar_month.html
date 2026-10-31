@@ -17,7 +17,7 @@ so calendar posters do not open it.
 
 A poster on today or a later day is instead a button that opens that day's
 times for the film (CalendarMonthView gives it `dialog_id`/`dialog_key`): the
-shared ticket dialog from partials/times_dialog.html, rendered after the grid
+shared showtimes dialog from partials/times_dialog.html, rendered after the grid
 inside this fragment, keyed by `open` on the fragment's own Alpine scope, so a
 month swap carries nothing across the boundary. Past days and runs hidden from
 the main listings keep a plain image with a `title` tooltip.

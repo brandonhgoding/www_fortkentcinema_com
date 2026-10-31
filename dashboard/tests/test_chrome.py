@@ -42,7 +42,6 @@ class ChromeTests(TestCase):
                 "Engagements",
                 "Members",
                 "Memberships",
-                "Online tickets",
                 "Polls",
                 "Rental Inquiries",
                 "Screens",
@@ -75,10 +74,10 @@ class ChromeTests(TestCase):
         from phone.models import Voicemail
 
         Voicemail.objects.create(recording_sid="RE-badge")
-        make_staff(email="box@example.com", perms=("tickets.view_ticketorder",))
+        make_staff(email="box@example.com", perms=("cinema.view_screen",))
         self.client.login(username="box@example.com", password="pw12345")
         html = self.client.get(reverse("dashboard:home")).content.decode()
-        self.assertIn(reverse("dashboard:tickets"), html)
+        self.assertIn(f'href="{reverse("dashboard:screens")}"', html)
         for name in (
             "ad_inquiries",
             "blog",
@@ -87,7 +86,6 @@ class ChromeTests(TestCase):
             "tiers",
             "polls",
             "rental_inquiries",
-            "screens",
             "subscribers",
             "voicemails",
         ):
@@ -110,7 +108,6 @@ class ChromeTests(TestCase):
             "engagements",
             "members",
             "tiers",
-            "tickets",
             "polls",
             "rental_inquiries",
             "screens",

@@ -1,14 +1,14 @@
 """Who gets told about a completed Square payment.
 
-Other apps register a handler at startup (``tickets.apps``); the webhook
-offers each handler the payment in registration order and stops at the
-first that claims it. ``boxoffice`` itself never imports those apps.
-Membership sales are handled by the webhook after no handler claims the
-payment, so a ticket order never pays for a membership fetch.
+Other apps may register a handler at startup; the webhook offers each
+handler the payment in registration order and stops at the first that
+claims it. ``boxoffice`` itself never imports those apps. Membership sales
+are handled by the webhook after no handler claims the payment. (The online
+tickets app, removed 2026-10-31, was the only one to register; none does
+now.)
 
 Refunds and disputes (chargebacks) made outside the site are offered the
-same way, keyed by the payment they reverse, so a ticket refunded from the
-Square dashboard or contested at the buyer's bank does not stay redeemable.
+same way, keyed by the payment they reverse.
 """
 import dataclasses
 import datetime

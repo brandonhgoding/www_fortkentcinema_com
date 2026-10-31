@@ -1,11 +1,7 @@
-/* /tickets/<pk>/ and /tickets/order/<token>/ — tickets/templates/tickets/.
+/* The membership checkout pages (join/templates/join/), which grew out of
+ * the online ticket pages (removed 2026-10-31) and keep their class names.
  *
  * One narrow column at every width: a phone is where people buy.
- *
- * The buy form is drawn as a ticket stub. Above the tear line, what you are
- * buying (the tiers and steppers); below it, who is coming (the contact
- * fields), then the total and the button. The tear line's notches are the
- * page ground showing through, so the page keeps a flat background.
  */
 
 .ticket-page {
@@ -26,32 +22,6 @@
   color: var(--color-accent);
 }
 
-/* Visually hidden, read by screen readers (the fieldset's legend). */
-.ticket-page__sr {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-}
-
-/* The film: poster beside the facts. */
-.ticket-page__movie {
-  display: flex;
-  gap: var(--spacing-md);
-  align-items: flex-start;
-  margin-bottom: var(--spacing-lg);
-}
-
-.ticket-page__poster {
-  flex: none;
-  width: 104px;
-  height: auto;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-surface-sunken);
-}
-
 .ticket-page__title {
   font-family: var(--font-heading);
   font-size: var(--type-heading);
@@ -60,22 +30,12 @@
   margin: 0 0 var(--spacing-xs);
 }
 
-.ticket-page__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 var(--spacing-sm);
-  margin: 0 0 var(--spacing-xs);
-  color: var(--color-text-muted);
-  font-size: 0.95rem;
-}
-
 .ticket-page__when {
   margin: 0;
   font-size: 1.05rem;
   font-weight: 600;
 }
 
-.ticket-page__note,
 .ticket-page__small,
 .ticket-page__help {
   color: var(--color-text-muted);
@@ -85,21 +45,6 @@
 .ticket-page__small {
   margin: var(--spacing-sm) 0 0;
   text-align: center;
-}
-
-/* A notice about the showing itself (open captions), between the film and
-   the stub: the error and closed boxes' left-rule idiom, in the accent so it
-   reads as information, with the full text colour so it is read. */
-.ticket-page__notice {
-  margin: 0 0 var(--spacing-lg);
-  padding: var(--spacing-sm) var(--spacing-md);
-  color: var(--color-text);
-  font-size: 0.95rem;
-  font-weight: 500;
-  border: 1px solid var(--color-surface-sunken);
-  border-left: 3px solid var(--color-accent);
-  border-radius: var(--radius-md);
-  background: var(--color-surface-raised);
 }
 
 /* The stub. */
@@ -123,135 +68,6 @@
   font-size: 0.95rem;
   border-left: 3px solid var(--color-danger);
   background: var(--color-surface);
-}
-
-/* Tiers: name and price on the left, a segmented stepper on the right. */
-.ticket-page__tickets {
-  border: 0;
-  padding: 0;
-  margin: 0;
-  min-width: 0;
-}
-
-.ticket-page__row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: var(--spacing-xs) var(--spacing-sm);
-  padding: var(--spacing-sm) 0;
-  border-bottom: 1px solid var(--color-surface-sunken);
-}
-
-.ticket-page__row:last-of-type {
-  border-bottom: 0;
-}
-
-.ticket-page__tier {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0 var(--spacing-xs);
-}
-
-.ticket-page__tier-name {
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.ticket-page__price {
-  color: var(--color-text-muted);
-}
-
-.ticket-page__matinee {
-  color: var(--color-accent);
-  font-size: 0.9rem;
-}
-
-.ticket-page__stepper {
-  display: inline-flex;
-  align-items: stretch;
-  border: 1px solid var(--color-brass);
-  border-radius: var(--radius-md);
-  background: var(--color-surface-raised);
-}
-
-.ticket-page__step {
-  width: 2.75rem;
-  min-height: 2.75rem;
-  font-size: 1.35rem;
-  line-height: 1;
-  color: var(--color-accent);
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-}
-
-.ticket-page__step:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: -2px;
-}
-
-.ticket-page__stepper input {
-  width: 3rem;
-  min-height: 2.75rem;
-  text-align: center;
-  font-family: var(--font-body);
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--color-text);
-  background: transparent;
-  border: 0;
-  border-left: 1px solid var(--color-brass);
-  border-right: 1px solid var(--color-brass);
-  border-radius: 0;
-  -moz-appearance: textfield;
-  appearance: textfield;
-}
-
-.ticket-page__stepper input::-webkit-outer-spin-button,
-.ticket-page__stepper input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-.ticket-page__stepper input:focus {
-  outline: 2px solid var(--color-accent);
-  outline-offset: -2px;
-}
-
-.ticket-page__row .ticket-page__field-error {
-  grid-column: 1 / -1;
-}
-
-/* The tear line, with the page ground showing through the notches. */
-.ticket-page__tear {
-  position: relative;
-  height: 0;
-  margin: var(--spacing-sm) calc(-1 * var(--spacing-md)) var(--spacing-md);
-  border-top: 2px dashed var(--color-brass);
-}
-
-.ticket-page__tear::before,
-.ticket-page__tear::after {
-  content: "";
-  position: absolute;
-  top: -0.75rem;
-  width: 1.375rem;
-  height: 1.375rem;
-  border-radius: 50%;
-  background: var(--color-surface-alt);
-  border: 1px solid var(--color-brass);
-}
-
-/* Only the half inside the stub shows; the outer half is clipped away. */
-.ticket-page__tear::before {
-  left: -0.75rem;
-  clip-path: inset(-2px -2px -2px 50%);
-}
-
-.ticket-page__tear::after {
-  right: -0.75rem;
-  clip-path: inset(-2px 50% -2px -2px);
 }
 
 /* Who is coming: first and last name side by side, the rest full width. */
@@ -308,22 +124,6 @@
   font-size: 0.9rem;
 }
 
-/* Total and the button. */
-.ticket-page__total {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin: var(--spacing-md) 0 var(--spacing-sm);
-  padding-top: var(--spacing-sm);
-  border-top: 1px solid var(--color-surface-sunken);
-  font-size: 1.05rem;
-}
-
-.ticket-page__total strong {
-  font-size: 1.5rem;
-  font-weight: 700;
-}
-
 @media (max-width: 360px) {
   .ticket-page__contact {
     grid-template-columns: 1fr;
@@ -334,7 +134,7 @@
   }
 }
 
-/* The showtime cannot be bought online. */
+/* Online sign-up is closed. */
 .ticket-page__closed {
   padding: var(--spacing-md);
   border-left: 3px solid var(--color-accent);
@@ -345,7 +145,7 @@
   margin-bottom: var(--spacing-sm);
 }
 
-/* Order page: the ticket itself. */
+/* Order page: the receipt. */
 .ticket-page__ticket {
   text-align: center;
   padding: var(--spacing-lg) var(--spacing-md);
@@ -363,14 +163,6 @@
   font-family: var(--font-heading);
   font-size: var(--type-lead);
   margin-bottom: 0;
-}
-
-.ticket-page__qr {
-  display: block;
-  width: 200px;
-  max-width: 100%;
-  height: auto;
-  margin: var(--spacing-sm) auto;
 }
 
 /* Printed, the ticket is the page: no chrome. */

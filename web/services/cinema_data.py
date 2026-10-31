@@ -173,8 +173,8 @@ def get_coming_soon(now=None):
     Each card carries `upcoming`: the not-yet-started, non-cancelled showtimes
     of every run the card stands for (runs of one film set collapse into one
     card, so their showtimes merge), grouped by local date, each time in the
-    chip shape (HomeView._add_ticket_state completes it). That is how a run
-    beyond the hero's week sells tickets. [] when none are entered yet."""
+    chip shape. That is how a run beyond the hero's week lists its times.
+    [] when none are entered yet."""
     if now is None:
         now = timezone.now()
     today = _local_date(now)

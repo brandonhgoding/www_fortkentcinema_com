@@ -3,8 +3,8 @@
          x-data="{ trailer: null, view: 'grid', tickets: null }"
          x-effect="document.body.style.overflow = (trailer || tickets !== null) ? 'hidden' : ''">
   {% comment %}
-    No JavaScript: the ticket dialogs (below the grid) show in place, and the
-    card's "Showtimes & tickets" link is a plain anchor to its dialog.
+    No JavaScript: the showtimes dialogs (below the grid) show in place, and
+    the card's "Showtimes" link is a plain anchor to its dialog.
   {% endcomment %}
   <noscript><style>.coming-tickets-overlay[x-cloak] { display: block !important; position: static; padding: 0; margin-top: var(--spacing-md); background: none; } .coming-tickets-overlay[x-cloak] .coming-tickets { max-width: none; max-height: none; } .coming-tickets-overlay[x-cloak] .coming-tickets__close { display: none; }</style></noscript>
   <div class="section-container">
@@ -89,14 +89,14 @@
           <h3 class="coming-movie-title">{{ movie.title }}</h3>
           <p class="coming-movie-genre">{{ movie.genre }}</p>
           {% comment %}
-            Once the run has showtimes, the way to buy: opens the run's
-            ticket dialog (after the grid). An anchor to it, so the no-JS
-            path is a jump to the same rows shown in place.
+            Once the run has showtimes: opens the run's showtimes dialog
+            (after the grid). An anchor to it, so the no-JS path is a jump
+            to the same rows shown in place.
           {% endcomment %}
           {% if movie.upcoming %}
           <a class="coming-movie-tickets" href="#coming-tickets-{{ forloop.counter }}"
              data-track="coming_soon_tickets" data-track-film="{{ movie.title }}"
-             @click.prevent="tickets = {{ forloop.counter0 }}">Showtimes &amp; tickets</a>
+             @click.prevent="tickets = {{ forloop.counter0 }}">Showtimes</a>
           {% endif %}
         </div>
       </article>
@@ -132,9 +132,8 @@
     </div>
 
     {% comment %}
-    One ticket dialog per run with showtimes (partials/times_dialog.html):
-    the run's dates, each time the shared chip, so a run past the hero's
-    week sells from here with the hero's states. Each dialog answers to its
+    One showtimes dialog per run with showtimes (partials/times_dialog.html):
+    the run's dates, each time the shared chip. Each dialog answers to its
     card's index in the section's `tickets`.
     {% endcomment %}
     {% for movie in coming_soon %}

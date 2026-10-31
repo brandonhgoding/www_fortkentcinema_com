@@ -8,10 +8,10 @@ from boxoffice.reports import (
     sales_panel, send_reports, ticket_report,
 )
 from boxoffice.tests.test_pull import make_eng
+from cinema.tests.factories import make_showtime
 from django.core import mail
 from django.test import TestCase, override_settings
 from django.utils import timezone
-from tickets.tests.factories import make_showtime
 
 DAY = datetime.date(2026, 10, 9)
 LOGGER = "boxoffice.reports"

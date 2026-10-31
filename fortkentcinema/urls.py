@@ -96,7 +96,6 @@ urlpatterns = [
     path("dashboard/", include("dashboard.urls")),
     path("phone/", include("phone.urls")),
     path("boxoffice/", include("boxoffice.urls")),
-    path("tickets/", include("tickets.urls")),
     path("", include("join.urls")),
     *legacy_urlpatterns,
     path("", include("web.urls")),

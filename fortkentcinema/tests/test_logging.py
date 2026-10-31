@@ -19,14 +19,14 @@ class LoggingTests(SimpleTestCase):
     def test_errors_from_any_logger_are_mailed_to_admins(self) -> None:
         # The console copy would land in the test output; swallow it.
         with mock.patch.object(root_console_handler(), "stream", io.StringIO()):
-            logging.getLogger("tickets.orders").error("Ticket email failed for FK-1")
+            logging.getLogger("join.orders").error("Membership email failed for FK-1")
 
         self.assertEqual(len(mail.outbox), 1)
         message = mail.outbox[0]
         self.assertEqual(message.to, ["owner@example.com"])
         self.assertTrue(message.subject.startswith("[Fort Kent Cinema] ERROR"),
                         message.subject)
-        self.assertIn("Ticket email failed for FK-1", message.body)
+        self.assertIn("Membership email failed for FK-1", message.body)
 
     @override_settings(ADMINS=[("Owner", "owner@example.com")])
     def test_warnings_are_not_mailed(self) -> None:

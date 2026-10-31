@@ -1,4 +1,3 @@
-import math
 from typing import Any, ClassVar
 
 from django.db import models
@@ -38,15 +37,6 @@ class Showtime(models.Model):
         choices=CaptionChoices.choices,
     )
 
-    online_allowance = models.PositiveIntegerField(
-        null=True,
-        blank=True,
-        help_text=(
-            "How many tickets this showtime sells online. Blank uses the "
-            "default: half the screen's seats."
-        ),
-    )
-
     class Meta:
         ordering = ["starts_at"]
         indexes = [
@@ -66,14 +56,6 @@ class Showtime(models.Model):
 
     def __str__(self) -> str:
         return f"{self.engagement.title} @ {self.starts_at}"
-
-    @property
-    def effective_online_allowance(self) -> int:
-        if self.online_allowance is not None:
-            return self.online_allowance
-        from web.constants import TICKET_ONLINE_SHARE
-
-        return math.floor(self.screen.capacity * TICKET_ONLINE_SHARE)
 
     def save(self, *args: Any, **kwargs: Any) -> None:
         if self.engagement_id:

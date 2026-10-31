@@ -111,7 +111,6 @@ class ShowtimeControlPermissionTests(TestCase):
             "showtime_bulk": reverse("dashboard:showtime_bulk", args=[self.eng.pk]),
             "showtime_edit": reverse("dashboard:showtime_edit", args=[self.st.pk]),
             "showtime_delete": reverse("dashboard:showtime_delete", args=[self.st.pk]),
-            "showtime_orders": reverse("dashboard:showtime_orders", args=[self.st.pk]),
         }
 
     def _get(self, perms):
@@ -133,7 +132,6 @@ class ShowtimeControlPermissionTests(TestCase):
         html = self._get((
             "cinema.view_engagement", "cinema.add_showtime",
             "cinema.change_showtime", "cinema.delete_showtime",
-            "tickets.view_ticketorder",
         )).content.decode()
         for name, url in self.urls.items():
             with self.subTest(name=name):

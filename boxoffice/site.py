@@ -1,6 +1,6 @@
 """Where Square sends buyers back to, and who they can write to.
 
-Every hosted checkout the site starts (tickets, memberships) needs the
+Every hosted checkout the site starts (memberships) needs the
 public scheme and host for its redirect URL and the cinema's support
 address for Square's receipt page. Both come from settings, not the
 request: build_absolute_uri() is wrong behind nginx.
