@@ -3,10 +3,9 @@
  * The next showing is the first fold: its backdrop is the ground, the type
  * sits on a scrim of brand ink to the left, the poster hangs to the right.
  * It is a `.hero`, so the dark token block Hero.css declares on .hero is
- * inherited here: gold is legible, the glow tokens are on, .btn-ticket and
- * .hero-members read exactly as they do on the marquee. This file only
- * lays the fold out. The marquee's own rules (.marquee-*, .bulb) never
- * match here, and nothing here matches the marquee.
+ * inherited here: gold is legible and the glow tokens are on. This file
+ * only lays the fold out. The members line and the lockup at the foot are
+ * shared with the empty-week fold (.hero--empty, HomeSections.css).
  */
 .hero--film {
   /* Sized by content, capped by the viewport: the fold should end where
@@ -157,8 +156,7 @@
 }
 
 /* The headline. An <h2> (the cinema name keeps the <h1>, see the lockup)
- * carrying the marquee title's neon core so the fold still reads as the
- * same sign, just saying something different. */
+ * carrying the neon core, the one place the full glow stack shows. */
 .hero-film__title {
   margin: 0;
   font-family: var(--font-display);
@@ -299,8 +297,8 @@
   margin-top: var(--spacing-sm);
 }
 
-/* The poster in the marquee's own frame: gold hairline, ink gap, warm
- * gold inner line. The slight tilt is a one-sheet pinned in a lobby case. */
+/* The poster in a sign frame: gold hairline, ink gap, warm gold inner
+ * line. The slight tilt is a one-sheet pinned in a lobby case. */
 .hero-film__poster {
   display: block;
   width: 100%;
@@ -315,8 +313,8 @@
     0 0 60px var(--neon-gold-far);
 }
 
-/* The page's <h1>: name and tagline, small, where the marquee used to
- * shout it. The nav already carries the real wordmark. */
+/* The page's <h1>: name and tagline, small. The nav already carries the
+ * real wordmark. */
 .hero-film__lockup {
   position: relative;
   z-index: 10;
@@ -525,8 +523,7 @@
   }
 
   /* Smaller than the desktop one-sheet: on a phone the poster is a
-   * thumbnail above the title, and the fold has to fit one screen the way
-   * the marquee does. */
+   * thumbnail above the title, and the fold has to fit one screen. */
   .hero-film__poster-wrap {
     transform: none;
   }

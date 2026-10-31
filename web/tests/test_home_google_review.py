@@ -1,7 +1,7 @@
 """The Google review chip on the home hero.
 
 It hangs to the right of the member sentence, on the same line, in both
-heroes: the film fold and the bulb marquee. The rating, the review count
+heroes: the film fold and the empty-week fold. The rating, the review count
 and the link are SITE_CONFIG["google_review"], kept by hand like the phone
 number; None leaves the chip out and the member sentence stands alone.
 """
@@ -47,8 +47,8 @@ def one_member() -> None:
 @mock.patch.dict(SITE_CONFIG, {"google_review": REVIEW})
 @mock.patch("web.views.get_coming_soon", return_value=[])
 @mock.patch("web.views.get_hero_films", return_value=[])
-class MarqueeGoogleReviewTests(TestCase):
-    """Nothing booked: the marquee hero."""
+class EmptyFoldGoogleReviewTests(TestCase):
+    """Nothing booked: the empty-week fold."""
 
     def _html(self) -> str:
         return self.client.get(reverse("home")).content.decode()
@@ -58,7 +58,7 @@ class MarqueeGoogleReviewTests(TestCase):
     ) -> None:
         one_member()
         html = self._html()
-        line_start = html.index('<p class="hero-members">')
+        line_start = html.index('<p class="hero-members hero-film__members">')
         line_end = html.index("</p>", line_start)
         line = html[line_start:line_end]
         self.assertIn("to keep the lights on", line)

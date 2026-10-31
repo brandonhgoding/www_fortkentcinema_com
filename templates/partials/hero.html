@@ -1,57 +1,45 @@
-{% load static %}
 {% comment %}
-  Two heroes, one fold. With a showing booked this week the fold is that
-  film (hero_film.html); the bulb marquee below is the fallback for a week
-  with nothing booked, so the bulbs, the power-on and the cursor bulbs stay
-  and simply do not run most weeks. The marquee branch is unchanged.
+  Two shapes, one fold. With a showing booked this week the fold is that
+  film (hero_film.html). With nothing booked it is the same dark ground
+  holding the empty state, closed by the member line and the cinema-name
+  <h1> lockup exactly as the film hero closes, so the page keeps one shape
+  every week. (The bulb marquee that used to stand here was removed
+  2026-10-31.) Either way this section carries the #now-showing anchor the
+  nav and the other pages point at.
+
+  The home page carries almost all of this site's search clicks, so
+  whatever stands here when nothing is booked is indexable content: it
+  should say what is true and then hand the visitor somewhere to go.
 {% endcomment %}
 {% if hero_films %}{% include "partials/hero_film.html" %}{% else %}
-<section class="hero" data-neon data-cursor-bulbs>
+<section class="hero hero--empty" id="now-showing" data-hero-idle>
   <div class="hero-background"></div>
   <div class="hero-stars"></div>
-  {% comment %}Main Marquee Sign{% endcomment %}
-  <div class="marquee-container">
-    <div class="marquee-outer">
-      {% comment %}Bulbs - Top{% endcomment %}
-      <div class="marquee-bulbs-top">
-        {% for i in hero_top_bulbs %}<span class="bulb"></span>{% endfor %}
-      </div>
-
-      {% comment %}Bulbs - Bottom{% endcomment %}
-      <div class="marquee-bulbs-bottom">
-        {% for i in hero_top_bulbs %}<span class="bulb"></span>{% endfor %}
-      </div>
-
-      {% comment %}Bulbs - Left{% endcomment %}
-      <div class="marquee-bulbs-left">
-        {% for i in hero_side_bulbs %}<span class="bulb"></span>{% endfor %}
-      </div>
-
-      {% comment %}Bulbs - Right{% endcomment %}
-      <div class="marquee-bulbs-right">
-        {% for i in hero_side_bulbs %}<span class="bulb"></span>{% endfor %}
-      </div>
-
-      <div class="marquee-inner">
-        <h1 class="marquee-title">{{ site_config.cinema.name }}</h1>
-        <p class="marquee-subtitle">&#9733; {{ site_config.cinema.tagline }} &#9733;</p>
-      </div>
-    </div>
+  <div class="no-showtimes">
+    <p class="no-showtimes__lead">No showtimes available.</p>
+    <p class="no-showtimes__body">
+      The screen is dark between bookings. New runs go up here as soon as
+      they are confirmed, and we post every one to Facebook first.
+    </p>
+    {% include "partials/list_signup.html" with list_signup_location="home_empty" list_signup_lead="Get an email the moment new runs are booked." %}
+    <ul class="no-showtimes__links">
+      <li><a href="#coming-soon">See what is coming soon</a></li>
+      {% if site_config.social.facebook %}
+      <li>
+        <a href="{{ site_config.social.facebook }}"
+           target="_blank" rel="noopener noreferrer"
+           data-track="facebook_click" data-track-location="now_showing_empty">
+          Follow us on Facebook
+        </a>
+      </li>
+      {% endif %}
+      <li><a href="/membership/">Join the Cinema Club</a></li>
+      <li><a href="/history/">Read the history, back to 1917</a></li>
+    </ul>
   </div>
 
-  <div class="hero-tagline">
-    <p>"{{ site_config.cinema.heroQuote }}"</p>
-  </div>
+  {% include "partials/hero_members.html" with extra_class="hero-film__members" %}
 
-  <div class="hero-cta">
-    <a href="#now-showing" class="btn btn-ticket">
-      View Showtimes
-    </a>
-    <a href="/membership/" class="btn btn-secondary">
-      Join Membership
-    </a>
-  </div>
-
-  {% include "partials/hero_members.html" %}
+  <h1 class="hero-film__lockup">{{ site_config.cinema.name }} <span class="hero-film__lockup-tagline">{{ site_config.cinema.tagline }}</span></h1>
 </section>
 {% endif %}

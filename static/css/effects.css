@@ -1,6 +1,6 @@
 /* src/styles/effects.css
    ============================================
-   d3 CINEMATIC EFFECTS — layered on top of the
+   CINEMATIC EFFECTS — layered on top of the
    Art Deco theme; never modifies base styles.
    Custom properties written by effect hooks:
      --fx-fade  0..1  content fade/translate progress
@@ -15,47 +15,6 @@
 .fx-reveal.fx-revealed {
   opacity: 1;
   transform: none;
-}
-
-/* === Hero neon power-on === */
-.hero--pre-show .bulb {
-  opacity: 0.08;
-  transition: opacity 0.15s ease;
-}
-
-/* No chase during the power-on: the lit layer is off until the bulb's own
- * turn (bulb--lit), then on. `none` rather than paused, because a paused
- * animation sitting on its first keyframe would still pin the opacity at 0. */
-.hero--pre-show .bulb::after {
-  animation: none;
-  opacity: 0;
-}
-
-.hero--pre-show .bulb.bulb--lit {
-  opacity: 1;
-}
-
-.hero--pre-show .bulb.bulb--lit::after {
-  opacity: 1;
-}
-
-.hero--pre-show .marquee-subtitle {
-  opacity: 0.06;
-}
-
-.marquee-subtitle {
-  transition: opacity 0.6s ease;
-}
-
-/* The tagline, buttons and member count are NOT held back for the power-on.
-   They used to sit at opacity 0 until the marquee went live and then replay
-   their fade, so "View Showtimes" was invisible (but clickable) for ~3.4s
-   on a first visit. They now take their own short entrance from Hero.css
-   while the sign lights up behind them. */
-
-/* Cursor-aware bulbs: JS sets transform/box-shadow inline; this smooths them */
-.hero--live .bulb {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 /* === Card spotlight === */

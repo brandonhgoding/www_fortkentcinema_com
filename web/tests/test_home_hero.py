@@ -1,10 +1,10 @@
-"""The home hero shows the films on this week; the marquee is the fallback.
+"""The home hero shows the films on this week; the empty fold is the fallback.
 
 With a showing booked this week the first fold is the next film on: its
 backdrop, poster, title, and its upcoming showtimes as the shared ticket
 chips, so the visitor picks a time on the fold. The other films this week
 are one panel each, hidden until picked from the "Also showing" strip.
-With nothing booked the bulb marquee renders as it always has.
+With nothing booked the same dark fold holds the empty state.
 """
 
 import datetime
@@ -281,12 +281,13 @@ class FilmHeroWithoutSalesTests(HeroBase):
         self.assertNotIn('class="hero-film__poster"', html)
 
 
-class MarqueeFallbackTests(HeroBase):
-    def test_nothing_booked_renders_the_marquee(self):
+class EmptyFoldFallbackTests(HeroBase):
+    def test_nothing_booked_renders_the_empty_fold(self):
         html = self.home()
         self.assertNotIn("hero--film", html)
+        self.assertIn('class="hero hero--empty"', html)
         self.assertIn(
-            f'<h1 class="marquee-title">{SITE_CONFIG["cinema"]["name"]}</h1>', html
+            f'<h1 class="hero-film__lockup">{SITE_CONFIG["cinema"]["name"]} ', html
         )
 
     def test_a_showing_that_started_does_not_count(self):

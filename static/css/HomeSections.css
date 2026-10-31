@@ -154,7 +154,7 @@
 }
 
 /* Membership band: one framed panel on the blue, ruled in gold like the
- * hero's marquee so the ask reads as the cinema's own member card. The pitch
+ * hero's poster frame so the ask reads as the cinema's own member card. The pitch
  * and perks on the left; the price and the button on the right, behind a
  * gold hairline. */
 .home-membership__panel {
@@ -363,11 +363,27 @@
   margin: var(--spacing-lg) 0 0;
 }
 
-/* The empty week (partials/home_no_showtimes.html): the section under the
- * marquee that keeps the #now-showing anchor when nothing is booked. */
-.no-showtimes {
-  text-align: center;
-  padding: var(--spacing-2xl);
-  color: var(--color-cream-muted);
+/* The empty week (partials/hero.html, .hero--empty): the dark fold with
+ * nothing booked. It is a .hero, so the dark tokens flip the shared
+ * empty-state block (global.css) and the signup form for free; this only
+ * sizes the fold and lifts the copy above the grain (z-index 4). The member
+ * line and the <h1> lockup reuse the film hero's classes (HeroFilm.css). */
+.hero--empty {
+  min-height: min(72vh, 680px);
+  padding: calc(70px + var(--spacing-xl)) var(--spacing-lg) var(--spacing-lg);
+}
+
+.hero--empty .no-showtimes {
+  position: relative;
+  z-index: 10;
+  padding: var(--spacing-lg) 0 0;
+  color: var(--color-text-muted);
   font-size: 1.1rem;
+}
+
+@media (max-width: 600px) {
+  .hero--empty {
+    min-height: 0;
+    padding: calc(70px + var(--spacing-md)) var(--spacing-sm) var(--spacing-lg);
+  }
 }

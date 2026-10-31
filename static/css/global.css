@@ -426,28 +426,6 @@ button {
 /* ============================================
    ANIMATIONS
 ============================================ */
-@keyframes bulb-glow {
-  0%,
-  100% {
-    opacity: 0;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-/* Hero entrance animations */
-@keyframes curtain-reveal {
-  0% {
-    opacity: 0;
-    transform: translateY(30px) scale(0.96);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
 @keyframes fade-up {
   0% {
     opacity: 0;

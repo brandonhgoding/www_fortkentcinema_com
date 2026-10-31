@@ -93,11 +93,6 @@ class HomeView(TemplateView):
         # replaces still counts once, and .count() keeps it to one query.
         ctx["member_count"] = Member.objects.active().count()
 
-        # Hero marquee bulbs: 17 across top/bottom, 5 down each side (Hero.jsx).
-        # Only rendered when nothing is booked (see partials/hero.html).
-        ctx["hero_top_bulbs"] = range(17)
-        ctx["hero_side_bulbs"] = range(5)
-
         today = today_eastern()
 
         # Hero: every film with a showing to come, the next one on the fold

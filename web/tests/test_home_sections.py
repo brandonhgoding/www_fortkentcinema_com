@@ -140,7 +140,7 @@ class SectionCompositionTests(TestCase):
         self.assertEqual(
             seq, sorted(set(seq), key=seq.index), "a section rendered twice: %s" % seq
         )
-        self.assertEqual(seq[0], "hero")
+        self.assertEqual(seq[0], "now-showing")
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_hero_films", return_value=[])
@@ -150,7 +150,6 @@ class SectionCompositionTests(TestCase):
         self.assertEqual(
             seq,
             [
-                "hero",
                 "now-showing",
                 "membership",
                 "coming-soon",
@@ -175,7 +174,6 @@ class SectionCompositionTests(TestCase):
         and no two neighbours share a ground."""
         main = main_content(self.home())
         expected = {
-            "now-showing": "raised",
             "membership": "accent",
             "coming-soon": "alt",
             "get-involved": "surface",

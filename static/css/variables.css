@@ -102,7 +102,7 @@
   --color-brass: #d2ccb4;       /* hairlines and panel borders */
   --color-brass-light: #6b6240; /* small caption text, 6.2:1 on surface */
 
-  /* The neon stack is the marquee's alone. Every use outside .hero has been
+  /* The neon stack is the hero's alone. Every use outside .hero has been
    * given a real colour (the membership title, the form errors), so
    * all four can go transparent here and the glow simply does not render. */
   --neon-gold-inner: transparent;
