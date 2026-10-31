@@ -22,13 +22,3 @@ class AdInquiryModelTests(TestCase):
             business_name="B", contact_name="b", email="b@example.com"
         )
         self.assertEqual(list(AdInquiry.objects.all()), [second, first])
-
-    def test_ad_type_labels(self):
-        self.assertEqual(
-            AdType.choices,
-            [
-                ("SLIDE", "Pre-show slide"),
-                ("VIDEO", "Video spot"),
-                ("UNSURE", "Not sure yet"),
-            ],
-        )

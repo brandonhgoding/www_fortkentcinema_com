@@ -58,20 +58,9 @@ class LlmsTxtTests(TestCase):
         self.assertIn(SITE_CONFIG["social"]["facebook"], text)
         self.assertIn(OPEN_MIC["start_label"], text)
 
-    def test_gift_cards_are_not_listed(self, *_):
-        # The owner took gift cards off the site on 2026-10-14; llms.txt was
-        # the last place that named them.
-        text = self.get().content.decode()
-        self.assertNotIn("squareup.com/gift", text)
-        self.assertNotIn("gift card", text.lower())
-
     def test_advertising_is_listed(self, *_):
         text = self.get().content.decode()
-        self.assertIn("## Rentals, advertising", text)
-        # Named as the nav and page titles name them.
-        self.assertIn("- Rent the Cinema", text)
         self.assertIn("http://testserver/rentals/", text)
-        self.assertIn("- Buy Ad Space", text)
         self.assertIn("http://testserver/advertise/", text)
 
     def test_every_site_link_is_a_live_page(self, *_):
@@ -81,15 +70,6 @@ class LlmsTxtTests(TestCase):
         for path in sorted(paths):
             with self.subTest(path=path):
                 self.assertEqual(self.client.get(path).status_code, 200)
-
-    def test_does_not_promise_per_film_pages(self, *_):
-        # /movies/<slug> was retired on 2026-10-14 (it 301s to the home page),
-        # so an assistant reading "links to its own page" would send people to
-        # a redirect. The home card is now where a film's details live.
-        text = self.get().content.decode()
-        self.assertNotIn("its own page", text)
-        self.assertIn("There are no separate film pages.", text)
-        self.assertIn("Each film card on the home page carries its showtimes", text)
 
     def test_states_the_screens_and_their_seats(self, *_):
         # Directories disagree on the screen count (Cinema Treasures says

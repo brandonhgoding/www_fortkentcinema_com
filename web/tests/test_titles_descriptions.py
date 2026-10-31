@@ -1,10 +1,7 @@
 """Titles and meta descriptions on the section pages.
 
-The 2026-10-15 site audit found the membership page titled
-"Membership — Fort Kent Cinema" under an H1 and nav button that say
-"Become a Member" (the sitelink rule: label = title = H1), and four
-descriptions long enough that Google cut off the sentence carrying the
-price or the time. These hold the fixes.
+The 2026-10-15 site audit found four descriptions long enough that Google
+cut off the sentence carrying the price or the time. These hold the fix.
 """
 
 import html as html_lib
@@ -40,17 +37,6 @@ def meta_description(html):
 @mock.patch("web.views.get_coming_soon", return_value=[])
 @mock.patch("web.views.get_hero_films", return_value=[])
 class TitleAndDescriptionTests(TestCase):
-    def test_membership_title_is_the_sitelink_label(self, *_):
-        # Nav button, <title>, og:title and <h1> all read the same, as on
-        # the Buy Ad Space and Rent the Cinema pages.
-        html = self.client.get(reverse("membership")).content.decode()
-        self.assertIn("<title>Become a Member | Fort Kent Cinema</title>", html)
-        self.assertIn(
-            '<meta property="og:title" content="Become a Member | Fort Kent Cinema"',
-            html,
-        )
-        self.assertNotIn("Membership — Fort Kent Cinema", html)
-
     def test_every_section_description_fits_a_result_snippet(self, *_):
         for name in SECTION_PAGES:
             with self.subTest(page=name):

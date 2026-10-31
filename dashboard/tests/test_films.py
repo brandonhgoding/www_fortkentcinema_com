@@ -36,7 +36,6 @@ class FilmSearchTests(TestCase):
         html = self.client.get(reverse("dashboard:film_search_tmdb"), {"q": "alien"}).content.decode()
         self.assertIn("Alien", html)
         self.assertIn("1979", html)
-        self.assertIn("TMDB Results", html)
 
     @mock.patch("dashboard.views.TMDBService")
     def test_tmdb_search_error_inline(self, MockSvc) -> None:

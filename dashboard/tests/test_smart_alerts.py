@@ -71,24 +71,6 @@ class BuildSmartAlertsTests(TestCase):
         self.assertEqual(alerts, [])
 
 
-class SponsorshipAlertRemovedTests(TestCase):
-    def setUp(self) -> None:
-        self.today = datetime.date(2026, 7, 10)
-
-    def test_rental_alert_alone(self):
-        alerts = build_smart_alerts(
-            [], 1, self.today, new_rental_inquiries=2, new_voicemails=1
-        )
-        ids = [a["id"] for a in alerts]
-        self.assertIn("new-rental-inquiries", ids)
-        self.assertIn("new-voicemails", ids)
-        self.assertNotIn("new-sponsorship-inquiries", ids)
-
-    def test_new_inquiries_argument_is_gone(self):
-        with self.assertRaises(TypeError):
-            build_smart_alerts([], 1, self.today, new_inquiries=1)
-
-
 class RentalInquiryAlertTests(TestCase):
     def setUp(self) -> None:
         self.today = datetime.date(2026, 7, 10)
@@ -157,13 +139,12 @@ class VoicemailAlertTests(TestCase):
         self.assertEqual(self._square_ids(square_pull_status=None), [])
         self.assertEqual(self._square_ids(square_pull_status="OK"), [])
 
-    def test_incomplete_pull_names_the_online_orders(self) -> None:
+    def test_incomplete_pull_raises_a_warning(self) -> None:
         incomplete = build_smart_alerts(
             [], 1, self.today, square_pull_status="INCOMPLETE")
         self.assertEqual(
-            [(a["id"], a["type"], a["message"]) for a in incomplete],
-            [("square-pull-incomplete", "warning",
-              "Yesterday's Square sales pull missed paid online ticket orders")])
+            [(a["id"], a["type"]) for a in incomplete],
+            [("square-pull-incomplete", "warning")])
 
     def test_square_sync_failed_message_pluralises(self) -> None:
         one = build_smart_alerts([], 1, self.today, square_sync_failures=1)

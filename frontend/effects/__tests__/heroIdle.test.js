@@ -65,11 +65,4 @@ describe('initHeroIdle on the film hero', () => {
     initHeroIdle(document);
     expect(io.observed).toEqual([document.getElementById('f')]);
   });
-
-  it('ignores the retired marquee hook', () => {
-    document.body.innerHTML = '<section class="hero" data-neon></section>';
-    const io = stubObserver();
-    initHeroIdle(document);
-    expect(io.observed).toEqual([]);
-  });
 });

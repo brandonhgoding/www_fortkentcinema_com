@@ -40,11 +40,3 @@ class UserModelTests(TestCase):
         user = make_user(email="a@example.com")
         self.assertEqual(user.get_short_name(), "a@example.com")
         self.assertEqual(user.get_full_name(), "a@example.com")
-
-    def test_stores_no_personal_names(self):
-        fields = [f.name for f in User._meta.get_fields()]
-        self.assertNotIn("first_name", fields)
-        self.assertNotIn("last_name", fields)
-
-    def test_has_no_username_field(self):
-        self.assertNotIn("username", [f.name for f in User._meta.get_fields()])

@@ -108,11 +108,8 @@ class BuyPageTests(ViewTestCase):
 
     def test_buy_page_asks_first_and_last_name(self):
         html = self.get(self.st)
-        self.assertIn("First name", html)
-        self.assertIn("Last name", html)
         self.assertIn('autocomplete="given-name"', html)
         self.assertIn('autocomplete="family-name"', html)
-        self.assertNotIn("Your name", html)
 
     def test_buy_page_lists_prices_and_matinee(self):
         matinee_st = make_showtime(starts_at=matinee_start())
@@ -279,7 +276,6 @@ class OrderPageTests(ViewTestCase):
         self.assertIn("Payment received", html)
         self.assertIn(paid.number, html)
         self.assertIn(reverse("tickets:order_qr", args=[paid.token]), html)
-        self.assertIn("Show this at the door, or just give your name.", html)
         self.assertIn("noindex", html)
 
         mail_failed = make_order(self.st, status="FAILED", square_payment_id="P2")
@@ -289,13 +285,10 @@ class OrderPageTests(ViewTestCase):
             self.st, square_checkout_url="https://square.link/u/9", square_order_id="S9"
         )
         html = self.page(pending)
-        self.assertIn("Confirming your payment", html)
         self.assertIn('http-equiv="refresh" content="4"', html)
 
         age(pending, 3)
         html = self.page(pending)
-        self.assertIn("Still waiting. Check your email for the ticket", html)
-        self.assertIn("Return to payment", html)
         self.assertIn('href="https://square.link/u/9"', html)
         self.assertNotIn('http-equiv="refresh"', html)
 

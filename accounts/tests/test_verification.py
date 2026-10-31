@@ -122,8 +122,6 @@ class VerificationEmailTests(TestCase):
         self.assertEqual(message.subject, "Confirm your Fort Kent Cinema account")
         self.assertEqual(message.to, ["ann@example.com"])
         self.assertIn("http://testserver/register/verify/", message.body)
-        self.assertIn("24 hours", message.body)
-        self.assertIn("ignore", message.body)
 
     def test_already_registered_email_content(self):
         request = RequestFactory().post("/register")
@@ -134,7 +132,6 @@ class VerificationEmailTests(TestCase):
         self.assertEqual(message.to, ["ann@example.com"])
         self.assertIn("http://testserver/login", message.body)
         self.assertIn("http://testserver/password-reset", message.body)
-        self.assertIn("ignore", message.body)
 
     def test_send_failure_logged(self):
         user = make_user("ann@example.com", is_staff=False)

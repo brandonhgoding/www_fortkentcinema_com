@@ -1,5 +1,5 @@
-"""Drafts stay off every public surface: the blog, the home teaser, the
-sitemap, the API and film pages. Staff see them only in the dashboard."""
+"""Drafts stay off every public surface: the blog, the home teaser and the
+sitemap. Staff see them only in the dashboard."""
 
 import datetime
 

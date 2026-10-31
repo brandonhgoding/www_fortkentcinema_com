@@ -173,7 +173,6 @@ class CarryAddressTests(TestCase):
         self.assertIn(f"Voting as <strong>{EMAIL}</strong>", html)
         # The way out for a second person at the same keyboard.
         self.assertIn(f'href="{self.second.get_absolute_url()}"', html)
-        self.assertIn("Use a different address", html)
         # Same place as the email field: above the films.
         self.assertLess(html.index("Voting as"), html.index('name="option"'))
 

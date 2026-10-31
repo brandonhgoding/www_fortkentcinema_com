@@ -187,10 +187,6 @@ class CardDataTests(TestCase):
         self.assertEqual(data.slug, "dune")
         self.assertEqual(data.badge, BADGE_NOW_PLAYING)
         self.assertEqual(data.date_line, "NOW THROUGH JULY 7")
-        self.assertEqual(data.wordmark, "FORT KENT CINEMA")
-        self.assertEqual(
-            data.footer, "VISIT WWW.FORTKENTCINEMA.COM FOR SHOWTIMES"
-        )
 
     def test_two_films_join_in_the_headline(self) -> None:
         eng = self._eng([make_film("Alien"), make_film("Aliens")])

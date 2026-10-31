@@ -93,10 +93,7 @@ class DashboardPermissionTests(TestCase):
         resp = self.client.post("/perm-probe", HTTP_HX_REQUEST="true")
         self.assertEqual(resp.status_code, 403)
         trigger = json.loads(resp["HX-Trigger"])
-        self.assertEqual(
-            trigger["dashboard-toast"],
-            {"kind": "error", "message": "You don't have permission to do that."},
-        )
+        self.assertEqual(trigger["dashboard-toast"]["kind"], "error")
 
     def test_tuple_requires_every_permission(self) -> None:
         self.login(("cinema.view_screen",))

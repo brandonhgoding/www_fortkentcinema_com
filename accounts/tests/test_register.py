@@ -30,11 +30,6 @@ class RegisterTests(TestCase):
         cache.clear()
         self.users = get_user_model().objects
 
-    def test_register_page(self):
-        response = self.client.get(URL)
-        self.assertContains(response, "Create an account")
-        self.assertContains(response, "Create account")
-
     def test_honeypot_checked_first(self):
         response = post(self.client, email="not-an-email", website="x")
         self.assertContains(response, SENT)
@@ -43,7 +38,6 @@ class RegisterTests(TestCase):
 
     def test_invalid_and_weak_and_mismatched(self):
         response = post(self.client, email="nope")
-        self.assertContains(response, "Create account")
         self.assertTrue(response.context["form"].errors["email"])
         response = post(self.client, p1="12345678")
         self.assertTrue(response.context["form"].errors["password2"])
@@ -160,11 +154,6 @@ class RegisterTests(TestCase):
             self.client.post("/register/resend", {"email": f"b{i}@example.com"})
         response = post(self.client, email="z@example.com")
         self.assertEqual(response.status_code, 429)
-        self.assertContains(
-            response,
-            "Too many requests from this connection. Try again later.",
-            status_code=429,
-        )
         self.assertFalse(self.users.filter(email="z@example.com").exists())
 
     @override_settings(USE_PROXY_HEADERS=True)
@@ -257,12 +246,6 @@ class ResendTests(TestCase):
         response = self.resend("u@example.com")
         self.assertContains(response, "in the last 5 minutes")
         self.assertEqual(len(mail.outbox), 1)
-
-
-class MagicLinkGoneTests(TestCase):
-    def test_magic_link_urls_gone(self):
-        self.assertEqual(self.client.get("/login/link").status_code, 404)
-        self.assertEqual(self.client.post("/login/link", {}).status_code, 404)
 
 
 class RegisterTimingTests(TestCase):

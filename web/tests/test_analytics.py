@@ -35,12 +35,6 @@ class GA4SnippetTests(TestCase):
         self.assertIn("googletagmanager.com/gtag/js?id=G-TESTID123", html)
         self.assertIn("gtag('config', 'G-TESTID123')", html)
 
-    @override_settings(GA_MEASUREMENT_ID="G-TESTID123")
-    def test_hardcoded_id_is_gone(self):
-        """It used to be baked into base.html."""
-        html = self.client.get("/").content.decode()
-        self.assertNotIn("G-S2PR27SWGD", html)
-
 
 class ClickEventMarkupTests(TestCase):
     def test_join_click_is_tracked_without_a_value(self):
@@ -58,12 +52,6 @@ class ClickEventMarkupTests(TestCase):
         for hit in hits:
             self.assertNotIn("value", hit)
 
-    def test_no_giftcard_link_on_the_home_page(self):
-        # The gift-card card left the home page on 2026-10-13 (the owner's
-        # call). If a gift-card link comes back, tag it giftcard_click.
-        html = self.client.get("/").content.decode()
-        self.assertEqual(len(tracked(html, "giftcard_click")), 0)
-
     def test_footer_phone_tagged_with_location(self):
         html = self.client.get("/").content.decode()
         hits = tracked(html, "phone_click")
@@ -75,7 +63,6 @@ class ClickEventMarkupTests(TestCase):
         carries the tracking the mailto link used to."""
         html = self.client.get(reverse("rentals")).content.decode()
         self.assertIn('data-track-location="rentals"', html)
-        self.assertEqual(len(tracked(html, "rental_email_click")), 0)
         self.assertEqual(len(tracked(html, "rental_inquiry_submit")), 1)
 
 

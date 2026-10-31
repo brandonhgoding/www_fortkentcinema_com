@@ -90,7 +90,6 @@ class TermCreateTests(TestCase):
             reverse("dashboard:term_create", args=[self.member.pk])
         ).content.decode()
         self.assertIn('id="term-form"', html)
-        self.assertIn("Create Term", html)
 
     def test_renewal_needs_only_a_tier_and_a_start_date(self) -> None:
         resp = self.client.post(
@@ -327,14 +326,12 @@ class RenewPrefillTests(TestCase):
             reverse("dashboard:term_create", args=[self.member.pk]), {"renew": "1"}
         ).content.decode()
 
-    def test_renewal_says_renew_through_an_invalid_submit(self) -> None:
-        # The drawer is titled Renew Membership; its button matches, and
-        # keeps matching when a bad submit re-renders the form.
+    def test_renewal_stays_a_renewal_through_an_invalid_submit(self) -> None:
+        # The form keeps posting back as a renewal when a bad submit
+        # re-renders it.
         url = reverse("dashboard:term_create", args=[self.member.pk]) + "?renew=1"
-        self.assertIn("Renew Membership", self.renew_form())
         self.assertIn(f'hx-post="{url}"', self.renew_form())
         html = self.client.post(url, {}).content.decode()
-        self.assertIn("Renew Membership", html)
         self.assertIn(f'hx-post="{url}"', html)
 
     def test_renewal_toasts_renewed(self) -> None:

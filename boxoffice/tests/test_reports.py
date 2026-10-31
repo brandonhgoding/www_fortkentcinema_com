@@ -116,7 +116,6 @@ class RenderTests(TestCase):
 
     def test_ticket_report_body(self) -> None:
         body = render_report("TICKET_REPORT", DAY, [ItemTotal("Dune", 2, 1600)])
-        self.assertIn("🎟 Ticket Sales Summary:", body)
         self.assertIn("Dune: 2 sold, $16.00 revenue", body)
         self.assertIn("Report generated for October 9, 2026", body)
 

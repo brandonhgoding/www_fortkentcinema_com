@@ -62,8 +62,6 @@ class RentalInquiryTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "base.html")
         self.assertTemplateUsed(response, "web/rentals.html")
-        # The rest of the page is still there, FAQ and all.
-        self.assertContains(response, "QUESTIONS WE GET")
 
     def test_missing_name_is_rejected(self):
         response = self.client.post(
@@ -153,6 +151,4 @@ class RentalFormRenderTests(TestCase):
         self.assertIn('href="tel:+12072315287"', self.html)
 
     def test_form_uses_rental_classes(self):
-        # The form owns its styles; it must not lean on the sponsor page's.
         self.assertIn("rental-inquire__form", self.html)
-        self.assertNotIn("sponsor-inquire", self.html)

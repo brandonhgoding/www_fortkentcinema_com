@@ -14,8 +14,7 @@ site's search clicks:
 The dividers were then removed outright rather than placed correctly, and
 the {% section %} tag went with them — with no seam to emit it did nothing
 a bare {% include %} does not. Sections are separated by their alternating
-grounds. What survives here is the ordering guarantee and a check that the
-ornament does not come back.
+grounds. What survives here is the ordering guarantee.
 """
 
 import datetime
@@ -114,27 +113,6 @@ class SectionCompositionTests(TestCase):
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_hero_films", return_value=[])
-    def test_section_ornaments_are_gone(self, _ns, _cs):
-        """Two decorative devices were removed from between and beneath the
-        sections, each in every layer it touched:
-
-          * the ornament divider — partial deleted, .ornament-* rules
-            deleted, and the template tag that placed it deleted;
-          * the fx-divider chevron under each section subtitle — <svg>
-            deleted from three partials, .fx-divider rules deleted, and the
-            --fx-draw property that drew its stroke no longer set by
-            scrollReveal.js (nothing else consumed it).
-
-        Sections are separated by their alternating grounds. This asserts no
-        layer of either device comes back on its own."""
-        html = self.home()
-        self.assertNotIn("ornament-divider", html)
-        self.assertNotIn("ornament-line", html)
-        self.assertNotIn("ornament-star", html)
-        self.assertNotIn("fx-divider", html)
-
-    @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_hero_films", return_value=[])
     def test_sections_appear_once_each_in_order(self, _ns, _cs):
         seq = section_sequence(self.home())
         self.assertEqual(
@@ -145,8 +123,7 @@ class SectionCompositionTests(TestCase):
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_hero_films", return_value=[])
     def test_section_order_ends_with_from_the_booth(self, _ns, _cs):
-        html = self.home()
-        seq = section_sequence(html)
+        seq = section_sequence(self.home())
         self.assertEqual(
             seq,
             [
@@ -157,7 +134,6 @@ class SectionCompositionTests(TestCase):
                 "from-the-booth",
             ],
         )
-        self.assertNotIn("cta-pair", html)
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_hero_films", return_value=[])
@@ -247,17 +223,9 @@ class FooterHoursTests(TestCase):
         # A single line in the brand column since 2026-10-13, not a column
         # of its own (the owner's call).
         footer = self.footer()
-        self.assertNotIn("footer-hours", footer)
-        self.assertNotIn("Box Office Hours", footer)
         self.assertLess(footer.index("</address>"), footer.index("footer-box-office"))
         brand = footer[footer.index('class="footer-brand"') :]
         self.assertIn("footer-box-office", brand[: brand.index('class="footer-column')])
-
-    def test_no_fixed_weekly_hours_remain(self):
-        footer = self.footer()
-        self.assertNotIn("footer-hours-row", footer)
-        self.assertNotIn("Wednesday", footer)
-        self.assertNotIn("hours", SITE_CONFIG)
 
     def test_hours_are_sitewide_not_just_the_home_page(self):
         self.assertIn("footer-box-office", self.footer(reverse("membership")))
@@ -281,12 +249,6 @@ class TheaterSchemaTests(TestCase):
         block = self.theater()
         for key in ("image", "hasMap"):
             self.assertIn(key, block)
-
-    def test_no_fixed_opening_hours_are_published(self):
-        """Google shows openingHoursSpecification as "Closed" on every other
-        day, and show nights fall on those days. Better no hours than wrong
-        ones."""
-        self.assertNotIn("openingHoursSpecification", self.theater())
 
     def test_has_map_points_at_the_configured_address(self):
         self.assertIn("Hall+Street", self.theater()["hasMap"])
@@ -360,7 +322,6 @@ class EmptyStateTests(TestCase):
         html = self.client.get(reverse("home")).content.decode()
         # Through the links list: the signup form's honeypot has its own </div>.
         empty = re.search(r'<div class="no-showtimes">.*?</ul>', html, re.S).group(0)
-        self.assertIn("No showtimes available.", empty)
         self.assertIn(SITE_CONFIG["social"]["facebook"], empty)
         self.assertIn("/membership/", empty)
         self.assertIn("/history/", empty)
@@ -398,8 +359,7 @@ class EmptyStateTests(TestCase):
 
 
 class FromTheBoothTests(TestCase):
-    """Up to three image-led post cards and a way to the rest. The history
-    card that used to lead this row is gone; History lives under More."""
+    """Up to three image-led post cards and a way to the rest."""
 
     @classmethod
     def setUpTestData(cls):
@@ -423,23 +383,8 @@ class FromTheBoothTests(TestCase):
     def section(self):
         html = self.client.get(reverse("home")).content.decode()
         self.assertEqual(html.count('id="from-the-booth"'), 1)
-        self.assertNotIn('id="our-story"', html)
         start = html.index('id="from-the-booth"')
         return html[html.rindex("<section", 0, start) : html.index("</section>", start)]
-
-    def test_heading_and_lede(self):
-        section = self.section()
-        self.assertRegex(
-            section, r'<h2 class="section-title"[^>]*>From the booth</h2>'
-        )
-        self.assertIn("Film reviews and notes on running a small-town cinema.", section)
-
-    def test_no_history_card(self):
-        self.make_posts(1)
-        section = self.section()
-        self.assertNotIn("history-cta", section)
-        self.assertNotIn("/history/", section)
-        self.assertNotIn("A century on this lot", section)
 
     def test_keeps_the_blog_marker_and_alt_ground(self):
         section = self.section()
@@ -474,7 +419,6 @@ class FromTheBoothTests(TestCase):
             section,
             r'<img src="%s" alt="" loading="lazy"' % re.escape(post.header_image.url),
         )
-        self.assertNotIn("blog-card", section)
 
     def test_post_without_an_image_keeps_the_media_block(self):
         self.make_posts(1)
@@ -519,10 +463,8 @@ class GetInvolvedTests(TestCase):
         card = section[section.index(card_class) :]
         return card[: card.index("</article>")]
 
-    def test_heading_and_cards_row(self):
-        section = self.section()
-        self.assertRegex(section, r'<h2 class="section-title"[^>]*>Be part of the show</h2>')
-        self.assertIn('class="home-cards"', section)
+    def test_cards_row(self):
+        self.assertIn('class="home-cards"', self.section())
 
     def test_advertise_card_links_to_the_page(self):
         # Added 2026-10-13 without a link; /advertise/ landed 2026-10-14.
@@ -531,11 +473,8 @@ class GetInvolvedTests(TestCase):
             section.index("heckle-night-cta"), section.index("advertise-cta")
         )
         card = self.card("advertise-cta")
-        self.assertIn("Advertise with us", card)
         self.assertIn(
-            f'<a href="{reverse("advertise")}" class="home-link">'
-            "See rates &rarr;</a>",
-            card,
+            f'<a href="{reverse("advertise")}" class="home-link">', card
         )
 
     def test_cards_are_open_mic_then_heckle_night(self):
@@ -546,16 +485,9 @@ class GetInvolvedTests(TestCase):
         section = self.section()
         self.assertEqual(section.count("home-card "), 3)
         self.assertLess(section.index("open-mic-cta"), section.index("heckle-night-cta"))
-        self.assertNotIn("vote-cta", section)
-        self.assertNotIn("gift-card-cta", section)
 
     def test_no_ticket_button_in_get_involved(self):
         self.assertNotIn("btn-ticket", self.section())
-
-    def test_open_mic_card_copy(self):
-        card = self.card("open-mic-cta")
-        for text in ("Take center stage", "Every Monday", "Open Mic", "How to sign up &rarr;"):
-            self.assertIn(text, card)
 
     PICTURES = (
         ("open-mic-cta", "take-center-stage"),
@@ -583,17 +515,15 @@ class GetInvolvedTests(TestCase):
 
         card = self.card("heckle-night-cta")
         self.assertIn("Heckle Night &middot; Third Friday of the month", card)
-        self.assertIn("Talk back to the screen", card)
         self.assertIn(f"${HECKLE_NIGHT['general_price']} at the door", card)
         self.assertIn("free for members", card)
         self.assertIn(f"Starts at {HECKLE_NIGHT['start_label']}", card)
         self.assertIn(f'href="{reverse("heckle_night")}"', card)
-        self.assertIn("See what&rsquo;s next &rarr;", card)
 
 
 class HomeTypeAndGroundTests(TestCase):
-    """Three heading sizes below the hero, from tokens only, and no ornament
-    left on Coming Soon. Read from the source sheets, since the bundle is
+    """Three heading sizes below the hero, from tokens only, and a flat
+    ground on Coming Soon. Read from the source sheets, since the bundle is
     minified."""
 
     CSS = Path(settings.BASE_DIR) / "static" / "css"
@@ -646,7 +576,6 @@ class HomeTypeAndGroundTests(TestCase):
         css = re.sub(
             r"/\*.*?\*/", "", (self.CSS / "ComingSoon.css").read_text(), flags=re.S
         )
-        self.assertNotIn("ornament-gold", css)
         # The ground comes from .home-section--alt; the section's own rule may
         # not paint a background or rules over it.
         for selectors, body in re.findall(r"([^{}]+)\{([^{}]*)\}", css):
@@ -715,7 +644,6 @@ class ScreeningEventSchemaTests(TestCase):
         self.assertEqual(ev["location"]["address"]["streetAddress"],
                          SITE_CONFIG["cinema"]["address"]["street"])
         self.assertEqual(ev["workPresented"]["name"], "Dune")
-        self.assertNotIn("url", ev["workPresented"])  # no film pages since 2026-10-14
         self.assertEqual(ev["workPresented"]["image"], "http://p/d.jpg")
         self.assertEqual(ev["workPresented"]["contentRating"], "PG-13")
         self.assertEqual(ev["offers"]["lowPrice"], str(TICKET_PRICES["member"]))

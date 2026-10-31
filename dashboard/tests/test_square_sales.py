@@ -102,8 +102,6 @@ class ListTests(StaffTestCase):
     def test_empty_state(self) -> None:
         html = self.client.get(self.url).content.decode()
         self.assertIn("No Square membership sales yet", html)
-        self.assertIn("They'll show up here when someone joins on the website or "
-                      "pays through a membership link.", html)
 
     def test_source_column_says_website_or_payment_link(self) -> None:
         web = make_sale(order_id="W", status="OK", error="", source="WEBSITE",

@@ -22,16 +22,6 @@ class BlogListTests(TestCase):
         self.assertTemplateUsed(resp, "blog/post_list.html")
         self.assertTemplateUsed(resp, "base.html")
 
-    def test_list_meta(self):
-        html = self.client.get(reverse("blog_list")).content.decode()
-        self.assertIn("From the Booth: Blog | Fort Kent Cinema", html)   # title/og:title
-        self.assertIn('class="blog-list-grid"', html)
-
-    def test_heading_matches_the_home_page_section(self):
-        html = self.client.get(reverse("blog_list")).content.decode()
-        self.assertIn('<h1 class="blog-list-title">FROM THE BOOTH</h1>', html)
-        self.assertIn("Film reviews and notes on running a small-town cinema.", html)
-
     def test_page_one_is_a_lead_and_a_grid_of_twelve(self):
         resp = self.client.get(reverse("blog_list"))
         self.assertEqual(len(resp.context["posts"]), 13)

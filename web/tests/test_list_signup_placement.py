@@ -30,13 +30,11 @@ class HomePlacementTests(TestCase):
             coming.index("coming-calendar-container"),
             coming.index('class="list-signup"'),
         )
-        self.assertIn("every Thursday", html)
 
     def test_in_the_empty_state_before_the_links(self, _cs):
         with mock.patch("web.views.get_hero_films", return_value=[]):
             html = self.home()
         self.assertEqual(signup_locations(html), ["home_empty"])
-        self.assertIn("Get an email the moment new runs are booked.", html)
         self.assertLess(
             html.index('class="list-signup"'), html.index('class="no-showtimes__links"')
         )

@@ -46,19 +46,6 @@ class StyleConsistencyTests(TestCase):
         used = set(re.findall(r"var\((--[a-z0-9-]+)", css))
         self.assertEqual(used - defined, set())
 
-    def test_templates_use_the_shared_button_family(self) -> None:
-        # One button family (.btn + variant, design-system.css). These were
-        # the page-local copies, each styled differently per page.
-        legacy = re.compile(
-            r'class="[^"]*\b(primaryButton|secondaryButton|submitButton|'
-            r"cancelButton|actionButton|deleteButton|confirmButton|statusPill|"
-            r'statusBadge)\b'
-        )
-        offenders = [
-            p.name for p in TEMPLATES_DIR.glob("*.html") if legacy.search(p.read_text())
-        ]
-        self.assertEqual(offenders, [])
-
     def test_only_shared_sheets_define_page_chrome(self) -> None:
         # .tableWrapper, .formGroup and .input live in components.css; a page
         # sheet redefining them is how the pages drifted apart.

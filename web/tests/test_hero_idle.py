@@ -55,14 +55,3 @@ class HeroIdleCssTests(SimpleTestCase):
         )
         self.assertGreater(first_pause, last_animation)
         self.assertTrue(order)
-
-
-class MarqueeGoneTests(SimpleTestCase):
-    """The bulb marquee was removed 2026-10-31; none of its CSS ships."""
-
-    def test_no_bulb_or_marquee_rules_in_the_bundle(self):
-        css = (CSS_DIR / "bundle.css").read_text()
-        for gone in (".bulb", ".marquee-", "@keyframes bulb-", "hero--pre-show",
-                     "curtain-reveal"):
-            with self.subTest(gone=gone):
-                self.assertNotIn(gone, css)

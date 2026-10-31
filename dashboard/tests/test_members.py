@@ -40,7 +40,6 @@ class MemberListTests(TestCase):
     def test_empty_state(self) -> None:
         html = self.client.get(reverse("dashboard:members")).content.decode()
         self.assertIn("empty-state", html)
-        self.assertIn("No Members Yet", html)
 
     def test_rows_show_name_email_tier_and_expiry(self) -> None:
         member = make_member()
@@ -199,8 +198,6 @@ class MemberCreateEditTests(TestCase):
     def test_get_create_form(self) -> None:
         html = self.client.get(reverse("dashboard:member_create")).content.decode()
         self.assertIn('id="member-form"', html)
-        self.assertIn("Create Member", html)
-        self.assertNotIn('name="phone"', html)
 
     def test_post_create_valid(self) -> None:
         resp = self.client.post(

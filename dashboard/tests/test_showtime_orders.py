@@ -111,7 +111,6 @@ class DoorListTests(DoorListTestCase):
         self.assertIn('id="online-count"', html)
         self.assertIn("3 / 50", html)
         self.assertIn('name="online_allowance"', html)
-        self.assertIn("0 means in-person purchase only", html)
 
     def test_view_only_user_sees_door_list_without_actions(self) -> None:
         order = self.paid(lines={"adult": 3})

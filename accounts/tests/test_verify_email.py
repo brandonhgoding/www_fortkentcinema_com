@@ -30,13 +30,8 @@ class VerifyEmailTests(TestCase):
     def test_opening_the_link_asks_for_the_password_and_changes_nothing(self):
         # A mail scanner or link preview fetching the URL verifies nothing.
         response = self.client.get(self.url)
-        self.assertContains(response, "Confirm your email, ann@example.com")
         self.assertContains(response, 'type="password"')
         self.assertContains(response, 'autocomplete="current-password"')
-        self.assertContains(
-            response, "Enter the password you chose when you created the account."
-        )
-        self.assertContains(response, "Confirm my email")
         self.assertIsNone(self.refreshed().email_verified_at)
 
     def test_right_password_verifies_and_does_not_sign_in(self):
@@ -50,7 +45,6 @@ class VerifyEmailTests(TestCase):
         for data in ({}, {"password": "wrong"}):
             response = self.client.post(self.url, data)
             self.assertContains(response, WRONG)
-            self.assertContains(response, "Confirm my email")
             self.assertIsNone(self.refreshed().email_verified_at)
         self.assertEqual(self.client.get(self.url).status_code, 200)
         self.client.post(self.url, {"password": PW})

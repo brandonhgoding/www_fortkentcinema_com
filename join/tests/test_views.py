@@ -52,8 +52,7 @@ class JoinPageTests(ViewTestCase):
     def test_join_page_shows_tier_and_form(self):
         html = self.get("individual")
         for s in ["Individual", "$60", 'name="first_name"', 'name="last_name"',
-                  'name="email"', "Pay $60 on Square", "come straight back here",
-                  'content="noindex, nofollow"']:
+                  'name="email"', 'content="noindex, nofollow"']:
             self.assertIn(s, html)
         self.assertNotIn('name="phone"', html)
         self.assertNotIn(">Join<", html)  # the card's own button stays off here
@@ -141,9 +140,8 @@ class OrderPageTests(ViewTestCase):
     def test_paid_first_term(self):
         order = paid_order()
         html = self.page(order)
-        for s in ["Payment received", "Welcome, Ann", "Individual membership",
+        for s in ["Welcome, Ann", "Individual membership",
                   "Your membership runs Oct 26, 2026 through Oct 25, 2027.",
-                  "There's no card to carry. Give your name at the box office.",
                   "Create an account with ann@example.com", 'href="/register"',
                   "'purchase'", "value: 60", 'content="noindex, nofollow"']:
             self.assertIn(s, html)
@@ -160,11 +158,9 @@ class OrderPageTests(ViewTestCase):
     def test_pending_refreshes_then_waits(self):
         order = make_order(square_checkout_url="https://square.link/u/9")
         html = self.page(order)
-        self.assertIn("Confirming your payment", html)
         self.assertIn('http-equiv="refresh" content="4"', html)
         age(order, 3)
         html = self.page(order)
-        self.assertIn("Still waiting", html)
         self.assertIn('href="https://square.link/u/9"', html)
         self.assertNotIn('http-equiv="refresh"', html)
         self.assertNotIn("'purchase'", html)

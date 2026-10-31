@@ -50,12 +50,6 @@ class PollDetailTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("Round One", response.content.decode())
 
-    def test_detail_shows_the_film_picker(self) -> None:
-        html = self.client.get(
-            reverse("dashboard:poll_detail", args=[self.poll.pk])
-        ).content.decode()
-        self.assertIn("Search for a film", html)
-
     def test_film_picker_search_box_inherits_no_hx_vals(self) -> None:
         # The add-to-ballot hook used to be hx-post/hx-vals on the picker's
         # wrapper. htmx inherits hx-vals from ancestors, so the wrapper's

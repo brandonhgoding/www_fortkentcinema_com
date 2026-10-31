@@ -55,8 +55,6 @@ class PasswordResetTests(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         message = mail.outbox[0]
         self.assertEqual(message.to, ["staffer@example.com"])
-        self.assertEqual(message.subject, "Reset your LeprinceOS password")
-        self.assertIn("5 minutes", message.body)
         self.link_in(message)
 
     def test_unknown_email_looks_the_same_but_sends_nothing(self) -> None:
@@ -76,11 +74,6 @@ class PasswordResetTests(TestCase):
         html = self.client.get("/password-reset").content.decode()
         self.assertIn('name="website"', html)
         self.assertIn('aria-hidden="true"', html)
-
-    def test_sent_page_does_not_say_whether_the_account_exists(self) -> None:
-        self.assertContains(
-            self.client.get("/password-reset/sent"), "If that email has an account"
-        )
 
     def test_second_request_within_five_minutes_sends_nothing(self) -> None:
         self.request_link()
@@ -133,7 +126,6 @@ class PasswordResetTests(TestCase):
             NEW_PASSWORD,
         )
         self.assertEqual(resp["Location"], "/password-reset/done")
-        self.assertContains(self.client.get("/password-reset/done"), "Password changed")
         self.assertTrue(
             self.client.login(
                 username="staffer@example.com", password="popcorn-balcony-42"

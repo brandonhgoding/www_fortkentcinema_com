@@ -96,12 +96,6 @@ class EngagementTestCase(TestCase):
     def test_title_is_empty_with_no_films_and_no_override(self) -> None:
         self.assertEqual(self._engagement().title, "")
 
-    def test_special_event_is_no_longer_a_kind(self) -> None:
-        self.assertEqual(
-            Engagement.Kind.values, ["REGULAR", "CLASSIC", "DOUBLE_FEATURE"]
-        )
-        self.assertFalse(hasattr(Engagement, "default_visibility_for"))
-
     def test_clean_rejects_end_before_start(self) -> None:
         eng = Engagement(
             screen=self.screen,

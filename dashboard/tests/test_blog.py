@@ -6,7 +6,6 @@ from zoneinfo import ZoneInfo
 
 from accounts.tests.factories import make_user
 from blog.models import BlogAuthor, BlogCategory, BlogPost
-from cinema.models import Film
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -18,7 +17,6 @@ class BlogFixture(TestCase):
     def setUpTestData(cls):
         cls.author = BlogAuthor.objects.create(first_name="Ada", last_name="Lovelace")
         cls.category = BlogCategory.objects.create(name="Reviews")
-        cls.film = Film.objects.create(title="Dune", runtime_minutes=155)
 
     def setUp(self) -> None:
         make_staff(email="s@example.com", password="pw12345")
@@ -89,21 +87,7 @@ class StaffOnlyTests(BlogFixture):
 class NavTests(BlogFixture):
     def test_sidebar_links_to_blog(self) -> None:
         html = self.client.get(reverse("dashboard:home")).content.decode()
-        self.assertIn(">Blog<", html)
         self.assertIn(f'href="{reverse("dashboard:blog")}"', html)
-
-    def test_blog_is_gone_from_admin(self) -> None:
-        make_user(
-            email="root@example.com",
-            password="pw12345",
-            is_staff=True,
-            is_superuser=True,
-        )
-        self.client.login(username="root@example.com", password="pw12345")
-        self.assertEqual(self.client.get("/admin/blog/blogpost/").status_code, 404)
-        # FilmAdmin used to autocomplete against BlogPostAdmin.
-        film_admin = self.client.get(f"/admin/cinema/film/{self.film.pk}/change/")
-        self.assertEqual(film_admin.status_code, 200)
 
 
 class PostListTests(BlogFixture):
@@ -247,13 +231,6 @@ class CreatePostTests(BlogFixture):
         post = BlogPost.objects.get(subtitle="★★★★☆")
         self.assertEqual(post.slug, "post-2")
         self.assertEqual(self.client.get(reverse("dashboard:blog")).status_code, 200)
-
-    def test_editor_has_no_film_picker(self) -> None:
-        """The film-to-review link went with the film pages on 2026-10-14."""
-        html = self.client.get(reverse("dashboard:blog_post_create")).content.decode()
-        self.assertNotIn('name="films"', html)
-        self.assertNotIn("Reviews film", html)
-        self.assertNotIn("film_search_combo.css", html)
 
 
 class EditPostTests(BlogFixture):

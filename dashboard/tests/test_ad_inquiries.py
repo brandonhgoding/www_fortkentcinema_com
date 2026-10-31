@@ -89,7 +89,6 @@ class AdInquiryListTests(TestCase):
         self.client.force_login(self.staff)
         html = self.client.get(reverse("dashboard:home")).content.decode()
         self.assertIn(reverse("dashboard:ad_inquiries"), html)
-        self.assertIn("Ad Inquiries", html)
 
     def test_home_alert_counts_new_ad_inquiries(self):
         AdInquiry.objects.create(

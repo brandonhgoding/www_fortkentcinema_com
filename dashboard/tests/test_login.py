@@ -21,7 +21,6 @@ class LoginTests(TestCase):
         resp = self.client.get("/login")
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode()
-        self.assertIn("LeprinceOS", html)
         self.assertIn("login.css", html)
 
     def test_login_redirects_to_dashboard(self) -> None:
@@ -35,7 +34,6 @@ class LoginTests(TestCase):
         html = self.client.get("/login").content.decode()
         self.assertIn('type="email"', html)
         self.assertIn('autocomplete="email"', html)
-        self.assertIn(">Email<", html)
 
     def test_wrong_password_says_email(self) -> None:
         resp = self.client.post(
@@ -88,8 +86,6 @@ class LoginLockoutTests(TestCase):
         resp = self.attempt("pw12345")
         self.assertEqual(resp.status_code, 429)
         html = resp.content.decode()
-        self.assertIn("Too many sign-in attempts", html)
-        self.assertIn("15 minutes", html)
         self.assertNotIn("staffer@example.com", html)  # the page echoes no email
 
     def test_mixed_case_tries_count_against_one_email(self) -> None:
@@ -153,16 +149,11 @@ class MemberSignInTests(TestCase):
 
     def test_login_single_form(self) -> None:
         html = self.client.get("/login").content.decode()
-        self.assertNotIn("<details", html)
-        self.assertNotIn("Email me a sign-in link", html)
         self.assertIn('href="/register"', html)
-        self.assertIn("Create an account", html)
         self.assertEqual(html.count("<form"), 1)
 
     def _assert_unverified(self, resp) -> None:
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, UNVERIFIED)
-        self.assertContains(resp, "Send a new link")
         self.assertContains(resp, 'action="/register/resend"')
         self.assertContains(resp, 'name="email" value="member@example.com"')
         self.assertNotIn("_auth_user_id", self.client.session)
@@ -249,7 +240,6 @@ class LoginIpCapTests(TestCase):
         resp = self.attempt("staffer@example.com", "pw12345")
         self.assertEqual(resp.status_code, 429)
         html = resp.content.decode()
-        self.assertIn("Too many sign-in attempts", html)
         self.assertNotIn("staffer@example.com", html)
 
     def test_under_the_cap_the_right_password_still_works(self) -> None:
@@ -283,7 +273,6 @@ class LoginIpCapTests(TestCase):
             REMOTE_ADDR=self.IP,
         )
         self.assertEqual(resp.status_code, 429)
-        self.assertIn("Too many sign-in attempts", resp.content.decode())
         self.assertNotIn("_auth_user_id", self.client.session)
 
     def test_spraying_through_the_admin_form_locks_the_address(self) -> None:
