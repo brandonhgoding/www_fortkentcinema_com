@@ -10,7 +10,8 @@ from django.contrib.auth import get_user_model, password_validation
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 
-from accounts.verification import normalise
+from accounts.client_ip import request_ip
+from accounts.verification import ip_allowed, normalise
 
 
 UNVERIFIED_MESSAGE = "Please confirm your email first. We can send a new link."
@@ -50,8 +51,9 @@ class EmailAuthenticationForm(AuthenticationForm):
 class EmailPasswordResetForm(PasswordResetForm):
     """Asks for the email to send a reset link to. An address is sent at most
     one link per PASSWORD_RESET_TIMEOUT, so nobody can flood a staff inbox and
-    each address has only one live link at a time. Known or not, the page
-    answers the same way."""
+    each address has only one live link at a time, and one connection gets
+    the same hourly cap as registering. Known or not, the page answers the
+    same way."""
 
     email = forms.EmailField(
         label="Email",
@@ -59,17 +61,23 @@ class EmailPasswordResetForm(PasswordResetForm):
         widget=forms.EmailInput(attrs={"autofocus": True, "autocomplete": "email"}),
     )
 
-    def save(self, *args, **kwargs) -> None:
+    def save(self, *args, request=None, **kwargs) -> None:
         # The honeypot "website" field, as on the site's other forms: hidden
         # from people, so filling it in marks a bot, which gets the same
         # reply and no email.
         if self.data.get("website"):
             return
-        # The in-process cache, so each server worker counts on its own: a
-        # soft limit, which is all flooding protection needs.
-        key = "password-reset:" + self.cleaned_data["email"].strip().lower()
+        if not ip_allowed(request_ip(request)):
+            return
+        email = normalise(self.cleaned_data["email"])
+        # Only an address with an account claims a cache row: the cache is a
+        # bounded table that culls its lowest keys first, and the sign-in
+        # counters sort below these.
+        if not any(True for _ in self.get_users(email)):
+            return
+        key = "password-reset:" + email
         if cache.add(key, True, settings.PASSWORD_RESET_TIMEOUT):
-            super().save(*args, **kwargs)
+            super().save(*args, request=request, **kwargs)
 
 
 class ResendForm(forms.Form):

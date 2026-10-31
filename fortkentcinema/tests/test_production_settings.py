@@ -18,6 +18,15 @@ class CacheSettingsTests(SimpleTestCase):
         )
         self.assertEqual(default["LOCATION"], "django_cache")
 
+    def test_production_cache_table_is_not_culled_at_300_rows(self):
+        # DatabaseCache culls the lowest-sorting third of its keys once it
+        # passes MAX_ENTRIES; "login:ip:*" sorts first. Django's default of
+        # 300 is a handful of busy hours of throttle rows.
+        settings = load_settings()
+        self.assertGreaterEqual(
+            settings.CACHES["default"]["OPTIONS"]["MAX_ENTRIES"], 5000
+        )
+
     def test_social_card_bytes_stay_in_process(self):
         settings = load_settings()
         self.assertEqual(

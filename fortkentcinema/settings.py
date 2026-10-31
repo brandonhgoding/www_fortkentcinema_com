@@ -229,6 +229,12 @@ CACHES = {
         else {
             "BACKEND": "django.core.cache.backends.db.DatabaseCache",
             "LOCATION": "django_cache",
+            # Throttle rows (accounts/throttle.py, verification.py, forms.py)
+            # live here. Past MAX_ENTRIES the backend deletes the
+            # lowest-sorting third of keys, and "login:ip:*" sorts first, so
+            # Django's default of 300 would let a burst of reset or register
+            # requests clear the sign-in counters. Rows are small.
+            "OPTIONS": {"MAX_ENTRIES": 5000},
         }
     ),
     # Dedicated alias for social-card artwork bytes (cinema/social_cards/posters.py).
