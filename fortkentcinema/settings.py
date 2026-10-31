@@ -54,13 +54,10 @@ INSTALLED_APPS = [
     "boxoffice.apps.BoxofficeConfig",
     "tickets.apps.TicketsConfig",
     "join.apps.JoinConfig",
-    "rest_framework",
-    "corsheaders",
     "axes",
 ]
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -206,12 +203,6 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = config(
 SECURE_HSTS_PRELOAD = config("SECURE_HSTS_PRELOAD", default=False, cast=bool)
 
 
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^https?://(www\.)?fortkentcinema\.com$",
-]
-CORS_ALLOWED_ORIGINS: list[str] = []
-
 # The default cache holds the sign-in and registration throttles (accounts
 # app) and short TMDB search results. gunicorn runs several workers and
 # recycles each after ~1000 requests, so an in-process cache would give every
@@ -250,19 +241,6 @@ CACHES = {
         "LOCATION": "fkc-social-cards",
         "OPTIONS": {"MAX_ENTRIES": 64},
     },
-}
-
-REST_FRAMEWORK = {
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
-    "PAGE_SIZE": 6,
-    "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticatedOrReadOnly",
-    ],
-    # The API is public and read-only, so it never needs to know who is
-    # asking. DRF's default stack includes HTTP Basic auth, which checked any
-    # username and password sent with a cookie-less GET: a second place to
-    # guess staff passwords, beside the login form and without its checks.
-    "DEFAULT_AUTHENTICATION_CLASSES": [],
 }
 
 AUTH_USER_MODEL = "accounts.User"
