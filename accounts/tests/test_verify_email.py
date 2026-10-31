@@ -106,6 +106,22 @@ class VerifyEmailTests(TestCase):
             self.client.post(self.url, {"password": PW})
         self.assertIsNotNone(self.refreshed().email_verified_at)
 
+    def test_reregistering_after_wrong_passwords_gives_a_usable_link(self):
+        # The wrong-password page says to create the account again with the
+        # same email and use the newest link; that link must work at once,
+        # since a new password leaves nothing of the old one to guess.
+        for _ in range(5):
+            self.client.post(self.url, {"password": "wrong"})
+        new_pw = "Fresh-passphrase-33"
+        self.client.post(
+            "/register",
+            {"email": "ann@example.com", "password1": new_pw, "password2": new_pw},
+        )
+        new_url = "/register/verify/" + make_token(self.refreshed())
+        self.assertEqual(self.client.get(new_url).status_code, 200)
+        self.assertContains(self.client.post(new_url, {"password": new_pw}), DONE)
+        self.assertIsNotNone(self.refreshed().email_verified_at)
+
     def test_failures_count_per_account(self):
         other = make_user("bob@example.com", PW, is_staff=False)
         other_url = "/register/verify/" + make_token(other)
