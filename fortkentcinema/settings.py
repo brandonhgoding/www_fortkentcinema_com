@@ -293,10 +293,16 @@ PASSWORD_RESET_TIMEOUT = 5 * 60
 # client's login() passes none, so the suite runs on the plain backend and
 # the lockout tests opt in with override_settings.
 AXES_ENABLED = not TESTING
+# IpLockoutBackend comes first: it refuses password checks from an address
+# over LOGIN_IP_FAILURE_LIMIT (below) for every login form, the admin's too.
 AUTHENTICATION_BACKENDS = (
-    ["django.contrib.auth.backends.ModelBackend"]
+    [
+        "accounts.backends.IpLockoutBackend",
+        "django.contrib.auth.backends.ModelBackend",
+    ]
     if TESTING
     else [
+        "accounts.backends.IpLockoutBackend",
         "axes.backends.AxesStandaloneBackend",
         "django.contrib.auth.backends.ModelBackend",
     ]
@@ -319,9 +325,9 @@ AXES_CLIENT_IP_CALLABLE = "accounts.client_ip.request_ip"
 # The axes key is email AND address, so one address trying one password
 # against many emails never trips it. This looser cap counts every failed
 # sign-in from one address (accounts/lockout.py) and locks the address for
-# AXES_COOLOFF_TIME once reached: far above what a shared connection of
-# honest people mistypes, far below a spray (accounts security audit
-# 2026-10-24, L2).
+# AXES_COOLOFF_TIME once reached, on every login form (accounts/backends.py):
+# far above what a shared connection of honest people mistypes, far below
+# a spray (accounts security audit 2026-10-24, L2).
 LOGIN_IP_FAILURE_LIMIT = 30
 
 # TMDB (The Movie Database) integration

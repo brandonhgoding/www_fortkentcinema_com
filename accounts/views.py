@@ -8,7 +8,6 @@ from django.contrib.auth.views import (
     PasswordResetConfirmView,
 )
 from django.contrib.messages.views import SuccessMessageMixin
-from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.shortcuts import render
 from django.utils import timezone
@@ -16,7 +15,7 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.cache import never_cache
 
-from accounts import lockout, verification
+from accounts import verification
 from accounts.client_ip import request_ip
 from accounts.forms import (
     DashboardPasswordChangeForm,
@@ -70,13 +69,6 @@ class SignInView(LoginView):
             request.POST.get("next") or request.GET.get("next")
         )
         return super().dispatch(request, *args, **kwargs)
-
-    def post(self, request, *args, **kwargs):
-        # Too many failed sign-ins from this address, whatever the emails:
-        # the same page axes shows, before the password is even checked.
-        if lockout.ip_locked(request):
-            return render(request, settings.AXES_LOCKOUT_TEMPLATE, status=429)
-        return super().post(request, *args, **kwargs)
 
 
 class _GatedEmailView(View):
