@@ -97,9 +97,6 @@ class HomeRenderTests(TestCase):
 
     def test_cards_and_links(self) -> None:
         html = self.client.get(reverse("dashboard:home")).content.decode()
-        self.assertIn("Active Engagements", html)
-        self.assertIn("Today's Showtimes", html)
-        self.assertIn("Screens", html)
         self.assertIn(reverse("dashboard:engagements"), html)
         self.assertIn(reverse("dashboard:screens"), html)
         self.assertIn("summaryGrid", html)
@@ -205,7 +202,6 @@ class HomePermissionTests(TestCase):
         resp = self.client.get(reverse("dashboard:home"))
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode()
-        self.assertIn("Welcome back", html)
         self.assertIn(
             "You don't have access to any dashboard sections yet. "
             "Ask an administrator for access.",

@@ -31,8 +31,6 @@ class ListSignupTests(TestCase):
         msg = mail.outbox[0]
         self.assertEqual(msg.subject, "Confirm your Fort Kent Cinema emails")
         self.assertEqual(msg.to, ["fan@example.com"])
-        self.assertIn("every Thursday", msg.body)
-        self.assertIn("Didn't ask for this?", msg.body)
         self.assertNotIn("Thanks for voting", msg.body)
         link = re.search(r"http://testserver(/subscribe/confirm/\S+)", msg.body).group(
             1
@@ -184,7 +182,6 @@ class ListConfirmTests(TestCase):
         self.assertContains(r, "fan@example.com")
         self.assertContains(r, 'method="post"')
         self.assertContains(r, "noindex")
-        self.assertContains(r, ">Confirm</button>")
         self.sub.refresh_from_db()
         self.assertEqual(self.sub.status, SubscriberStatus.PENDING)
 

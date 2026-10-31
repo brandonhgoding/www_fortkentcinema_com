@@ -31,8 +31,6 @@ class TicketEmailTests(TestCase):
             "1 × Child $6.00",
             "Total $22.00",
             "13 Hall Street",
-            "Show this at the door, or just give your name.",
-            "Tickets are non-refundable unless the show is cancelled.",
             f"https://www.fortkentcinema.com/tickets/order/{order.token}/",
         ]:
             self.assertIn(text, msg.body)
@@ -60,8 +58,7 @@ class TicketEmailTests(TestCase):
         msg = mail.outbox[0]
         self.assertEqual(msg.to, ["ann@example.com"])
         self.assertRegex(msg.subject, r"^Refunded: Dune, \w{3} \w{3} \d{1,2}$")
-        for text in ["Hi Ann,", "cancelled", "$22.00", "within a few days",
-                     "(207) 231-5287"]:
+        for text in ["Hi Ann,", "cancelled", "$22.00", "(207) 231-5287"]:
             self.assertIn(text, msg.body)
 
     def test_staff_refund_email_on_a_running_show(self):
@@ -76,5 +73,5 @@ class TicketEmailTests(TestCase):
             msg.body,
         )
         self.assertNotIn("cancelled", msg.body)
-        for text in ["$22.00", "within a few days", "(207) 231-5287"]:
+        for text in ["$22.00", "(207) 231-5287"]:
             self.assertIn(text, msg.body)

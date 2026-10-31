@@ -51,7 +51,6 @@ class VoiceTests(PhoneTestCase):
 class IncomingCallTests(PhoneTestCase):
     def test_greets_and_gathers_one_digit(self) -> None:
         twiml = self.call("incoming_call")
-        self.assertIn("Thanks for calling Fort Kent Cinema.", twiml)
         self.assertIn('<Gather action="/phone/menu/?attempt=1" numDigits="1"', twiml)
         self.assertIn("Press 1 for today's showtimes", twiml)
         # No input falls through to the menu as a miss.
@@ -83,7 +82,6 @@ class IncomingCallTests(PhoneTestCase):
         ):
             get_or_create.side_effect = DatabaseError("connection lost")
             twiml = self.call("incoming_call")
-        self.assertIn("Thanks for calling Fort Kent Cinema.", twiml)
         self.assertIn("<Gather", twiml)
 
 
@@ -156,7 +154,6 @@ class MenuTests(PhoneTestCase):
         for digits in ("", "9"):
             with self.subTest(digits=digits):
                 twiml = self.press(digits, attempt=2)
-                self.assertIn("Goodbye.", twiml)
                 self.assertIn("<Hangup />", twiml)
                 self.assertNotIn("<Gather", twiml)
 

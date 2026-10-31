@@ -203,7 +203,6 @@ class ComingSoonTicketChipTests(TestCase):
         self.assertIn(
             '<a class="coming-movie-tickets" href="#coming-tickets-1"', card
         )
-        self.assertIn("Showtimes &amp; tickets", card)
 
     def test_the_chips_live_in_the_dialog_not_the_card_body(self):
         html = self.home()

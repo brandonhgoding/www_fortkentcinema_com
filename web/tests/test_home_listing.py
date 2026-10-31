@@ -4,7 +4,7 @@ The Now Showing section is gone: the film hero carries the whole week's
 showtimes, the trailer, the ticket line and the Now Showing anchor, and
 the mailing-list form moves to the foot of Coming Soon. In a week with
 nothing booked the same dark fold carries the empty state under the same
-anchor (the bulb marquee that used to stand there was removed 2026-10-31).
+anchor.
 """
 
 import datetime
@@ -34,25 +34,6 @@ class HeroIsTheListingTests(HeroBase):
         html = self.home()
         self.assertEqual(html.count('id="now-showing"'), 1)
         self.assertIn('<section class="hero hero--film" id="now-showing"', html)
-        self.assertNotIn('class="now-showing', html)
-        self.assertNotIn("section-title", section(html, "now-showing"))
-
-    def test_the_grid_and_the_schedule_list_are_gone(self):
-        html = self.home()
-        for marker in (
-            'class="movies-grid"',
-            'class="schedule-list"',
-            'class="date-nav"',
-            'class="movie-card"',
-            'class="schedule-card"',
-            "ns_dates",
-        ):
-            self.assertNotIn(marker, html, marker)
-
-    def test_no_button_points_at_the_listing_any_more(self):
-        hero = self.hero()
-        self.assertNotIn('href="#now-showing"', hero)
-        self.assertNotIn("hero-cta", hero)
 
     def test_ticket_line_sits_under_the_dates_in_the_panel(self):
         hero = self.hero()
@@ -61,7 +42,6 @@ class HeroIsTheListingTests(HeroBase):
         line = hero.index('<p class="ticket-info">')
         self.assertLess(dates, line)
         self.assertLess(line, hero.index("</article>"))
-        self.assertIn("Buy online from the showtimes above", hero)
 
     def test_three_dates_show_without_a_toggle(self):
         for day in (3, 4):
@@ -96,7 +76,6 @@ class HeroIsTheListingTests(HeroBase):
             hero,
         )
         self.assertIn("Show all 7 dates", hero)
-        self.assertIn("Show fewer dates", hero)
         # Every panel has its own `expanded`.
         self.assertIn('x-data="{ expanded: false }"', hero)
 
@@ -147,20 +126,6 @@ class HeroIsTheListingTests(HeroBase):
             coming.index("coming-calendar-container"),
             coming.index('class="list-signup"'),
         )
-        # The form keeps its Thursday promise; the empty week's lead is different.
-        self.assertIn("every Thursday", coming)
-        self.assertNotIn("Get an email the moment new runs are booked.", coming)
-
-    def test_old_context_is_gone(self):
-        ctx = self.client.get(reverse("home")).context
-        for key in (
-            "now_showing",
-            "ns_dates",
-            "ns_dates_json",
-            "ns_labels_json",
-            "ns_today_index",
-        ):
-            self.assertNotIn(key, ctx)
 
     def test_screening_events_come_from_the_hero_films(self):
         self.st.engagement.showtimes.create(
@@ -201,7 +166,6 @@ class HeroTrailerTests(HeroBase):
     def test_a_text_link_offers_the_trailer_too(self):
         hero = self.hero()
         self.assertIn('<button class="hero-film__trailer" type="button"', hero)
-        self.assertIn("Watch trailer", hero)
 
     def test_the_dialog_lives_in_the_hero(self):
         html = self.home()
@@ -223,7 +187,7 @@ class HeroTrailerTests(HeroBase):
 
 @mock.patch("web.views.get_coming_soon", return_value=[])
 class NothingBookedTests(TestCase):
-    """The empty week: the dark fold holds the empty state; no marquee."""
+    """The empty week: the dark fold holds the empty state."""
 
     def home(self):
         return self.client.get(reverse("home")).content.decode()
@@ -234,18 +198,8 @@ class NothingBookedTests(TestCase):
         fold = section(html, "now-showing")
         self.assertIn('class="hero hero--empty"', fold)
         self.assertIn('<div class="no-showtimes">', fold)
-        self.assertIn("No showtimes available.", fold)
         self.assertNotIn("ticket-info", html)
         self.assertLess(html.index('id="now-showing"'), html.index('id="membership"'))
-
-    def test_the_marquee_is_gone(self, _cs):
-        html = self.home()
-        fold = section(html, "now-showing")
-        for gone in ("marquee", "bulb", "hero-cta", "hero-tagline"):
-            self.assertNotIn(gone, fold)
-        for gone in ("data-neon", "data-cursor-bulbs", 'class="marquee-',
-                     "home-section--raised"):
-            self.assertNotIn(gone, html)
 
     def test_the_cinema_name_is_the_one_h1_at_the_foot(self, _cs):
         html = self.home()

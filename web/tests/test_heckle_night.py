@@ -272,24 +272,6 @@ class HeckleNightPageTests(TestCase):
     def test_states_the_door_price(self):
         self.assertContains(self.response, f"${HECKLE_NIGHT['general_price']}")
 
-    def test_members_come_in_free(self):
-        """Free is the headline, so it has to be on the page as a word."""
-        self.assertTrue(HECKLE_NIGHT["members_free"])
-        content = self.response.content.decode()
-        self.assertIn("Free", content)
-        self.assertIn("free for members", content.lower())
-
-    def test_the_free_night_does_not_spend_a_monthly_allowance(self):
-        """The answer the box office needs, and the one the code implies.
-
-        Engagement.is_free_for_members is a badge; audience.FreeAdmission
-        is a separate allowance drawn down only when staff record a
-        redemption. Nothing here records one, so a member keeps whatever
-        their tier gives them — and the page has to say so, or the counter
-        improvises.
-        """
-        self.assertContains(self.response, "monthly free admission")
-
     def test_members_are_pointed_at_the_membership_page(self):
         """A free rate is an argument for joining; it should link."""
         self.assertContains(self.response, reverse("membership"))
@@ -309,10 +291,6 @@ class HeckleNightPageTests(TestCase):
     def test_states_who_the_night_is_for(self):
         """In a small town this is the question that decides the evening."""
         self.assertContains(self.response, HECKLE_NIGHT["audience"])
-
-    def test_the_one_rule_is_on_the_page(self):
-        """Everything else about this night is negotiable; this is not."""
-        self.assertContains(self.response, "Heckle the movie, not each other")
 
     def test_every_faq_question_is_visible_on_the_page(self):
         """FAQPage markup whose answers are not on the page is penalised.

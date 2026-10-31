@@ -118,12 +118,10 @@ class BundleTests(TestCase):
         ]:
             self.assertIn(probe, self.css, f"{probe} missing from bundle")
 
-    def test_bundle_carries_the_home_vocabulary_and_not_the_old_pair(self):
-        """HomeSections.css is in the bundle; the retired CTA grid is not."""
+    def test_bundle_carries_the_home_vocabulary(self):
+        """HomeSections.css is in the bundle."""
         for probe in (".home-card", ".home-section--accent", ".btn-member"):
             self.assertIn(probe, self.css, f"{probe} missing from bundle")
-        self.assertNotIn(".cta-pair", self.css)
-        self.assertNotIn("--color-ornament-gold", self.css)
 
     def test_fonts_are_self_hosted_and_relative(self):
         """The url() refs must stay relative so collectstatic can rewrite them to

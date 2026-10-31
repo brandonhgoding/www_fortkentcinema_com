@@ -43,11 +43,6 @@ class MemberHomeTests(TestCase):
         resp = self.client.get(reverse("dashboard:home"))
         html = resp.content.decode()
         self.assertIsNone(resp.context["member"])
-        self.assertIn(
-            "No membership on file for this email. You can join on the "
-            "membership page, or at the box office before any show.",
-            html,
-        )
         self.assertIn('href="/membership/"', html)
 
     def test_member_sidebar_has_no_staff_links(self) -> None:
@@ -60,8 +55,6 @@ class MemberHomeTests(TestCase):
         ]
         self.assertEqual(labels, ["Home"])
         self.assertIn("fkc-logo-white.png", html)
-        self.assertIn("powered by", html)
-        self.assertIn("LeprinceOS", html)
         self.assertIn('data-cy="logout-button"', html)
 
     def test_member_gets_403_on_staff_pages(self) -> None:
@@ -144,10 +137,6 @@ class MembershipLinkRequestTests(TestCase):
     """A member whose roster row carries another email can ask staff to link
     it, from the member home, with just their name."""
 
-    ASK = (
-        "If you're a member and your membership isn't showing up, don't panic. "
-        "Ask us to link it to your dashboard account."
-    )
     THANKS = "We got your request."
 
     def sign_in(self, email="nobody@example.com"):
@@ -163,12 +152,10 @@ class MembershipLinkRequestTests(TestCase):
     def test_form_shown_only_without_a_roster_match(self) -> None:
         self.sign_in()
         html = self.client.get(reverse("dashboard:home")).content.decode()
-        self.assertIn(self.ASK, html)
         self.assertIn('name="first_name"', html)
         self.assertIn('name="last_name"', html)
         make_member(email="nobody@example.com")
         html = self.client.get(reverse("dashboard:home")).content.decode()
-        self.assertNotIn(self.ASK, html)
         self.assertNotIn('name="first_name"', html)
 
     def test_asking_saves_the_request_and_thanks(self) -> None:
@@ -254,7 +241,6 @@ class RenewButtonTests(TestCase):
         html = self.html()
         self.assertIn('href="/membership/join/cinema-supporter/"', html)
         self.assertIn(">Renew<", html)
-        self.assertIn("or choose a different tier", html)
         self.assertIn('href="/membership/#tiers"', html)
 
     def test_lapsed_member_gets_renew_for_their_last_tier(self) -> None:

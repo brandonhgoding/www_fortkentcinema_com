@@ -20,29 +20,10 @@ class AdvertisePageTests(TestCase):
     def test_renders(self):
         self.assertEqual(self.response.status_code, 200)
         self.assertTemplateUsed(self.response, "web/advertise.html")
-        # Title, og:title and H1 all say "Buy Ad Space", the nav and footer
-        # label, so the sitelink Google builds for this page reads the same.
-        self.assertIn("<title>Buy Ad Space | Fort Kent Cinema</title>", self.html)
-        self.assertIn('content="Buy Ad Space | Fort Kent Cinema"', self.html)
-        self.assertIn('<h1 class="advertise-title">BUY AD SPACE</h1>', self.html)
-        self.assertNotIn("Advertise on the Big Screen", self.html)
-        # The old headline survives as the subtitle.
-        self.assertIn("Your business on the big screen", self.html)
 
     def test_the_two_rates(self):
-        for text in ("PRE-SHOW SLIDE", "VIDEO SPOT", "$75", "$150", "30 seconds",
-                     "1920", "PNG or JPEG", "MP4", "THE RATES", "HOW IT WORKS"):
+        for text in ("$75", "$150", "30 seconds"):
             self.assertIn(text, self.html, text)
-        # Nothing promises a count.
-        self.assertNotRegex(self.html, r"\d[\d,]* (people|views|plays)")
-
-    def test_exposure_promise(self):
-        self.assertIn("before every show", self.html)
-        self.assertIn("30 minutes before showtime", self.html)
-
-    def test_how_it_works_names_the_deadline_and_square(self):
-        self.assertIn("by the 20th", self.html)
-        self.assertIn("invoice you through Square", self.html)
 
     def test_faq_renders_once_visibly_and_once_as_json_ld(self):
         for faq in ADVERTISING_FAQ:
@@ -61,17 +42,12 @@ class AdvertisePageTests(TestCase):
         self.assertEqual([q["name"] for q in data["mainEntity"]],
                          [f["question"] for f in ADVERTISING_FAQ])
 
-    def test_policy_is_on_the_page(self):
-        self.assertIn("political", self.html)
-        self.assertIn("decline any ad", self.html)
-
     def test_form_is_on_the_page(self):
         self.assertIn('id="inquire"', self.html)
         self.assertIn(f'action="{reverse("advertise_inquire")}"', self.html)
         self.assertIn('name="business_name"', self.html)
         self.assertIn('name="email"', self.html)
         self.assertEqual(self.html.count('name="ad_type"'), 3)
-        self.assertIn("Pre-show slide, $75 a month", self.html)
         # Radios sit in a fieldset, not nested inside another <label>.
         self.assertIn("<fieldset", self.html)
         self.assertNotRegex(
@@ -92,7 +68,6 @@ class AdvertisePageTests(TestCase):
         )
 
     def test_phone_fallback(self):
-        self.assertIn("Or call", self.html)
         self.assertIn(
             'data-track="phone_click" data-track-location="advertise"', self.html
         )

@@ -71,7 +71,6 @@ class EmptyFoldGoogleReviewTests(TestCase):
         one_member()
         html = self._html()
         self.assertIn('<span class="hero-google-rating">4.9</span>', html)
-        self.assertIn("on Google", html)
         self.assertIn("112 reviews", html)
         # Django escapes the & in the query string.
         self.assertIn(

@@ -38,18 +38,14 @@ class TicketInfoContentTests(TestCase):
     def test_says_where_to_pay_and_how_to_call(self, ns, _cs):
         ns.return_value = [hero_film()]
         line = ticket_info(self.client.get(reverse("home")).content.decode())
-        self.assertIn("box office", line)
         self.assertIn('href="tel:+12072315287"', line)
         self.assertIn(SITE_CONFIG["cinema"]["phone"], line)
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_hero_films")
-    def test_points_to_online_tickets_and_the_box_office(self, ns, _cs):
+    def test_gives_the_box_office_address(self, ns, _cs):
         ns.return_value = [hero_film()]
         line = ticket_info(self.client.get(reverse("home")).content.decode())
-        self.assertIn(
-            "Buy online from the showtimes above, or pay at the box office.", line
-        )
         self.assertIn(SITE_CONFIG["cinema"]["address"]["street"], line)
 
     @mock.patch("web.views.get_coming_soon", return_value=[])

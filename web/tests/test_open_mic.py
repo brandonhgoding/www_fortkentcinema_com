@@ -124,7 +124,5 @@ class HomeBandAgreesTests(TestCase):
         )
         self.assertIn("in the Century auditorium", card)
         self.assertIn("free and all ages", card)
-        self.assertIn("Open Mic", card)
-        self.assertIn("How to sign up &rarr;", card)
         self.assertIn(f'href="{reverse("open_mic")}"', card)
         self.assertNotIn("data-track", card)

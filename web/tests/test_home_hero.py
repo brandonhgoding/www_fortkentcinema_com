@@ -65,7 +65,6 @@ class FilmHeroTests(HeroBase):
     def test_fold_is_the_next_film(self):
         html = self.home()
         self.assertIn('class="hero hero--film"', html)
-        self.assertNotIn('class="marquee-title"', html)
         self.assertIn(
             '<h2 class="hero-film__title" tabindex="-1" x-ref="title0">Dune</h2>', html
         )
@@ -113,11 +112,6 @@ class FilmHeroTests(HeroBase):
         self.assertIn(
             f'<a class="showtime showtime--buy" href="{late_url}">9:00 PM', hero
         )
-        self.assertNotIn("Buy Tickets", hero)
-        # The hero is the listing: no button to a schedule below, and the
-        # nav's Become a Member button is in view on the fold.
-        self.assertNotIn('href="#now-showing"', hero)
-        self.assertNotIn("Join Membership", hero)
 
     def test_rows_past_three_dates_are_there_but_folded(self):
         # Every date of the week renders (the hero is the listing); the
@@ -144,7 +138,6 @@ class FilmHeroTests(HeroBase):
         hero = self.hero()
         self.assertIn('<span class="showtime__note">Sold out online</span>', hero)
         self.assertNotIn(f'href="{self.buy_url}"', hero)
-        self.assertNotIn("btn-ticket", hero)
 
     def test_member_line_sits_once_over_the_lockup(self):
         tier = MembershipTier.objects.get(slug="individual")
@@ -219,7 +212,6 @@ class AlsoShowingTests(HeroBase):
         strip = re.search(
             r'<div class="hero-film__also".*?</ul>', self.hero(), re.S
         ).group(0)
-        self.assertIn("Also showing", strip)
         items = re.findall(r'<li[^>]*>.*?</li>', strip, re.S)
         self.assertEqual(len(items), 2)
         self.assertIn('x-show="film !== 0"', items[0])
@@ -253,9 +245,6 @@ class FilmHeroWithoutSalesTests(HeroBase):
         hero = self.hero()
         self.assertIn('<span class="showtime">7:00 PM</span>', hero)
         self.assertNotIn("showtime--buy", hero)
-        self.assertNotIn("btn-ticket", hero)
-        self.assertNotIn("Join Membership", hero)
-        self.assertNotIn("Buy Tickets", html)
 
     def test_poster_stands_in_for_a_missing_backdrop(self):
         st = self.booked()

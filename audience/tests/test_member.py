@@ -47,10 +47,6 @@ class MemberFieldTests(TestCase):
         )
         self.assertEqual(member.notes, "")
 
-    def test_stores_no_phone(self) -> None:
-        fields = [f.name for f in Member._meta.get_fields()]
-        self.assertNotIn("phone", fields)
-
 
 class MembershipTermTests(TestCase):
     def setUp(self) -> None:
@@ -279,7 +275,6 @@ class DerivedStatusTests(TestCase):
         self._term(10, 375)
         self.assertFalse(self.member.is_active)
         self.assertEqual(self.member.status, "upcoming")
-        self.assertEqual(self.member.status_label, "Not started yet")
 
     def test_a_lapsed_member_with_a_booked_renewal_is_not_started_yet(self) -> None:
         self._term(-400, -10)

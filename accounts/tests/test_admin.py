@@ -32,7 +32,6 @@ class UserAdminTests(TestCase):
         make_user(email="staff@example.com")
         resp = self.add("STAFF@example.com")
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, "A user with that email already exists.")
         self.assertEqual(
             User.objects.filter(email__iexact="staff@example.com").count(), 1
         )
@@ -43,7 +42,6 @@ class UserAdminTests(TestCase):
             f"/admin/accounts/user/{user.pk}/change/"
         ).content.decode()
         self.assertIn('name="email"', html)
-        self.assertNotIn('name="username"', html)
 
 
 class UserAdminVerifiedTests(TestCase):

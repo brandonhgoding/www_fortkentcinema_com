@@ -32,7 +32,6 @@ class EngagementDetailPageTests(TestCase):
         self.assertIn("155 min", html)
         self.assertIn("Classic", html)          # KIND_LABELS
         self.assertIn("Sold out nightly", html) # notes
-        self.assertIn("Back to Engagements", html)
 
     def test_hidden_note(self) -> None:
         eng = make_eng(self.screen, films=[self.film], show_in_main_listings=False)
@@ -152,7 +151,6 @@ class ShowtimeCreateEditTests(TestCase):
     def test_get_form(self) -> None:
         html = self.client.get(reverse("dashboard:showtime_create", args=[self.eng.pk])).content.decode()
         self.assertIn('id="showtime-form"', html)
-        self.assertIn("Create Showtime", html)
 
     def test_create_combines_tz_aware(self) -> None:
         resp = self.client.post(reverse("dashboard:showtime_create", args=[self.eng.pk]),

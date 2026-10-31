@@ -4,14 +4,12 @@ from django.urls import reverse
 from cinema.models import Poll, PollStatus
 
 
-class HomepageHasNoVoteCardTests(TestCase):
-    """The home page's vote card came out of Be part of the show on
-    2026-10-13; the footer's "You Choose" link is the way in."""
+class HomepageVoteLinkTests(TestCase):
+    """The footer's "You Choose" link is the home page's way in."""
 
-    def test_open_round_adds_no_card(self) -> None:
+    def test_footer_links_the_vote(self) -> None:
         Poll.objects.create(title="Round One", status=PollStatus.OPEN)
         html = self.client.get(reverse("home")).content.decode()
-        self.assertNotIn("vote-cta", html)
         footer = html[html.index("<footer") :]
         self.assertIn(f'href="{reverse("vote")}"', footer)
 

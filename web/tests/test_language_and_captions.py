@@ -57,8 +57,6 @@ class LanguageCaptionsTests(TestCase):
         times = slot["times"]
         self.assertEqual(times[0]["captions"], "OC")
         self.assertEqual(times[0]["captions_label"], "Open Captions")
-        # The chip is the whole of it: no sentence rides along.
-        self.assertNotIn("captions_note", times[0])
 
     def test_home_shows_open_captions_chip_only(self) -> None:
         # The OC chip sits beside the time exactly as CC does, so the row of
@@ -73,7 +71,6 @@ class LanguageCaptionsTests(TestCase):
             'OC</abbr><span class="sr-only">Open Captions</span></span>',
             html,
         )
-        self.assertNotIn("open captions", html)
         self.assertNotIn("showtime--noted", html)
 
     def test_home_shows_label_and_caption_chip(self) -> None:

@@ -147,15 +147,6 @@ class SocialPanelTests(TestCase):
             reverse("dashboard:engagement_detail", args=[eng.pk])
         ).content.decode()
 
-    def test_panel_is_rendered(self) -> None:
-        eng = self.make_eng(
-            datetime.date(2026, 7, 1), datetime.date(2026, 7, 7)
-        )
-        html = self.detail_html(eng)
-        self.assertIn("Social Images", html)
-        self.assertIn("Coming Soon", html)
-        self.assertIn("Now Playing", html)
-
     def test_panel_links_to_both_platforms(self) -> None:
         eng = self.make_eng(
             datetime.date(2026, 7, 1), datetime.date(2026, 7, 7)

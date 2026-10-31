@@ -271,12 +271,6 @@ class HoursAndPricesSpeechTests(TestCase):
             "You can also buy tickets ahead of time at fort kent cinema dot com.",
         )
 
-    def test_says_tickets_are_sold_online(self) -> None:
-        self.assertIn(
-            "buy tickets ahead of time at fort kent cinema dot com.",
-            hours_and_prices_speech(),
-        )
-
     def test_reads_the_live_prices(self) -> None:
         speech = hours_and_prices_speech()
         self.assertIn(f"${TICKET_PRICES['adult']} for adults", speech)

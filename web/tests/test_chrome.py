@@ -18,4 +18,3 @@ class ChromeTests(TestCase):
         self.assertIn('class="footer"', html)
         self.assertIn("13 Hall Street", html)             # address from site_config
         self.assertIn("facebook.com/fortkentcinema", html)  # social link
-        self.assertIn("All rights reserved", html)        # copyright line

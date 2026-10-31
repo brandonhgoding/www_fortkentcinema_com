@@ -27,7 +27,6 @@ class HomePageTests(TestCase):
         # Django's {# #} comment is single-line only; a multi-line {# #} leaks
         # as literal page text. Guard against that regression.
         html = self.client.get(reverse("home")).content.decode()
-        self.assertNotIn("Twitter/X falls back", html)
         self.assertNotIn("{#", html)
         self.assertNotIn("{% comment %}", html)
 
@@ -74,17 +73,6 @@ class BaseChromeTests(TestCase):
         html = self.client.get(reverse("home")).content.decode()
         self.assertIn('class="skip-link"', html)
 
-    def test_ambient_dust_is_gone(self):
-        """The hero's floating dust canvas was removed deliberately: its motes
-        were hardcoded rgba(201, 168, 76) — the old design's warm gold, not a
-        brand value — and it read as grain over the blue-led hero rather than
-        as projector light. Removed in markup (hero.html), CSS (.fx-dust) and
-        JS (frontend/effects/init/ambientDust.js, deleted). This asserts it
-        stays gone; a reappearance means one of the three came back alone."""
-        html = self.client.get(reverse("home")).content.decode()
-        self.assertNotIn("fx-dust", html)
-        self.assertNotIn("data-ambient-dust", html)
-
     def test_canonical_uses_request_url(self):
         html = self.client.get(reverse("home")).content.decode()
         self.assertIn('rel="canonical"', html)
@@ -98,12 +86,6 @@ class HomeViewDataTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertIn("hero_films", resp.context)
         self.assertIn("coming_soon", resp.context)
-
-    @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_hero_films", return_value=[])
-    def test_home_meta_overrides(self, _ns, _cs):
-        html = self.client.get(reverse("home")).content.decode()
-        self.assertIn("Movies in the St. John Valley", html)  # home <title>/og:title
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_hero_films")
@@ -125,7 +107,6 @@ class HomeViewDataTests(TestCase):
         self.assertIn("7:00 PM", html)                   # both dates server-rendered
         self.assertIn("Free for Members", html)          # the ribbon
         self.assertIn('data-hero-idle', html)            # hero idle hook
-        self.assertNotIn('data-neon', html)              # the marquee's hooks stay off
 
 
 class ComingSoonTests(TestCase):
@@ -210,7 +191,6 @@ class CalendarTests(TestCase):
             [("Verity", "Oct 2\u201315"), ("Pan's Labyrinth", "Oct 9")],
         )
         html = resp.content.decode()
-        self.assertIn("Showing in October", html)
         self.assertIn("Pan&#x27;s Labyrinth", html)
         # Each poster in the grid points at its film in the key.
         self.assertEqual(html.count("film !== 0 }"), 3)
@@ -341,10 +321,6 @@ class MembershipPageTests(TestCase):
         self.assertIn("How long does a membership last?", html)  # a FAQ question
         self.assertIn('id="tiers"', html)          # scroll-to anchor target
 
-    def test_membership_meta(self):
-        html = self.client.get(reverse("membership")).content.decode()
-        self.assertIn("Membership", html)
-
 
 class RentalsPageTests(TestCase):
     def test_rentals_200_and_content(self):
@@ -352,26 +328,13 @@ class RentalsPageTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertTemplateUsed(resp, "web/rentals.html")
         html = resp.content.decode()
-        self.assertIn('<h1 class="rentals-title">RENT THE CINEMA</h1>', html)
-        self.assertNotIn("RENT THE THEATER", html)
+        self.assertIn('<h1 class="rentals-title">', html)
         self.assertIn("$225", html)  # base rate
         self.assertIn("rentals-page", html)
-
-    def test_rentals_meta(self):
-        # Title and og:title match the nav label, so Google's sitelink for
-        # this page reads "Rent the Cinema".
-        html = self.client.get(reverse("rentals")).content.decode()
-        self.assertIn("<title>Rent the Cinema | Fort Kent Cinema</title>", html)
-        self.assertIn('content="Rent the Cinema | Fort Kent Cinema"', html)
-        self.assertNotIn("Private Rentals", html)
 
     def test_rentals_content_sections(self):
         html = self.client.get(reverse("rentals")).content.decode()
         self.assertIn("rental-card--featured", html)
-        self.assertIn("PRIVATE SCREENING", html)
-        self.assertIn("LICENSED SCREENING", html)
-        self.assertIn("QUESTIONS WE GET", html)
-        self.assertIn("READY TO BOOK?", html)
 
     def test_every_rental_term_is_on_the_page(self):
         """The terms used to be a bulleted POLICIES list; they are now

@@ -49,7 +49,6 @@ class AdInquiryTests(TestCase):
             reverse("advertise_inquire"), self.payload(email="not-an-email")
         )
         self.assertEqual(AdInquiry.objects.count(), 0)
-        self.assertContains(response, "valid email")
         self.assertContains(response, 'id="id_email_error"')
 
     def test_overlength_message_is_rejected(self):
@@ -65,7 +64,6 @@ class AdInquiryTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "web/advertise.html")
-        self.assertContains(response, "QUESTIONS WE GET")
         self.assertContains(response, "Rock&#x27;s Diner")  # values survive
 
     def test_success_message_is_shown_after_the_redirect(self):

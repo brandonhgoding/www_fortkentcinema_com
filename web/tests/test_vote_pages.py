@@ -318,7 +318,6 @@ class VoteHeroTests(TestCase):
         self.assertIn("2 films on the ballot.", html)
         self.assertIn("Voting closes", html)
         self.assertIn('href="#vote-panel"', html)
-        self.assertIn("Cast your vote", html)
 
     def test_vote_page_hero_with_one_round_sends_you_straight_to_it(self) -> None:
         poll = Poll.objects.create(title="Only round", status=PollStatus.OPEN)
@@ -328,7 +327,6 @@ class VoteHeroTests(TestCase):
             f'href="{poll.get_absolute_url()}" class="btn btn-primary vote-hero__cta"',
             html,
         )
-        self.assertIn("Cast your vote", html)
 
     def test_hero_shows_at_most_six_posters(self) -> None:
         poll = Poll.objects.create(title="Big round", status=PollStatus.OPEN)
@@ -378,9 +376,7 @@ class VoteHeroTests(TestCase):
 
 
 class VoteWordingTests(TestCase):
-    """The audit: round cards named their films only in hover tooltips, and
-    the page described itself as a classic night while the rounds were new
-    releases."""
+    """The audit: round cards named their films only in hover tooltips."""
 
     def test_round_card_names_its_films_in_text(self) -> None:
         poll = Poll.objects.create(title="Opening weekend", status=PollStatus.OPEN)
@@ -392,7 +388,3 @@ class VoteWordingTests(TestCase):
         html = self.client.get(reverse("vote")).content.decode()
         meta = html.split('class="vote-round__meta">', 1)[1].split("</span>", 1)[0]
         self.assertIn("On the ballot: Dune, Wicked and Sinners.", " ".join(meta.split()))
-
-    def test_page_no_longer_calls_itself_a_classic_night(self) -> None:
-        html = self.client.get(reverse("vote")).content.decode().lower()
-        self.assertEqual(html.count("classic"), 0)

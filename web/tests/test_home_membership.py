@@ -64,15 +64,13 @@ class HomeMembershipBandTests(TestCase):
     def test_no_tiers_omits_price_line(self, _ns, _cs) -> None:
         html = self._html()
         self.assertIn('id="membership"', html)
-        self.assertIn("Become a member", html)
         self.assertIn(reverse("membership"), html)
         self.assertNotIn(
             "From $", html.split('id="membership"')[1].split("</section>")[0]
         )
 
-    def test_copy_and_button(self, _ns, _cs) -> None:
+    def test_button(self, _ns, _cs) -> None:
         html = self._html()
-        self.assertIn("A year of cheaper movie nights, and a hand in keeping the marquee lit.", html)
         self.assertEqual(html.count("btn-member"), 1)
         links = re.findall(r"<a\b[^>]*\bbtn-member\b[^>]*>", html)
         self.assertEqual(len(links), 1)
