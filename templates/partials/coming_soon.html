@@ -1,12 +1,7 @@
 {% load posters %}
 <section class="coming-soon home-section home-section--alt" id="coming-soon"
-         x-data="{ trailer: null, view: 'grid', tickets: null }"
-         x-effect="document.body.style.overflow = (trailer || tickets !== null) ? 'hidden' : ''">
-  {% comment %}
-    No JavaScript: the showtimes dialogs (below the grid) show in place, and
-    the card's "Showtimes" link is a plain anchor to its dialog.
-  {% endcomment %}
-  <noscript><style>.coming-tickets-overlay[x-cloak] { display: block !important; position: static; padding: 0; margin-top: var(--spacing-md); background: none; } .coming-tickets-overlay[x-cloak] .coming-tickets { max-width: none; max-height: none; } .coming-tickets-overlay[x-cloak] .coming-tickets__close { display: none; }</style></noscript>
+         x-data="{ trailer: null, view: 'grid' }"
+         x-effect="document.body.style.overflow = trailer ? 'hidden' : ''">
   <div class="section-container">
     <div class="section-header">
       <h2 class="section-title">Coming Soon</h2>
@@ -88,16 +83,6 @@
           <p class="coming-movie-date">{{ movie.release_date|upper }}</p>
           <h3 class="coming-movie-title">{{ movie.title }}</h3>
           <p class="coming-movie-genre">{{ movie.genre }}</p>
-          {% comment %}
-            Once the run has showtimes: opens the run's showtimes dialog
-            (after the grid). An anchor to it, so the no-JS path is a jump
-            to the same rows shown in place.
-          {% endcomment %}
-          {% if movie.upcoming %}
-          <a class="coming-movie-tickets" href="#coming-tickets-{{ forloop.counter }}"
-             data-track="coming_soon_tickets" data-track-film="{{ movie.title }}"
-             @click.prevent="tickets = {{ forloop.counter0 }}">Showtimes</a>
-          {% endif %}
         </div>
       </article>
       {% empty %}
@@ -130,19 +115,6 @@
       </div>
       {% endfor %}
     </div>
-
-    {% comment %}
-    One showtimes dialog per run with showtimes (partials/times_dialog.html):
-    the run's dates, each time the shared chip. Each dialog answers to its
-    card's index in the section's `tickets`.
-    {% endcomment %}
-    {% for movie in coming_soon %}
-    {% if movie.upcoming %}
-    {% with n=forloop.counter|stringformat:"s" %}
-    {% include "partials/times_dialog.html" with dialog_id="coming-tickets-"|add:n dialog_var="tickets" dialog_key=forloop.counter0 poster=movie.poster eyebrow="Opens "|add:movie.release_date title=movie.title rows=movie.upcoming %}
-    {% endwith %}
-    {% endif %}
-    {% endfor %}
 
     {% comment %}
     Calendar view. Lazily loads the initial month via HTMX the first time it is

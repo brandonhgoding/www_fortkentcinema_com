@@ -107,24 +107,14 @@ class HomeView(TemplateView):
             )
         ctx["hero_films"] = hero_films
 
-        # Coming Soon: a run past the hero's week lists its showtimes in a
-        # dialog off its card, as the same chips.
-        for card in coming_soon:
-            # A card without the key (hand-built fixtures) has no rows.
-            for slot in card.get("upcoming", ()):
-                slot["label"] = format_showtime_date(
-                    slot["key"], weekday="short", today=today
-                )
-
-        # One schema.org ScreeningEvent per listed showtime, flattened here
-        # so partials/home_jsonld.html is a single loop with one forloop.last.
-        # A run starting within the week is on the fold and on a Coming Soon
-        # card; its showtimes are marked up once. A time dict with no "iso"
-        # (older fixtures, hand-built callers) is skipped: an event with no
-        # startDate is worse than no event.
+        # One schema.org ScreeningEvent per showtime the hero lists, flattened
+        # here so partials/home_jsonld.html is a single loop with one
+        # forloop.last. Only the hero lists times (Coming Soon does not commit
+        # to them), so only its showings are marked up. A time dict with no
+        # "iso" (older fixtures, hand-built callers) is skipped: an event with
+        # no startDate is worse than no event.
         ctx["ns_events"] = _screening_events(
             [(film, "/#now-showing") for film in hero_films]
-            + [(card, "/#coming-soon") for card in coming_soon]
         )
 
         return ctx
@@ -261,35 +251,6 @@ class CalendarMonthView(TemplateView):
                 }
             )
 
-        # A poster on today or a later day opens that day's times for the
-        # film: one dialog each (partials/times_dialog.html), keyed by its
-        # place in this list. Past days' showings are gone, so their posters
-        # stay plain, as do hidden runs' (no times).
-        #
-        # The dialog id names the date, not the day of the month: the arrows
-        # swap this fragment with HTMX, which settles attributes between old
-        # and new elements that share an id, and a dialog Alpine had hidden
-        # in the old month would come back visible, with no way to close it,
-        # under a repeated id.
-        dialogs = []
-        for cell in cells:
-            if cell["day"] is None or cell["is_past"] or not cell["movies"]:
-                continue
-            date = first.replace(day=cell["day"])
-            for i, movie in enumerate(cell["movies"]):
-                if not movie.get("times"):
-                    continue
-                movie["dialog_id"] = f"calendar-times-{date.isoformat()}-{i}"
-                movie["dialog_key"] = len(dialogs)
-                movie["date_label"] = format_showtime_date(
-                    date.isoformat(), weekday="short", today=today
-                )
-                # The dialog's eyebrow names the day in full; its one row
-                # needs no label of its own.
-                movie["eyebrow"] = date.strftime("%A, %B %-d")
-                movie["rows"] = [{"label": "", "times": movie["times"]}]
-                dialogs.append(movie)
-
         # Prev/next (year, 0-based month), wrapping December<->January.
         prev_month = (month - 1) % 12
         prev_year = year - 1 if month == 0 else year
@@ -303,7 +264,6 @@ class CalendarMonthView(TemplateView):
                 "month_label": first.strftime("%B %Y").upper(),
                 "month_name": first.strftime("%B"),
                 "cells": cells,
-                "dialogs": dialogs,
                 "films": films,
                 "prev_year": prev_year,
                 "prev_month": prev_month,
