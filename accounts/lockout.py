@@ -1,6 +1,6 @@
 from django.conf import settings
-from django.core.cache import cache
 
+from accounts import throttle
 from accounts.client_ip import request_ip
 
 
@@ -25,13 +25,7 @@ def record_failed_login(sender, credentials=None, request=None, **kwargs) -> Non
     ip = request_ip(request) if request is not None else None
     if ip is None:
         return
-    key = _ip_key(ip)
-    ttl = int(settings.AXES_COOLOFF_TIME.total_seconds())
-    cache.add(key, 0, ttl)
-    try:
-        cache.incr(key)
-    except ValueError:
-        cache.add(key, 1, ttl)
+    throttle.bump(_ip_key(ip), int(settings.AXES_COOLOFF_TIME.total_seconds()))
 
 
 def ip_locked(request) -> bool:
@@ -41,4 +35,4 @@ def ip_locked(request) -> bool:
     ip = request_ip(request)
     if ip is None:
         return False
-    return (cache.get(_ip_key(ip)) or 0) >= settings.LOGIN_IP_FAILURE_LIMIT
+    return throttle.count(_ip_key(ip)) >= settings.LOGIN_IP_FAILURE_LIMIT
