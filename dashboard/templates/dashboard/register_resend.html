@@ -1,0 +1,21 @@
+{% extends "dashboard/login_base.html" %}
+
+{% block title %}Send a new link{% endblock %}
+{% block subtitle %}Member account{% endblock %}
+
+{% block card %}
+  <h1 class="login-heading">Send a new confirmation link</h1>
+  <form method="post" action="{% url 'register_resend' %}" class="login-form">
+    {% csrf_token %}
+    {% comment %} Honeypot: hidden from people, irresistible to bots. {% endcomment %}
+    <div class="login-hp" aria-hidden="true">
+      <label for="resend-website">Website</label>
+      <input type="text" name="website" id="resend-website" tabindex="-1" autocomplete="off" />
+    </div>
+    {% if form.email.errors %}<div class="login-error">{{ form.email.errors.0 }}</div>{% endif %}
+    <label class="login-label" for="{{ form.email.id_for_label }}">Email</label>
+    {{ form.email }}
+    <button type="submit" class="btn btn-primary login-submit">Send a new link</button>
+  </form>
+  <p class="login-aside"><a href="{% url 'login' %}">Back to sign in</a></p>
+{% endblock %}

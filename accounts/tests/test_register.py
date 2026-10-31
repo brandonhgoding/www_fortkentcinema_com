@@ -238,6 +238,19 @@ class ResendTests(TestCase):
         self.assertContains(response, SENT)
         self.assertEqual(len(mail.outbox), 0)
 
+    def test_bad_address_shows_a_resend_form_not_the_register_page(self):
+        # The sign-in page posts the address hidden; a bad one must come back
+        # as a resend form, not the register page with orphan password labels.
+        response = self.resend("not-an-email")
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        self.assertIn("Enter a valid email address.", html)
+        self.assertIn('action="/register/resend"', html)
+        self.assertIn('name="email"', html)
+        self.assertIn('name="website"', html)
+        self.assertNotIn("Password", html)
+        self.assertNotIn('action="/register"', html)
+
     def test_throttled(self):
         make_user("u@example.com", "pw-1-long-enough", is_staff=False)
         self.resend("u@example.com")

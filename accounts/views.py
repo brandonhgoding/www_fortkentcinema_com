@@ -147,6 +147,10 @@ class RegisterView(_GatedEmailView):
 
 
 class ResendVerificationView(_GatedEmailView):
+    # The sign-in page posts the address hidden; a bad one comes back on a
+    # form of its own, not the register page with its password fields.
+    form_template = "dashboard/register_resend.html"
+
     def act(self, request, form, email):
         user = get_user_model().objects.filter(email__iexact=email).first()
         if (
