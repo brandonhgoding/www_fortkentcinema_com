@@ -82,7 +82,10 @@ def claim_address(email: str) -> datetime | None:
 
 
 def _failures_key(user) -> str:
-    return f"register:verify-fail:{user.pk}"
+    # Keyed on the password too: re-registering sets a new one, which the
+    # wrong-password page tells people to do, and leaves nothing of the old
+    # one to guess, so its count starts fresh.
+    return f"register:verify-fail:{user.pk}:{_password_fingerprint(user)}"
 
 
 def link_locked(user) -> bool:
