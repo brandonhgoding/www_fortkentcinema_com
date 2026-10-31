@@ -93,7 +93,6 @@ class VerificationThrottleTests(TestCase):
             self.assertTrue(verification.ip_allowed("203.0.113.9"))
         self.assertFalse(verification.ip_allowed("203.0.113.9"))
         self.assertTrue(verification.ip_allowed("203.0.113.10"))
-        self.assertTrue(verification.ip_allowed(None))
 
     def test_ip_cap_lifts_after_the_hour(self):
         for _ in range(5):

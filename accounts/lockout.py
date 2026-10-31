@@ -1,7 +1,7 @@
 from django.conf import settings
 
 from accounts import throttle
-from accounts.client_ip import request_ip
+from accounts.client_ip import bucket
 
 
 def lockout_username(request, credentials: dict | None) -> str:
@@ -22,17 +22,18 @@ def _ip_key(ip: str) -> str:
 def record_failed_login(sender, credentials=None, request=None, **kwargs) -> None:
     """user_login_failed receiver: count the failure against the address for
     AXES_COOLOFF_TIME. Connected in AccountsConfig.ready()."""
-    ip = request_ip(request) if request is not None else None
-    if ip is None:
+    if request is None:
+        # Not a login form: the test client or a shell, nothing to count.
         return
-    throttle.bump(_ip_key(ip), int(settings.AXES_COOLOFF_TIME.total_seconds()))
+    throttle.bump(
+        _ip_key(bucket(request)), int(settings.AXES_COOLOFF_TIME.total_seconds())
+    )
 
 
 def ip_locked(request) -> bool:
     """True once the address failed LOGIN_IP_FAILURE_LIMIT sign-ins, across
     any emails, within the cool-off. The axes lockout is per (email,
     address); this stops one address spraying a password across accounts."""
-    ip = request_ip(request)
-    if ip is None:
-        return False
-    return throttle.count(_ip_key(ip)) >= settings.LOGIN_IP_FAILURE_LIMIT
+    return (
+        throttle.count(_ip_key(bucket(request))) >= settings.LOGIN_IP_FAILURE_LIMIT
+    )

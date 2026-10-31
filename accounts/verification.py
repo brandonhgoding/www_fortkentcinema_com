@@ -64,10 +64,9 @@ def read_token(token: str):
     return user
 
 
-def ip_allowed(ip: str | None) -> bool:
-    """Count this request against the IP's hourly cap."""
-    if ip is None:
-        return True
+def ip_allowed(ip: str) -> bool:
+    """Count this request against the address's hourly cap (ip is the
+    client_ip.bucket() of the request)."""
     return throttle.bump(f"register:ip:{ip}", IP_WINDOW) <= IP_CAP
 
 
