@@ -297,11 +297,13 @@ class LoginIpCapTests(TestCase):
             self.attempt("staffer@example.com", "pw12345").status_code, 429
         )
 
-    def test_no_address_means_no_cap(self) -> None:
-        # gunicorn behind nginx without X-Real-IP: nothing to count against.
+    def test_no_address_shares_one_bucket(self) -> None:
+        # gunicorn behind nginx without X-Real-IP: every request counts in
+        # one bucket, so a misconfigured proxy shows up as lockouts rather
+        # than as a cap that silently never trips.
         self.spray(settings.LOGIN_IP_FAILURE_LIMIT, ip="")
         self.assertEqual(
-            self.attempt("staffer@example.com", "pw12345", ip="").status_code, 302
+            self.attempt("staffer@example.com", "pw12345", ip="").status_code, 429
         )
 
     def test_get_is_never_blocked(self) -> None:

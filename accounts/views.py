@@ -16,7 +16,7 @@ from django.views import View
 from django.views.decorators.cache import never_cache
 
 from accounts import verification
-from accounts.client_ip import request_ip
+from accounts.client_ip import bucket
 from accounts.forms import (
     DashboardPasswordChangeForm,
     EmailAuthenticationForm,
@@ -94,7 +94,7 @@ class _GatedEmailView(View):
             return render(request, self.form_template, {"form": form})
         email = form.cleaned_data["email"]
         ctx = {"email": email}
-        if not verification.ip_allowed(request_ip(request)):
+        if not verification.ip_allowed(bucket(request)):
             ctx["too_many"] = True
             return render(request, self.sent_template, ctx, status=429)
         retry = verification.claim_address(email)

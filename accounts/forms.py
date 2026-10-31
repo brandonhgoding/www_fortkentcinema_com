@@ -10,7 +10,7 @@ from django.contrib.auth import get_user_model, password_validation
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 
-from accounts.client_ip import request_ip
+from accounts.client_ip import bucket
 from accounts.verification import ip_allowed, normalise
 
 
@@ -67,7 +67,7 @@ class EmailPasswordResetForm(PasswordResetForm):
         # reply and no email.
         if self.data.get("website"):
             return
-        if not ip_allowed(request_ip(request)):
+        if not ip_allowed(bucket(request)):
             return
         email = normalise(self.cleaned_data["email"])
         # Only an address with an account claims a cache row: the cache is a
