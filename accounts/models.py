@@ -4,7 +4,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models.functions import Lower
 
-from .managers import UserManager
+from .managers import UserManager, normalise
 
 
 class User(AbstractUser):
@@ -44,18 +44,18 @@ class User(AbstractUser):
     def clean_fields(self, exclude: Collection[str] | None = None) -> None:
         # Normalise before validation, as Member does, so forms check the
         # stored form of the address.
-        self.email = (self.email or "").strip().lower()
+        self.email = normalise(self.email)
         super().clean_fields(exclude=exclude)
 
     def clean(self) -> None:
-        self.email = (self.email or "").strip().lower()
+        self.email = normalise(self.email)
         # AbstractUser.clean() hands the address to normalize_email, which
         # raises ValueError on a blank; the required field reports that.
         if self.email:
             super().clean()
 
     def save(self, *args, **kwargs) -> None:
-        self.email = (self.email or "").strip().lower()
+        self.email = normalise(self.email)
         super().save(*args, **kwargs)
 
     def get_full_name(self) -> str:

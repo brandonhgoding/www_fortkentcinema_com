@@ -31,10 +31,6 @@ IP_CAP = 5
 IP_WINDOW = 3600
 
 
-def normalise(email: str) -> str:
-    return email.strip().lower()
-
-
 def _password_fingerprint(user) -> str:
     return salted_hmac(SALT, user.password).hexdigest()[:16]
 

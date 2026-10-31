@@ -1,6 +1,13 @@
 from django.contrib.auth.base_user import BaseUserManager
 
 
+def normalise(email) -> str:
+    """The stored form of an address: stripped and lowercased, "" for none.
+    The one rule for everything that stores, counts or looks up an email,
+    so "Staff@x.com" and " staff@x.com" are one person everywhere."""
+    return str(email or "").strip().lower()
+
+
 class UserManager(BaseUserManager):
     """Users are found and made by email; the address is the login."""
 
@@ -10,7 +17,7 @@ class UserManager(BaseUserManager):
     def normalize_email(cls, email):
         # The whole address, not just the domain as the base class does:
         # "Staff@" and "staff@" are one person at a small cinema.
-        email = (email or "").strip().lower()
+        email = normalise(email)
         if not email:
             raise ValueError("email is required")
         return email
