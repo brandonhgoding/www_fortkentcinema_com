@@ -287,3 +287,49 @@ class RegisterTimingTests(TestCase):
         self.hashes_for("new@example.com").assert_not_called()
         cache.clear()
         self.hashes_for("new@example.com").assert_not_called()
+
+
+class ResendTimingTests(TestCase):
+    """Resend sends mail only to an unverified member, and the SMTP round
+    trip is the slow part of the request. The other branches open and close
+    the mail connection too, so the response time does not say which
+    addresses have an unconfirmed account."""
+
+    def setUp(self):
+        cache.clear()
+
+    def resend_with_padding_mocked(self, email):
+        with mock.patch("accounts.verification.get_connection") as dummy:
+            self.client.post("/register/resend", {"email": email})
+        return dummy
+
+    def test_other_addresses_pay_for_an_smtp_connection(self):
+        verified = make_user("v@example.com", "pw-1-long-enough", is_staff=False)
+        verified.email_verified_at = timezone.now()
+        verified.save()
+        make_staff(email="s@example.com", password="pw-1-long-enough")
+        gone = make_user("g@example.com", "pw-1-long-enough", is_staff=False)
+        gone.is_active = False
+        gone.save()
+        for email in ("v@example.com", "s@example.com", "g@example.com", "none@x.com"):
+            with self.subTest(email=email):
+                dummy = self.resend_with_padding_mocked(email)
+                dummy.assert_called_once_with()
+                dummy.return_value.open.assert_called_once_with()
+                dummy.return_value.close.assert_called_once_with()
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_unverified_member_gets_the_mail_and_no_padding(self):
+        make_user("u@example.com", "pw-1-long-enough", is_staff=False)
+        dummy = self.resend_with_padding_mocked("u@example.com")
+        dummy.assert_not_called()
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_padding_failure_is_logged_not_raised(self):
+        with mock.patch("accounts.verification.get_connection") as dummy:
+            dummy.return_value.open.side_effect = OSError("down")
+            with self.assertLogs("accounts.verification", "ERROR"):
+                response = self.client.post(
+                    "/register/resend", {"email": "none@example.com"}
+                )
+        self.assertContains(response, SENT)
