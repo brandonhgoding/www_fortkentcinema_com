@@ -1,6 +1,4 @@
-from typing import Any, ClassVar
 
-from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 
@@ -17,8 +15,7 @@ class MembershipTier(models.Model):
 
     slug = models.SlugField(
         unique=True,
-        help_text="Square redirects to /thanks?tier=<slug> and the Join button "
-        "carries it for analytics. Changing it breaks both — don't.",
+        help_text="Short name for the tier in dashboard filters and the member export.",
     )
     name = models.CharField(max_length=45)
     eyebrow = models.CharField(
@@ -76,38 +73,3 @@ class MembershipTier(models.Model):
 
     def __str__(self) -> str:
         return self.name
-
-    SLUG_IS_FIXED: ClassVar[str] = (
-        "A tier's slug is fixed once saved: Square redirects and GA4 "
-        "tracking carry it."
-    )
-
-    def _slug_changed(self) -> bool:
-        """Whether this saved tier's slug differs from the stored one.
-
-        Asks the database rather than remembering the loaded value, so a
-        deliberate QuerySet.update() — the escape hatch for a real rename —
-        followed by refresh_from_db() is not mistaken for an edit.
-        """
-        if self._state.adding or self.pk is None:
-            return False
-        stored = (
-            type(self)
-            ._base_manager.filter(pk=self.pk)
-            .values_list("slug", flat=True)
-            .first()
-        )
-        return stored is not None and stored != self.slug
-
-    def clean(self) -> None:
-        if self._slug_changed():
-            raise ValidationError({"slug": self.SLUG_IS_FIXED})
-
-    def save(self, *args: Any, **kwargs: Any) -> None:
-        # The forms and admin already lock the field; this catches code.
-        update_fields = kwargs.get("update_fields")
-        if (update_fields is None or "slug" in update_fields) and (
-            self._slug_changed()
-        ):
-            raise ValueError(self.SLUG_IS_FIXED)
-        super().save(*args, **kwargs)

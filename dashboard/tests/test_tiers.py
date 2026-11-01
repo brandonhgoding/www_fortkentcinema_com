@@ -2,6 +2,7 @@
 
 import datetime
 import json
+import re
 from decimal import Decimal
 
 from audience.models import (
@@ -221,21 +222,20 @@ class TierEditTests(StaffTestCase):
         self.assertEqual(self.tier.price, 75)
         self.assertEqual(term.price_paid, Decimal("60.00"))
 
-    def test_slug_cannot_be_changed_after_creation(self) -> None:
-        """Square redirects to /thanks?tier=<slug> and GA4 keys off it, so a
-        posted slug is ignored rather than silently breaking attribution."""
+    def test_slug_can_be_changed_after_creation(self) -> None:
         self.client.post(
             reverse("dashboard:tier_edit", args=[self.tier.pk]),
             tier_payload(name="Individual", slug="something-else", price="60"),
         )
         self.tier.refresh_from_db()
-        self.assertEqual(self.tier.slug, "individual")
+        self.assertEqual(self.tier.slug, "something-else")
 
-    def test_slug_field_renders_disabled(self) -> None:
+    def test_slug_field_renders_editable(self) -> None:
         html = self.client.get(
             reverse("dashboard:tier_edit", args=[self.tier.pk])
         ).content.decode()
-        self.assertIn("disabled", html)
+        slug_input = re.search(r'<input[^>]*name="slug"[^>]*>', html).group(0)
+        self.assertNotIn("disabled", slug_input)
 
 
 class TierListingTests(StaffTestCase):

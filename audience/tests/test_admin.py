@@ -1,10 +1,7 @@
-"""Guard the one field editing must never silently break: the tier slug.
+"""The audience admin pages render, and a tier's slug can be edited.
 
-Square's payment dashboard redirects to /thanks?tier=<slug> and the Join
-button's GA4 tracking carries the same slug. Both are revenue attribution,
-not display — the page keeps rendering perfectly if the slug is edited out
-from under them. This test pins MembershipTierAdmin.get_readonly_fields
-directly so that guarantee doesn't rest on a comment.
+The slug was locked once saved while Square redirected to /thanks?tier=<slug>;
+nothing outside this database keys off it since that page went (2026-11-01).
 """
 
 import datetime
@@ -14,7 +11,6 @@ from django.test import TestCase
 from django.urls import reverse
 
 from accounts.tests.factories import make_user
-from audience.admin import MembershipTierAdmin
 from audience.models import (
     FreeAdmission,
     Member,
@@ -25,31 +21,9 @@ from audience.models import (
 )
 
 
-class MembershipTierAdminReadonlyFieldsTests(TestCase):
-    def setUp(self) -> None:
-        self.admin = MembershipTierAdmin(MembershipTier, None)
-
-    def test_slug_is_readonly_for_an_existing_tier(self) -> None:
-        tier = MembershipTier.objects.get(slug="individual")
-        self.assertEqual(
-            self.admin.get_readonly_fields(request=None, obj=tier), ("slug",)
-        )
-
-    def test_slug_is_editable_when_adding_a_new_tier(self) -> None:
-        self.assertEqual(
-            self.admin.get_readonly_fields(request=None, obj=None), ()
-        )
-
-
 class MembershipTierAdminPageTests(TestCase):
-    """The admin pages have to actually render.
-
-    The tests above call get_readonly_fields in isolation and pass, which
-    is exactly why they did not catch a KeyError raised while building the
-    change form: prepopulated_fields still named `slug` after
-    get_readonly_fields had removed it from the form. Assert on the
-    rendered page, not on the method that feeds it.
-    """
+    """The admin pages have to actually render: assert on the page, not on
+    the methods that feed it."""
 
     def setUp(self) -> None:
         make_user(
@@ -71,10 +45,9 @@ class MembershipTierAdminPageTests(TestCase):
         url = reverse("admin:audience_membershiptier_add")
         self.assertEqual(self.client.get(url).status_code, 200)
 
-    def test_slug_is_shown_but_not_editable_when_changing(self) -> None:
+    def test_slug_is_editable_when_changing(self) -> None:
         html = self.client.get(self.change_url()).content.decode()
-        self.assertNotIn('name="slug"', html)
-        self.assertIn("individual", html)
+        self.assertIn('name="slug"', html)
 
     def test_slug_is_editable_when_adding(self) -> None:
         url = reverse("admin:audience_membershiptier_add")

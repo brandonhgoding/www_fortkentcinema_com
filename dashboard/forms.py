@@ -192,21 +192,6 @@ class MembershipTierForm(forms.ModelForm):
         # The form field's min_value=0 (from PositiveSmallIntegerField)
         # overwrites the widget's min="1"; the model refuses 0 anyway.
         self.fields["duration_months"].widget.attrs["min"] = "1"
-        # The slug is load-bearing outside this database — Square redirects
-        # to /thanks?tier=<slug> and the Join button's GA4 tracking carries
-        # it — so editing it after creation would break revenue attribution
-        # silently, with the page still rendering fine. Same rule the admin
-        # enforces (audience/admin.py), for the same reason.
-        if self.instance.pk:
-            self.fields["slug"].disabled = True
-            self.fields["slug"].help_text = (
-                "Fixed after creation: Square and GA4 both key off it."
-            )
-
-    def clean_slug(self) -> str:
-        # A disabled field falls back to the initial value, so an edit can
-        # never change it even if the POST carries a different slug.
-        return self.instance.slug if self.instance.pk else self.cleaned_data["slug"]
 
 
 class MembershipBenefitForm(forms.ModelForm):
