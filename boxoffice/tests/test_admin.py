@@ -42,3 +42,29 @@ class LedgerAdminTests(TestCase):
             with self.subTest(model=name):
                 response = self.client.get(reverse(f"admin:boxoffice_{name}_add"))
                 self.assertEqual(response.status_code, 403)
+
+    def test_rows_cannot_be_changed(self) -> None:
+        line_url = reverse("admin:boxoffice_saleline_change", args=[self.line.pk])
+        self.assertEqual(self.client.post(line_url, {"quantity": "9"}).status_code, 403)
+        self.line.refresh_from_db()
+        self.assertEqual(self.line.quantity, 2)
+
+    def test_rows_cannot_be_deleted(self) -> None:
+        # A deleted SquareItem link row would orphan its item in Square.
+        for name, obj in (("saleline", self.line), ("squareitem", self.item),
+                          ("squarevariation", self.variation)):
+            with self.subTest(model=name):
+                url = reverse(f"admin:boxoffice_{name}_delete", args=[obj.pk])
+                self.assertEqual(self.client.post(url, {"post": "yes"}).status_code,
+                                 403)
+                self.assertTrue(type(obj).objects.filter(pk=obj.pk).exists())
+
+    def test_bulk_delete_action_is_refused(self) -> None:
+        for name, obj in (("saleline", self.line), ("squareitem", self.item),
+                          ("squarevariation", self.variation)):
+            with self.subTest(model=name):
+                self.client.post(
+                    reverse(f"admin:boxoffice_{name}_changelist"),
+                    {"action": "delete_selected", "_selected_action": [obj.pk],
+                     "post": "yes"})
+                self.assertTrue(type(obj).objects.filter(pk=obj.pk).exists())

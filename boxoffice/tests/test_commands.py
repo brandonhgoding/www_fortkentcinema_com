@@ -1,4 +1,5 @@
 import datetime
+import types
 from io import StringIO
 from unittest import mock
 
@@ -205,3 +206,25 @@ class PullSquareSalesCommandTests(TestCase):
             call_command("pull_square_sales", stdout=out)
         self.assertIn("disabled (SQUARE_TICKET_CATEGORY_ID is blank)", out.getvalue())
         self.assertEqual(SalesPull.objects.count(), 0)
+
+
+class PullSquareSalesDefaultDateTests(TestCase):
+    def test_date_defaults_to_today_in_eastern_time(self) -> None:
+        # 02:00 UTC on 10 October is still 9 October in Fort Kent.
+        class Clock(datetime.datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return datetime.datetime(
+                    2026, 10, 10, 2, 0, tzinfo=datetime.UTC).astimezone(tz)
+
+        # Swap the command's own `datetime` name only, not the stdlib module.
+        clock = types.SimpleNamespace(
+            date=datetime.date, timedelta=datetime.timedelta, datetime=Clock)
+        with mock.patch(PULL_GATEWAY, return_value=FakeGateway()), \
+                mock.patch("boxoffice.management.commands.pull_square_sales."
+                           "datetime", clock):
+            call_command("pull_square_sales", "--no-email", stdout=StringIO())
+        self.assertEqual(
+            sorted(SalesPull.objects.values_list("business_date", flat=True)),
+            [datetime.date(2026, 10, 7), datetime.date(2026, 10, 8),
+             datetime.date(2026, 10, 9)])
