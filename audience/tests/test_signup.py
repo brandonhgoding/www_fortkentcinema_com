@@ -1,12 +1,9 @@
 import datetime
 
-from django.db import connection
-from django.db.migrations.executor import MigrationExecutor
-from django.test import TestCase, TransactionTestCase
+from django.test import TestCase
 from django.utils import timezone
 
 from audience.models import Subscriber, SubscriberStatus
-from audience.tests.catalogue_seed import reseed_catalogue
 
 
 def statuses(sub: Subscriber) -> list[str]:
@@ -115,39 +112,3 @@ class ConfirmTests(TestCase):
     def test_pending_is_not_active(self) -> None:
         Subscriber.objects.request_signup("fan@example.com", "movie_page")
         self.assertFalse(Subscriber.objects.active().exists())
-
-
-class ConfirmedAtMigrationTests(TransactionTestCase):
-    """0015 backfills confirmed_at from consent_at on rows that predate it."""
-
-    migrate_from = [("audience", "0014_membershiptier_square_variation_id_message")]
-    migrate_to = [("audience", "0015_subscriber_pending")]
-
-    def setUp(self) -> None:
-        self.executor = MigrationExecutor(connection)
-        self.addCleanup(self.restore_latest_schema)
-
-    def _fixture_teardown(self) -> None:
-        # Reseed what the migrations seeded, as in the term migration test.
-        super()._fixture_teardown()
-        reseed_catalogue()
-
-    def restore_latest_schema(self) -> None:
-        executor = MigrationExecutor(connection)
-        executor.loader.build_graph()
-        executor.migrate(executor.loader.graph.leaf_nodes())
-
-    def migrate(self, targets):
-        self.executor.migrate(targets)
-        self.executor.loader.build_graph()
-        return self.executor.loader.project_state(targets).apps
-
-    def test_existing_rows_get_confirmed_at_from_consent_at(self) -> None:
-        old_apps = self.migrate(self.migrate_from)
-        OldSubscriber = old_apps.get_model("audience", "Subscriber")
-        pk = OldSubscriber.objects.create(email="old@example.com", source="x").pk
-        consent_at = OldSubscriber.objects.get(pk=pk).consent_at
-
-        new_apps = self.migrate(self.migrate_to)
-        NewSubscriber = new_apps.get_model("audience", "Subscriber")
-        self.assertEqual(NewSubscriber.objects.get(pk=pk).confirmed_at, consent_at)

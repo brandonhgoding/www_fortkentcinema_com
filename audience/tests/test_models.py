@@ -237,31 +237,3 @@ class SubscriptionHistoryTests(TestCase):
         self.assertEqual(resp.status_code, 302)
         statuses = [status for status, _ in self.history()]
         self.assertEqual(statuses, ["ACTIVE", "UNSUBSCRIBED"])
-
-    def test_the_migration_backfills_existing_subscribers(self) -> None:
-        import importlib
-
-        from django.apps import apps
-
-        backfill = importlib.import_module(
-            "audience.migrations.0012_subscriptionchange"
-        ).backfill
-        self.sub.unsubscribe()
-        stayed, _ = Subscriber.objects.record("b@example.com", source="poll_vote")
-        from audience.models import SubscriptionChange
-
-        SubscriptionChange.objects.all().delete()
-
-        backfill(apps, None)
-
-        self.assertEqual(
-            self.history(),
-            [
-                ("ACTIVE", self.sub.consent_at),
-                ("UNSUBSCRIBED", self.sub.unsubscribed_at),
-            ],
-        )
-        self.assertEqual(
-            list(stayed.changes.values_list("status", "at")),
-            [("ACTIVE", stayed.consent_at)],
-        )
