@@ -60,20 +60,8 @@ class MembershipTierAdmin(admin.ModelAdmin):
     search_fields = ("name", "slug")
     filter_horizontal = ("benefits",)
 
-    # The slug is load-bearing outside this database: Square's payment
-    # dashboard redirects to /thanks?tier=<slug> and the Join button's GA4
-    # tracking carries it too. Editing it after creation would break revenue
-    # attribution silently, with the page still rendering fine. So it is
-    # editable only while adding, and auto-filled from the name there.
-    #
-    # Both methods below must agree: prepopulating a field that is readonly
-    # raises KeyError when the form renders, because a readonly field is not
-    # in the form at all.
-    def get_readonly_fields(self, request, obj=None):
-        return ("slug",) if obj else ()
-
-    def get_prepopulated_fields(self, request, obj=None):
-        return {} if obj else {"slug": ("name",)}
+    # Filled from the name while adding; the admin leaves a saved slug alone.
+    prepopulated_fields = {"slug": ("name",)}
 
 
 @admin.register(MembershipBenefit)
