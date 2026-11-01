@@ -36,10 +36,6 @@ class Film(models.Model):
         """Prefer our own synopsis; fall back to the TMDB overview."""
         return self.synopsis or self.overview or ""
 
-    @property
-    def imdb_url(self) -> str:
-        return f"https://www.imdb.com/title/{self.imdb_id}/" if self.imdb_id else ""
-
     def generate_slug(self) -> str:
         """Films have no release year, so remakes collide (two `The Mummy`s).
         Suffix rather than raise."""
