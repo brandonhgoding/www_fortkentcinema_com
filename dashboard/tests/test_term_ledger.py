@@ -1,9 +1,12 @@
 """The cross-member term ledger: who is about to lapse, and what sold."""
 
+import csv
 import datetime
+import io
 from decimal import Decimal
 
 from audience.models import Member, MembershipTerm, MembershipTier
+from audience.models.member import EXPIRING_SOON_DAYS
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -276,3 +279,25 @@ class EndOfTimeTests(LedgerTestCase):
         ):
             with self.subTest(url=url):
                 self.assertEqual(self.client.get(url).status_code, 200)
+
+
+class ExpiringWindowBoundaryTests(LedgerTestCase):
+    def test_expiring_includes_the_last_day_and_not_the_next(self) -> None:
+        day = datetime.timedelta(days=1)
+        self.term("Qedge", "individual", self.today - 300 * day,
+                  self.today + EXPIRING_SOON_DAYS * day)
+        self.term("Zpast", "individual", self.today - 300 * day,
+                  self.today + (EXPIRING_SOON_DAYS + 1) * day)
+        html = self.get(window="expiring")
+        self.assertIn("Qedge", html)
+        self.assertNotIn("Zpast", html)
+
+
+class ExportFormulaTests(LedgerTestCase):
+    def test_a_formula_in_a_name_is_exported_as_text(self) -> None:
+        self.term("@SUM(A1)", "individual",
+                  datetime.date(2026, 1, 1), datetime.date(2026, 12, 31))
+        rows = list(csv.reader(io.StringIO(
+            self.client.get(reverse("dashboard:terms_export")).content.decode()
+        )))
+        self.assertEqual(rows[1][1], "'@SUM(A1)")

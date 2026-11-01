@@ -100,3 +100,26 @@ class AdInquiryListTests(TestCase):
         self.client.force_login(self.staff)
         response = self.client.get(reverse("dashboard:home"))
         self.assertContains(response, "You have 1 new ad inquiry")
+
+
+class AdInquiryViewOnlyTests(TestCase):
+    def test_view_only_user_sees_status_as_text(self):
+        inquiry = AdInquiry.objects.create(
+            business_name="Rock's Diner", contact_name="Pat Harper",
+            email="pat@example.com",
+        )
+        make_staff(
+            email="viewer@example.com",
+            password="pw",
+            perms=("cinema.view_adinquiry",),
+        )
+        self.client.login(username="viewer@example.com", password="pw")
+        response = self.client.get(reverse("dashboard:ad_inquiries"))
+        self.assertContains(response, "Pat Harper")
+        self.assertNotContains(
+            response, reverse("dashboard:ad_inquiry_status", args=[inquiry.pk])
+        )
+        html = response.content.decode()
+        # Only the filter bar's select; the row shows the status as text.
+        self.assertEqual(html.count('name="status"'), 1)
+        self.assertRegex(html, rf">\s*{inquiry.get_status_display()}\s*</td>")
