@@ -530,7 +530,9 @@ button {
   }
 }
 
-/* /thanks — post-payment landing (Square redirect target). */
+/* One short message, centred: the mailing-list signup and confirm pages and
+ * the 404. Named for the /thanks page it was first written for (removed
+ * 2026-11-01). */
 .thanks-page {
   min-height: 100vh;
   padding: var(--spacing-lg);
@@ -544,7 +546,8 @@ button {
   text-align: center;
 }
 
-/* /thanks is the only page-level heading defined in this file, so it takes
+/* The message pages' heading is the only page-level heading defined in this
+ * file, so it takes
  * step 1 of the scale directly. It was 3rem/6px — the same size as
  * .section-title but a third tracking value, and with no mobile step either.
  * Pointing it at the tokens is what makes the scale a system rather than a
@@ -592,7 +595,7 @@ button {
   color: var(--color-on-accent);
 }
 
-/* 404 — the /thanks layout plus a short list of the usual destinations. */
+/* 404 — the message layout plus a short list of the usual destinations. */
 .error-page__links {
   list-style: none;
   margin: var(--spacing-lg) 0;

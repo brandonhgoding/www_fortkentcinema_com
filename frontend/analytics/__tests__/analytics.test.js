@@ -72,7 +72,7 @@ describe('click handling', () => {
   });
 
   it('never attaches a monetary value to a click', () => {
-    // The whole point: a click is intent, not revenue. Only /thanks fires money.
+    // The whole point: a click is intent, not revenue.
     const node = el('<a data-track="membership_join_click" data-track-tier="family-plus">Join</a>');
     handleClick({ target: node }, gtag);
     const params = gtag.mock.calls[0][2];

@@ -1,20 +1,14 @@
 """Conversion tracking.
 
-GA4 recorded zero key events, so there was no way to tell whether a membership
-was sold, a gift card bought, or the phone rung.
-
-The load-bearing distinction, and the thing these tests exist to protect: an
-outbound click is INTENT and carries no money; only /thanks — which Square
-redirects to after payment succeeds — fires revenue. Attaching a value to a
-click would make GA4 report sales that never happened.
+GA4 recorded zero key events, so there was no way to tell whether the phone
+rang or an inquiry was sent. A click is intent and carries no money; nothing
+is paid for on the site.
 """
 
 import re
 
 from django.test import TestCase, override_settings
 from django.urls import reverse
-
-from audience.models import MembershipTier
 
 
 def tracked(html, event):
@@ -51,50 +45,7 @@ class ClickEventMarkupTests(TestCase):
         self.assertEqual(len(tracked(html, "rental_inquiry_submit")), 1)
 
 
-class ThanksPageTests(TestCase):
-    def tier(self, slug):
-        return MembershipTier.objects.get(slug=slug)
-
-    def test_known_tier_fires_purchase_with_the_real_price(self):
-        tier = self.tier("cinema-supporter")
-        html = self.client.get("/thanks", {"tier": tier.slug}).content.decode()
-        self.assertIn("'purchase'", html)
-        self.assertIn(f"value: {tier.price}", html)
-        self.assertIn("currency: 'USD'", html)
-
-    def test_value_comes_from_the_record_not_the_query_string(self):
-        """Revenue must not be forgeable by editing the URL."""
-        tier = self.tier("individual")
-        html = self.client.get(
-            "/thanks", {"tier": tier.slug, "value": "99999"}
-        ).content.decode()
-        self.assertIn(f"value: {tier.price}", html)
-        self.assertNotIn("99999", html)
-
-    def test_unknown_tier_fires_nothing(self):
-        """Better no event than a garbage one."""
-        html = self.client.get("/thanks", {"tier": "not-a-tier"}).content.decode()
-        self.assertEqual(self.client.get("/thanks", {"tier": "x"}).status_code, 200)
-        self.assertNotIn("'purchase'", html)
-
-    def test_missing_tier_fires_nothing(self):
-        """Gift cards have a variable amount, so they land here with no tier."""
-        html = self.client.get("/thanks").content.decode()
-        self.assertNotIn("'purchase'", html)
-
-    def test_page_is_noindex(self):
-        html = self.client.get("/thanks").content.decode()
-        self.assertIn('<meta name="robots" content="noindex, nofollow" />', html)
-
-    def test_only_one_robots_tag(self):
-        """A noindex sitting next to an index,follow is a coin flip."""
-        html = self.client.get("/thanks").content.decode()
-        self.assertEqual(len(re.findall(r'<meta name="robots"', html)), 1)
-
-    def test_absent_from_sitemap(self):
-        xml = self.client.get("/sitemap.xml").content.decode()
-        self.assertNotIn("/thanks", xml)
-
+class RobotsTests(TestCase):
     def test_other_pages_remain_indexable(self):
         html = self.client.get("/").content.decode()
         self.assertIn('<meta name="robots" content="index, follow" />', html)
