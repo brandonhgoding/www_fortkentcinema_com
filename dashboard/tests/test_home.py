@@ -145,7 +145,6 @@ class HomeRenderTests(TestCase):
             business_date=yesterday, status=SalesPull.Status.FAILED)
         SaleLine.objects.create(
             order_id="O1", line_uid="L1", business_date=yesterday,
-            show_date=yesterday,
             closed_at=timezone.now(), item_name="Popcorn", quantity=1,
             gross_cents=500)
         html = self.client.get(reverse("dashboard:home")).content.decode()

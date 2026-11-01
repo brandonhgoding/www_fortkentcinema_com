@@ -3,7 +3,6 @@ import json
 
 from boxoffice.gateway import GatewayError, square_enabled
 from boxoffice.models import SquareItem
-from boxoffice.pull import recompute_show_dates
 from boxoffice.reports import pull_status, sales_panel
 from boxoffice.sync import delete, live_item, schedule, sync
 from cinema.dates import CINEMA_TZ
@@ -538,14 +537,10 @@ class ShowtimeEditView(StaffRequiredMixin, View):
                     engagement.title, exclude_showtime_id=st.pk)
                 if conflicts:
                     return again([format_overlap_error(c) for c in conflicts])
-            moved = st.starts_at != starts_at
             st.starts_at = starts_at
             st.captions = captions
             st.is_cancelled = is_cancelled
             st.save()
-            if moved:
-                # The ticket report counts a sale on its show day.
-                recompute_show_dates(st.pk)
         return _showtime_list_response(request, engagement,
                                        {"kind": "success", "message": "Showtime updated"},
                                        close_drawer=True)

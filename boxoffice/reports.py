@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from boxoffice.gateway import square_enabled
 from django.conf import settings
 from django.core.mail import EmailMessage
-from django.db.models import F, Q, QuerySet, Sum
+from django.db.models import Q, QuerySet, Sum
 from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 
@@ -34,15 +34,10 @@ class ItemTotal:
         return f"{self.gross_cents / 100:.2f}"
 
 
-# What was kept: a refunded line stays in the ledger with the refund on it.
-KEPT_QUANTITY = F("quantity") - F("refunded_quantity")
-KEPT_CENTS = F("gross_cents") - F("refunded_cents")
-
-
 def _group(lines: QuerySet[SaleLine]) -> list[ItemTotal]:
     rows = lines.values("item_name").annotate(
-        quantity=Sum(KEPT_QUANTITY), gross=Sum(KEPT_CENTS))
-    # An item whose every sale was given back has nothing to report.
+        quantity=Sum("quantity"), gross=Sum("gross_cents"))
+    # A line Square recorded at zero has nothing to report.
     totals = [ItemTotal(r["item_name"], r["quantity"], r["gross"]) for r in rows
               if r["quantity"] or r["gross"]]
     return sorted(totals, key=lambda t: (-t.gross_cents, t.name))
@@ -52,18 +47,12 @@ def owner_summary(day: datetime.date) -> list[ItemTotal]:
     return _group(SaleLine.objects.filter(business_date=day))
 
 
-def on_show_day(day: datetime.date) -> Q:
-    """Ticket lines for ``day``'s shows: the stored show day, which the pull
-    sets from the order's showtime (else the sale day, for register sales)."""
-    return Q(show_date=day)
-
-
 def ticket_report(day: datetime.date) -> list[ItemTotal]:
     wanted = Q(engagement__isnull=False, engagement__in_ticket_report=True)
     category = settings.SQUARE_TICKET_CATEGORY_ID
     if category:
         wanted |= Q(engagement__isnull=True, category_id=category)
-    return _group(SaleLine.objects.filter(wanted, on_show_day(day)))
+    return _group(SaleLine.objects.filter(wanted, business_date=day))
 
 
 def render_report(kind: str, day: datetime.date, rows: list[ItemTotal]) -> str:
@@ -130,9 +119,9 @@ class DaySales:
 def day_sales(day: datetime.date) -> DaySales:
     tickets = Q(engagement__isnull=False)
     totals = SaleLine.objects.filter(business_date=day).aggregate(
-        gross=Coalesce(Sum(KEPT_CENTS), 0),
-        tickets=Coalesce(Sum(KEPT_QUANTITY, filter=tickets), 0),
-        concessions=Coalesce(Sum(KEPT_CENTS, filter=~tickets), 0),
+        gross=Coalesce(Sum("gross_cents"), 0),
+        tickets=Coalesce(Sum("quantity", filter=tickets), 0),
+        concessions=Coalesce(Sum("gross_cents", filter=~tickets), 0),
     )
     return DaySales(totals["gross"], totals["tickets"], totals["concessions"])
 

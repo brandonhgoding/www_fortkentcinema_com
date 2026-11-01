@@ -1,6 +1,5 @@
 import datetime
 from unittest import mock
-from zoneinfo import ZoneInfo
 
 from boxoffice.models import EmailRecipient, EmailReport, SaleLine, SalesPull
 from boxoffice.reports import (
@@ -8,7 +7,6 @@ from boxoffice.reports import (
     sales_panel, send_reports, ticket_report,
 )
 from boxoffice.tests.test_pull import make_eng
-from cinema.tests.factories import make_showtime
 from django.core import mail
 from django.test import TestCase, override_settings
 from django.utils import timezone
@@ -16,11 +14,6 @@ from django.utils import timezone
 DAY = datetime.date(2026, 10, 9)
 LOGGER = "boxoffice.reports"
 _seq = iter(range(1, 10_000))
-
-
-def at_eastern(day: datetime.date, hour: int, minute: int) -> datetime.datetime:
-    return datetime.datetime.combine(
-        day, datetime.time(hour, minute), tzinfo=ZoneInfo("America/New_York"))
 
 
 def make_line(item_name, gross_cents, quantity=1, **over) -> SaleLine:
@@ -31,8 +24,6 @@ def make_line(item_name, gross_cents, quantity=1, **over) -> SaleLine:
         gross_cents=gross_cents,
     )
     fields.update(over)
-    # As the pull stores it: a register sale's show day is its sale day.
-    fields.setdefault("show_date", fields["business_date"])
     return SaleLine.objects.create(**fields)
 
 
@@ -46,21 +37,6 @@ class AggregationTests(TestCase):
             owner_summary(DAY),
             [ItemTotal("Dune", 2, 1600), ItemTotal("Popcorn", 2, 500)],
         )
-
-    def test_refunded_lines_are_left_out_of_the_summaries(self) -> None:
-        # A refunded ticket stays on its Square order; the ledger carries
-        # what was given back so the reports count only what was kept.
-        eng = make_eng()
-        make_line("Dune", 1600, quantity=2, engagement=eng)
-        make_line("Dune", 800, engagement=eng, refunded_quantity=1,
-                  refunded_cents=800)
-        make_line("Gone", 800, engagement=eng, refunded_quantity=1,
-                  refunded_cents=800)
-        make_line("Popcorn", 500, quantity=2)
-        with override_settings(SQUARE_TICKET_CATEGORY_ID="CAT-TICKETS"):
-            self.assertEqual(ticket_report(DAY), [ItemTotal("Dune", 2, 1600)])
-        self.assertEqual(owner_summary(DAY),
-                         [ItemTotal("Dune", 2, 1600), ItemTotal("Popcorn", 2, 500)])
 
     def test_ties_sort_by_name(self) -> None:
         make_line("B", 500)
@@ -82,31 +58,18 @@ class AggregationTests(TestCase):
         with override_settings(SQUARE_TICKET_CATEGORY_ID="CAT-TICKETS"):
             self.assertEqual(ticket_report(DAY), [ItemTotal("Hand-made Dune", 1, 800)])
 
+    def test_ticket_report_counts_by_sale_day(self) -> None:
+        # A register sale is for that day's show, so the sale day is the show day.
+        eng = make_eng()
+        make_line("Dune", 800, engagement=eng)
+        make_line("Dune", 800, engagement=eng,
+                  business_date=DAY - datetime.timedelta(days=1))
+        self.assertEqual(ticket_report(DAY), [ItemTotal("Dune", 1, 800)])
+
     def test_blank_ticket_category_setting_matches_nothing(self) -> None:
         make_line("Uncategorised", 800, category_id="")
         with override_settings(SQUARE_TICKET_CATEGORY_ID=""):
             self.assertEqual(ticket_report(DAY), [])
-
-    def test_ticket_report_dates_online_sales_by_show_day(self) -> None:
-        # Sold on DAY for a show two days later: the owner summary counts it
-        # on DAY, the ticket report on the show day.
-        show_day = DAY + datetime.timedelta(days=2)
-        showtime = make_showtime(starts_at=at_eastern(show_day, 19, 0))
-        make_line("Dune", 800, engagement=showtime.engagement, showtime=showtime,
-                  show_date=show_day)
-        self.assertEqual(owner_summary(DAY), [ItemTotal("Dune", 1, 800)])
-        self.assertEqual(ticket_report(DAY), [])
-        self.assertEqual(ticket_report(show_day), [ItemTotal("Dune", 1, 800)])
-
-    def test_a_deleted_showtime_keeps_its_show_day(self) -> None:
-        # The stored day is the record; losing the showtime row must not
-        # flip the line back to its sale day.
-        show_day = DAY + datetime.timedelta(days=2)
-        make_line("Dune", 800, engagement=make_eng(), showtime=None,
-                  show_date=show_day)
-        self.assertEqual(ticket_report(DAY), [])
-        self.assertEqual(ticket_report(show_day), [ItemTotal("Dune", 1, 800)])
-
 
 class RenderTests(TestCase):
     def test_owner_summary_body_matches_script_shape(self) -> None:
@@ -223,10 +186,6 @@ class SalesPanelTests(TestCase):
         make_line("Dune", 1600, quantity=2, engagement=eng, business_date=oct8)
         make_line("Popcorn", 500, business_date=oct8)
         make_line("Dune", 800, engagement=eng, business_date=oct1)
-        make_line("Dune", 800, engagement=eng, business_date=oct8,
-                  refunded_quantity=1, refunded_cents=800)
-        make_line("Soda", 300, business_date=oct8, refunded_quantity=1,
-                  refunded_cents=300)
         panel = sales_panel(datetime.date(2026, 10, 9))
         self.assertEqual(panel["yesterday"], DaySales(2100, 2, 500))
         self.assertEqual(panel["last_week"], DaySales(800, 1, 0))

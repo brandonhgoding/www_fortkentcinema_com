@@ -65,12 +65,11 @@ def _line(uid: str = "L1", catalog_object_id: str | None = "V0",
 
 def _order(order_id: str, closed_at: str, lines: list[mock.Mock],
            tenders: list[mock.Mock] | None = None,
-           created_at: str | None = None,
-           metadata: dict[str, str] | None = None) -> mock.Mock:
+           created_at: str | None = None) -> mock.Mock:
     # A Mock invents missing attributes, so "absent" must be an explicit None.
     return mock.Mock(id=order_id, closed_at=closed_at, line_items=lines,
                      tenders=tenders,
-                     created_at=created_at, metadata=metadata)
+                     created_at=created_at)
 
 
 def _catalog_item(item_id: str, cats: list[str] | None) -> mock.Mock:
@@ -460,19 +459,6 @@ class SearchOrdersTests(SimpleTestCase):
                              catalog_object_id="V0", quantity=1, gross_cents=800),),
         ))
         self.assertIsNotNone(orders[1].closed_at.tzinfo)
-
-    def test_order_data_reads_the_showtime_from_metadata(self) -> None:
-        # Website orders carried metadata.showtime; Square hands it back, so
-        # the ledger need not ask the website.
-        client = mock.Mock()
-        client.orders.search.return_value = mock.Mock(orders=[
-            _order("O1", "2026-10-04T18:00:00Z", [_line()], metadata={"showtime": "5"}),
-            _order("O2", "2026-10-04T18:00:00Z", [_line()]),
-            _order("O3", "2026-10-04T18:00:00Z", [_line()],
-                   metadata={"showtime": "soon"}),
-        ], cursor=None)
-        orders = SquareGateway(client, "LOC", "CAT").search_orders(START, END)
-        self.assertEqual([o.showtime_id for o in orders], [5, None, None])
 
     def test_empty_page_returns_no_orders(self) -> None:
         client = mock.Mock()
