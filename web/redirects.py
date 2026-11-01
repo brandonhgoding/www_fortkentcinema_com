@@ -60,6 +60,14 @@ legacy_urlpatterns = [
         RedirectView.as_view(url="/", permanent=True),
         name="legacy_vote",
     ),
+    # /thanks was where Square sent buyers after an online membership or
+    # gift card payment. Nothing is paid for on the site since 2026-11-01,
+    # but a Square link made before then may still point here.
+    re_path(
+        r"^thanks/?$",
+        RedirectView.as_view(url="/", permanent=True),
+        name="legacy_thanks",
+    ),
     # Online membership checkout was retired 2026-10-31; memberships are sold
     # at the box office. The join pages were linked from every tier card and
     # the order pages from buyers' welcome emails, so both go to /membership/.

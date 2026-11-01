@@ -158,23 +158,3 @@ class RetiredTierTests(TestCase):
         html = self.client.get(reverse("membership")).content.decode()
         for slug in ("silver-screen", "individual", "cinema-supporter", "family"):
             self.assertIn(f'data-tier="{slug}"', html)
-
-    def test_retired_tier_still_resolves_on_thanks(self) -> None:
-        """A bookmarked Square link must still attribute its revenue."""
-        self.retire()
-        html = self.client.get("/thanks", {"tier": "family-plus"}).content.decode()
-        self.assertIn("'purchase'", html)
-        self.assertIn("value: 250", html)
-
-
-class ThanksValueSourceTests(TestCase):
-    def test_value_comes_from_the_database_not_the_query_string(self) -> None:
-        html = self.client.get(
-            "/thanks", {"tier": "individual", "value": "99999"}
-        ).content.decode()
-        self.assertIn("value: 60", html)
-        self.assertNotIn("99999", html)
-
-    def test_unknown_tier_fires_nothing(self) -> None:
-        html = self.client.get("/thanks", {"tier": "not-a-tier"}).content.decode()
-        self.assertNotIn("'purchase'", html)

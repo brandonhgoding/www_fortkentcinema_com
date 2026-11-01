@@ -140,6 +140,16 @@ class LegacyPageRedirectTests(TestCase):
                     resp, "/", status_code=301, target_status_code=200
                 )
 
+    def test_thanks_page_redirects_home(self):
+        """/thanks was Square's post-payment landing; nothing is paid for on
+        the site any more, but an old Square link may still send someone."""
+        for path in ("/thanks", "/thanks/", "/thanks?tier=individual"):
+            with self.subTest(path=path):
+                resp = self.client.get(path)
+                self.assertRedirects(
+                    resp, "/", status_code=301, target_status_code=200
+                )
+
     def test_membership_checkout_pages_redirect_to_membership(self):
         """Online membership checkout was retired 2026-10-31. Join pages were
         linked from every tier card and order pages from welcome emails."""

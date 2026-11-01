@@ -12,7 +12,6 @@ from .views import (
     OpenMicView,
     RentalInquiryView,
     RentalsView,
-    ThanksView,
 )
 
 urlpatterns = [
@@ -28,9 +27,6 @@ urlpatterns = [
     path("heckle-night/", HeckleNightView.as_view(), name="heckle_night"),
     path("open-mic/", OpenMicView.as_view(), name="open_mic"),
     path("history/", HistoryView.as_view(), name="history"),
-    # Square redirects here after a successful payment. noindex, unlinked,
-    # and deliberately absent from the sitemap.
-    path("thanks", ThanksView.as_view(), name="thanks"),
     # Double opt-in: /subscribe emails a link, /subscribe/confirm/<token>
     # (the link) is what actually joins the list.
     path("subscribe", ListSignupView.as_view(), name="list_signup"),

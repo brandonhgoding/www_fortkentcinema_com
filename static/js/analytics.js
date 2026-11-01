@@ -8,10 +8,8 @@
  *   <a href="..." data-track="membership_join_click" data-track-tier="family">
  *
  * Any `data-track-*` attribute becomes an event parameter (data-track-tier ->
- * `tier`). Nothing here ever attaches a monetary `value`: these are outbound
- * clicks, not purchases, and someone who clicks "Join" and then abandons the
- * Square checkout has not paid us. Revenue is fired only by /thanks, which
- * Square redirects to *after* payment succeeds. See ThanksView in web/views.py.
+ * `tier`). Nothing here ever attaches a monetary `value`: these are clicks,
+ * not purchases, and nothing is paid for on the site.
  *
  * gtag is absent in dev (GA4_MEASUREMENT_ID unset) — every call site tolerates
  * that rather than throwing.
