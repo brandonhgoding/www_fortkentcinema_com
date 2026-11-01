@@ -93,3 +93,48 @@ class CallLogAdminTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Voicemails")
+
+
+class VoicemailAdminDeleteTests(TestCase):
+    """Deleting from admin would drop the row but leave the caller's audio
+    on Twilio. Only the dashboard delete removes the recording first, so
+    admin can't delete a voicemail at all."""
+
+    def setUp(self) -> None:
+        self.client.force_login(
+            make_user(
+                email="admin@example.com",
+                password="pw",
+                is_staff=True,
+                is_superuser=True,
+            )
+        )
+        self.call = CallLog.objects.create(call_sid="CA" + "1" * 32)
+        self.voicemail = Voicemail.objects.create(
+            recording_sid=SID, caller="+12075550100", call=self.call
+        )
+
+    def test_the_delete_page_is_refused(self) -> None:
+        url = reverse("admin:phone_voicemail_delete", args=[self.voicemail.pk])
+        self.assertEqual(self.client.post(url, {"post": "yes"}).status_code, 403)
+        self.assertTrue(Voicemail.objects.filter(pk=self.voicemail.pk).exists())
+
+    def test_the_bulk_delete_action_is_not_offered(self) -> None:
+        response = self.client.post(
+            reverse("admin:phone_voicemail_changelist"),
+            {
+                "action": "delete_selected",
+                "_selected_action": [self.voicemail.pk],
+                "post": "yes",
+            },
+        )
+        self.assertNotEqual(response.status_code, 500)
+        self.assertTrue(Voicemail.objects.filter(pk=self.voicemail.pk).exists())
+
+    def test_the_call_log_inline_cannot_delete_it(self) -> None:
+        response = self.client.get(
+            reverse("admin:phone_calllog_change", args=[self.call.pk])
+        )
+        self.assertEqual(response.status_code, 200)
+        formset = response.context["inline_admin_formsets"][0].formset
+        self.assertFalse(formset.can_delete)

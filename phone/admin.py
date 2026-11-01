@@ -12,6 +12,8 @@ class VoicemailInline(admin.TabularInline):
     fields = ("created_at", "status", "transcript")
     readonly_fields = ("created_at", "transcript")
     show_change_link = True
+    # See VoicemailAdmin.has_delete_permission.
+    can_delete = False
 
 
 @admin.register(CallLog)
@@ -44,6 +46,15 @@ class VoicemailAdmin(admin.ModelAdmin):
         "created_at",
     )
     exclude = ("recording_url",)
+
+    def has_delete_permission(self, request, obj=None) -> bool:
+        """Delete from the dashboard Voicemails page, never here.
+
+        Admin would drop the row and leave the caller's audio on Twilio with
+        nothing left pointing at it; the dashboard deletes the recording
+        first and keeps the row if Twilio fails.
+        """
+        return False
 
     @admin.display(description="Transcript")
     def excerpt(self, obj: Voicemail) -> str:
