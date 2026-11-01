@@ -1,3 +1,6 @@
+import csv
+import io
+
 from django.test import TestCase
 from django.urls import reverse
 
@@ -102,3 +105,14 @@ class SubscriberExportTests(TestCase):
         self.assertEqual(
             self.client.get(reverse("dashboard:subscribers_export")).status_code, 302
         )
+
+
+class SubscriberExportFormulaTests(TestCase):
+    def test_a_formula_in_an_address_is_exported_as_text(self) -> None:
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
+        Subscriber.objects.record("=cmd@example.com", source="poll_vote")
+        rows = list(csv.reader(io.StringIO(
+            self.client.get(reverse("dashboard:subscribers_export")).content.decode()
+        )))
+        self.assertEqual(rows[1][0], "'=cmd@example.com")

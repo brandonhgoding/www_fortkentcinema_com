@@ -321,3 +321,46 @@ class EngagementEditTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(list(e.engagement_films.values_list("film_id", "position")),
                          [(self.f2.pk, 1), (self.f1.pk, 2)])
+
+
+class EngagementTabFilterTests(TestCase):
+    """Each tab lists the runs it names and leaves out the others."""
+
+    def setUp(self) -> None:
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
+        screen = Screen.objects.create(name="S1", capacity=50)
+        today = timezone.localdate()
+        day = datetime.timedelta(days=1)
+
+        def run(start, end, status="CONFIRMED"):
+            return make_engagement(screen, start=start, end=end, status=status)
+
+        self.runs = {
+            "current": run(today - day, today + day),
+            "upcoming": run(today + 5 * day, today + 9 * day),
+            "ended": run(today - 9 * day, today - 5 * day),
+            "draft": run(today, today, "DRAFT"),
+            "cancelled": run(today, today, "CANCELLED"),
+        }
+
+    def listed(self, tab: str | None) -> set[str]:
+        params = {"tab": tab} if tab is not None else {}
+        resp = self.client.get(reverse("dashboard:engagements"), params)
+        pks = {e.pk for e in resp.context["engagements"]}
+        return {name for name, eng in self.runs.items() if eng.pk in pks}
+
+    def test_each_tab_lists_only_its_runs(self) -> None:
+        for tab, expected in (
+            ("CURRENT", {"current"}),
+            ("UPCOMING", {"upcoming"}),
+            ("ENDED", {"ended"}),
+            ("DRAFT", {"draft"}),
+            ("CANCELLED", {"cancelled"}),
+        ):
+            with self.subTest(tab=tab):
+                self.assertEqual(self.listed(tab), expected)
+
+    def test_no_tab_or_an_unknown_tab_is_current(self) -> None:
+        self.assertEqual(self.listed(None), {"current"})
+        self.assertEqual(self.listed("BOGUS"), {"current"})

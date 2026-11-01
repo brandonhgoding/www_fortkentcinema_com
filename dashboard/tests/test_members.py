@@ -1,4 +1,6 @@
+import csv
 import datetime
+import io
 import json
 from decimal import Decimal
 
@@ -8,6 +10,7 @@ from django.utils import timezone
 
 from accounts.tests.factories import make_user
 from audience.models import FreeAdmission, Member, MembershipTerm, MembershipTier
+from audience.models.member import EXPIRING_SOON_DAYS, MemberStatus
 from dashboard.tests.helpers import make_staff
 
 
@@ -494,3 +497,45 @@ class MemberViewOnlyTests(TestCase):
         ):
             with self.subTest(name):
                 self.assertNotContains(detail, reverse(f"dashboard:{name}", args=args))
+
+
+class MemberExportFormulaTests(TestCase):
+    """Names come from people, and Excel runs a cell starting with = as a
+    formula, so the export must neutralise it, not just the writer."""
+
+    def test_a_formula_in_a_name_is_exported_as_text(self) -> None:
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
+        make_member(first='=HYPERLINK("http://x","y")', last="Lovelace")
+        rows = list(csv.reader(io.StringIO(
+            self.client.get(reverse("dashboard:members_export")).content.decode()
+        )))
+        self.assertEqual(rows[1][0], """'=HYPERLINK("http://x","y")""")
+
+
+class ExpiringSoonBoundaryTests(TestCase):
+    """Cover ending in EXPIRING_SOON_DAYS counts as expiring; a day more is
+    plain active."""
+
+    def setUp(self) -> None:
+        make_staff(email="s@example.com", password="pw12345")
+        self.client.login(username="s@example.com", password="pw12345")
+        give_term(make_member("In", "Qedge", "in@example.com"),
+                  days_left=EXPIRING_SOON_DAYS)
+        give_term(make_member("Out", "Zpast", "out@example.com"),
+                  days_left=EXPIRING_SOON_DAYS + 1)
+
+    def test_the_expiring_filter_stops_at_the_boundary(self) -> None:
+        html = self.client.get(
+            reverse("dashboard:members"), {"status": "expiring"}
+        ).content.decode()
+        self.assertIn("Qedge", html)
+        self.assertNotIn("Zpast", html)
+
+    def test_the_row_status_agrees(self) -> None:
+        members = {
+            m.last_name: m.status
+            for m in self.client.get(reverse("dashboard:members")).context["members"]
+        }
+        self.assertEqual(members["Qedge"], MemberStatus.EXPIRING)
+        self.assertEqual(members["Zpast"], MemberStatus.ACTIVE)

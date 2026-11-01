@@ -314,3 +314,28 @@ class SaveToastTests(StaffTestCase):
                                     {"status": "CONFIRMED"})
         self.assertEqual(live_item(eng).last_error, "stale")
         self.assertEqual(self._toast(resp)["kind"], "success")
+
+
+@override_settings(SQUARE_ACCESS_TOKEN="tok", SQUARE_LOCATION_ID="L",
+                   SQUARE_TICKET_CATEGORY_ID="C")
+class DeleteWithLiveItemTests(StaffTestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.gw = FakeGateway()
+        patcher = mock.patch("boxoffice.sync.get_gateway", return_value=self.gw)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_square_deletes_the_item_then_the_engagement_goes(self) -> None:
+        eng = make_eng(self.screen, films=[self.film])
+        item = SquareItem.objects.create(engagement=eng, square_id="ITEM1",
+                                         name="Dune", synced_at=timezone.now())
+        resp = self.client.post(delete_url(eng))
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(("delete_item", {"item_id": "ITEM1"}), self.gw.calls)
+        self.assertFalse(Engagement.objects.filter(pk=eng.pk).exists())
+        self.assertEqual(json.loads(resp["HX-Trigger"])["dashboard-toast"]["kind"],
+                         "success")
+        # The row is kept (old sales still resolve) but no longer live.
+        item.refresh_from_db()
+        self.assertIsNotNone(item.deleted_at)
