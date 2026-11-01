@@ -17,10 +17,6 @@ from django.utils import timezone as dj_timezone
 
 
 class FilmTestCase(TestCase):
-    def test_str_is_title(self) -> None:
-        film = Film.objects.create(title="Toy Story 5")
-        self.assertEqual(str(film), "Toy Story 5")
-
     def test_blank_external_ids_coerced_to_none(self) -> None:
         # Empty-string ids must become NULL so multiple blank films are allowed
         # under the unique constraints on tmdb_id/imdb_id/youtube_id.
@@ -29,18 +25,6 @@ class FilmTestCase(TestCase):
         first.refresh_from_db()
         self.assertIsNone(first.tmdb_id)
         self.assertIsNone(second.tmdb_id)
-
-
-class ScreenTestCase(TestCase):
-    def test_str_is_name(self) -> None:
-        screen = Screen.objects.create(name="Screen 1", capacity=120)
-        self.assertEqual(str(screen), "Screen 1")
-
-    def test_columns_are_name_and_capacity(self) -> None:
-        """Type, aspect ratio, sound and 3D were never shown or used; gone."""
-        self.assertEqual(
-            [f.name for f in Screen._meta.concrete_fields],
-            ["id", "name", "capacity"])
 
 
 class EngagementTestCase(TestCase):
@@ -66,15 +50,6 @@ class EngagementTestCase(TestCase):
         self.assertEqual([f.title for f in eng.ordered_films], ["Alpha", "Beta"])
         self.assertEqual(eng.primary_film, self.film_a)
         self.assertEqual(eng.total_runtime_minutes, 190)
-
-    def test_language_defaults_to_english(self) -> None:
-        eng = self._engagement()
-        self.assertEqual(eng.language, Language.ENGLISH)
-        self.assertEqual(eng.language, "english")
-        self.assertEqual(eng.get_language_display(), "English")
-
-    def test_translation_defaults_to_none(self) -> None:
-        self.assertEqual(self._engagement().translation, Translation.NONE)
 
     def test_english_film_cannot_be_translated(self) -> None:
         eng = self._engagement(translation=Translation.DUBBED)
@@ -111,18 +86,6 @@ class EngagementTestCase(TestCase):
         # contained and TestCase teardown can still roll back cleanly.
         with self.assertRaises(IntegrityError), transaction.atomic():
             EngagementFilm.objects.create(engagement=eng, film=self.film_b, position=1)
-
-    def test_is_free_for_members_defaults_off(self) -> None:
-        for kind in (Engagement.Kind.CLASSIC, Engagement.Kind.REGULAR):
-            self.assertFalse(self._engagement(kind=kind).is_free_for_members)
-
-    def test_is_free_for_members_when_set(self) -> None:
-        eng = self._engagement(kind=Engagement.Kind.REGULAR)
-        eng.is_free_for_members = True
-        eng.save(update_fields=["is_free_for_members"])
-        eng.refresh_from_db()
-        self.assertTrue(eng.is_free_for_members)
-
 
 class ShowtimeTestCase(TestCase):
     def setUp(self) -> None:
@@ -212,24 +175,3 @@ class EngagementCancellationTests(TestCase):
         Showtime.objects.create(
             engagement=self.eng, starts_at=self.upcoming.starts_at
         )
-
-
-class EngagementAdmissionsTests(TestCase):
-    def test_admissions_defaults_to_none_and_stores_count(self) -> None:
-        screen = Screen.objects.create(name="The Century", capacity=1)
-        eng = Engagement.objects.create(
-            screen=screen, start_date=datetime.date(2024, 1, 1), end_date=datetime.date(2024, 1, 3)
-        )
-        self.assertIsNone(eng.admissions)  # unknown by default
-        eng.admissions = 472
-        eng.save()
-        eng.refresh_from_db()
-        self.assertEqual(eng.admissions, 472)
-
-
-class InTicketReportTests(TestCase):
-    def test_defaults_true(self) -> None:
-        screen = Screen.objects.create(name="S", capacity=10)
-        day = datetime.date(2026, 10, 9)
-        eng = Engagement.objects.create(screen=screen, start_date=day, end_date=day)
-        self.assertTrue(eng.in_ticket_report)

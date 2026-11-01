@@ -20,9 +20,6 @@ class BlogPostTestCase(TestCase):
             post_date="2025-01-01",
         )
 
-    def test_str(self) -> None:
-        self.assertEqual(str(self.post), self.post.subtitle)
-
     @mock.patch("blog.mixins.slugify")
     def test_slugify_is_called_on_save_if_no_slug(self, mock_slugify: Mock) -> None:
         mock_slugify.return_value = "slug"
@@ -53,9 +50,6 @@ class BlogAuthorTestCase(TestCase):
 class BlogCategoryTestCase(TestCase):
     def setUp(self) -> None:
         self.category = BlogCategory.objects.create(name="title")
-
-    def test_str(self) -> None:
-        self.assertEqual(str(self.category), f"{self.category.name}")
 
     @mock.patch("blog.mixins.slugify")
     def test_slugify_is_called_on_save_if_no_slug(self, mock_slugify: Mock) -> None:

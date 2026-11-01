@@ -1,16 +1,32 @@
-from cinema.admin import EngagementAdmin, EngagementFilmInline, ShowtimeInline
-from cinema.models import Engagement, Film, Screen, Showtime
-from django.contrib import admin
+import datetime
+
+from accounts.tests.factories import make_user
+from cinema.admin import EngagementFilmInline, ShowtimeInline
+from cinema.models import Engagement, Screen
 from django.test import TestCase
+from django.urls import reverse
 
 
-class CinemaAdminTestCase(TestCase):
-    def test_models_registered(self) -> None:
-        for model in (Film, Screen, Showtime, Engagement):
-            self.assertIn(model, admin.site._registry)
-
-    def test_engagement_admin_has_inlines(self) -> None:
-        engagement_admin = admin.site._registry[Engagement]
-        self.assertIsInstance(engagement_admin, EngagementAdmin)
-        self.assertIn(EngagementFilmInline, engagement_admin.inlines)
-        self.assertIn(ShowtimeInline, engagement_admin.inlines)
+class EngagementAdminTests(TestCase):
+    def test_change_page_renders_with_films_and_showtimes_inlines(self) -> None:
+        self.client.force_login(
+            make_user(
+                email="root@example.com",
+                password="pw",
+                is_staff=True,
+                is_superuser=True,
+            )
+        )
+        eng = Engagement.objects.create(
+            screen=Screen.objects.create(name="Screen 1", capacity=100),
+            start_date=datetime.date(2026, 7, 1),
+            end_date=datetime.date(2026, 7, 7),
+        )
+        resp = self.client.get(
+            reverse("admin:cinema_engagement_change", args=[eng.pk])
+        )
+        self.assertEqual(resp.status_code, 200)
+        inlines = {
+            type(formset.opts) for formset in resp.context["inline_admin_formsets"]
+        }
+        self.assertEqual(inlines, {EngagementFilmInline, ShowtimeInline})

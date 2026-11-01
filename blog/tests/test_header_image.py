@@ -43,11 +43,10 @@ class MediaRootTests(TestCase):
         """It was BASE_DIR / "media" — inside the release directory, which the
         next deploy replaces. Production points this at the shared dir nginx
         actually serves."""
-        from fortkentcinema import settings as s
+        from fortkentcinema.tests.settings_probe import load_settings
 
-        src = Path(s.__file__).read_text()
-        self.assertIn('config("MEDIA_ROOT"', src)
-        self.assertNotIn('MEDIA_ROOT = BASE_DIR / "media"', src)
+        settings = load_settings(MEDIA_ROOT="/srv/shared/media")
+        self.assertEqual(settings.MEDIA_ROOT, Path("/srv/shared/media"))
 
 
 # blog/images/<slug>-<8 hex>.<ext>

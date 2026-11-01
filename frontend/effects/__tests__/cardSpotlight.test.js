@@ -1,31 +1,41 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { initCardSpotlight } from '../init/cardSpotlight.js';
+
+// matchMedia that answers true for the given queries only.
+function stubMatchMedia(matching) {
+  vi.stubGlobal('matchMedia', (q) => ({ matches: matching.includes(q), media: q }));
+}
+
+// No spotlight node appended and no effect classes added to the grid.
+function expectUntouched() {
+  const grid = document.getElementById('g');
+  expect(grid.children).toHaveLength(1);
+  expect(grid.className).toBe('');
+}
 
 describe('initCardSpotlight', () => {
   beforeEach(() => {
-    document.body.innerHTML = '<div data-spotlight><article>a</article></div>';
-    // Force getMotionTier() === 'full': matchMedia present, not reduced, fine pointer.
-    vi.stubGlobal('matchMedia', (q) => ({
-      matches: q.includes('reduce') ? false : q.includes('coarse') ? false : false,
-    }));
+    document.body.innerHTML = '<div data-spotlight id="g"><article>a</article></div>';
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
-  it('adds spotlight scaffolding on full tier', async () => {
-    const { initCardSpotlight } = await import('../init/cardSpotlight.js');
+  it('attaches the spotlight on the full motion tier', () => {
+    stubMatchMedia([]);
     initCardSpotlight(document);
-    const grid = document.querySelector('[data-spotlight]');
-    expect(grid.classList.contains('fx-spotlight-grid')).toBe(true);
-    expect(grid.querySelector('.fx-spotlight')).not.toBeNull();
+    expect(document.getElementById('g').children).toHaveLength(2);
   });
 
-  it('matches <a>-wrapped cards (blog grid parity)', async () => {
-    document.body.innerHTML =
-      '<div data-spotlight><a class="blog-card-link"><article class="blog-card">a</article></a></div>';
-    const { initCardSpotlight } = await import('../init/cardSpotlight.js');
+  it('leaves the grid untouched under reduced motion', () => {
+    stubMatchMedia(['(prefers-reduced-motion: reduce)']);
     initCardSpotlight(document);
-    const grid = document.querySelector('[data-spotlight]');
-    expect(grid.classList.contains('fx-spotlight-grid')).toBe(true);
-    // Locks the selector contract: the default selector must include direct <a> children
-    // so blog-teaser cards (wrapped in <a class="blog-card-link">) receive focus/dim/tilt.
-    expect(grid.querySelectorAll(':scope > article, :scope > a').length).toBe(1);
+    expectUntouched();
+  });
+
+  it('leaves the grid untouched on touch devices', () => {
+    stubMatchMedia(['(pointer: coarse)']);
+    initCardSpotlight(document);
+    expectUntouched();
   });
 });

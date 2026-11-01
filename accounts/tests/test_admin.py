@@ -40,10 +40,3 @@ class UserAdminTests(TestCase):
             f"/admin/accounts/user/{user.pk}/change/"
         ).content.decode()
         self.assertIn('name="email"', html)
-
-
-class UserAdminVerifiedTests(TestCase):
-    def setUp(self):
-        self.client.force_login(
-            User.objects.create_superuser(email="root@example.com", password="pw")
-        )

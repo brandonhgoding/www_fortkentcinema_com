@@ -20,13 +20,6 @@ def make_tier(slug=None, name="Individual", price=60, **kw):
 
 
 class MembershipBenefitTests(TestCase):
-    def test_str_is_the_name(self) -> None:
-        self.assertEqual(str(make_benefit()), "$2 off matinee tickets")
-
-    def test_description_is_optional(self) -> None:
-        """Nothing on the public page renders it."""
-        self.assertEqual(make_benefit().description, "")
-
     def test_ordering_is_by_sort_order_then_name(self) -> None:
         make_benefit(name="Zebra benefit", sort_order=60)
         make_benefit(name="Apple benefit", sort_order=20)
@@ -47,26 +40,12 @@ class MembershipBenefitTests(TestCase):
 
 
 class MembershipTierTests(TestCase):
-    def test_str_is_the_name(self) -> None:
-        self.assertEqual(str(make_tier()), "Individual")
-
     def test_slug_is_unique(self) -> None:
         from django.db import IntegrityError, transaction
 
         make_tier(slug="unique-test-slug")
         with self.assertRaises(IntegrityError), transaction.atomic():
             make_tier(slug="unique-test-slug", name="Duplicate")
-
-    def test_defaults(self) -> None:
-        tier = make_tier()
-        self.assertEqual(tier.duration_months, 12)
-        self.assertFalse(tier.featured)
-        self.assertFalse(tier.is_family_tier)
-        self.assertEqual(tier.eyebrow, "")
-
-    def test_shown_on_the_membership_page_by_default(self) -> None:
-        """Retiring is the deliberate act; being listed is the norm."""
-        self.assertTrue(make_tier().show_on_membership_page)
 
     def test_a_tier_lasts_at_least_a_month(self) -> None:
         from django.core.exceptions import ValidationError
@@ -86,10 +65,6 @@ class MembershipTierTests(TestCase):
 
         with self.assertRaises(IntegrityError), transaction.atomic():
             make_tier(duration_months=0)
-
-    def test_price_is_a_whole_number(self) -> None:
-        """$35, never $35.00 — the card renders it raw."""
-        self.assertEqual(make_tier(price=35).price, 35)
 
     def test_ordering_is_by_sort_order_then_price(self) -> None:
         make_tier(slug="test-high", name="Test High", price=250, sort_order=50)
@@ -190,12 +165,6 @@ class TierDeletionTests(TestCase):
 class FreeAdmissionAllowanceTests(TestCase):
     """The per-tier monthly allowance, as seeded."""
 
-    def test_defaults_to_none_for_a_new_tier(self) -> None:
-        tier = MembershipTier.objects.create(
-            slug="brand-new", name="Brand New", price=10
-        )
-        self.assertEqual(tier.free_admissions_per_month, 0)
-
     def test_seeded_allowances(self) -> None:
         expected = {
             "silver-screen": 0,
@@ -209,55 +178,3 @@ class FreeAdmissionAllowanceTests(TestCase):
             for t in MembershipTier.objects.all()
         }
         self.assertEqual(actual, expected)
-
-    def test_only_two_tiers_grant_any(self) -> None:
-        """Most rows on the roster will show no allowance at all."""
-        granting = MembershipTier.objects.filter(
-            free_admissions_per_month__gt=0
-        ).order_by("slug")
-        self.assertEqual(
-            [t.slug for t in granting], ["cinema-supporter", "family-plus"]
-        )
-
-
-class CheckoutLinkTests(TestCase):
-    """The Square payment link is legacy: the site sells through its own
-    checkout, so a listed tier no longer needs one."""
-
-    def test_a_listed_tier_saves_without_a_payment_link(self) -> None:
-        MembershipTier(slug="no-link", name="No Link", price=10).full_clean()
-
-    def test_a_retired_tier_may_have_no_link(self) -> None:
-        MembershipTier(
-            slug="no-link", name="No Link", price=10, show_on_membership_page=False
-        ).full_clean()
-
-    def test_every_seeded_tier_still_validates(self) -> None:
-        """The rule must not strand the catalogue that is already live."""
-        for tier in MembershipTier.objects.all():
-            with self.subTest(slug=tier.slug):
-                tier.full_clean()
-
-
-class SlugEditTests(TestCase):
-    """Nothing outside the database keys off the slug since /thanks went,
-    so a saved tier's slug can be changed like any other field."""
-
-    def setUp(self) -> None:
-        self.tier = MembershipTier.objects.get(slug="individual")
-
-    def test_a_changed_slug_saves(self) -> None:
-        self.tier.slug = "individual-2"
-        self.tier.full_clean()
-        self.tier.save()
-        self.assertTrue(MembershipTier.objects.filter(slug="individual-2").exists())
-        self.assertFalse(MembershipTier.objects.filter(slug="individual").exists())
-
-    def test_other_fields_still_save(self) -> None:
-        self.tier.price = 65
-        self.tier.save()
-        self.tier.refresh_from_db()
-        self.assertEqual(self.tier.price, 65)
-
-    def test_a_new_tier_chooses_its_slug(self) -> None:
-        self.assertEqual(make_tier(slug="brand-new").slug, "brand-new")

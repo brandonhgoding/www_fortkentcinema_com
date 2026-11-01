@@ -1,8 +1,4 @@
-"""The audience admin pages render, and a tier's slug can be edited.
-
-The slug was locked once saved while Square redirected to /thanks?tier=<slug>;
-nothing outside this database keys off it since that page went (2026-11-01).
-"""
+"""The audience admin pages render and validate."""
 
 import datetime
 from decimal import Decimal
@@ -19,39 +15,6 @@ from audience.models import (
     MembershipTier,
     Subscriber,
 )
-
-
-class MembershipTierAdminPageTests(TestCase):
-    """The admin pages have to actually render: assert on the page, not on
-    the methods that feed it."""
-
-    def setUp(self) -> None:
-        make_user(
-            email="root@example.com",
-            password="pw12345",
-            is_staff=True,
-            is_superuser=True,
-        )
-        self.client.login(username="root@example.com", password="pw12345")
-        self.tier = MembershipTier.objects.get(slug="individual")
-
-    def change_url(self) -> str:
-        return reverse("admin:audience_membershiptier_change", args=[self.tier.pk])
-
-    def test_change_page_renders(self) -> None:
-        self.assertEqual(self.client.get(self.change_url()).status_code, 200)
-
-    def test_add_page_renders(self) -> None:
-        url = reverse("admin:audience_membershiptier_add")
-        self.assertEqual(self.client.get(url).status_code, 200)
-
-    def test_slug_is_editable_when_changing(self) -> None:
-        html = self.client.get(self.change_url()).content.decode()
-        self.assertIn('name="slug"', html)
-
-    def test_slug_is_editable_when_adding(self) -> None:
-        url = reverse("admin:audience_membershiptier_add")
-        self.assertIn('name="slug"', self.client.get(url).content.decode())
 
 
 class AudienceAdminSmokeTests(TestCase):

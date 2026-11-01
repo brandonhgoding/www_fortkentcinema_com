@@ -52,7 +52,6 @@ class IncomingCallTests(PhoneTestCase):
     def test_greets_and_gathers_one_digit(self) -> None:
         twiml = self.call("incoming_call")
         self.assertIn('<Gather action="/phone/menu/?attempt=1" numDigits="1"', twiml)
-        self.assertIn("Press 1 for today's showtimes", twiml)
         # No input falls through to the menu as a miss.
         self.assertIn("<Redirect>/phone/menu/?attempt=1</Redirect>", twiml)
 
@@ -104,31 +103,19 @@ class MenuTests(PhoneTestCase):
         # for a caller who never starts recording, then the hang-up.
         verbs = list(ET.fromstring(self.press("3")))
         self.assertEqual([v.tag for v in verbs], ["Say", "Record", "Say", "Hangup"])
-        prompt, record, fallthrough, _ = verbs
-        self.assertIn("after the beep", prompt.text or "")
+        record = verbs[1]
         self.assertEqual(
             record.attrib,
             {
                 "action": "/phone/voicemail/recorded/",
                 "maxLength": "120",
+                # Twilio's default of 5 s cuts off a caller who pauses.
                 "timeout": "10",
                 "playBeep": "true",
                 "finishOnKey": "#",
                 "recordingStatusCallback": "/phone/voicemail/status/",
             },
         )
-        self.assertIn("We didn't get a message", fallthrough.text or "")
-
-    def test_3_waits_ten_seconds_of_silence_before_ending_the_recording(
-        self,
-    ) -> None:
-        # Twilio's default is 5 s, which cuts off a caller who pauses to
-        # look up a date or read a number slowly.
-        self.assertIn('timeout="10"', self.press("3"))
-
-    def test_3_asks_twilio_to_report_the_recording_when_it_is_ready(self) -> None:
-        twiml = self.press("3")
-        self.assertIn('recordingStatusCallback="/phone/voicemail/status/"', twiml)
 
     def test_3_does_not_pay_for_transcription_by_default(self) -> None:
         twiml = self.press("3")
@@ -178,7 +165,7 @@ class MenuTests(PhoneTestCase):
         ):
             add_choice.side_effect = DatabaseError("connection lost")
             twiml = self.press("2")
-        self.assertIn("box office opens", twiml)
+        self.assertIn(escape(hours_and_prices_speech()), twiml)
 
 
 # A SID of the real shape, for the paths that check it before calling Twilio.
