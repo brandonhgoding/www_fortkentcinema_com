@@ -66,8 +66,8 @@ class SalesPullAdmin(admin.ModelAdmin):
 
 @admin.register(SaleLine)
 class SaleLineAdmin(ReadOnlyAdmin):
-    list_display = ("business_date", "show_date", "item_name", "variation_name",
-                    "quantity", "refunded_quantity", "gross_cents", "order_id")
+    list_display = ("business_date", "item_name", "variation_name",
+                    "quantity", "gross_cents", "order_id")
     list_filter = ("business_date",)
     search_fields = ("order_id", "item_name")
     date_hierarchy = "business_date"

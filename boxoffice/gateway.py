@@ -65,7 +65,6 @@ class OrderData:
     # When the buyer paid: the first tender's created_at, else the order's
     # created_at; aware, None when Square gives neither.
     paid_at: datetime.datetime | None = None
-    showtime_id: int | None = None  # from metadata.showtime, which we write
 
 
 def _call(fn: Callable[..., T], *args: Any, **kwargs: Any) -> T:
@@ -181,13 +180,7 @@ def _order_data(order: Any) -> OrderData:
         closed_at=parse_timestamp(order.closed_at),
         lines=tuple(_order_line(li) for li in (order.line_items or [])),
         paid_at=_paid_at(order),
-        showtime_id=_showtime_id(order.metadata),
     )
-
-
-def _showtime_id(metadata: dict[str, str] | None) -> int | None:
-    value = (metadata or {}).get("showtime", "")
-    return int(value) if value.isdigit() else None
 
 
 class Gateway(Protocol):

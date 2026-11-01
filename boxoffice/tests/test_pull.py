@@ -5,11 +5,11 @@ from zoneinfo import ZoneInfo
 from boxoffice.gateway import GatewayError, OrderData, OrderLine
 from boxoffice.models import SaleLine, SalesPull, SquareVariation
 from boxoffice.pull import (
-    business_date, day_bounds, pull_day, recompute_show_dates,
+    business_date, day_bounds, pull_day,
 )
 from boxoffice.sync import live_item, push
 from boxoffice.tests.fakes import FakeGateway
-from cinema.models import Engagement, EngagementFilm, Film, Screen, Showtime
+from cinema.models import Engagement, EngagementFilm, Film, Screen
 from django.test import SimpleTestCase, TestCase, override_settings
 
 LOGGER = "boxoffice.pull"
@@ -36,9 +36,8 @@ def at_eastern(*parts) -> datetime.datetime:
     return datetime.datetime(*parts, tzinfo=ZoneInfo("America/New_York"))
 
 
-def order(order_id, closed_at, *lines, showtime_id=None) -> OrderData:
-    return OrderData(order_id=order_id, closed_at=closed_at, lines=tuple(lines),
-                     showtime_id=showtime_id)
+def order(order_id, closed_at, *lines) -> OrderData:
+    return OrderData(order_id=order_id, closed_at=closed_at, lines=tuple(lines))
 
 
 def line(uid, name, variation_name="", catalog_object_id="", quantity=1,
@@ -107,53 +106,6 @@ class PullDayTests(TestCase):
         self.assertEqual(ticket.category_id, TICKETS)
         self.assertIsNotNone(pull.finished_at)
         self.assertEqual(pull.business_date, DAY)
-
-    def test_online_order_line_is_linked_to_its_showtime(self) -> None:
-        # From the order's own metadata, not the website's records: Square is
-        # the source, and the link survives the website forgetting the order.
-        showtime = Showtime.objects.create(
-            engagement=self.eng, screen=self.eng.screen,
-            starts_at=at_eastern(2026, 10, 11, 19, 0))
-        self.gw.orders = [
-            order("O1", at_eastern(2026, 10, 9, 12, 0),
-                  line("L1", "Dune", "Adult", self.adult_id, 2, 1600),
-                  showtime_id=showtime.pk),
-            order("O2", at_eastern(2026, 10, 9, 19, 5),
-                  line("L2", "Dune", "Adult", self.adult_id, 1, 800)),
-        ]
-        pull_day(datetime.date(2026, 10, 9), self.gw)
-        online = SaleLine.objects.get(line_uid="L1")
-        self.assertEqual(online.showtime, showtime)
-        # Sold on the 9th for the 11th: the money is the 9th's, the show the 11th's.
-        self.assertEqual((online.business_date, online.show_date),
-                         (DAY, datetime.date(2026, 10, 11)))
-        register = SaleLine.objects.get(line_uid="L2")
-        self.assertIsNone(register.showtime)
-        self.assertEqual(register.show_date, DAY)
-
-    def test_unknown_showtime_in_metadata_is_stored_without_a_link(self) -> None:
-        # The showtime was deleted after the order carried its id to Square.
-        self.gw.orders = [order("O1", at_eastern(2026, 10, 9, 12, 0),
-                                line("L1", "Dune", "Adult", self.adult_id),
-                                showtime_id=999_999)]
-        pull = pull_day(DAY, self.gw)
-        stored = SaleLine.objects.get(line_uid="L1")
-        self.assertEqual((pull.status, stored.showtime_id, stored.show_date),
-                         ("OK", None, DAY))
-
-    def test_recompute_show_dates_follows_a_moved_showtime(self) -> None:
-        showtime = Showtime.objects.create(
-            engagement=self.eng, screen=self.eng.screen,
-            starts_at=at_eastern(2026, 10, 11, 19, 0))
-        self.gw.orders = [order("O1", at_eastern(2026, 10, 9, 12, 0),
-                                line("L1", "Dune", "Adult", self.adult_id),
-                                showtime_id=showtime.pk)]
-        pull_day(DAY, self.gw)
-        Showtime.objects.filter(pk=showtime.pk).update(
-            starts_at=at_eastern(2026, 10, 12, 14, 0))
-        recompute_show_dates(showtime.pk)
-        self.assertEqual(SaleLine.objects.get(line_uid="L1").show_date,
-                         datetime.date(2026, 10, 12))
 
     def test_unattributed_categories_resolved_in_one_lookup(self) -> None:
         self.gw.categories = {"VPOP": "CAT-SNACKS"}
@@ -358,3 +310,10 @@ class SalesPullColumnsTests(SimpleTestCase):
         # The website-order cross-check went with the online sales.
         self.assertNotIn("missing_online",
                          [f.name for f in SalesPull._meta.concrete_fields])
+
+    def test_ledger_keeps_no_website_order_columns(self) -> None:
+        # Show day, showtime and refunds were only ever set by website orders.
+        names = {f.name for f in SaleLine._meta.concrete_fields}
+        self.assertEqual(
+            names & {"show_date", "showtime", "refunded_quantity", "refunded_cents"},
+            set())

@@ -24,7 +24,7 @@ class LedgerAdminTests(TestCase):
             name="Adult", price_cents=800, ordinal=0)
         day = timezone.localdate()
         self.line = SaleLine.objects.create(
-            order_id="O1", line_uid="L1", business_date=day, show_date=day,
+            order_id="O1", line_uid="L1", business_date=day,
             closed_at=timezone.now(), item_name="Dune", variation_name="Adult",
             quantity=2, gross_cents=1600, variation=self.variation, engagement=eng)
 
