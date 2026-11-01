@@ -5,7 +5,6 @@ cut off the sentence carrying the price or the time. These hold the fix.
 """
 
 import html as html_lib
-import json
 import re
 from unittest import mock
 
@@ -17,12 +16,8 @@ DESCRIPTION_LIMIT = 155
 
 SECTION_PAGES = (
     "home",
-    "membership",
     "rentals",
     "advertise",
-    "heckle_night",
-    "open_mic",
-    "history",
     "blog_list",
 )
 
@@ -47,16 +42,3 @@ class TitleAndDescriptionTests(TestCase):
                     DESCRIPTION_LIMIT,
                     f"{len(description)} chars: {description}",
                 )
-
-    def test_history_article_description_matches_its_meta(self, *_):
-        # The Article block spells the description out again (block.super
-        # can't reach it there), so the two can drift. Hold them together.
-        html = self.client.get(reverse("history")).content.decode()
-        blocks = [
-            json.loads(raw)
-            for raw in re.findall(
-                r'<script type="application/ld\+json">\s*(.*?)\s*</script>', html, re.S
-            )
-        ]
-        article = next(b for b in blocks if b.get("@type") == "Article")
-        self.assertEqual(article["description"], meta_description(html))

@@ -57,12 +57,3 @@ class HomeMarkupTests(TestCase):
         footer = self.home().split('<footer class="footer">', 1)[1]
         self.assertNotIn("<h3", footer)
         self.assertIn("<h2", footer)
-
-
-class SharedImageOnOtherPagesTests(TestCase):
-    def test_history_describes_its_own_image(self):
-        for path, words in (("/history/", "Savoy"),):
-            with self.subTest(path=path):
-                html = self.client.get(path).content.decode()
-                alt = re.search(r'<meta property="og:image:alt" content="([^"]*)"', html)
-                self.assertIn(words, alt.group(1))

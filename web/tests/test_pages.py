@@ -205,9 +205,9 @@ class HomeIntegrationTests(TestCase):
     def test_full_home_composition_order(self, _ns, _cs):
         html = self.client.get(reverse("home")).content.decode()
         # The empty-week fold (the hero, carrying #now-showing), then the
-        # four sections below it, each rendered once.
+        # three sections below it, each rendered once.
         markers = (
-            'class="hero hero--empty"', 'id="now-showing"', 'id="membership"',
+            'class="hero hero--empty"', 'id="now-showing"',
             'id="coming-soon"', 'id="get-involved"', 'id="from-the-booth"',
         )
         for marker in markers:
@@ -276,19 +276,6 @@ class BlogTeaserTests(TestCase):
         )
         # The 2026-01-01 post from setUpTestData is the oldest and falls off.
         self.assertNotIn("Fort Kent Cinema Turns 90", [p.title for p in posts])
-
-
-class MembershipPageTests(TestCase):
-    def test_membership_200_and_template(self):
-        resp = self.client.get(reverse("membership"))
-        self.assertEqual(resp.status_code, 200)
-        self.assertTemplateUsed(resp, "web/membership.html")
-
-    def test_renders_tiers_and_faq(self):
-        html = self.client.get(reverse("membership")).content.decode()
-        self.assertIn("Silver Screen", html)       # a tier name from MEMBERSHIP
-        self.assertIn("How long does a membership last?", html)  # a FAQ question
-        self.assertIn('id="tiers"', html)          # scroll-to anchor target
 
 
 class RentalsPageTests(TestCase):

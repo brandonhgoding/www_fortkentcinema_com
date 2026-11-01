@@ -93,24 +93,6 @@
   width: 100%;
 }
 
-/* "Become a Member" — the nav's one button. .btn is sized for page bodies
-   (1.2rem type, 1rem x 2rem padding), which would overfill a 70px bar, so it
-   is scaled down here to sit level with the links while keeping the 44px
-   target. */
-.nav-cta {
-  min-height: 44px;
-  padding: 0.5rem 1.25rem;
-  font-size: 0.95rem;
-  letter-spacing: 2px;
-  white-space: nowrap;
-}
-
-/* The bar is not tall enough for .btn-primary's hover lift to read as
-   anything but a jump. */
-.nav-cta:hover {
-  transform: none;
-}
-
 /* Hamburger button — hidden on desktop.
 
    This is the ONLY navigation control on a phone, so it gets the full
@@ -326,11 +308,6 @@
     font-size: 0.85rem;
     letter-spacing: 1px;
   }
-
-  .nav-cta {
-    padding: 0.5rem 1rem;
-    letter-spacing: 1px;
-  }
 }
 
 @media (max-width: 768px) {
@@ -384,16 +361,6 @@
 
   .nav-link::after {
     display: none;
-  }
-
-  /* In the open hamburger panel the button keeps its shape, inset to line
-     up with the links above it rather than stretched edge to edge. */
-  .nav-cta-item {
-    padding: var(--spacing-sm) var(--spacing-lg);
-  }
-
-  .nav-cta {
-    font-size: 1rem;
   }
 
   /* Flatten the dropdown: the whole nav is already behind the hamburger, so

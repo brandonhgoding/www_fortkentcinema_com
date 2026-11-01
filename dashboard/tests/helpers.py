@@ -30,23 +30,6 @@ SPEC_PERMISSIONS = frozenset(
         "cinema.view_adinquiry",
         "cinema.change_adinquiry",
         # audience
-        "audience.view_member",
-        "audience.add_member",
-        "audience.change_member",
-        "audience.delete_member",
-        "audience.view_membershipterm",
-        "audience.add_membershipterm",
-        "audience.change_membershipterm",
-        "audience.delete_membershipterm",
-        "audience.add_freeadmission",
-        "audience.delete_freeadmission",
-        "audience.view_membershiptier",
-        "audience.add_membershiptier",
-        "audience.change_membershiptier",
-        "audience.delete_membershiptier",
-        "audience.add_membershipbenefit",
-        "audience.change_membershipbenefit",
-        "audience.delete_membershipbenefit",
         "audience.view_subscriber",
         # boxoffice
         "boxoffice.view_salespull",  # template/home gating only

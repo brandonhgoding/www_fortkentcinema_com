@@ -1,9 +1,10 @@
 {% comment %}
-  Be part of the show (id stays get-involved): open mic, Heckle Night and
-  advertising in a row. The vote and gift-card cards came out on 2026-10-13 (the owner's
-  call); the vote itself was retired 2026-10-31 and gift cards are off the site. Each card leads with its art from
-  static/img/involved/, cropped 16:9 like the From the booth cards; replace
-  a file there to swap the picture.
+  Be part of the show (id stays get-involved): the advertising card. Open mic
+  and Heckle Night came out with their pages on 2026-11-01, the vote and
+  gift-card cards on 2026-10-13 (the owner's calls). The card leads with its
+  art from static/img/involved/, cropped 16:9 like the From the booth cards;
+  replace the file there to swap the picture. .home-cards caps a lone card at
+  28rem, so it does not stretch across the section.
 {% endcomment %}
 {% load static %}
 <section id="get-involved" class="home-section home-section--surface"
@@ -13,8 +14,6 @@
       <h2 class="section-title" id="get-involved-title">Be part of the show</h2>
     </div>
     <div class="home-cards">
-      {% include "partials/cta_openmic.html" %}
-      {% include "partials/cta_heckle.html" %}
       {% include "partials/cta_advertise.html" %}
     </div>
   </div>

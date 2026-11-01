@@ -9,17 +9,15 @@ With nothing booked the same dark fold holds the empty state.
 
 import datetime
 import re
-from decimal import Decimal
 from zoneinfo import ZoneInfo
 
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from audience.models import Member, MembershipTerm, MembershipTier
-
 from cinema.tests.factories import make_showtime
 from web.constants import SITE_CONFIG
+
 
 def in_two_days(hour=19):
     day = timezone.localdate() + datetime.timedelta(days=2)
@@ -113,17 +111,6 @@ class FilmHeroTests(HeroBase):
         self.assertIn(fifth.strftime("%a, %b %-d"), hero)
         self.assertEqual(hero.count('x-show="expanded"'), 1)
         self.assertIn("Show all 4 dates", hero)
-
-    def test_member_line_sits_once_in_the_hero(self):
-        tier = MembershipTier.objects.get(slug="individual")
-        member = Member.objects.create(first_name="A", last_name="B", email="a@b.c")
-        MembershipTerm.objects.create(
-            member=member, tier=tier, started_on=timezone.localdate(),
-            expires_on=timezone.localdate() + datetime.timedelta(days=30),
-            price_paid=Decimal("60.00"),
-        )
-        hero = self.hero()
-        self.assertEqual(hero.count('<span class="hero-members-count">1</span>'), 1)
 
 
 class AlsoShowingTests(HeroBase):

@@ -11,11 +11,7 @@ from unittest import mock
 
 from django.test import TestCase
 
-from web.constants import (
-    OPEN_MIC,
-    SITE_CONFIG,
-    TICKET_PRICES,
-)
+from web.constants import SITE_CONFIG, TICKET_PRICES
 
 
 @mock.patch("web.views.get_calendar_month", return_value={})
@@ -50,13 +46,12 @@ class LlmsTxtTests(TestCase):
             self.assertIn(price, text)
         self.assertIn("4 PM or earlier", text)
 
-    def test_contact_and_events_come_from_constants(self, *_):
+    def test_contact_comes_from_constants(self, *_):
         text = self.get().content.decode()
         cinema = SITE_CONFIG["cinema"]
         self.assertIn(cinema["address"]["street"], text)
         self.assertIn(cinema["phone"], text)
         self.assertIn(SITE_CONFIG["social"]["facebook"], text)
-        self.assertIn(OPEN_MIC["start_label"], text)
 
     def test_advertising_is_listed(self, *_):
         text = self.get().content.decode()
@@ -66,7 +61,7 @@ class LlmsTxtTests(TestCase):
     def test_every_site_link_is_a_live_page(self, *_):
         text = self.get().content.decode()
         paths = set(re.findall(r"https?://testserver(/[^\s)#]*)", text))
-        self.assertGreater(len(paths), 7, "expected links to the site's pages")
+        self.assertGreater(len(paths), 3, "expected links to the site's pages")
         for path in sorted(paths):
             with self.subTest(path=path):
                 self.assertEqual(self.client.get(path).status_code, 200)

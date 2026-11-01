@@ -54,7 +54,10 @@ class NavigationRenderTests(TestCase):
             for href in footer_destinations():
                 self.assertIn(f'href="{href}"', html, path)
 
-    def test_become_a_member_links_to_membership(self):
-        for path in ("/", "/rentals/"):
-            html = nav_html(self.client.get(path).content.decode())
-            self.assertIn('href="/membership/"', html, path)
+    def test_with_no_links_the_bar_is_just_the_logo(self):
+        # navigation is empty and the Become a Member button went with
+        # /membership/ on 2026-11-01: no hamburger opening an empty panel.
+        html = nav_html(self.client.get("/").content.decode())
+        self.assertIn('class="nav-logo"', html)
+        self.assertNotIn("nav-hamburger", html)
+        self.assertNotIn("nav-links", html)

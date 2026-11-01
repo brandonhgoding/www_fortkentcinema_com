@@ -72,9 +72,8 @@
     layout shift. Preloading gets them in flight alongside the stylesheet, so
     text paints once, in the right font.
 
-    Oswald is deliberately absent: it sets the playbills on /history/ only, well
-    below the fold on a single route. Neither are the italic or latin-ext
-    subsets, which unicode-range gates behind characters most pages never use.
+    The italic and latin-ext subsets are deliberately absent: unicode-range
+    gates them behind characters most pages never use.
 
     `crossorigin` is required on font preloads even same-origin; without it the
     browser fetches the file twice.
@@ -110,7 +109,7 @@
       "@id": "https://www.fortkentcinema.com/#theater",
       "name": "{{ site_config.cinema.name|escapejs }}",
       {% comment %}
-      The business's name until 2024 (see /history/), and still what the
+      The business's name until 2024, and still what the
       building is called in town. Showtime directories list it under this
       name with an old phone number; naming it here ties both names to one
       business so a reader does not take them for two theaters on one street.

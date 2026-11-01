@@ -61,38 +61,6 @@ class SeleniumTestCase(StaticLiveServerTestCase):
         return WebDriverWait(self.driver, timeout)
 
 
-class NavMenuE2E(SeleniumTestCase):
-    """The mobile nav hamburger menu. This flow touches only the base chrome
-    (nav/footer) and doesn't depend on the leprinceos API, so it's the
-    must-pass-or-skip flow: it should work in any environment where Chrome is
-    available at all.
-    """
-
-    @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_hero_films", return_value=[])
-    def test_mobile_menu_toggles(self, _ns, _cs):
-        from selenium.webdriver.common.by import By
-        from selenium.webdriver.support import expected_conditions as EC
-
-        self.driver.set_window_size(500, 900)  # phone width -> hamburger visible
-        self.driver.get(self.live_server_url + "/")
-
-        links = self.wait().until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, ".nav-links"))
-        )
-        self.assertNotIn("nav-links--open", links.get_attribute("class"))
-
-        hamburger = self.wait().until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, ".nav-hamburger"))
-        )
-        hamburger.click()
-
-        self.wait().until(
-            lambda d: "nav-links--open" in links.get_attribute("class")
-        )
-        self.assertIn("nav-links--open", links.get_attribute("class"))
-
-
 class BlogPaginationE2E(SeleniumTestCase):
     """Blog listing's numbered pagination. This replaced an HTMX infinite
     scroll, which hid every post past the first page from crawlers — see

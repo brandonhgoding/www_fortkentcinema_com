@@ -1,21 +1,16 @@
 """The Google review chip on the home hero.
 
-It hangs to the right of the member sentence, on the same line, in both
-heroes: the film fold and the empty-week fold. The rating, the review count
-and the link are SITE_CONFIG["google_review"], kept by hand like the phone
-number; None leaves the chip out and the member sentence stands alone.
+It sits in the line under the hero in both heroes: the film fold and the
+empty-week fold. The rating, the review count and the link are
+SITE_CONFIG["google_review"], kept by hand like the phone number; None
+leaves the line out.
 """
 
-import datetime
 import re
-from decimal import Decimal
 from unittest import mock
 
 from django.test import TestCase
 from django.urls import reverse
-from django.utils import timezone
-
-from audience.models import Member, MembershipTerm, MembershipTier
 
 from web.constants import SITE_CONFIG
 from web.tests.test_home_hero import HeroBase
@@ -29,21 +24,9 @@ REVIEW = {
 CHIP = 'data-track="google_review_click"'
 
 
-def member_line(html: str) -> str:
+def rating_line(html: str) -> str:
     start = html.index('<p class="hero-members')
     return html[start : html.index("</p>", start)]
-
-
-def one_member() -> None:
-    tier = MembershipTier.objects.get(slug="individual")
-    member = Member.objects.create(first_name="A", last_name="B", email="a@b.c")
-    MembershipTerm.objects.create(
-        member=member,
-        tier=tier,
-        started_on=timezone.localdate(),
-        expires_on=timezone.localdate() + datetime.timedelta(days=30),
-        price_paid=Decimal("60.00"),
-    )
 
 
 @mock.patch.dict(SITE_CONFIG, {"google_review": REVIEW})
@@ -55,16 +38,14 @@ class EmptyFoldGoogleReviewTests(TestCase):
     def _html(self) -> str:
         return self.client.get(reverse("home")).content.decode()
 
-    def test_chip_sits_in_the_member_line(
+    def test_chip_sits_in_the_rating_line(
         self, _ns: mock.Mock, _cs: mock.Mock
     ) -> None:
-        one_member()
-        self.assertIn(CHIP, member_line(self._html()))
+        self.assertIn(CHIP, rating_line(self._html()))
 
     def test_chip_reads_the_rating_count_and_link(
         self, _ns: mock.Mock, _cs: mock.Mock
     ) -> None:
-        one_member()
         chip = re.search(rf"<a\b[^>]*{CHIP}[^>]*>.*?</a>", self._html(), re.S).group(0)
         self.assertIn("4.9", chip)
         self.assertIn("112 reviews", chip)
@@ -78,29 +59,11 @@ class EmptyFoldGoogleReviewTests(TestCase):
     def test_stars_are_hidden_from_screen_readers(
         self, _ns: mock.Mock, _cs: mock.Mock
     ) -> None:
-        one_member()
         self.assertIn(
             '<span class="hero-google-stars" aria-hidden="true">', self._html()
         )
 
-    def test_chip_stands_alone_with_no_members(
-        self, _ns: mock.Mock, _cs: mock.Mock
-    ) -> None:
-        html = self._html()
-        self.assertIn('class="hero-google"', html)
-        self.assertNotIn("hero-members-count", html)
-        self.assertNotIn("lights on", html)
-
-    def test_no_config_leaves_the_sentence_alone(
-        self, _ns: mock.Mock, _cs: mock.Mock
-    ) -> None:
-        one_member()
-        with mock.patch.dict(SITE_CONFIG, {"google_review": None}):
-            html = self._html()
-        self.assertNotIn("hero-google", html)
-        self.assertIn("to keep the lights on", html)
-
-    def test_no_config_and_no_members_renders_no_line(
+    def test_no_config_renders_no_line(
         self, _ns: mock.Mock, _cs: mock.Mock
     ) -> None:
         with mock.patch.dict(SITE_CONFIG, {"google_review": None}):
@@ -118,10 +81,9 @@ class EmptyFoldGoogleReviewTests(TestCase):
 class FilmHeroGoogleReviewTests(HeroBase):
     """A showing booked this week: the film fold."""
 
-    def test_chip_sits_once_in_the_member_line(self) -> None:
+    def test_chip_sits_once_in_the_rating_line(self) -> None:
         self.booked()
-        one_member()
         html = self.home()
         self.assertIn('class="hero hero--film"', html)
         self.assertEqual(html.count(CHIP), 1)
-        self.assertIn(CHIP, member_line(html))
+        self.assertIn(CHIP, rating_line(html))

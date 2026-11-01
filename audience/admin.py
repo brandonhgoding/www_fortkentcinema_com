@@ -1,18 +1,7 @@
-from typing import cast
-
 from django.contrib import admin
-from django.db.models import QuerySet
 from django.http import HttpRequest
 
-from .models import (
-    FreeAdmission,
-    Member,
-    MembershipBenefit,
-    MembershipTerm,
-    MembershipTier,
-    Subscriber,
-    SubscriptionChange,
-)
+from .models import Subscriber, SubscriptionChange
 
 
 class SubscriptionChangeInline(admin.TabularInline):
@@ -44,56 +33,3 @@ class SubscriberAdmin(admin.ModelAdmin):
         "confirmation_sent_at",
     )
     inlines = [SubscriptionChangeInline]
-
-
-@admin.register(MembershipTier)
-class MembershipTierAdmin(admin.ModelAdmin):
-    list_display = (
-        "name",
-        "slug",
-        "price",
-        "free_admissions_per_month",
-        "show_on_membership_page",
-        "sort_order",
-    )
-    list_filter = ("show_on_membership_page", "featured", "is_family_tier")
-    search_fields = ("name", "slug")
-    filter_horizontal = ("benefits",)
-
-    # Filled from the name while adding; the admin leaves a saved slug alone.
-    prepopulated_fields = {"slug": ("name",)}
-
-
-@admin.register(MembershipBenefit)
-class MembershipBenefitAdmin(admin.ModelAdmin):
-    list_display = ("name", "sort_order")
-    search_fields = ("name",)
-
-
-@admin.register(FreeAdmission)
-class FreeAdmissionAdmin(admin.ModelAdmin):
-    list_display = ("member", "redeemed_on", "recorded_by")
-    list_select_related = ("member", "recorded_by")
-    search_fields = ("member__first_name", "member__last_name", "member__email")
-    date_hierarchy = "redeemed_on"
-    autocomplete_fields = ("member",)
-
-
-class MembershipTermInline(admin.TabularInline):
-    model = MembershipTerm
-    extra = 0
-
-    def get_queryset(self, request: HttpRequest) -> QuerySet[MembershipTerm]:
-        # Each row is labelled with MembershipTerm.__str__, which names the
-        # tier: one query per term without this.
-        return cast(
-            "QuerySet[MembershipTerm]",
-            super().get_queryset(request).select_related("tier"),
-        )
-
-
-@admin.register(Member)
-class MemberAdmin(admin.ModelAdmin):
-    list_display = ("last_name", "first_name", "email")
-    search_fields = ("last_name", "first_name", "email")
-    inlines = [MembershipTermInline]

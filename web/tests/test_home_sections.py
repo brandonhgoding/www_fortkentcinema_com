@@ -33,7 +33,6 @@ from web.constants import SITE_CONFIG, TICKET_PRICES
 SECTION_MARKERS = (
     "hero",
     "now-showing",
-    "membership",
     "coming-soon",
     "get-involved",
     "from-the-booth",
@@ -128,7 +127,6 @@ class SectionCompositionTests(TestCase):
             seq,
             [
                 "now-showing",
-                "membership",
                 "coming-soon",
                 "get-involved",
                 "from-the-booth",
@@ -173,7 +171,7 @@ class FooterHoursTests(TestCase):
         minutes = SITE_CONFIG["box_office"]["opens_before_show_minutes"]
         self.assertIn(
             f"opens {minutes} minutes before showtime",
-            self.footer(reverse("membership")),
+            self.footer(reverse("rentals")),
         )
 
 
@@ -241,8 +239,7 @@ class TelLinkTests(TestCase):
     six pages, and the footer built its own by stripping punctuation, which
     left off the country code."""
 
-    PAGES = ["/", "/rentals/", "/heckle-night/", "/open-mic/",
-             "/no-such-page/"]
+    PAGES = ["/", "/rentals/", "/advertise/", "/no-such-page/"]
 
     @mock.patch("web.views.get_calendar_month", return_value={})
     @mock.patch("web.views.get_coming_soon", return_value=[])
@@ -267,8 +264,6 @@ class EmptyStateTests(TestCase):
         # Through the links list: the signup form's honeypot has its own </div>.
         empty = re.search(r'<div class="no-showtimes">.*?</ul>', html, re.S).group(0)
         self.assertIn(SITE_CONFIG["social"]["facebook"], empty)
-        self.assertIn("/membership/", empty)
-        self.assertIn("/history/", empty)
         self.assertIn("#coming-soon", empty)
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
@@ -376,13 +371,8 @@ class FromTheBoothTests(TestCase):
 
 
 class GetInvolvedTests(TestCase):
-    """Open mic, Heckle Night and advertising share one section and one
-    card shape.
-
-    The section is titled "Be part of the show"; its id stays get-involved.
-    The vote and gift-card cards left it on 2026-10-13 (the owner's call):
-    the vote has its footer link, and Heckle Night took the free slot.
-    """
+    """The "Be part of the show" section (id get-involved): the advertising
+    card. Open mic and Heckle Night left with their pages on 2026-11-01."""
 
     def section(self):
         html = self.client.get(reverse("home")).content.decode()
@@ -400,14 +390,7 @@ class GetInvolvedTests(TestCase):
         card = self.card("advertise-cta")
         self.assertIn(f'href="{reverse("advertise")}"', card)
 
-    def test_cards_are_open_mic_then_heckle_night(self):
-        section = self.section()
-        self.assertEqual(section.count("home-card "), 3)
-        self.assertLess(section.index("open-mic-cta"), section.index("heckle-night-cta"))
-
     PICTURES = (
-        ("open-mic-cta", "take-center-stage"),
-        ("heckle-night-cta", "talk-back-to-the-screen"),
         ("advertise-cta", "your-ad-here"),
     )
 
@@ -424,14 +407,6 @@ class GetInvolvedTests(TestCase):
 
         for _, image in self.PICTURES:
             self.assertIsNotNone(finders.find(f"img/involved/{image}.jpg"), image)
-
-    def test_heckle_night_card_agrees_with_the_page_and_links_to_it(self):
-        from web.constants import HECKLE_NIGHT
-
-        card = self.card("heckle-night-cta")
-        self.assertIn(f"${HECKLE_NIGHT['general_price']}", card)
-        self.assertIn(HECKLE_NIGHT["start_label"], card)
-        self.assertIn(f'href="{reverse("heckle_night")}"', card)
 
 
 class ScreeningEventSchemaTests(TestCase):
@@ -533,9 +508,9 @@ class ScreeningEventSchemaTests(TestCase):
 
 class TheaterFormerNameTests(TestCase):
     """Showtime directories still carry the old name, "The Century Theater",
-    and the building is still called that in town. The site says so on the
-    history page; the MovieTheater block says it too, so a machine can tie
-    the two names to one business instead of guessing they are neighbours."""
+    and the building is still called that in town. The MovieTheater block
+    says so, so a machine can tie the two names to one business instead of
+    guessing they are neighbours."""
 
     def theater(self):
         html = self.client.get("/").content.decode()
@@ -549,9 +524,3 @@ class TheaterFormerNameTests(TestCase):
 
     def test_former_name_is_an_alternate_name(self):
         self.assertEqual(self.theater()["alternateName"], "The Century Theater")
-
-    def test_the_history_page_says_it_in_visible_text(self):
-        """Structured data may only state what a visitor can read."""
-        html = self.client.get(reverse("history")).content.decode()
-        self.assertIn("Century", main_content(html))
-        self.assertIn("Fort Kent Cinema", main_content(html))

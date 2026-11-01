@@ -70,11 +70,21 @@ legacy_urlpatterns = [
     ),
     # Online membership checkout was retired 2026-10-31; memberships are sold
     # at the box office. The join pages were linked from every tier card and
-    # the order pages from buyers' welcome emails, so both go to /membership/.
+    # the order pages from buyers' welcome emails. /membership/ itself was
+    # removed 2026-11-01 (memberships are handled at the counter), so the
+    # page and both old checkout routes go home.
     re_path(
-        r"^membership/(?:join|order)/[-a-zA-Z0-9_]+/?$",
-        RedirectView.as_view(url="/membership/", permanent=True),
+        r"^membership(?:/(?:join|order)/[-a-zA-Z0-9_]+)?/?$",
+        RedirectView.as_view(url="/", permanent=True),
         name="legacy_membership_checkout",
+    ),
+    # The Heckle Night, Open Mic and History pages were removed 2026-11-01 to
+    # simplify the site. All three were in the sitemap, so they redirect
+    # rather than 404.
+    re_path(
+        r"^(?:heckle-night|open-mic|history)/?$",
+        RedirectView.as_view(url="/", permanent=True),
+        name="legacy_info_pages",
     ),
     # Classic Movie Night was discontinued 2026-08-14 and /classics/ removed.
     # The page carried its own ranking history, so it redirects rather than 404s.
