@@ -8,15 +8,10 @@ import pydantic
 
 import boxoffice.gateway as gateway_module
 from boxoffice.gateway import (
-    CheckoutLine,
-    CheckoutResult,
-    CheckoutSpec,
     GatewayError,
-    InvalidPhone,
     NotFound,
     OrderData,
     OrderLine,
-    Recipient,
     RemoteItem,
     SquareGateway,
     Tender,
@@ -28,7 +23,6 @@ from boxoffice.gateway import (
     parse_timestamp,
     square_enabled,
     get_gateway,
-    payment_link_body,
 )
 from boxoffice.spec import ItemSpec, VariationSpec
 from boxoffice.tests.fakes import FakeGateway
@@ -51,16 +45,6 @@ SPEC_FOR_7 = ItemSpec(
 
 START = datetime.datetime(2026, 10, 4, 4, 0, tzinfo=datetime.timezone.utc)
 END = datetime.datetime(2026, 10, 5, 4, 0, tzinfo=datetime.timezone.utc)
-
-MATINEE_SPEC = CheckoutSpec(
-    reference="FK-ABCDE", showtime_id=5,
-    lines=(CheckoutLine("var-adult", "Adult", 2, 600, 400),
-           CheckoutLine("var-child", "Child", 1, 600, 0)),
-    redirect_url="https://www.fortkentcinema.com/tickets/order/tok/",
-    buyer_email="ann@example.com", buyer_phone="2075550100",
-    support_email="info@fortkentcinema.com", idempotency_key="tok")
-EVENING_SPEC = dataclasses.replace(
-    MATINEE_SPEC, lines=(CheckoutLine("var-adult", "Adult", 2, 800, 0),))
 
 
 def _upsert_response(mappings: list[tuple[str, str]], version: int) -> mock.Mock:
@@ -93,25 +77,15 @@ def _tender(payment_id: str, *, type: str = "CARD", amount: int | None = 1600,
 
 
 def _order(order_id: str, closed_at: str, lines: list[mock.Mock],
-           fulfillments: list[mock.Mock] | None = None,
            tenders: list[mock.Mock] | None = None,
            created_at: str | None = None,
            reference_id: str | None = None,
            metadata: dict[str, str] | None = None) -> mock.Mock:
     # A Mock invents missing attributes, so "absent" must be an explicit None.
     return mock.Mock(id=order_id, closed_at=closed_at, line_items=lines,
-                     fulfillments=fulfillments, tenders=tenders,
+                     tenders=tenders,
                      created_at=created_at, reference_id=reference_id,
                      metadata=metadata)
-
-
-def _shipment(display_name: str | None = "Ann Lee",
-              email_address: str | None = "Ann@Example.com",
-              phone_number: str | None = "+12075550100") -> mock.Mock:
-    recipient = mock.Mock(display_name=display_name, email_address=email_address,
-                          phone_number=phone_number)
-    return mock.Mock(shipment_details=mock.Mock(recipient=recipient),
-                     pickup_details=None, delivery_details=None)
 
 
 def _catalog_item(item_id: str, cats: list[str] | None) -> mock.Mock:
@@ -229,10 +203,10 @@ class UpsertRequestTests(SimpleTestCase):
             status_code=404, body={"errors": [{"code": "NOT_FOUND"}]})
         with self.assertRaises(NotFound):
             SquareGateway(client, "LOC", "CAT").retrieve_item("I1")
-        client.orders.get.side_effect = ApiError(
+        client.catalog.object.get.side_effect = ApiError(
             status_code=500, body={"errors": [{"code": "INTERNAL_SERVER_ERROR"}]})
         with self.assertRaises(GatewayError) as ctx:
-            SquareGateway(client, "LOC", "CAT").retrieve_order("O1")
+            SquareGateway(client, "LOC", "CAT").retrieve_item("I1")
         self.assertNotIsInstance(ctx.exception, NotFound)
 
     def test_other_api_error_is_gateway_error(self) -> None:
@@ -453,12 +427,12 @@ class ResponseShapeTests(SimpleTestCase):
         with self.assertRaisesMessage(GatewayError, "AttributeError"):
             SquareGateway(client, "LOC", "CAT").search_orders(START, END)
 
-    def test_retrieved_order_with_bad_timestamp_is_gateway_error(self) -> None:
+    def test_searched_order_with_bad_timestamp_is_gateway_error(self) -> None:
         client = mock.Mock()
-        client.orders.get.return_value = mock.Mock(
-            order=_order("O1", "yesterday", [_line()]))
+        client.orders.search.return_value = mock.Mock(
+            orders=[_order("O1", "yesterday", [_line()])], cursor=None)
         with self.assertRaisesMessage(GatewayError, "ValueError"):
-            SquareGateway(client, "LOC", "CAT").retrieve_order("O1")
+            SquareGateway(client, "LOC", "CAT").search_orders(START, END)
 
     def test_upsert_without_id_mappings_is_gateway_error(self) -> None:
         client = mock.Mock()
@@ -467,14 +441,6 @@ class ResponseShapeTests(SimpleTestCase):
         with self.assertRaisesMessage(GatewayError, "KeyError"):
             SquareGateway(client, "LOC", "CAT").upsert_item(
                 SPEC_FOR_7, item_id=None, version=None, variation_ids_by_tier={})
-
-    def test_uneven_discount_is_still_a_value_error(self) -> None:
-        # The request body is built before Square is called; its own checks
-        # are programming errors, not gateway failures.
-        bad = dataclasses.replace(
-            MATINEE_SPEC, lines=(CheckoutLine("var-adult", "Adult", 3, 600, 400),))
-        with self.assertRaises(ValueError):
-            SquareGateway(mock.Mock(), "LOC", "CAT").create_payment_link(bad)
 
 
 class SearchOrdersTests(SimpleTestCase):
@@ -530,8 +496,8 @@ class SearchOrdersTests(SimpleTestCase):
                          [("O1", None, "FK-ABCDE")])
 
     def test_order_data_reads_the_showtime_from_metadata(self) -> None:
-        # payment_link_body writes metadata.showtime on every website order;
-        # Square carries it back, so the ledger need not ask the website.
+        # Website orders carried metadata.showtime; Square hands it back, so
+        # the ledger need not ask the website.
         client = mock.Mock()
         client.orders.search.return_value = mock.Mock(orders=[
             _order("O1", None, [_line()], metadata={"showtime": "5"}),
@@ -616,61 +582,33 @@ class SearchOrdersTests(SimpleTestCase):
             SquareGateway(client, "LOC", "CAT").search_orders(START, END)
 
 
-class RetrieveOrderTests(SimpleTestCase):
-    @staticmethod
-    def _gateway(order: mock.Mock) -> tuple[SquareGateway, mock.Mock]:
-        client = mock.Mock()
-        client.orders.get.return_value = mock.Mock(order=order)
-        return SquareGateway(client, "LOC", "CAT"), client
-
-    def test_reads_lines_and_shipment_recipient(self) -> None:
-        gw, client = self._gateway(_order(
-            "O1", "2026-10-02T23:12:33.034Z", [_line()], [_shipment()]))
-        data = gw.retrieve_order("O1")
-        self.assertEqual(data.order_id, "O1")
-        self.assertEqual(data.lines[0].catalog_object_id, "V0")
-        self.assertEqual(data.recipient,
-                         Recipient("Ann Lee", "Ann@Example.com", "+12075550100"))
-        client.orders.get.assert_called_once_with("O1")
-
-    def test_no_fulfillment_means_no_recipient(self) -> None:
-        gw, _ = self._gateway(_order("O1", "2026-10-02T23:12:33.034Z", [_line()]))
-        self.assertIsNone(gw.retrieve_order("O1").recipient)
-
-    def test_recipient_fields_default_to_empty_strings(self) -> None:
-        gw, _ = self._gateway(_order(
-            "O1", "2026-10-02T23:12:33.034Z", [_line()],
-            [_shipment(email_address=None, phone_number=None)]))
-        self.assertEqual(gw.retrieve_order("O1").recipient,
-                         Recipient("Ann Lee", "", ""))
-
+class PaidAtTests(SimpleTestCase):
     def test_paid_at_is_the_first_tenders_created_at(self) -> None:
         tenders = [mock.Mock(created_at="2026-09-29T15:11:16Z", payment_id="P1"),
                    mock.Mock(created_at="2026-09-29T15:20:00Z", payment_id="P2")]
-        gw, _ = self._gateway(_order("O1", None, [_line()], tenders=tenders,
-                                     created_at="2026-09-29T15:09:40Z"))
-        self.assertEqual(gw.retrieve_order("O1").paid_at, datetime.datetime(
+        order = _order("O1", None, [_line()], tenders=tenders,
+                       created_at="2026-09-29T15:09:40Z")
+        self.assertEqual(_order_data(order).paid_at, datetime.datetime(
             2026, 9, 29, 15, 11, 16, tzinfo=datetime.timezone.utc))
 
     def test_paid_at_falls_back_to_the_orders_created_at(self) -> None:
-        gw, _ = self._gateway(_order("O1", None, [_line()], tenders=None,
-                                     created_at="2026-09-29T15:09:40.5Z"))
-        paid_at = gw.retrieve_order("O1").paid_at
+        order = _order("O1", None, [_line()], tenders=None,
+                       created_at="2026-09-29T15:09:40.5Z")
+        paid_at = _order_data(order).paid_at
         self.assertEqual(paid_at, datetime.datetime(
             2026, 9, 29, 15, 9, 40, 500000, tzinfo=datetime.timezone.utc))
         self.assertIsNotNone(paid_at.tzinfo)
 
     def test_tender_without_created_at_falls_back_to_the_order(self) -> None:
         tenders = [mock.Mock(created_at=None, payment_id="P1")]
-        gw, _ = self._gateway(_order("O1", None, [_line()], tenders=tenders,
-                                     created_at="2026-09-29T15:09:40Z"))
-        self.assertEqual(gw.retrieve_order("O1").paid_at, datetime.datetime(
+        order = _order("O1", None, [_line()], tenders=tenders,
+                       created_at="2026-09-29T15:09:40Z")
+        self.assertEqual(_order_data(order).paid_at, datetime.datetime(
             2026, 9, 29, 15, 9, 40, tzinfo=datetime.timezone.utc))
 
     def test_paid_at_is_none_without_tenders_or_created_at(self) -> None:
-        gw, _ = self._gateway(_order("O1", None, [_line()], tenders=None,
-                                     created_at=None))
-        self.assertIsNone(gw.retrieve_order("O1").paid_at)
+        order = _order("O1", None, [_line()], tenders=None, created_at=None)
+        self.assertIsNone(_order_data(order).paid_at)
 
     def test_search_orders_also_fills_paid_at(self) -> None:
         client = mock.Mock()
@@ -682,188 +620,8 @@ class RetrieveOrderTests(SimpleTestCase):
         self.assertEqual(o.paid_at, datetime.datetime(
             2026, 10, 1, 12, 0, tzinfo=datetime.timezone.utc))
 
-    def test_api_error_becomes_gateway_error(self) -> None:
-        client = mock.Mock()
-        client.orders.get.side_effect = ApiError(
-            status_code=404, body={"errors": [{"code": "NOT_FOUND"}]})
-        with self.assertRaises(GatewayError):
-            SquareGateway(client, "LOC", "CAT").retrieve_order("O1")
 
-    def test_search_orders_also_fills_the_recipient(self) -> None:
-        client = mock.Mock()
-        client.orders.search.return_value = mock.Mock(
-            orders=[_order("O1", "2026-10-04T12:00:00Z", [_line()], [_shipment()])],
-            cursor=None)
-        [o] = SquareGateway(client, "LOC", "CAT").search_orders(START, END)
-        self.assertEqual(o.recipient.email_address, "Ann@Example.com")
-
-
-class PaymentLinkBodyTests(SimpleTestCase):
-    def test_customer_id_goes_on_the_order_only_when_set(self) -> None:
-        self.assertNotIn("customer_id", payment_link_body(MATINEE_SPEC, "LOC1")["order"])
-        spec = dataclasses.replace(MATINEE_SPEC, customer_id="C7")
-        self.assertEqual(payment_link_body(spec, "LOC1")["order"]["customer_id"], "C7")
-
-    def test_payment_link_body_without_showtime_has_no_metadata(self) -> None:
-        spec = dataclasses.replace(MATINEE_SPEC, showtime_id=None)
-        self.assertNotIn("metadata", payment_link_body(spec, "LOC1")["order"])
-
-    def test_payment_link_body_with_showtime_keeps_metadata(self) -> None:
-        body = payment_link_body(MATINEE_SPEC, "LOC1")
-        self.assertEqual(body["order"]["metadata"],
-                         {"showtime": str(MATINEE_SPEC.showtime_id)})
-
-    def test_payment_link_body_matinee(self) -> None:
-        spec = MATINEE_SPEC
-        body = payment_link_body(spec, "LOC1")
-        order = body["order"]
-        self.assertEqual(order["location_id"], "LOC1")
-        self.assertEqual(order["reference_id"], "FK-ABCDE")
-        self.assertEqual(order["metadata"], {"showtime": "5"})
-        self.assertNotIn("fulfillments", order)
-        adult, child = order["line_items"]
-        self.assertEqual(adult["catalog_object_id"], "var-adult")
-        self.assertEqual(adult["quantity"], "2")
-        self.assertEqual(adult["base_price_money"], {"amount": 800, "currency": "USD"})
-        self.assertEqual(adult["applied_discounts"],
-                         [{"discount_uid": "matinee-var-adult"}])
-        self.assertEqual(child["quantity"], "1")
-        self.assertEqual(child["base_price_money"], {"amount": 600, "currency": "USD"})
-        self.assertNotIn("applied_discounts", child)
-        self.assertEqual(order["discounts"], [{
-            "uid": "matinee-var-adult", "name": "Matinee", "type": "FIXED_AMOUNT",
-            "scope": "LINE_ITEM", "amount_money": {"amount": 400, "currency": "USD"}}])
-        opts = body["checkout_options"]
-        self.assertEqual(opts["redirect_url"], spec.redirect_url)
-        self.assertFalse(opts["ask_for_shipping_address"])
-        self.assertFalse(opts["allow_tipping"])
-        self.assertEqual(opts["accepted_payment_methods"],
-                         {"apple_pay": True, "google_pay": True})
-        self.assertEqual(opts["merchant_support_email"], "info@fortkentcinema.com")
-        self.assertEqual(body["pre_populated_data"],
-                         {"buyer_email": "ann@example.com",
-                          "buyer_phone_number": "2075550100"})
-        self.assertEqual(body["idempotency_key"], "tok")
-
-    def test_blank_phone_is_left_out_of_prepopulated_data(self) -> None:
-        spec = dataclasses.replace(MATINEE_SPEC, buyer_phone="")
-        body = payment_link_body(spec, "LOC1")
-        self.assertEqual(body["pre_populated_data"], {"buyer_email": "ann@example.com"})
-
-    def test_blank_support_email_is_left_out_of_checkout_options(self) -> None:
-        spec = dataclasses.replace(MATINEE_SPEC, support_email="")
-        opts = payment_link_body(spec, "LOC1")["checkout_options"]
-        self.assertNotIn("merchant_support_email", opts)
-        self.assertEqual(opts["redirect_url"], spec.redirect_url)
-
-    def test_evening_body_has_no_discounts_key(self) -> None:
-        order = payment_link_body(EVENING_SPEC, "LOC1")["order"]
-        self.assertNotIn("discounts", order)
-        [line] = order["line_items"]
-        self.assertNotIn("applied_discounts", line)
-        self.assertEqual(line["base_price_money"], {"amount": 800, "currency": "USD"})
-
-    def test_uneven_discount_raises(self) -> None:
-        spec = dataclasses.replace(
-            MATINEE_SPEC, lines=(CheckoutLine("var-adult", "Adult", 3, 600, 400),))
-        with self.assertRaisesMessage(
-                ValueError, "Discount 400 is not a whole number of cents per ticket "
-                "for quantity 3"):
-            payment_link_body(spec, "LOC1")
-
-
-class CustomerCallTests(SimpleTestCase):
-    def test_find_customer_matches_the_exact_email(self) -> None:
-        client = mock.Mock()
-        client.customers.search.return_value = mock.Mock(
-            customers=[mock.Mock(id="C1"), mock.Mock(id="C2")])
-        gw = SquareGateway(client, "LOC1", "CAT1")
-        self.assertEqual(gw.find_customer("ann@example.com"), "C1")
-        client.customers.search.assert_called_once_with(
-            query={"filter": {"email_address": {"exact": "ann@example.com"}}},
-            limit=1)
-        client.customers.search.return_value = mock.Mock(customers=None)
-        self.assertIsNone(gw.find_customer("nobody@example.com"))
-
-    def test_create_customer_sends_names_email_and_phone(self) -> None:
-        client = mock.Mock()
-        client.customers.create.return_value = mock.Mock(customer=mock.Mock(id="C7"))
-        gw = SquareGateway(client, "LOC1", "CAT1")
-        self.assertEqual(
-            gw.create_customer(given_name="Ann", family_name="Lee",
-                               email="ann@example.com", phone="+12075550100",
-                               idempotency_key="cust-tok"), "C7")
-        client.customers.create.assert_called_once_with(
-            idempotency_key="cust-tok", given_name="Ann", family_name="Lee",
-            email_address="ann@example.com", phone_number="+12075550100")
-        client.customers.create.reset_mock()
-        gw.create_customer(given_name="Cher", family_name="", email="c@example.com",
-                           phone="", idempotency_key="k2")
-        # Square rejects "" for a phone or family name; leave them out.
-        client.customers.create.assert_called_once_with(
-            idempotency_key="k2", given_name="Cher", email_address="c@example.com")
-
-    def test_create_customer_rejected_phone_is_typed(self) -> None:
-        client = mock.Mock()
-        client.customers.create.side_effect = ApiError(
-            status_code=400,
-            body={"errors": [{"code": "INVALID_PHONE_NUMBER", "field": "phone_number"}]})
-        gw = SquareGateway(client, "LOC1", "CAT1")
-        with self.assertRaises(InvalidPhone):
-            gw.create_customer(given_name="Ann", family_name="Lee",
-                               email="ann@example.com", phone="+12973198270",
-                               idempotency_key="k")
-
-
-class PaymentCallTests(SimpleTestCase):
-    def test_create_payment_link_maps_response_and_errors(self) -> None:
-        client = mock.Mock()
-        client.checkout.payment_links.create.return_value = mock.Mock(
-            payment_link=mock.Mock(order_id="SQ1", url="https://square.link/u/x"))
-        gw = SquareGateway(client, "LOC1", "CAT1")
-        self.assertEqual(gw.create_payment_link(MATINEE_SPEC),
-                         CheckoutResult("SQ1", "https://square.link/u/x"))
-        client.checkout.payment_links.create.assert_called_once_with(
-            **payment_link_body(MATINEE_SPEC, "LOC1"))
-        client.checkout.payment_links.create.side_effect = httpx.ConnectError("down")
-        with self.assertRaises(GatewayError):
-            gw.create_payment_link(MATINEE_SPEC)
-
-    def test_rejected_phone_prefill_is_typed(self) -> None:
-        client = mock.Mock()
-        client.checkout.payment_links.create.side_effect = ApiError(
-            status_code=400,
-            body={"errors": [{"category": "INVALID_REQUEST_ERROR",
-                              "code": "INVALID_PHONE_NUMBER",
-                              "detail": "Invalid phone number.",
-                              "field": "pre_populated_data.buyer_phone_number"}]})
-        gw = SquareGateway(client, "LOC1", "CAT1")
-        with self.assertRaises(InvalidPhone) as ctx:
-            gw.create_payment_link(MATINEE_SPEC)
-        self.assertIsInstance(ctx.exception, GatewayError)
-        self.assertIn("INVALID_PHONE_NUMBER", str(ctx.exception))
-
-    def test_refund_payment_sends_amount_and_key(self) -> None:
-        client = mock.Mock()
-        client.refunds.refund_payment.return_value = mock.Mock(
-            refund=mock.Mock(id="R1"))
-        gw = SquareGateway(client, "LOC1", "CAT1")
-        self.assertEqual(gw.refund_payment(
-            payment_id="P1", amount_cents=2200, idempotency_key="refund-FK-ABCDE",
-            reason="Showtime cancelled"), "R1")
-        client.refunds.refund_payment.assert_called_once_with(
-            idempotency_key="refund-FK-ABCDE", payment_id="P1",
-            amount_money={"amount": 2200, "currency": "USD"},
-            reason="Showtime cancelled")
-
-    def test_refund_api_error_is_gateway_error(self) -> None:
-        client = mock.Mock()
-        client.refunds.refund_payment.side_effect = ApiError(
-            status_code=400, body={"errors": [{"code": "REFUND_AMOUNT_INVALID"}]})
-        with self.assertRaises(GatewayError):
-            SquareGateway(client, "LOC1", "CAT1").refund_payment(
-                payment_id="P1", amount_cents=1, idempotency_key="k", reason="r")
-
+class TenderTests(SimpleTestCase):
     def test_order_data_reads_tenders(self) -> None:
         order = _order("O1", None, [_line()], tenders=[_tender(
             "P1", card_details=mock.Mock(status="CAPTURED"), amount=1600)])
@@ -1033,7 +791,7 @@ class ParseTimestampTests(SimpleTestCase):
 class FakeGatewayTests(SimpleTestCase):
     def test_public_methods_match_the_real_gateway(self) -> None:
         public = [n for n in vars(SquareGateway) if not n.startswith("_")]
-        self.assertEqual(len(public), 13)
+        self.assertEqual(len(public), 8)
         for name in public:
             self.assertEqual(inspect.signature(getattr(FakeGateway, name)),
                              inspect.signature(getattr(SquareGateway, name)), name)
@@ -1043,33 +801,12 @@ class FakeGatewayTests(SimpleTestCase):
         # one must both offer every method on it, with the same signature.
         protocol = [n for n in vars(Gateway)
                     if not n.startswith("_") and callable(getattr(Gateway, n))]
-        self.assertEqual(len(protocol), 13)
+        self.assertEqual(len(protocol), 8)
         for name in protocol:
             for cls in (SquareGateway, FakeGateway):
                 self.assertEqual(inspect.signature(getattr(cls, name)),
                                  inspect.signature(getattr(Gateway, name)),
                                  f"{cls.__name__}.{name}")
-
-    def test_refund_with_a_reused_key_returns_the_same_refund(self) -> None:
-        # Like Square: an idempotency key names one refund, so a retry after
-        # a timeout gets the first answer back instead of a second refund.
-        gw = FakeGateway()
-        first = gw.refund_payment(payment_id="P1", amount_cents=800,
-                                  idempotency_key="refund-FK-1", reason="x")
-        again = gw.refund_payment(payment_id="P1", amount_cents=800,
-                                  idempotency_key="refund-FK-1", reason="x")
-        other = gw.refund_payment(payment_id="P1", amount_cents=800,
-                                  idempotency_key="refund-FK-2", reason="x")
-        self.assertEqual(first, again)
-        self.assertNotEqual(first, other)
-
-    def test_retrieve_order_returns_by_id_or_raises(self) -> None:
-        gw = FakeGateway()
-        order = OrderData("O1", None, (), Recipient("Ann", "a@b.c", ""))
-        gw.orders.append(order)
-        self.assertIs(gw.retrieve_order("O1"), order)
-        with self.assertRaises(NotFound):
-            gw.retrieve_order("nope")
 
     def test_unknown_item_is_not_found(self) -> None:
         gw = FakeGateway()
@@ -1168,29 +905,18 @@ class FakeGatewayTests(SimpleTestCase):
         gw.categories = {"V1": "CAT", "V2": "POP"}
         self.assertEqual(gw.lookup_categories(["V1", "V3"]), {"V1": "CAT"})
 
-    def test_fake_create_payment_link_records_and_stores_open_order(self) -> None:
-        gw = FakeGateway()
-        res = gw.create_payment_link(MATINEE_SPEC)
-        self.assertEqual(res, CheckoutResult("SQ-1", "https://square.link/u/1"))
-        self.assertEqual(gw.calls[-1], ("create_payment_link", {"spec": MATINEE_SPEC}))
-        order = gw.retrieve_order("SQ-1")
-        self.assertIsNone(order.closed_at)
-        self.assertIsNone(order.paid_at)
-        self.assertEqual([(li.catalog_object_id, li.quantity, li.gross_cents)
-                          for li in order.lines],
-                         [("var-adult", 2, 1200), ("var-child", 1, 600)])
-        self.assertEqual(order.reference_id, "FK-ABCDE")
-        self.assertEqual(order.showtime_id, 5)
-        self.assertEqual(gw.create_payment_link(EVENING_SPEC).order_id, "SQ-2")
-        self.assertEqual(gw.search_orders(START, END), [])  # open orders never match
+    @staticmethod
+    def open_order(gw: FakeGateway, order_id: str) -> None:
+        """An unpaid website order: OPEN in Square, so no closed_at."""
+        gw.orders.append(OrderData(order_id, None, (
+            OrderLine(f"{order_id}-0", "Dune", "Adult", "var-adult", 2, 1600),)))
 
     def test_fake_search_open_orders_returns_open_orders_touched_in_window(self):
-        # Like Square's updated_at filter: an unpaid link order is "touched" when
+        # Like Square's updated_at filter: an unpaid order is "touched" when
         # made, a paid one when paid; a closed order is no longer open.
         gw = FakeGateway()
-        gw.create_payment_link(MATINEE_SPEC)  # SQ-1, never paid
-        gw.create_payment_link(EVENING_SPEC)  # SQ-2
-        gw.create_payment_link(EVENING_SPEC)  # SQ-3
+        for order_id in ("SQ-1", "SQ-2", "SQ-3"):
+            self.open_order(gw, order_id)
         gw.pay("SQ-2", paid_at=START)
         gw.pay("SQ-3", paid_at=END)
         gw.orders.append(OrderData("closed", START, ()))
@@ -1198,32 +924,24 @@ class FakeGatewayTests(SimpleTestCase):
                          ["SQ-1", "SQ-2"])
         self.assertEqual(gw.calls[-1],
                          ("search_open_orders", {"start": START, "end": END}))
+        self.assertEqual(gw.search_orders(START, END)[0].order_id, "closed")
 
     def test_fake_pay_marks_tender_captured(self) -> None:
         gw = FakeGateway()
-        res = gw.create_payment_link(MATINEE_SPEC)
-        self.assertEqual(gw.retrieve_order(res.order_id).tenders, ())
-        gw.pay(res.order_id, "P7")
-        paid = gw.retrieve_order(res.order_id)
+        self.open_order(gw, "SQ-1")
+        gw.pay("SQ-1", "P7")
+        [paid] = gw.orders
         # The tender covers the order: the sum of its lines.
-        total = sum(ln.unit_cents * ln.quantity for ln in MATINEE_SPEC.lines)
-        self.assertEqual(paid.tenders, (Tender("P7", "CAPTURED", "CARD", total),))
+        self.assertEqual(paid.tenders, (Tender("P7", "CAPTURED", "CARD", 1600),))
         self.assertIsNotNone(paid.paid_at.tzinfo)
 
     def test_fake_pay_can_use_a_wallet_or_pay_short(self) -> None:
         gw = FakeGateway()
-        res = gw.create_payment_link(MATINEE_SPEC)
-        gw.pay(res.order_id, "P8", tender_type="WALLET", amount_cents=100)
-        self.assertEqual(gw.retrieve_order(res.order_id).tenders,
-                         (Tender("P8", "", "WALLET", 100),))
+        self.open_order(gw, "SQ-1")
+        gw.pay("SQ-1", "P8", tender_type="WALLET", amount_cents=100)
+        self.assertEqual(gw.orders[0].tenders, (Tender("P8", "", "WALLET", 100),))
         self.assertEqual(len(gw.orders), 1)
 
-    def test_fake_refund_payment_records_and_mints_ids(self) -> None:
-        gw = FakeGateway()
-        kwargs = {"payment_id": "P1", "amount_cents": 2200,
-                  "idempotency_key": "refund-FK-ABCDE", "reason": "Showtime cancelled"}
-        self.assertEqual(gw.refund_payment(**kwargs), "R-1")
-        self.assertEqual(gw.calls[-1], ("refund_payment", kwargs))
-        self.assertEqual(
-            gw.refund_payment(**{**kwargs, "idempotency_key": "refund-FK-ZZZZZ"}),
-            "R-2")
+    def test_fake_pay_unknown_order_is_not_found(self) -> None:
+        with self.assertRaises(NotFound):
+            FakeGateway().pay("nope")
