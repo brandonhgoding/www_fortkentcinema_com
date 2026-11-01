@@ -1,4 +1,5 @@
-"""Seed local demo data for the online-ticket sandbox QA (docs/qa Part A5).
+"""Seed local demo data for the Square sandbox checks
+(docs/qa/2026-10-20-square-variation-versions-sandbox-check.md).
 
 Run with:  python manage.py shell < seed_sandbox_demo.py  STAGE=local|no_item
 Idempotent: everything is looked up before it is created.
@@ -90,7 +91,7 @@ if STAGE == "local":
         print(f"recipient {kind}: {address} {'NEW' if made else 'exists'}")
 
 elif STAGE == "no_item":
-    # Confirmed and listed, but created after the sync: no Square item (QA B10/C7).
+    # Confirmed and listed, but created after the sync: no Square item.
     bride = film_by_title("The Princess Bride", 1987)
     eng_c = engagement(bride, screen2, TODAY + datetime.timedelta(days=13),
                        TODAY + datetime.timedelta(days=19), Engagement.Kind.CLASSIC)
