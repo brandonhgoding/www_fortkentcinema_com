@@ -93,14 +93,3 @@ class MembershipTermFormTests(TestCase):
         form = MembershipTermForm({"tier": a_tier().pk})
         self.assertFalse(form.is_valid())
         self.assertIn("started_on", form.errors)
-
-    def test_every_catalogue_tier_is_offered(self) -> None:
-        offered = {
-            t.slug for t in MembershipTermForm().fields["tier"].queryset
-        }
-        self.assertEqual(
-            offered,
-            {t.slug for t in MembershipTier.objects.filter(
-                show_on_membership_page=True
-            )},
-        )

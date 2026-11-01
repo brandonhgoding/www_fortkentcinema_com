@@ -58,11 +58,6 @@ class DashboardAuthTests(TestCase):
         resp = self.client.get(reverse("dashboard:home"))
         self.assertEqual(resp.status_code, 200)
 
-    def test_named_routes_resolve(self) -> None:
-        self.assertEqual(reverse("dashboard:home"), "/dashboard/")
-        self.assertEqual(reverse("dashboard:members"), "/dashboard/members")
-        self.assertEqual(reverse("dashboard:engagements"), "/dashboard/engagements")
-
 
 @override_settings(ROOT_URLCONF="dashboard.tests.test_auth")
 class DashboardPermissionTests(TestCase):

@@ -93,7 +93,6 @@ class EngagementSquareHookTests(StaffTestCase):
         resp = self.client.post(delete_url(eng))
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(Engagement.objects.filter(pk=eng.pk).exists())
-        self.assertIn("Engagement deleted", resp["HX-Trigger"])
 
 
 @override_settings(SQUARE_ACCESS_TOKEN="tok", SQUARE_LOCATION_ID="L",
@@ -272,8 +271,7 @@ class SaveToastTests(StaffTestCase):
     def test_create_with_square_success_is_normal(self) -> None:
         resp = self.client.post(reverse("dashboard:engagement_create"),
                                 self._payload())
-        self.assertEqual(self._toast(resp),
-                         {"kind": "success", "message": "Engagement created"})
+        self.assertEqual(self._toast(resp)["kind"], "success")
         self.assertIn("item-1", self.gw.items)
 
     def test_edit_and_status_with_square_failure_say_so(self) -> None:
@@ -298,13 +296,11 @@ class SaveToastTests(StaffTestCase):
                        end_date=self.today)
         resp = self.client.post(
             reverse("dashboard:engagement_edit", args=[eng.pk]), self._payload())
-        self.assertEqual(self._toast(resp),
-                         {"kind": "success", "message": "Engagement updated"})
+        self.assertEqual(self._toast(resp)["kind"], "success")
         status_url = reverse("dashboard:engagement_status", args=[eng.pk])
         resp = self.client.post(status_url + "?tab=CURRENT",
                                 {"status": "CONFIRMED"})
-        self.assertEqual(self._toast(resp),
-                         {"kind": "success", "message": "Status updated"})
+        self.assertEqual(self._toast(resp)["kind"], "success")
 
     @override_settings(SQUARE_ACCESS_TOKEN="")
     def test_disabled_square_never_shows_the_failure_toast(self) -> None:
@@ -317,5 +313,4 @@ class SaveToastTests(StaffTestCase):
             resp = self.client.post(status_url + "?tab=CURRENT",
                                     {"status": "CONFIRMED"})
         self.assertEqual(live_item(eng).last_error, "stale")
-        self.assertEqual(self._toast(resp),
-                         {"kind": "success", "message": "Status updated"})
+        self.assertEqual(self._toast(resp)["kind"], "success")

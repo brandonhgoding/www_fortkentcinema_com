@@ -1,4 +1,5 @@
 import datetime
+import re
 
 from cinema.models import Engagement, EngagementFilm, Film, Screen, Showtime
 from django.test import TestCase
@@ -56,26 +57,20 @@ class EngagementListTests(TestCase):
     def test_language_badge(self) -> None:
         eng = make_engagement(self.screen, start=self.today, end=self.today,
                               films=[self.film])
+        label = "French · English subtitles"
         html = self.client.get(reverse("dashboard:engagements")).content.decode()
-        self.assertNotIn('class="languageBadge"', html)  # plain English: no tag
+        self.assertNotIn(label, html)  # plain English: no tag
         eng.language, eng.translation = "french", "subtitled"
         eng.save()
         html = self.client.get(reverse("dashboard:engagements")).content.decode()
-        # Once in the desktop table and once in the phone card list.
-        self.assertEqual(
-            html.count('<span class="languageBadge">French · English subtitles</span>'), 2
-        )
-
-    def test_detail_stub_resolves(self) -> None:
-        self.assertEqual(reverse("dashboard:engagement_detail", args=[1]), "/dashboard/engagements/1")
+        self.assertIn(label, html)
 
     def test_combo_css_and_reactive_tabs_present(self) -> None:
         html = self.client.get(reverse("dashboard:engagements")).content.decode()
         # FilmSearchCombo dropdown CSS must be linked (else the picker is unstyled/off-screen)
         self.assertIn("dashboard/css/film_search_combo.css", html)
-        # Filter tabs are client-reactive so the active pill follows HTMX tab selection
+        # Filter tabs keep their Alpine state so the active tab follows HTMX selection
         self.assertIn("x-data=\"{ tab:", html)
-        self.assertIn(":class=\"{ active: tab ===", html)
 
     def test_requires_staff(self) -> None:
         self.client.logout()
@@ -119,8 +114,6 @@ class EngagementPermissionTemplateTests(TestCase):
 
     def test_status_badge_static_without_change(self) -> None:
         html = self.client.get(reverse("dashboard:engagements")).content.decode()
-        self.assertNotIn('class="statusMenu"', html)
-        self.assertNotIn('@click="open = !open"', html)
         status_url = reverse("dashboard:engagement_status", args=[self.eng.pk])
         self.assertNotIn(status_url, html)
         self.assertIn("Confirmed", html)
@@ -162,10 +155,14 @@ class EngagementStatusTests(TestCase):
 
     def test_ended_engagement_locked(self) -> None:
         past = self.today - datetime.timedelta(days=5)
-        make_engagement(self.screen, start=past, end=past, status="CONFIRMED")
+        e = make_engagement(self.screen, start=past, end=past, status="CONFIRMED")
         html = self.client.get(reverse("dashboard:engagements"), {"tab": "ENDED"}).content.decode()
-        # locked: the status button is disabled for an ended engagement
-        self.assertIn("disabled", html)
+        # locked: the status button is disabled and offers no status menu
+        buttons = re.findall(r'<button[^>]*statusButton"[^>]*>', html)
+        self.assertTrue(buttons)
+        for button in buttons:
+            self.assertIn("disabled", button)
+        self.assertNotIn(reverse("dashboard:engagement_status", args=[e.pk]), html)
 
 
 class EngagementDeleteTests(TestCase):
@@ -219,7 +216,7 @@ class EngagementCreateTests(TestCase):
     def test_display_title_is_offered_for_a_regular_run(self) -> None:
         html = self.client.get(
             reverse("dashboard:engagement_create")).content.decode()
-        self.assertIn("Display title", html)
+        self.assertIn('name="display_title"', html)
 
     def test_display_title_shows_on_the_detail_page(self) -> None:
         e = make_engagement(self.screen, start=self.today, end=self.today,

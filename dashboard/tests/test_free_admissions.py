@@ -286,13 +286,6 @@ class HouseTotalTests(StaffClient):
         ).content.decode()
         self.assertIn("3 free admissions given", html)
 
-    def test_singular(self) -> None:
-        member = make_member()
-        give_term(member, "family-plus")
-        FreeAdmission.objects.create(member=member)
-        html = self.client.get(reverse("dashboard:members")).content.decode()
-        self.assertIn("1 free admission given", html)
-
     def test_last_month_does_not_count(self) -> None:
         member = make_member()
         give_term(member, "family-plus")

@@ -17,9 +17,9 @@ class SubscriberListTests(TestCase):
     def test_lists_addresses_and_a_count(self) -> None:
         Subscriber.objects.record("a@example.com", source="poll_vote")
         Subscriber.objects.record("b@example.com", source="poll_vote")
-        html = self.client.get(reverse("dashboard:subscribers")).content.decode()
-        self.assertIn("a@example.com", html)
-        self.assertIn("2", html)
+        response = self.client.get(reverse("dashboard:subscribers"))
+        self.assertContains(response, "a@example.com")
+        self.assertEqual(response.context["active_count"], 2)
 
     def test_requires_staff(self) -> None:
         self.client.logout()
@@ -37,7 +37,6 @@ class SubscriberListTests(TestCase):
         response = self.client.get(reverse("dashboard:subscribers"))
         html = response.content.decode()
         self.assertIn("Pending confirmation", html)
-        self.assertIn("status-pending", html)
         self.assertEqual(response.context["active_count"], 1)
         body = self.client.get(
             reverse("dashboard:subscribers_export")

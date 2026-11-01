@@ -411,10 +411,7 @@ class SidebarBadgeTests(VoicemailTestCase):
     def test_shows_the_new_count_on_every_page(self):
         Voicemail.objects.create(recording_sid="RE2")
         Voicemail.objects.create(recording_sid="RE3", status=VoicemailStatus.HANDLED)
-        self.assertIn(
-            '<span class="sidebarBadge" aria-label="2 new">2</span>',
-            self.sidebar_link(),
-        )
+        self.assertIn('aria-label="2 new"', self.sidebar_link())
 
     def test_hidden_when_nothing_is_new(self):
         Voicemail.objects.update(status=VoicemailStatus.HANDLED)
@@ -441,6 +438,9 @@ class VoicemailViewOnlyTests(VoicemailTestCase):
                     response, reverse(f"dashboard:{name}", args=[pk])
                 )
         self.assertContains(response, "Called back Tuesday")
-        self.assertContains(
-            response, self.voicemail.get_status_display() + "\n"
+        html = response.content.decode()
+        # Only the filter bar's select; the row shows the status as text.
+        self.assertEqual(html.count('name="status"'), 1)
+        self.assertRegex(
+            html, rf">\s*{self.voicemail.get_status_display()}\s*</td>"
         )
