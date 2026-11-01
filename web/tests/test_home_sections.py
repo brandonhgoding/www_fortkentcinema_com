@@ -34,7 +34,6 @@ SECTION_MARKERS = (
     "hero",
     "now-showing",
     "coming-soon",
-    "get-involved",
     "from-the-booth",
 )
 
@@ -128,7 +127,6 @@ class SectionCompositionTests(TestCase):
             [
                 "now-showing",
                 "coming-soon",
-                "get-involved",
                 "from-the-booth",
             ],
         )
@@ -368,45 +366,6 @@ class FromTheBoothTests(TestCase):
         self.assertIn("All posts", section)
         self.assertNotIn("home-cards", section)
         self.assertNotIn("blog-post-card", section)
-
-
-class GetInvolvedTests(TestCase):
-    """The "Be part of the show" section (id get-involved): the advertising
-    card. Open mic and Heckle Night left with their pages on 2026-11-01."""
-
-    def section(self):
-        html = self.client.get(reverse("home")).content.decode()
-        self.assertEqual(html.count('id="get-involved"'), 1)
-        start = html.index('id="get-involved"')
-        return html[start : html.index("</section>", start)]
-
-    def card(self, card_class):
-        section = self.section()
-        card = section[section.index(card_class) :]
-        return card[: card.index("</article>")]
-
-    def test_advertise_card_links_to_the_page(self):
-        # Added 2026-10-13 without a link; /advertise/ landed 2026-10-14.
-        card = self.card("advertise-cta")
-        self.assertIn(f'href="{reverse("advertise")}"', card)
-
-    PICTURES = (
-        ("advertise-cta", "your-ad-here"),
-    )
-
-    def test_each_card_has_its_picture(self):
-        """Decorative (alt="") because the title under it says the same
-        thing."""
-        for card_class, image in self.PICTURES:
-            card = self.card(card_class)
-            self.assertIn(f"img/involved/{image}.jpg", card)
-            self.assertRegex(card, r'<img [^>]*alt=""')
-
-    def test_the_pictures_ship(self):
-        from django.contrib.staticfiles import finders
-
-        for _, image in self.PICTURES:
-            self.assertIsNotNone(finders.find(f"img/involved/{image}.jpg"), image)
 
 
 class ScreeningEventSchemaTests(TestCase):

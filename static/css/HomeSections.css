@@ -1,8 +1,7 @@
 /* Homepage sections below the hero: the shared vocabulary.
  *
- * One flat ground per section, three heading sizes (--type-title for the
- * section h2, --type-heading for the Membership headline, --type-lead for
- * card h3), and one card shape. Spacing halves with each level of nesting:
+ * One flat ground per section, two heading sizes (--type-title for the
+ * section h2, --type-lead for card h3), and one card shape. Spacing halves with each level of nesting:
  * 96px between sections, 32px header to content, 24px between cards, 16px
  * inside a card. Only sections carrying .home-section opt in, so other pages
  * that reuse .section-header keep their own 4rem gap.
@@ -97,27 +96,6 @@
   color: var(--color-text);
 }
 
-/* The only action style in Be part of the show and Support. In a card
- * it is pushed to the bottom so a row of cards ends on one line. */
-.home-link {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  align-self: flex-start;
-  font-weight: 600;
-  color: var(--color-accent);
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-}
-
-.home-link:hover {
-  text-decoration-thickness: 2px;
-}
-
-.home-card > .home-link {
-  margin-top: auto;
-}
-
 /* From the booth: three post cards, each led by its header image, full
  * bleed to the card's edge. 16:9 crops the wide header art the way /blog/
  * shows it; a post without one keeps the block, tinted, so the row stays
@@ -132,8 +110,7 @@
   overflow: hidden;
 }
 
-.blog-post-card__media,
-.home-card__media {
+.blog-post-card__media {
   margin: calc(-1 * var(--spacing-sm)) calc(-1 * var(--spacing-sm)) 0;
   aspect-ratio: 16 / 9;
   background: var(--color-surface-sunken);
@@ -141,8 +118,7 @@
   overflow: hidden;
 }
 
-.blog-post-card__img,
-.home-card__img {
+.blog-post-card__img {
   display: block;
   width: 100%;
   height: 100%;
