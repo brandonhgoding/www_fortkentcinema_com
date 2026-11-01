@@ -7,6 +7,7 @@ home-page band that has advertised the same night since the React port.
 """
 
 import datetime
+from unittest import mock
 
 from django.test import TestCase
 from django.urls import reverse
@@ -126,3 +127,27 @@ class HomeBandAgreesTests(TestCase):
         self.assertIn("free and all ages", card)
         self.assertIn(f'href="{reverse("open_mic")}"', card)
         self.assertNotIn("data-track", card)
+
+
+class NextOneRenderTests(TestCase):
+    """The page's "Next one" line says Tonight on the night itself, and the
+    date otherwise. The date rule is UpcomingNightsTests'; this is the page."""
+
+    def next_line(self, offset_days):
+        def nights(count, *, now):
+            return [now.date() + datetime.timedelta(days=offset_days)]
+
+        with mock.patch("web.views.upcoming_open_mics", side_effect=nights):
+            html = self.client.get(reverse("open_mic")).content.decode()
+        start = html.index('class="openmic-next__date"')
+        return html[start : html.index("</p>", start)]
+
+    def test_tonight_on_the_night(self):
+        line = self.next_line(0)
+        self.assertIn("Tonight", line)
+
+    def test_the_date_on_any_other_day(self):
+        line = self.next_line(7)
+        self.assertNotIn("Tonight", line)
+        night = datetime.datetime.now(CINEMA_TZ).date() + datetime.timedelta(days=7)
+        self.assertIn(night.strftime("%A, %B %-d"), line)

@@ -15,6 +15,7 @@ one where the page starts working correctly only after October.
 """
 
 import datetime
+from unittest import mock
 
 from django.test import TestCase
 from django.urls import reverse
@@ -370,3 +371,44 @@ class MstThreeKTests(TestCase):
 
     def test_the_page_disclaims_affiliation(self):
         self.assertIn("not affiliated with them", self.content)
+
+
+class HeckleNightDatesRenderTests(TestCase):
+    """The page's list of dates: every night by its label, "Not booked yet"
+    until a film is on it, and the film's title and time once one is."""
+
+    def page(self, rows):
+        with mock.patch("web.views.get_heckle_nights", return_value=rows):
+            return self.client.get(reverse("heckle_night")).content.decode()
+
+    def dates(self, html):
+        start = html.index('<ol class="heckle-dates">')
+        return html[start : html.index("</ol>", start)]
+
+    def row(self, day, film=None):
+        night = datetime.date(2999, 1, day)
+        return {"date": night, "iso": night.isoformat(),
+                "label": night.strftime("%A, %B %-d"), "film": film}
+
+    def test_every_night_is_listed_and_unbooked_ones_say_so(self):
+        rows = [self.row(15), self.row(22), self.row(29)]
+        dates = self.dates(self.page(rows))
+        for row in rows:
+            self.assertIn(row["label"], dates)
+        self.assertEqual(dates.count("Not booked yet"), 3)
+        self.assertEqual(dates.count(HECKLE_NIGHT["start_label"]), 3)
+
+    def test_a_booked_night_names_its_film_and_time(self):
+        film = {"title": "Plan 9 From Outer Space", "slug": "", "poster": "",
+                "rating": "", "runtime": "1h 19min", "time": "7:30 PM"}
+        dates = self.dates(self.page([self.row(15, film), self.row(22)]))
+        self.assertIn("Plan 9 From Outer Space", dates)
+        # The row's own time, not the constant.
+        self.assertIn("7:30 PM", dates)
+        self.assertEqual(dates.count("Not booked yet"), 1)
+
+    def test_the_real_page_lists_the_configured_number_of_nights(self):
+        dates = self.dates(self.client.get(reverse("heckle_night")).content.decode())
+        self.assertEqual(
+            dates.count("Not booked yet"), HECKLE_NIGHT["months_ahead"]
+        )
