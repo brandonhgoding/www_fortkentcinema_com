@@ -17,13 +17,7 @@ from web.constants import (
     AD_VIDEO_MAX_SECONDS,
     AD_VIDEO_PRICE,
     ADVERTISING_FAQ,
-    HECKLE_NIGHT,
-    HECKLE_NIGHT_FAQ,
-    OPEN_MIC,
-    OPEN_MIC_FAQ,
-    FILM_HISTORY_VIDEO,
     MEMBERSHIP_FAQ,
-    SAVOY_PLAYBILLS,
     RENTALS_FAQ,
 )
 from web.forms import AdInquiryForm, RentalInquiryForm
@@ -33,8 +27,6 @@ from web.services.cinema_data import (
     get_calendar_month,
     get_hero_films,
 )
-from web.services.heckle_night import get_heckle_nights
-from web.services.open_mic import upcoming_nights as upcoming_open_mics
 from web.services.showtimes import (
     today_eastern,
     format_showtime_date,
@@ -263,9 +255,9 @@ class CalendarMonthView(TemplateView):
 
 
 class LlmsTxtView(TemplateView):
-    """/llms.txt, a plain-text summary for AI assistants. Like robots.txt it
-    is served from the site root; unlike it, it needs the event
-    constants, which the context processors don't carry."""
+    """/llms.txt, a plain-text summary for AI assistants, served from the
+    site root like robots.txt. It needs absolute URLs, so it carries the
+    site's base URL."""
 
     template_name = "llms.txt"
     content_type = "text/plain; charset=utf-8"
@@ -273,8 +265,6 @@ class LlmsTxtView(TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["base"] = f"{self.request.scheme}://{self.request.get_host()}"
-        ctx["open_mic"] = OPEN_MIC
-        ctx["heckle_night"] = HECKLE_NIGHT
         return ctx
 
 
@@ -382,82 +372,3 @@ class AdInquiryView(AdvertiseView):
             return redirect(sent_url)
 
         return self.render_to_response(self.get_context_data(form=form))
-
-
-class HeckleNightView(TemplateView):
-    """/heckle-night/ — the monthly bad-movie night the room talks over.
-
-    Two computed things: the dates ("third Friday" is a rule) and the film
-    on each one. The film lookup is parked until the Event model lands, so
-    every night currently reads "Not booked yet". See web/services/heckle_night.py, and
-    note the one difference — nothing before HECKLE_NIGHT["starts_on"]
-    renders, because this night has never run and the rule alone would
-    advertise a date nobody planned.
-
-    Most listed nights will have no film yet. That is the expected state,
-    and the template renders it as "not booked yet" rather than hiding the
-    date.
-    """
-
-    template_name = "web/heckle_night.html"
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["heckle_night"] = HECKLE_NIGHT
-        nights = get_heckle_nights()
-        ctx["nights"] = nights
-        # The hero needs the next one on its own. nights is never empty —
-        # upcoming_nights() walks the calendar forward until it has enough —
-        # but the guard costs nothing and a 500 on the hero costs the page.
-        ctx["next_night"] = nights[0] if nights else None
-        # One list, two renderings: the visible FAQ and the FAQPage markup
-        # in the head. Same arrangement as /craft-night/ and /rentals/.
-        ctx["faqs"] = HECKLE_NIGHT_FAQ
-        return ctx
-
-
-class OpenMicView(TemplateView):
-    """/open-mic/ — every Monday in the Century auditorium.
-
-    No film and no booking behind it, so unlike the monthly nights the only
-    computed thing is the next date. See web/services/open_mic.py.
-    """
-
-    template_name = "web/open_mic.html"
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["open_mic"] = OPEN_MIC
-        now = datetime.datetime.now(CINEMA_TZ)
-        next_night = upcoming_open_mics(1, now=now)[0]
-        ctx["next_night"] = next_night
-        # "Tonight" rather than a date, on a Monday before 9 PM.
-        ctx["next_is_tonight"] = next_night == now.date()
-        # One list, two renderings: the visible FAQ and the FAQPage markup
-        # in the head. Same arrangement as /heckle-night/ and /craft-night/.
-        ctx["faqs"] = OPEN_MIC_FAQ
-        return ctx
-
-
-class HistoryView(TemplateView):
-    """/history/ — how Fort Kent has gone to the movies since 1917.
-
-    Hand-authored prose rather than model-driven content: this is one page
-    about one town's history and it is not going to grow rows. The playbills
-    are the exception — they come from web.constants.SAVOY_PLAYBILLS so the
-    owner can add the rest of the Historical Society's sheets without touching
-    the template.
-
-    Sourcing is deliberately visible on the page. Almost everything here comes
-    from a single published article by an archivist, and a page about a real
-    town's real families should show where it got that rather than assert it
-    in its own voice.
-    """
-
-    template_name = "web/history.html"
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["playbills"] = SAVOY_PLAYBILLS
-        ctx["video"] = FILM_HISTORY_VIDEO
-        return ctx

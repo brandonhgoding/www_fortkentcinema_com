@@ -76,6 +76,14 @@ legacy_urlpatterns = [
         RedirectView.as_view(url="/membership/", permanent=True),
         name="legacy_membership_checkout",
     ),
+    # The Heckle Night, Open Mic and History pages were removed 2026-11-01 to
+    # simplify the site. All three were in the sitemap, so they redirect
+    # rather than 404.
+    re_path(
+        r"^(?:heckle-night|open-mic|history)/?$",
+        RedirectView.as_view(url="/", permanent=True),
+        name="legacy_info_pages",
+    ),
     # Classic Movie Night was discontinued 2026-08-14 and /classics/ removed.
     # The page carried its own ranking history, so it redirects rather than 404s.
     re_path(

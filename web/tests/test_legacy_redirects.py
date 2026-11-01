@@ -90,6 +90,13 @@ class LegacyPageRedirectTests(TestCase):
         resp = self.client.get("/contact-fort-kent-cinema/")
         self.assertRedirects(resp, "/", status_code=301, target_status_code=200)
 
+    def test_removed_info_pages_redirect_home(self):
+        """Heckle Night, Open Mic and History, removed 2026-11-01."""
+        for path in ("/heckle-night/", "/open-mic/", "/history/", "/history"):
+            with self.subTest(path=path):
+                resp = self.client.get(path)
+                self.assertRedirects(resp, "/", status_code=301, target_status_code=200)
+
     def test_legacy_archive_movie_redirects_home(self):
         """The 2022-era per-movie pages."""
         resp = self.client.get("/archive/karate-kid-legends")
