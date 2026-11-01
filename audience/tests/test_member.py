@@ -434,3 +434,51 @@ class DerivedValueCacheTests(TestCase):
         member.terms.all().delete()
         self.assertIsNone(member.current_term)
         self.assertEqual(member.status, MemberStatus.LAPSED)
+
+
+class MemberManagerBoundaryTests(TestCase):
+    """Member.objects.active() filters in SQL (MembershipTerm.covering); it
+    must agree with the Python is_active at the edges of a term."""
+
+    def setUp(self) -> None:
+        self.today = timezone.localdate()
+        self.tier = MembershipTier.objects.get(slug="individual")
+        self.member = Member.objects.create(
+            first_name="Ada", last_name="Lovelace", email="ada@example.com"
+        )
+
+    def _term(self, start_offset: int, end_offset: int) -> None:
+        MembershipTerm.objects.create(
+            member=self.member,
+            tier=self.tier,
+            started_on=self.today + datetime.timedelta(days=start_offset),
+            expires_on=self.today + datetime.timedelta(days=end_offset),
+            price_paid=Decimal("60.00"),
+        )
+
+    def assertActiveAgrees(self, expected: bool) -> None:
+        self.assertEqual(Member.objects.active().exists(), expected)
+        self.assertEqual(Member.objects.get(pk=self.member.pk).is_active, expected)
+
+    def test_active_on_the_first_day(self) -> None:
+        self._term(0, 365)
+        self.assertActiveAgrees(True)
+
+    def test_active_on_the_expiry_date_itself(self) -> None:
+        self._term(-365, 0)
+        self.assertActiveAgrees(True)
+
+    def test_not_active_the_day_after_expiry(self) -> None:
+        self._term(-366, -1)
+        self.assertActiveAgrees(False)
+
+    def test_a_term_starting_tomorrow_is_not_active_yet(self) -> None:
+        self._term(1, 366)
+        self.assertActiveAgrees(False)
+
+    def test_one_term_must_cover_both_bounds(self) -> None:
+        """An old term that started before today and a booked renewal that
+        ends after it do not add up to cover today."""
+        self._term(-400, -10)
+        self._term(10, 375)
+        self.assertActiveAgrees(False)
