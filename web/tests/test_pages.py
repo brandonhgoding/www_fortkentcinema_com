@@ -205,10 +205,10 @@ class HomeIntegrationTests(TestCase):
     def test_full_home_composition_order(self, _ns, _cs):
         html = self.client.get(reverse("home")).content.decode()
         # The empty-week fold (the hero, carrying #now-showing), then the
-        # three sections below it, each rendered once.
+        # two sections below it, each rendered once.
         markers = (
             'class="hero hero--empty"', 'id="now-showing"',
-            'id="coming-soon"', 'id="get-involved"', 'id="from-the-booth"',
+            'id="coming-soon"', 'id="from-the-booth"',
         )
         for marker in markers:
             self.assertEqual(html.count(marker), 1, marker)
