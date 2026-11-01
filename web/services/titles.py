@@ -3,7 +3,7 @@
 Staff mark a themed night by typing it into the event title, in whatever
 case comes to hand: "Attack of the Giant Leeches (HECKLE NIGHT)" one month,
 "The Brain That Wouldn't Die (Heckle Night)" the next. The title is data and
-stays as typed — the dashboard and the social cards still read it — so the
+stays as typed — the dashboard still reads it — so the
 public pages tidy it on the way out instead.
 
 Only the event names below count. Any other trailing parenthetical is part

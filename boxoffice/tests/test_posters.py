@@ -32,7 +32,7 @@ def _stream(response=None, side_effect=None):
 class FetchPosterTests(SimpleTestCase):
     """The URL is Film.poster_url: TMDB's normally, but a URLField anyone with
     the Film admin can edit, fetched from the server's network position by a
-    nightly job. The guard is the social-card fetcher's: https only, no
+    nightly job. The guard: https only, no
     redirects, a size cap, and the bytes must decode as an image."""
 
     def test_returns_image_bytes(self) -> None:

@@ -90,7 +90,7 @@ class EventTitleIntegrationTests(TestCase):
         self.assertEqual(titles, ["Attack of the Giant Leeches (Heckle Night)"])
 
     def test_the_stored_title_is_untouched(self):
-        """The dashboard and social cards still read it as typed."""
+        """The dashboard still reads it as typed."""
         start = timezone.localdate() + datetime.timedelta(days=5)
         self.book("Attack of the Giant Leeches (HECKLE NIGHT)", start, 19)
         self.assertEqual(

@@ -53,11 +53,6 @@ urlpatterns = [
         name="engagement_square_retry",
     ),
     path(
-        "engagements/<int:pk>/social/<slug:platform>.png",
-        views.EngagementSocialCardView.as_view(),
-        name="engagement_social_card",
-    ),
-    path(
         "engagements/<int:eng_pk>/showtimes/new",
         views.ShowtimeCreateView.as_view(),
         name="showtime_create",

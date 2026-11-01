@@ -18,8 +18,8 @@ def fetch_poster(url: str) -> bytes | None:
     so every failure here is a warning, never an error.
 
     The URL is Film.poster_url, which TMDB fills but anyone with the Film
-    admin can edit, and this runs from the server's network position. So,
-    like cinema.social_cards.posters: https only, no redirects (a public
+    admin can edit, and this runs from the server's network position. So:
+    https only, no redirects (a public
     host could otherwise bounce the fetch to a private one), a size cap,
     and the bytes must decode as an image before they go anywhere.
     """

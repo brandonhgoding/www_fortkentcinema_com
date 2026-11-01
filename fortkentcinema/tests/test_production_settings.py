@@ -27,13 +27,6 @@ class CacheSettingsTests(SimpleTestCase):
             settings.CACHES["default"]["OPTIONS"]["MAX_ENTRIES"], 5000
         )
 
-    def test_social_card_bytes_stay_in_process(self):
-        settings = load_settings()
-        self.assertEqual(
-            settings.CACHES["social_cards"]["BACKEND"],
-            "django.core.cache.backends.locmem.LocMemCache",
-        )
-
     def test_tests_keep_the_in_memory_cache(self):
         settings = load_settings(argv=("manage.py", "test"))
         self.assertEqual(
