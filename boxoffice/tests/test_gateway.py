@@ -14,7 +14,6 @@ from boxoffice.gateway import (
     OrderLine,
     RemoteItem,
     SquareGateway,
-    Tender,
     UpsertResult,
     VersionMismatch,
     Gateway,
@@ -64,28 +63,14 @@ def _line(uid: str = "L1", catalog_object_id: str | None = "V0",
     return line
 
 
-def _tender(payment_id: str, *, type: str = "CARD", amount: int | None = 1600,
-            card_details=None, bank_account_details=None,
-            buy_now_pay_later_details=None, square_account_details=None) -> mock.Mock:
-    # A Mock invents missing attributes, so every details block is explicit.
-    return mock.Mock(id=payment_id, created_at="2026-10-03T03:12:00Z", type=type,
-                     amount_money=None if amount is None else mock.Mock(amount=amount),
-                     card_details=card_details,
-                     bank_account_details=bank_account_details,
-                     buy_now_pay_later_details=buy_now_pay_later_details,
-                     square_account_details=square_account_details)
-
-
 def _order(order_id: str, closed_at: str, lines: list[mock.Mock],
            tenders: list[mock.Mock] | None = None,
            created_at: str | None = None,
-           reference_id: str | None = None,
            metadata: dict[str, str] | None = None) -> mock.Mock:
     # A Mock invents missing attributes, so "absent" must be an explicit None.
     return mock.Mock(id=order_id, closed_at=closed_at, line_items=lines,
                      tenders=tenders,
-                     created_at=created_at, reference_id=reference_id,
-                     metadata=metadata)
+                     created_at=created_at, metadata=metadata)
 
 
 def _catalog_item(item_id: str, cats: list[str] | None) -> mock.Mock:
@@ -476,43 +461,18 @@ class SearchOrdersTests(SimpleTestCase):
         ))
         self.assertIsNotNone(orders[1].closed_at.tzinfo)
 
-    def test_search_open_orders_filters_open_by_updated_at(self) -> None:
-        # Square cannot filter orders by reference, so the pull asks for every
-        # OPEN order touched in the window and keeps the paid website ones.
-        client = mock.Mock()
-        client.orders.search.return_value = mock.Mock(
-            orders=[_order("O1", None, [_line()], reference_id="FK-ABCDE")],
-            cursor=None)
-        orders = SquareGateway(client, "LOC", "CAT").search_open_orders(START, END)
-        query = client.orders.search.call_args.kwargs["query"]
-        self.assertEqual(query["filter"]["state_filter"], {"states": ["OPEN"]})
-        self.assertEqual(query["filter"]["date_time_filter"], {"updated_at": {
-            "start_at": START.isoformat(), "end_at": END.isoformat()}})
-        self.assertEqual(query["sort"],
-                         {"sort_field": "UPDATED_AT", "sort_order": "ASC"})
-        self.assertEqual(client.orders.search.call_args.kwargs["location_ids"],
-                         ["LOC"])
-        self.assertEqual([(o.order_id, o.closed_at, o.reference_id) for o in orders],
-                         [("O1", None, "FK-ABCDE")])
-
     def test_order_data_reads_the_showtime_from_metadata(self) -> None:
         # Website orders carried metadata.showtime; Square hands it back, so
         # the ledger need not ask the website.
         client = mock.Mock()
         client.orders.search.return_value = mock.Mock(orders=[
-            _order("O1", None, [_line()], metadata={"showtime": "5"}),
-            _order("O2", None, [_line()]),
-            _order("O3", None, [_line()], metadata={"showtime": "soon"}),
+            _order("O1", "2026-10-04T18:00:00Z", [_line()], metadata={"showtime": "5"}),
+            _order("O2", "2026-10-04T18:00:00Z", [_line()]),
+            _order("O3", "2026-10-04T18:00:00Z", [_line()],
+                   metadata={"showtime": "soon"}),
         ], cursor=None)
-        orders = SquareGateway(client, "LOC", "CAT").search_open_orders(START, END)
+        orders = SquareGateway(client, "LOC", "CAT").search_orders(START, END)
         self.assertEqual([o.showtime_id for o in orders], [5, None, None])
-
-    def test_order_without_reference_has_blank_reference_id(self) -> None:
-        client = mock.Mock()
-        client.orders.search.return_value = mock.Mock(
-            orders=[_order("O1", "2026-10-04T18:00:00Z", [_line()])], cursor=None)
-        [o] = SquareGateway(client, "LOC", "CAT").search_orders(START, END)
-        self.assertEqual(o.reference_id, "")
 
     def test_empty_page_returns_no_orders(self) -> None:
         client = mock.Mock()
@@ -619,51 +579,6 @@ class PaidAtTests(SimpleTestCase):
         [o] = SquareGateway(client, "LOC", "CAT").search_orders(START, END)
         self.assertEqual(o.paid_at, datetime.datetime(
             2026, 10, 1, 12, 0, tzinfo=datetime.timezone.utc))
-
-
-class TenderTests(SimpleTestCase):
-    def test_order_data_reads_tenders(self) -> None:
-        order = _order("O1", None, [_line()], tenders=[_tender(
-            "P1", card_details=mock.Mock(status="CAPTURED"), amount=1600)])
-        self.assertEqual(_order_data(order).tenders,
-                         (Tender("P1", "CAPTURED", "CARD", 1600),))
-
-    def test_tender_without_card_details_has_blank_status(self) -> None:
-        order = _order("O1", None, [_line()], tenders=[_tender("P1", amount=None)])
-        self.assertEqual(_order_data(order).tenders, (Tender("P1", "", "CARD"),))
-
-    def test_card_tender_is_paid_only_once_captured(self) -> None:
-        self.assertTrue(Tender("P1", "CAPTURED", "CARD").paid)
-        self.assertFalse(Tender("P1", "AUTHORIZED", "CARD").paid)
-        self.assertFalse(Tender("P1", "", "CARD").paid)
-
-    def test_wallet_tender_carries_no_status_and_is_paid(self) -> None:
-        # Cash App Pay: Square records the tender with no details block, and
-        # only once the money has moved.
-        order = _order("O1", None, [_line()], tenders=[_tender(
-            "P1", type="WALLET", amount=1600)])
-        (tender,) = _order_data(order).tenders
-        self.assertEqual(tender, Tender("P1", "", "WALLET", 1600))
-        self.assertTrue(tender.paid)
-
-    def test_afterpay_tender_reads_its_own_status(self) -> None:
-        order = _order("O1", None, [_line()], tenders=[_tender(
-            "P1", type="BUY_NOW_PAY_LATER",
-            buy_now_pay_later_details=mock.Mock(status="CAPTURED"))])
-        (tender,) = _order_data(order).tenders
-        self.assertEqual(tender.status, "CAPTURED")
-        self.assertTrue(tender.paid)
-        self.assertFalse(Tender("P1", "AUTHORIZED", "BUY_NOW_PAY_LATER").paid)
-
-    def test_bank_tender_is_paid_when_completed(self) -> None:
-        order = _order("O1", None, [_line()], tenders=[_tender(
-            "P1", type="BANK_ACCOUNT",
-            bank_account_details=mock.Mock(status="COMPLETED"))])
-        self.assertTrue(_order_data(order).tenders[0].paid)
-        self.assertFalse(Tender("P1", "PENDING", "BANK_ACCOUNT").paid)
-
-    def test_order_without_tenders_has_none(self) -> None:
-        self.assertEqual(_order_data(_order("O1", None, [_line()])).tenders, ())
 
 
 class GetGatewayTests(SimpleTestCase):
@@ -791,7 +706,7 @@ class ParseTimestampTests(SimpleTestCase):
 class FakeGatewayTests(SimpleTestCase):
     def test_public_methods_match_the_real_gateway(self) -> None:
         public = [n for n in vars(SquareGateway) if not n.startswith("_")]
-        self.assertEqual(len(public), 8)
+        self.assertEqual(len(public), 7)
         for name in public:
             self.assertEqual(inspect.signature(getattr(FakeGateway, name)),
                              inspect.signature(getattr(SquareGateway, name)), name)
@@ -801,7 +716,7 @@ class FakeGatewayTests(SimpleTestCase):
         # one must both offer every method on it, with the same signature.
         protocol = [n for n in vars(Gateway)
                     if not n.startswith("_") and callable(getattr(Gateway, n))]
-        self.assertEqual(len(protocol), 8)
+        self.assertEqual(len(protocol), 7)
         for name in protocol:
             for cls in (SquareGateway, FakeGateway):
                 self.assertEqual(inspect.signature(getattr(cls, name)),
@@ -875,11 +790,10 @@ class FakeGatewayTests(SimpleTestCase):
             lambda: gw.delete_item("x"), lambda: gw.retrieve_item("x"),
             lambda: gw.search_orders(START, END), lambda: gw.list_ticket_items(),
             lambda: gw.lookup_categories(["v"]),
-            lambda: gw.search_open_orders(START, END),
         ]:
             with self.assertRaisesMessage(GatewayError, "down"):
                 call()
-        self.assertEqual(len(gw.calls), 7)
+        self.assertEqual(len(gw.calls), 6)
         gw.fail_with = None
         self.assertEqual(gw.upsert_item(SPEC_FOR_7, item_id=None, version=None,
                                         variation_ids_by_tier={}).item_id, "item-1")
@@ -904,44 +818,3 @@ class FakeGatewayTests(SimpleTestCase):
         gw = FakeGateway()
         gw.categories = {"V1": "CAT", "V2": "POP"}
         self.assertEqual(gw.lookup_categories(["V1", "V3"]), {"V1": "CAT"})
-
-    @staticmethod
-    def open_order(gw: FakeGateway, order_id: str) -> None:
-        """An unpaid website order: OPEN in Square, so no closed_at."""
-        gw.orders.append(OrderData(order_id, None, (
-            OrderLine(f"{order_id}-0", "Dune", "Adult", "var-adult", 2, 1600),)))
-
-    def test_fake_search_open_orders_returns_open_orders_touched_in_window(self):
-        # Like Square's updated_at filter: an unpaid order is "touched" when
-        # made, a paid one when paid; a closed order is no longer open.
-        gw = FakeGateway()
-        for order_id in ("SQ-1", "SQ-2", "SQ-3"):
-            self.open_order(gw, order_id)
-        gw.pay("SQ-2", paid_at=START)
-        gw.pay("SQ-3", paid_at=END)
-        gw.orders.append(OrderData("closed", START, ()))
-        self.assertEqual([o.order_id for o in gw.search_open_orders(START, END)],
-                         ["SQ-1", "SQ-2"])
-        self.assertEqual(gw.calls[-1],
-                         ("search_open_orders", {"start": START, "end": END}))
-        self.assertEqual(gw.search_orders(START, END)[0].order_id, "closed")
-
-    def test_fake_pay_marks_tender_captured(self) -> None:
-        gw = FakeGateway()
-        self.open_order(gw, "SQ-1")
-        gw.pay("SQ-1", "P7")
-        [paid] = gw.orders
-        # The tender covers the order: the sum of its lines.
-        self.assertEqual(paid.tenders, (Tender("P7", "CAPTURED", "CARD", 1600),))
-        self.assertIsNotNone(paid.paid_at.tzinfo)
-
-    def test_fake_pay_can_use_a_wallet_or_pay_short(self) -> None:
-        gw = FakeGateway()
-        self.open_order(gw, "SQ-1")
-        gw.pay("SQ-1", "P8", tender_type="WALLET", amount_cents=100)
-        self.assertEqual(gw.orders[0].tenders, (Tender("P8", "", "WALLET", 100),))
-        self.assertEqual(len(gw.orders), 1)
-
-    def test_fake_pay_unknown_order_is_not_found(self) -> None:
-        with self.assertRaises(NotFound):
-            FakeGateway().pay("nope")

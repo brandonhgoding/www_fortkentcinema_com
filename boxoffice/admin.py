@@ -42,7 +42,6 @@ class SalesPullAdmin(admin.ModelAdmin):
         "status",
         "orders",
         "lines",
-        "missing_online",
         "owner_email_sent",
         "report_email_sent",
     )
@@ -53,7 +52,6 @@ class SalesPullAdmin(admin.ModelAdmin):
         "status",
         "orders",
         "lines",
-        "missing_online",
         "owner_email_sent",
         "report_email_sent",
         "error",
