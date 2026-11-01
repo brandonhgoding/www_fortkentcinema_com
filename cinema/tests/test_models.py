@@ -36,12 +36,11 @@ class ScreenTestCase(TestCase):
         screen = Screen.objects.create(name="Screen 1", capacity=120)
         self.assertEqual(str(screen), "Screen 1")
 
-    def test_defaults(self) -> None:
-        screen = Screen.objects.create(name="Main", capacity=200)
-        self.assertEqual(screen.screen_type, "standard")
-        self.assertEqual(screen.aspect_ratio, "scope")
-        self.assertEqual(screen.sound_system, "standard")
-        self.assertFalse(screen.supports_3d)
+    def test_columns_are_name_and_capacity(self) -> None:
+        """Type, aspect ratio, sound and 3D were never shown or used; gone."""
+        self.assertEqual(
+            [f.name for f in Screen._meta.concrete_fields],
+            ["id", "name", "capacity"])
 
 
 class EngagementTestCase(TestCase):
