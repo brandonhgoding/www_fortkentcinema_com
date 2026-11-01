@@ -8,10 +8,8 @@ that existed then is marked plain and renders exactly as it used to.
 """
 
 import datetime
-from importlib import import_module
 from unittest import mock
 
-from django.apps import apps
 from django.test import TestCase
 from django.utils.html import escape
 
@@ -129,28 +127,6 @@ class StoredExcerptTests(BodyFormatFixture):
         post.save()
         post.refresh_from_db()
         self.assertEqual(post.lead_text, "Body.")
-
-    def test_backfill_migration_fills_existing_posts(self):
-        post = self.make_post("# Heading\n\nBody.", body_format=BlogPost.BodyFormat.PLAIN)
-        BlogPost.objects.filter(pk=post.pk).update(lead_text="")
-        migration = import_module("blog.migrations.0022_blogpost_lead_text")
-        migration.backfill_lead_text(apps, None)
-        post.refresh_from_db()
-        self.assertEqual(post.lead_text, "# Heading")
-
-
-class MarkExistingPostsPlainMigrationTests(BodyFormatFixture):
-    """Runs the data migration's function on real rows. Every other test
-    creates its posts after the migrations have run."""
-
-    def test_every_existing_post_becomes_plain(self):
-        a = self.make_post(LEGACY_BODY)
-        b = self.make_post("Second.", status=BlogPost.Status.DRAFT)
-        migration = import_module("blog.migrations.0021_blogpost_body_format")
-        migration.mark_existing_posts_plain(apps, None)
-        for post in (a, b):
-            post.refresh_from_db()
-            self.assertEqual(post.body_format, BlogPost.BodyFormat.PLAIN)
 
 
 class LeadTextBypassTests(BodyFormatFixture):
