@@ -1,7 +1,7 @@
 import datetime
 
 from accounts.tests.factories import make_user
-from boxoffice.models import MembershipSale, SaleLine, SalesPull
+from boxoffice.models import SaleLine, SalesPull
 from cinema.models import Engagement, EngagementFilm, Film, Screen, Showtime
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -152,13 +152,6 @@ class HomeRenderTests(TestCase):
         self.assertIn("$5.00", html)
         self.assertIn("0 tickets", html)
         self.assertIn("Square sales pull failed", html)
-
-    def test_failed_membership_sale_alert(self) -> None:
-        MembershipSale.objects.create(order_id="O1", status="FAILED", error="boom")
-        MembershipSale.objects.create(order_id="O2", status="SKIPPED")
-        html = self.client.get(reverse("dashboard:home")).content.decode()
-        self.assertIn("1 Square membership sale needs attention", html)
-
 
 class HomePermissionTests(TestCase):
     def _login(self, perms):

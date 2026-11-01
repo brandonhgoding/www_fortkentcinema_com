@@ -75,8 +75,6 @@ PERMISSION_TABLE: list[tuple[str, dict, str, str | tuple[str, ...]]] = [
     ("benefit_create", {}, "get", "audience.add_membershipbenefit"),
     ("benefit_edit", {"pk": 999999}, "get", "audience.change_membershipbenefit"),
     ("benefit_delete", {"pk": 999999}, "post", "audience.delete_membershipbenefit"),
-    ("square_sales", {}, "get", "boxoffice.view_membershipsale"),
-    ("square_sale_retry", {"pk": 999999}, "post", "boxoffice.change_membershipsale"),
     ("subscribers", {}, "get", "audience.view_subscriber"),
     ("subscribers_export", {}, "get", "audience.view_subscriber"),
     ("blog", {}, "get", "blog.view_blogpost"),

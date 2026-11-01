@@ -159,15 +159,10 @@ class TierDeleteView(StaffRequiredMixin, View):
         try:
             tier.delete()
         except ProtectedError:
-            # MembershipTerm.tier and MembershipOrder.tier are PROTECT: a
-            # tier someone bought, or started buying, is part of a revenue
-            # record, so the answer is to retire it.
-            holders = [
-                _plural(tier.terms.count(), "membership term"),
-                _plural(tier.orders.count(), "website order"),
-            ]
-            held_by = " and ".join(h for h in holders if h)
-            verb = "point" if " and " in held_by or held_by[:2] != "1 " else "points"
+            # MembershipTerm.tier is PROTECT: a tier someone bought is part
+            # of a revenue record, so the answer is to retire it.
+            held_by = _plural(tier.terms.count(), "membership term")
+            verb = "points" if held_by[:2] == "1 " else "point"
             return _catalogue_response(
                 request,
                 f'Can\'t delete "{name}" — {held_by} {verb} at it. Retire it instead.',

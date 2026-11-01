@@ -9,16 +9,14 @@ would mean asserting the page matches the thing that generated it.
 """
 
 from html import unescape
-from unittest import mock
 
 from django.test import TestCase
 from django.urls import reverse
 
-# (slug, name, eyebrow, price, featured, is_family, checkout_url, perks)
+# (slug, name, eyebrow, price, featured, is_family, perks)
 EXPECTED_TIERS = [
     (
         "silver-screen", "Silver Screen", "Seniors 65+", 35, False, False,
-        "https://square.link/u/UnQLNeHp",
         [
             "$2 off matinee tickets",
             "$1 off evening tickets",
@@ -30,7 +28,6 @@ EXPECTED_TIERS = [
     ),
     (
         "individual", "Individual", "", 60, False, False,
-        "https://square.link/u/zricPsRR",
         [
             "$2 off matinee tickets",
             "$4 off evening tickets",
@@ -42,7 +39,6 @@ EXPECTED_TIERS = [
     ),
     (
         "cinema-supporter", "Cinema Supporter", "", 120, True, False,
-        "https://square.link/u/2HnpAb9N",
         [
             "$2 off matinee tickets",
             "$4 off evening tickets",
@@ -54,7 +50,6 @@ EXPECTED_TIERS = [
     ),
     (
         "family", "Family", "", 150, False, True,
-        "https://square.link/u/FkcUasKu",
         [
             "$2 off matinee tickets",
             "$4 off evening tickets",
@@ -66,7 +61,6 @@ EXPECTED_TIERS = [
     ),
     (
         "family-plus", "Family Plus", "", 250, False, True,
-        "https://square.link/u/1YSgMFSQ",
         [
             "$2 off matinee tickets",
             "$4 off evening tickets",
@@ -104,33 +98,19 @@ class MembershipPageIsUnchangedTests(TestCase):
 
     def test_perks_appear_in_catalogue_order_within_each_card(self) -> None:
         """Ordering is the thing a plain ManyToManyField would scramble."""
-        for slug, name, _eyebrow, _price, _f, _fam, _url, perks in EXPECTED_TIERS:
+        for slug, name, _eyebrow, _price, _f, _fam, perks in EXPECTED_TIERS:
             card = self.card_for(slug)
             positions = [card.index(p) for p in perks]
             self.assertEqual(
                 positions, sorted(positions), f"{name} perks are out of order"
             )
 
-    def test_join_buttons_link_to_the_join_page(self) -> None:
-        """Owner, 2026-10-26: Join buttons are back, pointing at the site's
-        own checkout, never at the legacy Square payment links."""
-        from audience.models import MembershipTier
-
-        for tier in MembershipTier.objects.all():
-            MembershipTier.objects.filter(pk=tier.pk).update(
-                square_variation_id=f"VAR-{tier.slug}")
-        with mock.patch("web.views.square_enabled", return_value=True):
-            html = unescape(self.client.get(reverse("membership")).content.decode())
-        for slug, *_rest, url, _perks in EXPECTED_TIERS:
-            self.assertNotIn(url, html)
-            card = html.split(f'data-tier="{slug}"', 1)[1].split("</article>", 1)[0]
-            self.assertIn(f'href="/membership/join/{slug}/"', card)
-            self.assertIn(">Join<", card)
-        self.assertEqual(html.count(">Join<"), len(EXPECTED_TIERS))
-
-    def test_square_off_shows_box_office_on_every_card(self) -> None:
-        # The test settings carry no Square token, so Square is off here.
+    def test_every_card_sends_people_to_the_box_office(self) -> None:
+        """Owner, 2026-10-31: memberships are sold at the box office only,
+        so no card links to an online checkout."""
         self.assertNotIn(">Join<", self.html)
+        self.assertNotIn("/membership/join/", self.html)
+        self.assertNotIn("square.link", self.html)
         self.assertEqual(self.html.count("Join at the box office"),
                          len(EXPECTED_TIERS))
 
@@ -171,8 +151,7 @@ class RetiredTierTests(TestCase):
     def test_retired_tier_is_absent_from_the_page(self) -> None:
         self.retire()
         html = self.client.get(reverse("membership")).content.decode()
-        self.assertNotIn('data-track-tier="family-plus"', html)
-        self.assertNotIn("https://square.link/u/1YSgMFSQ", html)
+        self.assertNotIn('data-tier="family-plus"', html)
 
     def test_the_other_tiers_still_render(self) -> None:
         self.retire()
@@ -186,21 +165,6 @@ class RetiredTierTests(TestCase):
         html = self.client.get("/thanks", {"tier": "family-plus"}).content.decode()
         self.assertIn("'purchase'", html)
         self.assertIn("value: 250", html)
-
-
-class MissingVariationTests(TestCase):
-    def test_a_tier_without_a_variation_sends_people_to_the_box_office(self) -> None:
-        """A tier with no Square item cannot be sold online; its card says
-        so instead of linking a join page that would refuse it."""
-        from audience.models import MembershipTier
-
-        MembershipTier.objects.create(slug="no-item", name="No Item", price=10)
-        with mock.patch("web.views.square_enabled", return_value=True):
-            html = self.client.get(reverse("membership")).content.decode()
-        card = html.split('data-tier="no-item"', 1)[1].split("</article>", 1)[0]
-        self.assertNotIn('href=""', html)
-        self.assertNotIn("/membership/join/no-item/", html)
-        self.assertIn("Join at the box office", card)
 
 
 class ThanksValueSourceTests(TestCase):

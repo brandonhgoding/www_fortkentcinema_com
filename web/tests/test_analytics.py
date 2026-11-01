@@ -37,21 +37,6 @@ class GA4SnippetTests(TestCase):
 
 
 class ClickEventMarkupTests(TestCase):
-    def test_join_click_is_tracked_without_a_value(self):
-        # A Join click is intent, not money: the purchase event fires on the
-        # order page once Square has confirmed the payment.
-        from unittest import mock
-
-        for tier in MembershipTier.objects.all():
-            MembershipTier.objects.filter(pk=tier.pk).update(
-                square_variation_id=f"VAR-{tier.slug}")
-        with mock.patch("web.views.square_enabled", return_value=True):
-            html = self.client.get(reverse("membership")).content.decode()
-        hits = tracked(html, "membership_join_click")
-        self.assertEqual(len(hits), MembershipTier.objects.count())
-        for hit in hits:
-            self.assertNotIn("value", hit)
-
     def test_footer_phone_tagged_with_location(self):
         html = self.client.get("/").content.decode()
         hits = tracked(html, "phone_click")

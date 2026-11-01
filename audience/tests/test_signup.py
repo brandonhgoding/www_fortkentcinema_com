@@ -1,5 +1,4 @@
 import datetime
-from importlib import import_module
 
 from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
@@ -7,9 +6,7 @@ from django.test import TestCase, TransactionTestCase
 from django.utils import timezone
 
 from audience.models import Subscriber, SubscriberStatus
-
-SEED = import_module("audience.migrations.0004_seed_membership_catalogue")
-ALLOWANCES = import_module("audience.migrations.0007_seed_free_admission_allowances")
+from audience.tests.catalogue_seed import reseed_catalogue
 
 
 def statuses(sub: Subscriber) -> list[str]:
@@ -133,10 +130,7 @@ class ConfirmedAtMigrationTests(TransactionTestCase):
     def _fixture_teardown(self) -> None:
         # Reseed what the migrations seeded, as in the term migration test.
         super()._fixture_teardown()
-        SEED.seed(self.executor.loader.project_state(self.migrate_to).apps, None)
-        ALLOWANCES.set_allowances(
-            self.executor.loader.project_state(self.migrate_to).apps, None
-        )
+        reseed_catalogue()
 
     def restore_latest_schema(self) -> None:
         executor = MigrationExecutor(connection)

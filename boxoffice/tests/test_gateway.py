@@ -439,8 +439,8 @@ class CatalogCallTests(SimpleTestCase):
 class ResponseShapeTests(SimpleTestCase):
     """A response the SDK parsed but this module cannot read is a GatewayError.
 
-    Callers branch on GatewayError (the webhook answers 503, the pull marks
-    the day FAILED, the ticket page shows a message); a bare AttributeError
+    Callers branch on GatewayError (the pull marks the day FAILED, the sync
+    records the error); a bare AttributeError
     from a surprising shape would be a 500 instead.
     """
 

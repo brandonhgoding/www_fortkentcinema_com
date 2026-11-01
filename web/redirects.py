@@ -60,6 +60,14 @@ legacy_urlpatterns = [
         RedirectView.as_view(url="/", permanent=True),
         name="legacy_vote",
     ),
+    # Online membership checkout was retired 2026-10-31; memberships are sold
+    # at the box office. The join pages were linked from every tier card and
+    # the order pages from buyers' welcome emails, so both go to /membership/.
+    re_path(
+        r"^membership/(?:join|order)/[-a-zA-Z0-9_]+/?$",
+        RedirectView.as_view(url="/membership/", permanent=True),
+        name="legacy_membership_checkout",
+    ),
     # Classic Movie Night was discontinued 2026-08-14 and /classics/ removed.
     # The page carried its own ranking history, so it redirects rather than 404s.
     re_path(

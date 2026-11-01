@@ -43,8 +43,9 @@ from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
 from django.test import TransactionTestCase
 
+from audience.tests.catalogue_seed import reseed_catalogue
+
 SEED = import_module("audience.migrations.0004_seed_membership_catalogue")
-ALLOWANCES = import_module("audience.migrations.0007_seed_free_admission_allowances")
 
 
 def latest_migrations(executor: MigrationExecutor) -> list[tuple[str, str]]:
@@ -67,8 +68,7 @@ class MembershipTermMigrationTests(TransactionTestCase):
         # TransactionTestCase empties every table here; reseed what the
         # migrations seeded, as a freshly migrated database would have it.
         super()._fixture_teardown()
-        SEED.seed(django_apps, None)
-        ALLOWANCES.set_allowances(django_apps, None)
+        reseed_catalogue()
 
     def restore_latest_schema(self) -> None:
         executor = MigrationExecutor(connection)
@@ -87,8 +87,10 @@ class MembershipTermMigrationTests(TransactionTestCase):
         schema runs 0007, which refuses to proceed without its tiers.
         """
         Tier = apps.get_model("audience", "MembershipTier")
+        # Fields the model has since dropped (checkout_url) are left out.
+        known = {f.name for f in Tier._meta.get_fields()} - {"slug", "benefits"}
         for spec in SEED.TIERS:
-            fields = {k: v for k, v in spec.items() if k not in ("slug", "benefits")}
+            fields = {k: v for k, v in spec.items() if k in known}
             Tier.objects.get_or_create(slug=spec["slug"], defaults=fields)
 
     def build_rows_at_0004(self) -> None:

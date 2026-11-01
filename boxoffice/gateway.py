@@ -149,10 +149,9 @@ def _call(fn: Callable[..., T], *args: Any, **kwargs: Any) -> T:
     """Run ``fn``, which calls Square and reads the reply, as one gateway step.
 
     Every way that can go wrong is a GatewayError, so callers have one thing
-    to catch: the webhook answers 503, the pull marks the day FAILED, the
-    ticket page shows a message. The reply is read inside too, because a
-    shape this module does not expect must not escape as a bare
-    AttributeError and turn into a 500.
+    to catch: the pull marks the day FAILED, the sync records the error.
+    The reply is read inside too, because a shape this module does not
+    expect must not escape as a bare AttributeError and turn into a 500.
     """
     try:
         return fn(*args, **kwargs)
