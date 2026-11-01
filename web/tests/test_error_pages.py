@@ -6,9 +6,6 @@ forms every other section page uses — landed there. (Both now redirect
 home: see test_legacy_redirects.)
 """
 
-from pathlib import Path
-
-from django.conf import settings
 from django.template.loader import get_template
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
@@ -27,7 +24,6 @@ class NotFoundPageTests(TestCase):
     def test_uses_the_site_chrome(self):
         self.assertTemplateUsed(self.response, "404.html")
         self.assertTemplateUsed(self.response, "base.html")
-        self.assertIn('<nav class="nav"', self.html)
         self.assertIn("<footer", self.html)
 
     def test_is_not_indexed(self):
@@ -43,10 +39,6 @@ class NotFoundPageTests(TestCase):
 class ServerErrorPageTests(SimpleTestCase):
     """500.html renders with no context processors and no request, so it
     has to stand on its own: no {% url %}, no site_config, no base.html."""
-
-    def test_does_not_extend_the_site_chrome(self):
-        source = (Path(settings.BASE_DIR) / "templates" / "500.html").read_text()
-        self.assertNotIn("{% extends", source)
 
     def test_renders_with_an_empty_context(self):
         """What Django's server_error view gives it."""

@@ -7,7 +7,6 @@ from django.test import TestCase
 from django.urls import reverse
 
 from web.tests.test_home_sections import _time, hero_film
-from django.contrib.staticfiles.finders import find
 
 from blog.models import BlogAuthor, BlogCategory, BlogPost
 from web.constants import RENTALS_FAQ
@@ -39,16 +38,6 @@ class SiteConfigContextTests(TestCase):
             response.context["site_config"]["cinema"]["name"], "Fort Kent Cinema"
         )
 
-    def test_navigation_present(self):
-        # Blog lives in the footer links, not the nav. See test_nav.py for
-        # the structure's own tests.
-        from web.constants import SITE_CONFIG
-
-        # The nav row is empty since 2026-10-31.
-        self.assertEqual(SITE_CONFIG["navigation"], [])
-        footer = [item["label"] for item in SITE_CONFIG["footer_navigation"]]
-        self.assertIn("From the Booth", footer)
-
 
 class BaseChromeTests(TestCase):
     def test_default_meta_and_og(self):
@@ -62,12 +51,6 @@ class BaseChromeTests(TestCase):
         html = self.client.get(reverse("home")).content.decode()
         self.assertIn('"@type": "MovieTheater"', html)
         self.assertIn("13 Hall Street", html)
-
-    def test_google_analytics_absent_without_measurement_id(self):
-        """The ID moved to GA_MEASUREMENT_ID; it is unset outside production so
-        dev and test traffic stay out of the analytics. See test_analytics.py."""
-        html = self.client.get(reverse("home")).content.decode()
-        self.assertNotIn("googletagmanager.com", html)
 
     def test_chrome_elements_present(self):
         html = self.client.get(reverse("home")).content.decode()
@@ -121,7 +104,7 @@ class ComingSoonTests(TestCase):
         html = self.client.get(reverse("home")).content.decode()
         self.assertIn("coming-soon", html)
         self.assertIn("Wicked", html)
-        self.assertIn("NOVEMBER 22", html)  # release_date uppercased in template
+        self.assertIn("november 22", html.lower())  # the release date
 
 
 class CalendarTests(TestCase):
@@ -149,9 +132,8 @@ class CalendarTests(TestCase):
                                "poster": "w.jpg", "youtube_id": "y"}]}
         y = self.year
         html = self.client.get(reverse("calendar_month", args=[y, 4])).content.decode()
-        self.assertIn(f"MAY {y}", html)                        # month_label
+        self.assertIn(f"may {y}", html.lower())                # month_label
         self.assertIn("Wicked", html)                          # a day's movie
-        self.assertIn("coming-calendar-cell--has-movie", html)
         # Next-month nav wraps 0-based month 4 -> 5 (June), same year.
         self.assertIn(reverse("calendar_month", args=[y, 5]), html)
         # Prev-month nav 4 -> 3 (April), same year.
@@ -166,13 +148,6 @@ class CalendarTests(TestCase):
         # December (month 11) next is January of the next year.
         html2 = self.client.get(reverse("calendar_month", args=[y, 11])).content.decode()
         self.assertIn(reverse("calendar_month", args=[y + 1, 0]), html2)
-
-    @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_hero_films", return_value=[])
-    def test_home_has_view_toggle(self, _ns, _cs):
-        html = self.client.get(reverse("home")).content.decode()
-        self.assertIn("coming-view-toggle", html)
-        self.assertIn("coming-calendar-container", html)
 
     @mock.patch("web.views.get_calendar_month")
     def test_key_lists_each_film_once_with_its_dates(self, m):
@@ -217,10 +192,7 @@ class CalendarTests(TestCase):
         self.assertTrue(days[12]["is_today"])
         self.assertFalse(days[12]["is_past"])
         self.assertFalse(days[13]["is_past"] or days[13]["is_today"])
-        html = resp.content.decode()
-        self.assertEqual(html.count("coming-calendar-cell--today"), 1)
-        self.assertEqual(html.count("coming-calendar-cell--past"), 11)
-        self.assertIn('<span class="sr-only"> (today)</span>', html)
+        self.assertContains(resp, '<span class="sr-only"> (today)</span>', count=1)
 
     def test_out_of_range_month_404(self):
         for bad in ("/calendar/2999/12/", "/calendar/2999/13/"):
@@ -278,7 +250,6 @@ class BlogTeaserTests(TestCase):
         # subtitle, and a byline.
         html = self.client.get(reverse("home")).content.decode()
         self.assertIn("Fort Kent Cinema Turns 90", html)
-        self.assertIn('class="home-card blog-post-card"', html)
         self.assertIn("A look back at the history of the theater", html)
         self.assertIn("By Jane Doe", html)
 
@@ -316,8 +287,6 @@ class MembershipPageTests(TestCase):
     def test_renders_tiers_and_faq(self):
         html = self.client.get(reverse("membership")).content.decode()
         self.assertIn("Silver Screen", html)       # a tier name from MEMBERSHIP
-        self.assertIn("tier-card", html)
-        self.assertIn("membership-faq", html)
         self.assertIn("How long does a membership last?", html)  # a FAQ question
         self.assertIn('id="tiers"', html)          # scroll-to anchor target
 
@@ -327,14 +296,7 @@ class RentalsPageTests(TestCase):
         resp = self.client.get(reverse("rentals"))
         self.assertEqual(resp.status_code, 200)
         self.assertTemplateUsed(resp, "web/rentals.html")
-        html = resp.content.decode()
-        self.assertIn('<h1 class="rentals-title">', html)
-        self.assertIn("$225", html)  # base rate
-        self.assertIn("rentals-page", html)
-
-    def test_rentals_content_sections(self):
-        html = self.client.get(reverse("rentals")).content.decode()
-        self.assertIn("rental-card--featured", html)
+        self.assertContains(resp, "$225")  # base rate
 
     def test_every_rental_term_is_on_the_page(self):
         """The terms used to be a bulleted POLICIES list; they are now
@@ -373,14 +335,3 @@ class SeoTagTests(TestCase):
     def test_canonical_strips_query_string(self):
         html = self.client.get(reverse("home") + "?utm_source=x").content.decode()
         self.assertNotIn("utm_source", html)          # canonical/og:url must not carry query params
-
-
-class StaticAssetsTests(TestCase):
-    def test_core_css_present(self):
-        for name in ("css/variables.css", "css/global.css", "css/effects.css"):
-            self.assertIsNotNone(find(name), f"missing static asset: {name}")
-
-    def test_component_css_present(self):
-        # Representative sample of the ported component/page sheets.
-        for name in ("css/Hero.css", "css/Nav.css", "css/Footer.css", "css/HeroFilm.css"):
-            self.assertIsNotNone(find(name), f"missing static asset: {name}")

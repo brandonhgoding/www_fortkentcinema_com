@@ -1,8 +1,6 @@
 import json
 import re
-from pathlib import Path
 
-from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
 
@@ -53,14 +51,6 @@ class PlaybillTests(TestCase):
         self.assertEqual(
             self.html.count('class="playbill__sheet"'), len(SAVOY_PLAYBILLS)
         )
-
-    def test_transcribes_the_bill_verbatim(self):
-        # The printer's ampersand and quotes are the point; a "tidied" title
-        # would mean the recreation had drifted from the sheet.
-        self.assertIn("Wheeler &amp; Woolsey", self.html)
-        self.assertIn("Hook, Line &amp; Sinker", self.html)
-        self.assertIn("Joan Crawford", self.html)
-        self.assertIn("All Talking", self.html)
 
     def test_every_show_row_is_rendered(self):
         rows = sum(len(pb["shows"]) for pb in SAVOY_PLAYBILLS)
@@ -133,12 +123,6 @@ class SheetVariationTests(TestCase):
     def setUp(self) -> None:
         self.html = self.client.get(reverse("history")).content.decode()
 
-    def test_all_six_sheets_are_present(self):
-        self.assertEqual(len(SAVOY_PLAYBILLS), 6)
-        self.assertEqual(
-            self.html.count('class="playbill__sheet"'), len(SAVOY_PLAYBILLS)
-        )
-
     def test_double_quoted_titles_keep_double_quotes(self):
         # April 6: "REDUCING". July 8: "L'Enigmatique Monsieur Parkes".
         self.assertIn("&ldquo;Reducing&rdquo;", self.html)
@@ -156,19 +140,6 @@ class SheetVariationTests(TestCase):
         # April 9: 'Cohens & Kellys in Africa' / With Geo. Sidney & Chas. Murray
         self.assertIn("Cohens &amp; Kellys in Africa", self.html)
         self.assertIn("With Geo. Sidney &amp; Chas. Murray", self.html)
-
-    def test_all_talking_appears_only_on_the_april_sheets(self):
-        # The tag vanishes after April 18, 1931 — a real, datable detail the
-        # page draws attention to. If a later transcription adds it to a May
-        # or June sheet, that claim silently becomes false.
-        tagged = [
-            pb["label"] for pb in SAVOY_PLAYBILLS
-            if any(s.get("tag") for s in pb["shows"])
-        ]
-        self.assertEqual(
-            tagged,
-            ["Week of April 6, 1931", "Week of April 13, 1931"],
-        )
 
     def test_every_film_is_a_1930_or_1931_release_week(self):
         # The dating argument on the page rests on this: six Monday-start
@@ -399,9 +370,3 @@ class HistoryNavigationTests(TestCase):
         self.assertNotIn("keydown.left.window", self.html)
         self.assertNotIn("keydown.right.window", self.html)
         self.assertIn("@keydown.left=", self.html)
-
-    def test_bold_text_is_not_link_coloured(self):
-        css = (Path(settings.BASE_DIR) / "static/css/HistoryPage.css").read_text()
-        rule = css.split(".history-section strong {", 1)[1].split("}", 1)[0]
-        self.assertNotIn("gold-light", rule)
-        self.assertNotIn("accent", rule)

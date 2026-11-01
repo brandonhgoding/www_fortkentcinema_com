@@ -6,6 +6,7 @@ from django.test import TestCase
 from django.urls import reverse
 from web.constants import (
     AD_SLIDE_PRICE,
+    AD_VIDEO_MAX_SECONDS,
     AD_VIDEO_PRICE,
     ADVERTISING_FAQ,
     SITE_CONFIG,
@@ -22,7 +23,8 @@ class AdvertisePageTests(TestCase):
         self.assertTemplateUsed(self.response, "web/advertise.html")
 
     def test_the_two_rates(self):
-        for text in ("$75", "$150", "30 seconds"):
+        for text in (f"${AD_SLIDE_PRICE}", f"${AD_VIDEO_PRICE}",
+                     f"{AD_VIDEO_MAX_SECONDS} seconds"):
             self.assertIn(text, self.html, text)
 
     def test_faq_renders_once_visibly_and_once_as_json_ld(self):

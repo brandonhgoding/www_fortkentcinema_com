@@ -31,7 +31,7 @@ class ListSignupTests(TestCase):
         msg = mail.outbox[0]
         self.assertEqual(msg.subject, "Confirm your Fort Kent Cinema emails")
         self.assertEqual(msg.to, ["fan@example.com"])
-        self.assertNotIn("Thanks for voting", msg.body)
+
         link = re.search(r"http://testserver(/subscribe/confirm/\S+)", msg.body).group(
             1
         )

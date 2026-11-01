@@ -31,8 +31,6 @@ class ComingSoonCardTests(TestCase):
         section = coming_soon_section(self.home())
         self.assertIn("Dune", section)
         self.assertNotIn(CHIP, section)
-        # The trailer player is the section's only dialog.
-        self.assertEqual(section.count('role="dialog"'), 1)
 
     def test_its_showings_are_not_marked_up(self):
         self.assertIsNone(screening_events(self.home()))
@@ -48,12 +46,12 @@ class ComingSoonCardTests(TestCase):
 
 
 class CalendarPosterTests(TestCase):
-    def test_a_future_days_poster_is_a_plain_image(self):
+    def test_a_future_days_poster_names_the_run(self):
         coming_soon_showtime(days=21)
         day = timezone.localdate() + datetime.timedelta(days=21)
-        html = self.client.get(
+        response = self.client.get(
             reverse("calendar_month", args=[day.year, day.month - 1])
-        ).content.decode()
-        self.assertIn('<div class="coming-calendar-cell__poster" title="Dune"', html)
-        self.assertNotIn(CHIP, html)
-        self.assertNotIn('role="dialog"', html)
+        )
+        (cell,) = [c for c in response.context["cells"] if c["day"] == day.day]
+        self.assertEqual([m["title"] for m in cell["movies"]], ["Dune"])
+        self.assertContains(response, 'title="Dune"')

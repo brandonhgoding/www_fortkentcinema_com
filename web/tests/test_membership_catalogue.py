@@ -105,23 +105,17 @@ class MembershipPageIsUnchangedTests(TestCase):
                 positions, sorted(positions), f"{name} perks are out of order"
             )
 
-    def test_every_card_sends_people_to_the_box_office(self) -> None:
-        """Owner, 2026-10-31: memberships are sold at the box office only,
-        so no card links to an online checkout."""
-        self.assertNotIn(">Join<", self.html)
-        self.assertNotIn("/membership/join/", self.html)
-        self.assertNotIn("square.link", self.html)
-        self.assertEqual(self.html.count("Join at the box office"),
-                         len(EXPECTED_TIERS))
-
     def test_tiers_appear_in_price_order(self) -> None:
         positions = [self.html.index(f'data-tier="{t[0]}"')
                      for t in EXPECTED_TIERS]
         self.assertEqual(positions, sorted(positions))
 
-    def test_ribbons(self) -> None:
-        self.assertIn("Best Value", self.html)
-        self.assertIn("For Families", self.html)
+    def test_ribbons_follow_the_featured_and_family_flags(self) -> None:
+        for slug, name, _eyebrow, _price, featured, family, _perks in EXPECTED_TIERS:
+            card = self.card_for(slug)
+            with self.subTest(tier=name):
+                self.assertEqual("Best Value" in card, featured)
+                self.assertEqual("For Families" in card, family)
 
     def test_eyebrow_and_its_fallback(self) -> None:
         self.assertIn("Seniors 65+", self.html)

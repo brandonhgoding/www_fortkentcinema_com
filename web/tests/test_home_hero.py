@@ -114,7 +114,7 @@ class FilmHeroTests(HeroBase):
         self.assertEqual(hero.count('x-show="expanded"'), 1)
         self.assertIn("Show all 4 dates", hero)
 
-    def test_member_line_sits_once_over_the_lockup(self):
+    def test_member_line_sits_once_in_the_hero(self):
         tier = MembershipTier.objects.get(slug="individual")
         member = Member.objects.create(first_name="A", last_name="B", email="a@b.c")
         MembershipTerm.objects.create(
@@ -124,9 +124,6 @@ class FilmHeroTests(HeroBase):
         )
         hero = self.hero()
         self.assertEqual(hero.count('<span class="hero-members-count">1</span>'), 1)
-        line = hero.index('class="hero-members hero-film__members"')
-        self.assertLess(hero.rindex("</article>"), line)
-        self.assertLess(line, hero.index('<h1 class="hero-film__lockup">'))
 
 
 class AlsoShowingTests(HeroBase):

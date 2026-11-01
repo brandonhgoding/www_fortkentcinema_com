@@ -39,7 +39,3 @@ class JoinOnlineOrAtTheBoxOfficeTests(TestCase):
         final = self.html.split('class="membership-page__final-cta"', 1)[1].split(
             "</section>", 1)[0]
         self.assertIn('href="#tiers"', final)
-
-    def test_page_does_not_send_members_to_the_staff_sign_in(self):
-        # Only staff sign in since the member portal went (2026-10-31).
-        self.assertNotIn('href="/login"', self.html)

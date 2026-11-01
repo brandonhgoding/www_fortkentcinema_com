@@ -7,6 +7,7 @@ number; None leaves the chip out and the member sentence stands alone.
 """
 
 import datetime
+import re
 from decimal import Decimal
 from unittest import mock
 
@@ -24,6 +25,13 @@ REVIEW = {
     "count": 112,
     "url": "https://www.google.com/maps/search/?api=1&query=test",
 }
+
+CHIP = 'data-track="google_review_click"'
+
+
+def member_line(html: str) -> str:
+    start = html.index('<p class="hero-members')
+    return html[start : html.index("</p>", start)]
 
 
 def one_member() -> None:
@@ -47,31 +55,25 @@ class EmptyFoldGoogleReviewTests(TestCase):
     def _html(self) -> str:
         return self.client.get(reverse("home")).content.decode()
 
-    def test_chip_sits_in_the_member_line_to_the_right(
+    def test_chip_sits_in_the_member_line(
         self, _ns: mock.Mock, _cs: mock.Mock
     ) -> None:
         one_member()
-        html = self._html()
-        line_start = html.index('<p class="hero-members hero-film__members">')
-        line_end = html.index("</p>", line_start)
-        line = html[line_start:line_end]
-        self.assertIn("to keep the lights on", line)
-        self.assertIn('class="hero-google"', line)
-        self.assertLess(line.index("lights on"), line.index("hero-google"))
+        self.assertIn(CHIP, member_line(self._html()))
 
     def test_chip_reads_the_rating_count_and_link(
         self, _ns: mock.Mock, _cs: mock.Mock
     ) -> None:
         one_member()
-        html = self._html()
-        self.assertIn('<span class="hero-google-rating">4.9</span>', html)
-        self.assertIn("112 reviews", html)
+        chip = re.search(rf"<a\b[^>]*{CHIP}[^>]*>.*?</a>", self._html(), re.S).group(0)
+        self.assertIn("4.9", chip)
+        self.assertIn("112 reviews", chip)
         # Django escapes the & in the query string.
         self.assertIn(
-            '<a class="hero-google" href="https://www.google.com/maps/search/'
-            '?api=1&amp;query=test" target="_blank" rel="noopener noreferrer"',
-            html,
+            'href="https://www.google.com/maps/search/?api=1&amp;query=test"', chip
         )
+        self.assertIn('target="_blank"', chip)
+        self.assertIn('rel="noopener noreferrer"', chip)
 
     def test_stars_are_hidden_from_screen_readers(
         self, _ns: mock.Mock, _cs: mock.Mock
@@ -116,14 +118,10 @@ class EmptyFoldGoogleReviewTests(TestCase):
 class FilmHeroGoogleReviewTests(HeroBase):
     """A showing booked this week: the film fold."""
 
-    def test_chip_sits_once_in_the_member_line_over_the_lockup(self) -> None:
+    def test_chip_sits_once_in_the_member_line(self) -> None:
         self.booked()
         one_member()
         html = self.home()
         self.assertIn('class="hero hero--film"', html)
-        self.assertEqual(html.count('class="hero-google"'), 1)
-        line = html.index('class="hero-members hero-film__members"')
-        chip = html.index('class="hero-google"')
-        self.assertLess(line, chip)
-        self.assertLess(html.index("lights on"), chip)
-        self.assertLess(chip, html.index('<h1 class="hero-film__lockup">'))
+        self.assertEqual(html.count(CHIP), 1)
+        self.assertIn(CHIP, member_line(html))

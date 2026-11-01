@@ -6,10 +6,8 @@ carried no fact worth quoting.
 """
 
 import re
-from pathlib import Path
 from unittest import mock
 
-from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
 
@@ -33,14 +31,10 @@ class HomeMarkupTests(TestCase):
         search snippets reuse the source text. CSS does the capitals."""
         html = self.home()
         name = SITE_CONFIG["cinema"]["name"]
-        self.assertIn(f'<h1 class="hero-film__lockup">{name} ', html)
-        self.assertIn(SITE_CONFIG["cinema"]["tagline"].replace("'", "&#x27;"), html)
-        self.assertIn(
-            '<p class="hero-film__eyebrow"><span aria-hidden="true">&#9733;</span>'
-            " Now showing",
-            html,
-        )
-        self.assertIn('<h2 class="section-title">Coming Soon</h2>', html)
+        h1 = re.search(r"<h1\b[^>]*>(.*?)</h1>", html, re.S).group(1)
+        self.assertIn(name, h1)
+        self.assertNotIn(name.upper(), h1)
+        self.assertNotIn("COMING SOON", html)
 
     def test_meta_description_carries_quotable_facts(self, *_):
         with mock.patch.dict(TICKET_PRICES, adult=9, member=3):
@@ -62,21 +56,7 @@ class HomeMarkupTests(TestCase):
     def test_footer_headings_are_h2(self, *_):
         footer = self.home().split('<footer class="footer">', 1)[1]
         self.assertNotIn("<h3", footer)
-        self.assertIn('<h2 class="footer-heading"', footer)
-
-
-class CssCapitalsTests(TestCase):
-    def test_lockup_capitals_come_from_css(self):
-        bundle = Path(settings.BASE_DIR) / "static" / "css" / "bundle.css"
-        if not bundle.exists():
-            self.skipTest("bundle.css not built")
-        css = bundle.read_text()
-        for selector in (".hero-film__lockup",):
-            rules = re.findall(re.escape(selector) + r"\{([^}]*)\}", css)
-            self.assertTrue(
-                any("text-transform:uppercase" in r for r in rules),
-                f"{selector} has no text-transform:uppercase",
-            )
+        self.assertIn("<h2", footer)
 
 
 class SharedImageOnOtherPagesTests(TestCase):

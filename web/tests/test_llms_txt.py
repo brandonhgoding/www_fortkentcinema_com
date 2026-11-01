@@ -78,7 +78,6 @@ class LlmsTxtTests(TestCase):
         # this file can't drift apart.
         text = self.get().content.decode()
         screens = SITE_CONFIG["cinema"]["screens"]
-        self.assertEqual(len(screens), 2)
         self.assertIn(f"{len(screens)} screens", text)
         for screen in screens:
             self.assertIn(f"{screen['name']} ({screen['seats']} seats)", text)

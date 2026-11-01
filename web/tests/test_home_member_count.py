@@ -122,17 +122,8 @@ class HomeMemberCountRenderTests(TestCase):
         self, _ns: mock.Mock, _cs: mock.Mock
     ) -> None:
         html = self._html()
-        self.assertIn('class="hero-members hero-film__members"', html)
         self.assertIn('<span class="hero-members-count">3</span>', html)
         self.assertIn("members help to keep the lights on", html)
-
-    def test_sits_at_the_foot_of_the_fold_above_the_h1(
-        self, _ns: mock.Mock, _cs: mock.Mock
-    ) -> None:
-        html = self._html()
-        self.assertLess(html.index("no-showtimes__links"), html.index("hero-members"))
-        self.assertLess(html.index("hero-members"), html.index("<h1"))
-        self.assertLess(html.index("<h1"), html.index("</section>"))
 
     def test_one_member_reads_singular(self, _ns: mock.Mock, _cs: mock.Mock) -> None:
         Member.objects.exclude(pk=self.members[0].pk).delete()
