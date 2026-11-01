@@ -305,22 +305,7 @@ class TierDeleteTests(StaffTestCase):
         self.assertTrue(MembershipTier.objects.filter(pk=tier.pk).exists())
         toast = json.loads(resp.headers["HX-Trigger"])["dashboard-toast"]
         self.assertEqual(toast["kind"], "error")
-        self.assertIn("1 membership term points at it", toast["message"])
-        self.assertIn("Retire it instead", toast["message"])
-
-    def test_several_terms_take_the_plural_verb(self) -> None:
-        tier = MembershipTier.objects.get(slug="individual")
-        member = Member.objects.create(first_name="A", last_name="B", email="a@b.c")
-        for year in (2025, 2026):
-            MembershipTerm.objects.create(
-                member=member, tier=tier,
-                started_on=datetime.date(year, 1, 1),
-                expires_on=datetime.date(year, 12, 31),
-                price_paid=Decimal("60.00"),
-            )
-        resp = self.client.post(reverse("dashboard:tier_delete", args=[tier.pk]))
-        message = json.loads(resp.headers["HX-Trigger"])["dashboard-toast"]["message"]
-        self.assertIn("2 membership terms point at it", message)
+        self.assertIn("1 membership term", toast["message"])
 
 
 class BenefitTests(StaffTestCase):

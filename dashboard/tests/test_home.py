@@ -94,15 +94,15 @@ class HomeRenderTests(TestCase):
     def test_cards_and_links(self) -> None:
         html = self.client.get(reverse("dashboard:home")).content.decode()
         self.assertIn(reverse("dashboard:engagements"), html)
-        self.assertIn("summaryGrid", html)
 
     def test_today_showtimes_table(self) -> None:
         eng = make_eng(self.screen, self.film)
         Showtime.objects.create(engagement=eng, starts_at=self._local(timezone.localdate(), 19, 30))
         html = self.client.get(reverse("dashboard:home")).content.decode()
-        self.assertIn("Dune", html)
-        self.assertIn("Screen 1", html)
-        self.assertIn("Active", html)
+        table = html.split("<tbody>", 1)[1].split("</tbody>", 1)[0]
+        self.assertIn("Dune", table)
+        self.assertIn("Screen 1", table)
+        self.assertIn("status-active", table)
 
     def test_empty_state(self) -> None:
         html = self.client.get(reverse("dashboard:home")).content.decode()
@@ -113,8 +113,6 @@ class HomeRenderTests(TestCase):
         make_eng(self.screen, self.film)
         html = self.client.get(reverse("dashboard:home")).content.decode()
         self.assertIn("No showtimes scheduled for tomorrow", html)
-        self.assertIn("alertContainer", html)
-        self.assertIn("dismissButton", html)
 
     @override_settings(SQUARE_ACCESS_TOKEN="")
     def test_sales_panel_hidden_without_token(self) -> None:
@@ -167,11 +165,9 @@ class HomePermissionTests(TestCase):
             "Ask an administrator for access.",
             html.replace("&#x27;", "'"),
         )
-        for label in ("Active Engagements", "Today's Showtimes", "Screens",
-                      "Yesterday's Sales"):
+        for label in ("Active Engagements", "Today's Showtimes", "Yesterday's Sales"):
             self.assertNotIn(label, html)
-        # The home alerts partial; base.html's toast container is always there.
-        self.assertNotIn("x-data=\"{ shown: true }\"", html)
+        self.assertEqual(resp.context["alerts"], [])
 
     def test_showtime_viewer_sees_today_table_only(self) -> None:
         from phone.models import Voicemail
@@ -184,10 +180,11 @@ class HomePermissionTests(TestCase):
             timezone.localdate(), datetime.time(23, 30)))
         Showtime.objects.create(engagement=eng, starts_at=start)
         self._login(("cinema.view_showtime",))
-        html = self.client.get(reverse("dashboard:home")).content.decode()
+        resp = self.client.get(reverse("dashboard:home"))
+        html = resp.content.decode()
         self.assertIn("Today's Showtimes", html)
-        self.assertNotIn("new voicemail", html)
         self.assertNotIn("don't have access", html.replace("&#x27;", "'"))
-        self.assertNotIn("draft", html)
         self.assertNotIn("Active Engagements", html)
-        self.assertNotIn("Screens", html)
+        ids = [alert["id"] for alert in resp.context["alerts"]]
+        self.assertNotIn("draft-engagements", ids)
+        self.assertNotIn("new-voicemails", ids)

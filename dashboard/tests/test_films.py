@@ -20,12 +20,12 @@ class FilmSearchTests(TestCase):
         html = self.client.get(reverse("dashboard:film_search"), {"q": "jaw"}).content.decode()
         self.assertIn("Jaws", html)
         self.assertNotIn("Dune", html)
-        self.assertIn("Search TMDB", html)  # the TMDB affordance
+        # the TMDB affordance
         self.assertIn(reverse("dashboard:film_search_tmdb"), html)
 
     def test_local_search_empty_q(self) -> None:
         html = self.client.get(reverse("dashboard:film_search"), {"q": ""}).content.decode()
-        self.assertNotIn("Search TMDB", html)
+        self.assertNotIn(reverse("dashboard:film_search_tmdb"), html)
 
     @mock.patch("dashboard.views.TMDBService")
     def test_tmdb_search_renders_results(self, MockSvc) -> None:

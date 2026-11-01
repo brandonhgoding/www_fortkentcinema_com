@@ -11,6 +11,5 @@ class PrimitiveTests(TestCase):
     def test_toast_and_confirm_regions_rendered(self) -> None:
         html = self.client.get(reverse("dashboard:home")).content.decode()
         # toast region + confirm dialog scaffolding present on every page
-        self.assertIn('class="alertContainer"', html)
         self.assertIn("$store.toast", html)
         self.assertIn("$store.confirm", html)

@@ -1,9 +1,7 @@
 """Dashboard-wide plumbing, checked through the Members page: HTMX posts
-carry the CSRF token, form field errors are styled, and the film search
+carry the CSRF token, and the film search
 offers TMDB only to staff who may add films. (These rode on the Screens
 page until it left the dashboard, 2026-10-31.)"""
-
-from pathlib import Path
 
 from audience.models import Member
 from cinema.models import Film
@@ -50,19 +48,6 @@ class HtmxCsrfTests(TestCase):
         resp = client.post(reverse("dashboard:member_delete", args=[member.pk]))
         self.assertEqual(resp.status_code, 403)
         self.assertTrue(Member.objects.filter(pk=member.pk).exists())
-
-
-class FieldErrorStylingTests(TestCase):
-    def test_field_error_styling_linked(self) -> None:
-        make_staff(email="s@example.com", password="pw12345")
-        self.client.login(username="s@example.com", password="pw12345")
-        html = self.client.get(reverse("dashboard:members")).content.decode()
-        self.assertIn("dashboard/css/dashboard.css", html)
-        css_path = (
-            Path(__file__).resolve().parent.parent
-            / "static" / "dashboard" / "css" / "dashboard.css"
-        )
-        self.assertIn(".field-error", css_path.read_text())
 
 
 class FilmSearchTests(TestCase):

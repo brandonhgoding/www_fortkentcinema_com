@@ -107,4 +107,7 @@ class RentalInquiryViewOnlyTests(TestCase):
             response,
             reverse("dashboard:rental_inquiry_status", args=[inquiry.pk]),
         )
-        self.assertContains(response, inquiry.get_status_display() + "\n")
+        html = response.content.decode()
+        # Only the filter bar's select; the row shows the status as text.
+        self.assertEqual(html.count('name="status"'), 1)
+        self.assertRegex(html, rf">\s*{inquiry.get_status_display()}\s*</td>")

@@ -372,7 +372,6 @@ class BodyFormatTests(BlogFixture):
 
     def test_editor_marks_a_plain_post_and_previews_it_as_plain(self) -> None:
         resp = self.client.get(reverse("dashboard:blog_post_edit", args=[self.plain_post().pk]))
-        self.assertContains(resp, "Plain text (legacy)")
         self.assertContains(resp, 'name="use_markdown"')
         self.assertEqual(
             resp.context["preview_html"],
@@ -381,9 +380,9 @@ class BodyFormatTests(BlogFixture):
 
     def test_editor_has_no_legacy_note_for_markdown_posts(self) -> None:
         resp = self.client.get(reverse("dashboard:blog_post_edit", args=[self.make_post().pk]))
-        self.assertNotContains(resp, "Plain text (legacy)")
+        self.assertNotContains(resp, 'name="use_markdown"')
         resp = self.client.get(reverse("dashboard:blog_post_create"))
-        self.assertNotContains(resp, "Plain text (legacy)")
+        self.assertNotContains(resp, 'name="use_markdown"')
 
     def test_live_preview_follows_the_format(self) -> None:
         url = reverse("dashboard:blog_markdown_preview")
@@ -441,8 +440,6 @@ class BlogPermissionTests(BlogFixture):
         ):
             with self.subTest(url_name=name):
                 self.assertNotIn(reverse(f"dashboard:{name}", args=args), html)
-        self.assertNotIn("Authors", html)
-        self.assertNotIn("Categories</h2>", html)
         self.assertNotIn('id="author-list"', html)
         self.assertNotIn('id="category-list"', html)
 
@@ -452,7 +449,7 @@ class BlogPermissionTests(BlogFixture):
         self.assertIn("Ada Lovelace", html)
         self.assertNotIn(reverse("dashboard:blog_author_create"), html)
         self.assertNotIn(reverse("dashboard:blog_category_create"), html)
-        self.assertNotIn("Categories</h2>", html)
+        self.assertNotIn('id="category-list"', html)
 
 
 class AuthorCategoryTests(BlogFixture):

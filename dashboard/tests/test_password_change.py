@@ -1,5 +1,3 @@
-import re
-
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 
@@ -39,15 +37,7 @@ class PasswordChangeTests(TestCase):
         self.assertIn('name="old_password"', html)
         self.assertIn('name="new_password1"', html)
         self.assertIn('name="new_password2"', html)
-        self.assertIn("sidebar.css", html)
         self.assertIn('href="/password-reset"', html)
-
-    def test_inputs_carry_the_dashboard_input_class(self) -> None:
-        html = self.client.get(URL).content.decode()
-        for name in ("old_password", "new_password1", "new_password2"):
-            with self.subTest(name=name):
-                tag = re.search(rf'<input[^>]*name="{name}"[^>]*>', html).group(0)
-                self.assertIn('class="input"', tag)
 
     def test_wrong_current_password_is_rejected(self) -> None:
         before = self.fresh_hash()

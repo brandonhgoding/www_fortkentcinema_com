@@ -138,17 +138,18 @@ class WindowFilterTests(LedgerTestCase):
 
 class OtherFilterTests(LedgerTestCase):
     def test_tier_filter(self) -> None:
+        # Nonsense surnames: "Fam" would also match the "Family" option.
         self.term(
-            "Indy", "individual",
+            "Qindyx", "individual",
             datetime.date(2026, 1, 1), datetime.date(2026, 12, 31),
         )
         self.term(
-            "Fam", "family",
+            "Zfamwop", "family",
             datetime.date(2026, 1, 1), datetime.date(2026, 12, 31),
         )
         html = self.get(tier="family")
-        self.assertIn("Fam", html)
-        self.assertNotIn("Indy", html)
+        self.assertIn("Zfamwop", html)
+        self.assertNotIn("Qindyx", html)
 
     def test_search_matches_name_and_email(self) -> None:
         self.term(

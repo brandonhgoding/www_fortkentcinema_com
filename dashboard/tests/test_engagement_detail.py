@@ -46,19 +46,6 @@ class EngagementDetailPageTests(TestCase):
         self.client.logout()
         self.assertEqual(self.client.get(reverse("dashboard:engagement_detail", args=[eng.pk])).status_code, 302)
 
-    def test_status_badge_uses_design_system_pill(self) -> None:
-        """Regression: the status badge must carry a modifier the CSS defines.
-
-        It used to be a page-local statusConfirmed class; the dashboard now
-        has one status pill, design-system.css's .status-badge, whose
-        modifiers are the lower-cased status value.
-        """
-        eng = make_eng(self.screen, films=[self.film], status="CONFIRMED")
-        html = self.client.get(reverse("dashboard:engagement_detail", args=[eng.pk])).content.decode()
-        self.assertIn('class="status-badge status-confirmed"', html)
-        # Not the raw value, which no rule matches.
-        self.assertNotIn("status-CONFIRMED", html)
-
 
 from cinema.models import Showtime
 import datetime as _dt

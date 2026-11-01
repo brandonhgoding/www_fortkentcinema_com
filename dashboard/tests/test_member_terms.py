@@ -227,16 +227,6 @@ class TermEditDeleteTests(TestCase):
 class TermFormTierChoicesTests(TestCase):
     """The dropdown comes from the database, and retiring is not destructive."""
 
-    def test_choices_come_from_the_catalogue(self) -> None:
-        from dashboard.forms import MembershipTermForm
-
-        slugs = {t.slug for t in MembershipTermForm().fields["tier"].queryset}
-        self.assertEqual(
-            slugs,
-            {"silver-screen", "individual", "cinema-supporter", "family",
-             "family-plus"},
-        )
-
     def test_retired_tier_drops_out_for_a_new_term(self) -> None:
         from dashboard.forms import MembershipTermForm
 

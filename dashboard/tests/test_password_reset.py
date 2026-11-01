@@ -44,8 +44,6 @@ class PasswordResetTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode()
         self.assertIn('type="email"', html)
-        self.assertIn("login.css", html)
-        self.assertIn("fkc-logo-black.png", html)
         self.assertIn("noindex", html)
 
     def test_known_email_gets_a_link(self) -> None:
@@ -110,7 +108,7 @@ class PasswordResetTests(TestCase):
     def test_following_the_link_sets_a_new_password(self) -> None:
         self.request_link()
         resp = self.client.get(self.link_in(mail.outbox[0]), follow=True)
-        self.assertContains(resp, "New password")
+        self.assertContains(resp, 'name="new_password1"')
         resp = self.client.post(
             resp.redirect_chain[-1][0],
             NEW_PASSWORD,
@@ -159,7 +157,7 @@ class PasswordResetTests(TestCase):
         later = datetime.now() + timedelta(minutes=4, seconds=55)
         with mock.patch(TOKEN_CLOCK, return_value=later):
             resp = self.client.get(link, follow=True)
-        self.assertContains(resp, "New password")
+        self.assertContains(resp, 'name="new_password1"')
 
 
 @override_settings(

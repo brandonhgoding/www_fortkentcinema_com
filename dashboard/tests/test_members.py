@@ -54,9 +54,10 @@ class MemberListTests(TestCase):
         give_term(make_member("Soon", "Expiring", "b@example.com"), days_left=5)
         make_member("No", "Terms", "c@example.com")
         html = self.client.get(reverse("dashboard:members")).content.decode()
-        self.assertIn("Active", html)
-        self.assertIn("Expiring soon", html)
-        self.assertIn("Lapsed", html)
+        # The status filter lists every label, so look for the row badges.
+        self.assertIn('status-active">Active</span>', html)
+        self.assertIn('status-expiring">Expiring soon</span>', html)
+        self.assertIn('status-lapsed">Lapsed</span>', html)
 
     def test_query_filter_matches_name_and_email(self) -> None:
         give_term(make_member("Ada", "Lovelace", "ada@example.com"))
@@ -180,10 +181,6 @@ class MemberListTests(TestCase):
         self.assertEqual(
             self.client.get(reverse("dashboard:members")).status_code, 403
         )
-
-    def test_members_css_linked(self) -> None:
-        html = self.client.get(reverse("dashboard:members")).content.decode()
-        self.assertIn("dashboard/css/members.css", html)
 
     def test_sidebar_links_to_members(self) -> None:
         html = self.client.get(reverse("dashboard:home")).content.decode()

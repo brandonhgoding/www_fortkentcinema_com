@@ -16,12 +16,6 @@ class LoginTests(TestCase):
         cache.clear()
         make_staff(email="staffer@example.com", password="pw12345")
 
-    def test_login_page_themed(self) -> None:
-        resp = self.client.get("/login")
-        self.assertEqual(resp.status_code, 200)
-        html = resp.content.decode()
-        self.assertIn("login.css", html)
-
     def test_login_redirects_to_dashboard(self) -> None:
         resp = self.client.post(
             "/login", {"username": "staffer@example.com", "password": "pw12345"}

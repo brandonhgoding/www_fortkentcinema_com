@@ -13,16 +13,14 @@ class ChromeTests(TestCase):
         )
         self.client.login(username="staffer@example.com", password="pw12345")
 
-    def test_sidebar_shows_white_logo(self) -> None:
+    def test_sidebar_logo_has_alt_text(self) -> None:
         html = self.client.get(reverse("dashboard:home")).content.decode()
         brand = html.split('class="sidebarBrand"', 1)[1].split("</div>", 1)[0]
-        self.assertIn("img/fkc-logo-white.png", brand)
         self.assertIn('alt="Fort Kent Cinema"', brand)
 
-    def test_mobile_header_shows_white_logo(self) -> None:
+    def test_mobile_header_logo_has_alt_text(self) -> None:
         html = self.client.get(reverse("dashboard:home")).content.decode()
         header = html.split('class="mobileHeader"', 1)[1].split("</header>", 1)[0]
-        self.assertIn("img/fkc-logo-white.png", header)
         self.assertIn('alt="Fort Kent Cinema"', header)
 
     def test_nav_order_home_first_then_alphabetical(self) -> None:
