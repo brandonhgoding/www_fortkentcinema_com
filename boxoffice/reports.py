@@ -151,10 +151,8 @@ def sales_panel(today: datetime.date) -> dict | None:
 
 
 def pull_status(day: datetime.date) -> str:
-    """MISSING, FAILED, OK, or INCOMPLETE: OK but short of paid online orders."""
+    """MISSING, FAILED or OK."""
     latest = SalesPull.objects.filter(business_date=day).order_by("-started_at").first()
     if latest is None:
         return "MISSING"
-    if latest.status == SalesPull.Status.OK and latest.missing_online:
-        return "INCOMPLETE"
     return latest.status

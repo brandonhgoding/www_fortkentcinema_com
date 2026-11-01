@@ -58,48 +58,13 @@ class OrderLine:
 
 
 @dataclass(frozen=True)
-class Tender:
-    payment_id: str
-    # The tender kind's own status (CAPTURED for a card, Afterpay or Square
-    # account; COMPLETED for a bank account); "" for kinds without one.
-    status: str
-    type: str = "CARD"  # Square's tender type: CARD, WALLET, BUY_NOW_PAY_LATER...
-    amount_cents: int | None = None  # None when Square omits amount_money
-
-    @property
-    def paid(self) -> bool:
-        """Whether the money has moved.
-
-        A card-like tender is paid once captured. A wallet (Cash App Pay),
-        cash, gift card or other tender carries no status: Square records one
-        only once it is paid, and payment links complete in one step.
-        """
-        if self.type in CAPTURED_TENDER_TYPES:
-            return self.status == "CAPTURED"
-        if self.type == "BANK_ACCOUNT":
-            return self.status == "COMPLETED"
-        return True
-
-
-# Tender kinds whose details block reads CAPTURED once paid.
-CAPTURED_TENDER_TYPES = frozenset({"CARD", "BUY_NOW_PAY_LATER", "SQUARE_ACCOUNT"})
-_TENDER_DETAILS = {"CARD": "card_details",
-                   "BUY_NOW_PAY_LATER": "buy_now_pay_later_details",
-                   "SQUARE_ACCOUNT": "square_account_details",
-                   "BANK_ACCOUNT": "bank_account_details"}
-
-
-@dataclass(frozen=True)
 class OrderData:
     order_id: str
     closed_at: datetime.datetime | None  # aware; None when Square omits it
     lines: tuple[OrderLine, ...]
     # When the buyer paid: the first tender's created_at, else the order's
-    # created_at; aware, None when Square gives neither. Payment-link orders
-    # reach COMPLETED (closed_at) only when staff mark the shipment done.
+    # created_at; aware, None when Square gives neither.
     paid_at: datetime.datetime | None = None
-    tenders: tuple[Tender, ...] = ()
-    reference_id: str = ""  # the website's order number on payment-link orders
     showtime_id: int | None = None  # from metadata.showtime, which we write
 
 
@@ -210,24 +175,12 @@ def _paid_at(order: Any) -> datetime.datetime | None:
     return parse_timestamp(first_tender or order.created_at)
 
 
-def _tender(tender: Any) -> Tender:
-    details_attr = _TENDER_DETAILS.get(tender.type)
-    details = getattr(tender, details_attr, None) if details_attr else None
-    return Tender(payment_id=tender.id,
-                  status=getattr(details, "status", None) or "",
-                  type=tender.type,
-                  amount_cents=(tender.amount_money.amount
-                                if tender.amount_money else None))
-
-
 def _order_data(order: Any) -> OrderData:
     return OrderData(
         order_id=order.id,
         closed_at=parse_timestamp(order.closed_at),
         lines=tuple(_order_line(li) for li in (order.line_items or [])),
         paid_at=_paid_at(order),
-        tenders=tuple(_tender(t) for t in (order.tenders or [])),
-        reference_id=order.reference_id or "",
         showtime_id=_showtime_id(order.metadata),
     )
 
@@ -252,9 +205,6 @@ class Gateway(Protocol):
 
     def search_orders(self, start: datetime.datetime,
                       end: datetime.datetime) -> list[OrderData]: ...
-
-    def search_open_orders(self, start: datetime.datetime,
-                           end: datetime.datetime) -> list[OrderData]: ...
 
     def list_ticket_items(self) -> list[RemoteItem]: ...
 
@@ -313,17 +263,6 @@ class SquareGateway:
                       end: datetime.datetime) -> list[OrderData]:
         """Orders closed in [start, end): the register's completed sales."""
         return self._search("COMPLETED", "closed_at", start, end)
-
-    def search_open_orders(self, start: datetime.datetime,
-                           end: datetime.datetime) -> list[OrderData]:
-        """Orders still OPEN that were touched in [start, end).
-
-        A paid payment-link order stays OPEN (Square adds a digital
-        fulfillment nobody completes), so it never has a closed_at. Square
-        cannot filter by reference, so this returns every open order updated
-        in the window, paid or not; the caller keeps the ones it wants.
-        """
-        return self._search("OPEN", "updated_at", start, end)
 
     def _search(self, state: str, stamp: str, start: datetime.datetime,
                 end: datetime.datetime) -> list[OrderData]:

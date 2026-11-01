@@ -1,5 +1,4 @@
 """In-memory stand-in for SquareGateway, used by every test that needs Square."""
-import dataclasses
 import datetime
 import itertools
 
@@ -8,7 +7,6 @@ from boxoffice.gateway import (
     NotFound,
     OrderData,
     RemoteItem,
-    Tender,
     UpsertResult,
     VersionMismatch,
 )
@@ -82,36 +80,6 @@ class FakeGateway:
         # Only closed orders, like the real COMPLETED state filter.
         return [o for o in self.orders
                 if o.closed_at is not None and start <= o.closed_at < end]
-
-    def search_open_orders(self, start: datetime.datetime,
-                           end: datetime.datetime) -> list[OrderData]:
-        self._record("search_open_orders", start=start, end=end)
-        # Like Square's updated_at filter on OPEN orders: an unpaid link order
-        # was touched when made (always, here), a paid one when it was paid.
-        return [o for o in self.orders
-                if o.closed_at is None
-                and (o.paid_at is None or start <= o.paid_at < end)]
-
-    def pay(self, order_id: str, payment_id: str = "P1",
-            paid_at: datetime.datetime | None = None, *,
-            tender_type: str = "CARD", amount_cents: int | None = None) -> None:
-        """Test helper: the buyer pays an open (payment-link) order.
-
-        The tender covers the order unless ``amount_cents`` says otherwise. A
-        card tender reads CAPTURED; any other kind carries no status, as in
-        Square.
-        """
-        for i, order in enumerate(self.orders):
-            if order.order_id == order_id:
-                if amount_cents is None:
-                    amount_cents = sum(line.gross_cents for line in order.lines)
-                status = "CAPTURED" if tender_type == "CARD" else ""
-                self.orders[i] = dataclasses.replace(
-                    order,
-                    tenders=(Tender(payment_id, status, tender_type, amount_cents),),
-                    paid_at=paid_at or datetime.datetime.now(datetime.timezone.utc))
-                return
-        raise NotFound(f"Unknown order {order_id}")
 
     def list_ticket_items(self) -> list[RemoteItem]:
         self._record("list_ticket_items")

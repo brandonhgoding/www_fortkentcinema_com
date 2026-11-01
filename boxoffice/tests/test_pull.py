@@ -1,13 +1,11 @@
-import dataclasses
 import datetime
 from unittest import mock
 from zoneinfo import ZoneInfo
 
-from boxoffice.gateway import GatewayError, OrderData, OrderLine, Tender
+from boxoffice.gateway import GatewayError, OrderData, OrderLine
 from boxoffice.models import SaleLine, SalesPull, SquareVariation
-from boxoffice.spec import ONLINE_REFERENCE_PREFIX
 from boxoffice.pull import (
-    business_date, day_bounds, mark_refunded, pull_day, recompute_show_dates,
+    business_date, day_bounds, pull_day, recompute_show_dates,
 )
 from boxoffice.sync import live_item, push
 from boxoffice.tests.fakes import FakeGateway
@@ -327,67 +325,20 @@ class PullDayTests(TestCase):
         self.assertEqual(self.gw.calls[0][1]["start"], at_eastern(2026, 10, 9, 0, 0))
         self.assertEqual(self.gw.calls[0][1]["end"], at_eastern(2026, 10, 10, 0, 0))
 
-    # Square leaves a paid payment-link order OPEN (sandbox, 2026-10-19), so the
-    # COMPLETED search never sees it; the pull asks for open orders too and
-    # dates such a sale by when the buyer paid.
+    def test_pull_asks_square_only_for_completed_orders(self) -> None:
+        # The site sells nothing online any more, so the register's closed
+        # orders are the whole day; there is no open-order search.
+        pull_day(DAY, self.gw)
+        self.assertEqual([name for name, _ in self.gw.calls], ["search_orders"])
 
-    def link_order(self, quantity: int = 2):
-        """A website payment-link order, not yet paid; (showtime, Square id)."""
-        showtime = Showtime.objects.create(
-            engagement=self.eng, screen=self.eng.screen,
-            starts_at=at_eastern(2026, 10, 11, 19, 0))
-        order_id = f"SQ-{len(self.gw.orders) + 1}"
-        self.gw.orders.append(OrderData(
-            order_id=order_id, closed_at=None,
-            lines=(line(f"{order_id}-0", "Dune", "Adult", self.adult_id,
-                        quantity, 800 * quantity),),
-            reference_id=f"{ONLINE_REFERENCE_PREFIX}{order_id}",
-            showtime_id=showtime.pk))
-        return showtime, order_id
-
-    def test_paid_payment_link_order_is_stored_on_its_payment_day(self) -> None:
-        showtime, order_id = self.link_order(quantity=2)
-        self.gw.pay(order_id, paid_at=at_eastern(2026, 10, 9, 12, 0))
-        pull = pull_day(DAY, self.gw)
-        self.assertEqual((pull.status, pull.orders, pull.lines), ("OK", 1, 1))
-        stored = SaleLine.objects.get(order_id=order_id)
-        self.assertEqual(stored.business_date, DAY)
-        self.assertIsNone(stored.closed_at)
-        self.assertEqual(stored.showtime, showtime)
-        self.assertEqual((stored.engagement_id, stored.quantity, stored.gross_cents),
-                         (self.eng.pk, 2, 1600))
-        self.eng.refresh_from_db()
-        self.assertEqual(self.eng.admissions, 2)
-
-    def test_unpaid_payment_link_order_is_not_stored(self) -> None:
-        self.link_order()
-        pull = pull_day(DAY, self.gw)
-        self.assertEqual((pull.status, pull.orders, pull.lines), ("OK", 0, 0))
-        self.assertFalse(SaleLine.objects.exists())
-
-    def test_open_order_without_our_reference_is_not_stored(self) -> None:
-        # A register tab left open with a part payment is not a sale yet.
+    def test_open_order_is_not_stored(self) -> None:
+        # A register tab left open is not a sale yet.
         self.gw.orders = [OrderData(
             "TAB", None, (line("L1", "Dune", "Adult", self.adult_id),),
-            paid_at=at_eastern(2026, 10, 9, 20, 0),
-            tenders=(Tender("P1", "CAPTURED"),), reference_id="")]
+            paid_at=at_eastern(2026, 10, 9, 20, 0))]
         pull = pull_day(DAY, self.gw)
         self.assertEqual((pull.status, pull.orders, pull.lines), ("OK", 0, 0))
         self.assertFalse(SaleLine.objects.exists())
-
-    def test_completed_payment_link_order_keeps_its_payment_day(self) -> None:
-        # Staff marking the digital fulfillment done closes the order days
-        # later; the COMPLETED search then returns it, and it must not move.
-        _, order_id = self.link_order()
-        self.gw.pay(order_id, paid_at=at_eastern(2026, 10, 9, 12, 0))
-        pull_day(DAY, self.gw)
-        closed_at = at_eastern(2026, 10, 12, 9, 0)
-        self.gw.orders = [dataclasses.replace(o, closed_at=closed_at)
-                          if o.order_id == order_id else o for o in self.gw.orders]
-        later = pull_day(datetime.date(2026, 10, 12), self.gw)
-        self.assertEqual((later.status, later.orders), ("OK", 1))
-        stored = SaleLine.objects.get()
-        self.assertEqual((stored.business_date, stored.closed_at), (DAY, closed_at))
 
     def test_long_register_names_are_cut_to_the_ledger_columns(self) -> None:
         # Square allows 512-character item and 255-character variation names;
@@ -401,44 +352,9 @@ class PullDayTests(TestCase):
         self.assertEqual((len(stored.item_name), len(stored.variation_name)),
                          (200, 80))
 
-    def test_mark_refunded_zeroes_the_lines_and_admissions_at_once(self) -> None:
-        _, order_id = self.link_order(quantity=2)
-        self.gw.pay(order_id, paid_at=at_eastern(2026, 10, 9, 12, 0))
-        pull_day(DAY, self.gw)
-        self.eng.refresh_from_db()
-        self.assertEqual(self.eng.admissions, 2)
-        mark_refunded(order_id)
-        stored = SaleLine.objects.get(order_id=order_id)
-        self.assertEqual((stored.refunded_quantity, stored.refunded_cents),
-                         (2, 1600))
-        self.eng.refresh_from_db()
-        self.assertEqual(self.eng.admissions, 0)
-        mark_refunded("SQ-NOT-PULLED-YET")  # nothing to mark, no error
 
-    def test_pull_works_without_a_website_source(self) -> None:
-        # With nothing registered, lines are stored, nothing is refunded,
-        # and the missing-online guard has nothing to compare against.
-        _, order_id = self.link_order()
-        self.gw.pay(order_id, paid_at=at_eastern(2026, 10, 9, 12, 0))
-        with mock.patch("boxoffice.pull.website", None):
-            pull = pull_day(DAY, self.gw)
-        self.assertEqual((pull.status, pull.lines, pull.missing_online), ("OK", 1, 0))
-        stored = SaleLine.objects.get(order_id=order_id)
-        self.assertEqual((stored.refunded_quantity, stored.showtime_id),
-                         (0, stored.showtime_id))
-        self.assertIsNotNone(stored.showtime_id)
-
-    def test_refund_mark_comes_from_the_website_source(self) -> None:
-        _, order_id = self.link_order()
-        self.gw.pay(order_id, paid_at=at_eastern(2026, 10, 9, 12, 0))
-
-        class Source:
-            def refunded(self, order_ids):
-                return {order_id}
-
-            def paid(self, start, end):
-                return set()
-
-        with mock.patch("boxoffice.pull.website", Source()):
-            pull_day(DAY, self.gw)
-        self.assertEqual(SaleLine.objects.get(order_id=order_id).refunded_quantity, 2)
+class SalesPullColumnsTests(SimpleTestCase):
+    def test_no_missing_online_count(self) -> None:
+        # The website-order cross-check went with the online sales.
+        self.assertNotIn("missing_online",
+                         [f.name for f in SalesPull._meta.concrete_fields])

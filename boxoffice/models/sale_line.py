@@ -11,14 +11,13 @@ class SaleLine(models.Model):
     money came in: the owner summary and the dashboard panel count by it.
     ``show_date`` is the day of the show the ticket was for: the booker's
     ticket report and the tier totals count by it. For a register sale they
-    are the same day; for a website order they differ by however far ahead
-    the buyer bought.
+    are the same day; only the removed website orders (which carried their
+    showtime) ever told them apart.
     """
 
     order_id = models.CharField(max_length=64)
     line_uid = models.CharField(max_length=64)
-    # The Eastern day of the sale: when the register closed the order, or when
-    # the buyer paid a website order (those stay OPEN in Square, never closed).
+    # The Eastern day of the sale: when the order was paid, else closed.
     business_date = models.DateField(db_index=True)
     # The Eastern day of the showtime the line was for, else the sale day.
     # Stored, so losing the showtime row later does not re-date the line;
@@ -33,8 +32,8 @@ class SaleLine(models.Model):
     gross_cents = models.IntegerField()
     # What was given back: a refunded ticket stays on its Square order, so
     # the reports count quantity - refunded_quantity and gross - refunded.
-    # Today only a website order refunded in full from the dashboard sets
-    # these (the whole line); register refunds are not read from Square yet.
+    # Nothing sets these since the website refunds went (2026-11); register
+    # refunds are not read from Square yet.
     refunded_quantity = models.PositiveIntegerField(default=0)
     refunded_cents = models.IntegerField(default=0)
     variation = models.ForeignKey(
@@ -43,7 +42,8 @@ class SaleLine(models.Model):
     engagement = models.ForeignKey(
         Engagement, null=True, blank=True, on_delete=models.SET_NULL
     )
-    # The showtime an online ticket order was for; register sales have none.
+    # The showtime from the order's metadata. Only the removed website
+    # orders carried one; register sales have none.
     # Provenance for show_date; the reports do not read through it.
     showtime = models.ForeignKey(
         Showtime, null=True, blank=True, on_delete=models.SET_NULL
