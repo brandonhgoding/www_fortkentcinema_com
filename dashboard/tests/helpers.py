@@ -49,9 +49,7 @@ SPEC_PERMISSIONS = frozenset(
         "audience.delete_membershipbenefit",
         "audience.view_subscriber",
         # boxoffice
-        "boxoffice.view_membershipsale",
         "boxoffice.view_salespull",  # template/home gating only
-        "boxoffice.change_membershipsale",
         # blog
         "blog.view_blogpost",
         "blog.view_blogauthor",  # template gating only

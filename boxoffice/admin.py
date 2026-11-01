@@ -4,7 +4,6 @@ from django.contrib import admin
 from .models import (
     EmailRecipient,
     EmailReport,
-    MembershipSale,
     SaleLine,
     SalesPull,
     SquareItem,
@@ -64,31 +63,6 @@ class SalesPullAdmin(admin.ModelAdmin):
         return False
 
     def has_change_permission(self, request, obj=None) -> bool:
-        return False
-
-
-@admin.register(MembershipSale)
-class MembershipSaleAdmin(admin.ModelAdmin):
-    list_display = ("order_id", "paid_at", "tier", "email", "status")
-    list_filter = ("status",)
-    search_fields = ("order_id", "email", "display_name")
-    readonly_fields = (
-        "order_id",
-        "paid_at",
-        "tier",
-        "quantity",
-        "gross_cents",
-        "display_name",
-        "email",
-        "phone",
-        "status",
-        "error",
-        "term",
-        "created_at",
-        "processed_at",
-    )
-
-    def has_add_permission(self, request, obj=None) -> bool:
         return False
 
 

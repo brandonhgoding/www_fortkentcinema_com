@@ -11,8 +11,7 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
                        new_ad_inquiries: int = 0,
                        new_voicemails: int = 0,
                        square_pull_status: str | None = None,
-                       square_sync_failures: int = 0,
-                       square_membership_failures: int = 0) -> list[dict]:
+                       square_sync_failures: int = 0) -> list[dict]:
     """Server-side port of the React useSmartAlerts hook.
 
     engagements: iterable of Engagement (all engagements).
@@ -104,19 +103,6 @@ def build_smart_alerts(engagements, tomorrow_showtimes_count: int,
             "id": "square-sync-failed", "type": "warning",
             "perm": "cinema.view_engagement",
             "message": f"{square_sync_failures} {unit} failed to sync to Square",
-        })
-
-    if square_membership_failures > 0:
-        n = square_membership_failures
-        if n == 1:
-            message = "1 Square membership sale needs attention"
-        else:
-            message = f"{n} Square membership sales need attention"
-        alerts.append({
-            "id": "square-membership-failed", "type": "warning",
-            "perm": "boxoffice.view_membershipsale",
-            "message": message,
-            "url": reverse("dashboard:square_sales"),
         })
 
     return alerts

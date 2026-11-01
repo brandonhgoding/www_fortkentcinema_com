@@ -140,6 +140,23 @@ class LegacyPageRedirectTests(TestCase):
                     resp, "/", status_code=301, target_status_code=200
                 )
 
+    def test_membership_checkout_pages_redirect_to_membership(self):
+        """Online membership checkout was retired 2026-10-31. Join pages were
+        linked from every tier card and order pages from welcome emails."""
+        for path in (
+            "/membership/join/individual/",
+            "/membership/join/individual",
+            "/membership/order/abc123DEF_-x/",
+        ):
+            with self.subTest(path=path):
+                resp = self.client.get(path)
+                self.assertRedirects(
+                    resp, "/membership/", status_code=301, target_status_code=200
+                )
+
+    def test_membership_page_itself_is_not_redirected(self):
+        self.assertEqual(self.client.get("/membership/").status_code, 200)
+
 
 class LegacyRedirectsDoNotShadowLiveRoutesTests(TestCase):
     def test_modern_blog_routes_still_resolve(self):

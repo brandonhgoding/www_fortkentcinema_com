@@ -28,42 +28,19 @@ whenever the pins are more than a few months old, run `pip-audit -r requirements
 advisory databases and must report "No known vulnerabilities found". Upgrading
 `django-axes` can bring new migrations, so deploys run `migrate` as usual.
 
-## Online tickets
+## Square
 
-Online ticket sales (the `tickets` app) need one nightly job beside the Square
-sales pull (`python manage.py pull_square_sales`): `python manage.py
-expire_ticket_orders`, which asks Square about every order still pending past the
-hold and expires the unpaid ones (an order Square could not be asked about stays
-pending for the next run). Set `TICKETS_BASE_URL` (for example
-`https://www.fortkentcinema.com`) so Square's checkout returns buyers to this
-site; when it is empty the scheme and host of `SQUARE_WEBHOOK_URL` are used. The
-confirmation page and ticket email draw a QR code with the `qrcode` package,
-which is in `requirements.txt`.
+Tickets and memberships are sold at the box office only; the site sells
+nothing online (online tickets were removed 2026-10-31, online membership
+checkout and the Square payment webhook on 2026-11-01). Square is used for
+the catalogue sync (`python manage.py sync_square_catalog`) and the nightly
+sales pull (`python manage.py pull_square_sales`), both of which call Square
+and receive nothing from it. Staff enter memberships in the dashboard.
 
-The Square webhook subscription (Developer dashboard → Webhooks) must send
-`payment.created` and `payment.updated` (a sale), `refund.created` and
-`refund.updated` (a refund made from the Square dashboard or POS rather than
-the site's Refund button: the ticket is voided and the buyer emailed, exactly as
-the button would have; a partial refund flags the order for staff instead), and
-`dispute.created` and `dispute.state.updated` (a chargeback: the order is
-flagged while the dispute is open, voided if it is lost, and cleared if it is
-won). Do not tick `order.updated`.
-
-## Membership checkout
-
-Memberships are sold on the site (the `join` app) at
-`/membership/join/<tier slug>/`, through the same Square hosted-checkout
-flow as tickets: a pending order, a payment link with one explicitly priced
-line, and the payment webhook. A tier sells online when it is listed on the
-membership page and has its Square variation ID; otherwise its card says to
-join at the box office. On payment the existing membership entry code
-(`boxoffice.memberships.process_order`) creates or renews the member and
-term, and the `join` app's registered order source supplies the buyer and
-sends the welcome email. Website sales appear on the dashboard's Square
-Sales list as "Website" and use the same Retry button as payment-link
-sales. The legacy Square payment links keep working but are no longer
-linked from the site. No new settings, cron jobs or webhook events are
-needed: `payment.updated` already covers it.
+There is no webhook endpoint, so the Square webhook subscription
+(Developer dashboard → Webhooks) should be deleted, and the
+`SQUARE_WEBHOOK_SIGNATURE_KEY`, `SQUARE_WEBHOOK_URL` and `TICKETS_BASE_URL`
+settings are no longer read.
 
 ## Phone line
 

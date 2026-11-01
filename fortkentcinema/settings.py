@@ -52,7 +52,6 @@ INSTALLED_APPS = [
     "audience.apps.AudienceConfig",
     "phone.apps.PhoneConfig",
     "boxoffice.apps.BoxofficeConfig",
-    "join.apps.JoinConfig",
     "axes",
 ]
 
@@ -332,18 +331,6 @@ SQUARE_LOCATION_ID = config("SQUARE_LOCATION_ID", default="")
 SQUARE_TICKET_CATEGORY_ID = config("SQUARE_TICKET_CATEGORY_ID", default="")
 # Exactly "sandbox" or "production"; anything else disables the sync.
 SQUARE_ENVIRONMENT = config("SQUARE_ENVIRONMENT", default="sandbox")
-
-# Square membership webhook. The key verifies X-Square-HmacSha256-Signature; a
-# blank key means every call is a 403. The URL must be the exact notification
-# URL registered in Square, because the signature is computed over it.
-SQUARE_WEBHOOK_SIGNATURE_KEY = config("SQUARE_WEBHOOK_SIGNATURE_KEY", default="")
-SQUARE_WEBHOOK_URL = config("SQUARE_WEBHOOK_URL", default="")
-
-# The scheme and host for the link Square sends membership buyers back to.
-# A setting, like SQUARE_WEBHOOK_URL: build_absolute_uri() is wrong behind nginx.
-# (Named for the online tickets it first served; kept so the deployed env
-# needs no change.)
-TICKETS_BASE_URL = config("TICKETS_BASE_URL", default="")
 
 # Nightly flash-gross emails (boxoffice app). Who receives them lives in the
 # database (admin → Box Office → Email reports); how they are sent lives here.

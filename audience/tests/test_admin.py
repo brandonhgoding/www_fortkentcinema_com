@@ -159,17 +159,16 @@ class MembershipTierAdminValidationTests(TestCase):
             "price": "45",
             "duration_months": "12",
             "free_admissions_per_month": "0",
-            "checkout_url": "",
             "show_on_membership_page": "on",
             "sort_order": "0",
             **overrides,
         }
 
-    def test_a_listed_tier_saves_without_a_link(self) -> None:
+    def test_a_listed_tier_saves(self) -> None:
         self.client.post(reverse("admin:audience_membershiptier_add"), self.payload())
         self.assertTrue(MembershipTier.objects.filter(slug="matinee-club").exists())
 
-    def test_a_retired_tier_saves_without_one(self) -> None:
+    def test_a_retired_tier_saves(self) -> None:
         payload = self.payload()
         del payload["show_on_membership_page"]
         self.client.post(reverse("admin:audience_membershiptier_add"), payload)

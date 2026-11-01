@@ -2,7 +2,7 @@ import datetime
 import json
 
 from boxoffice.gateway import GatewayError, square_enabled
-from boxoffice.models import MembershipSale, SquareItem
+from boxoffice.models import SquareItem
 from boxoffice.pull import recompute_show_dates
 from boxoffice.reports import pull_status, sales_panel
 from boxoffice.sync import delete, live_item, schedule, sync
@@ -118,10 +118,6 @@ class HomeView(StaffRequiredMixin, TemplateView):
                         SquareItem.objects.filter(
                             deleted_at__isnull=True).exclude(last_error="").count()
                         if user.has_perm("cinema.view_engagement") else 0),
-                    square_membership_failures=(
-                        MembershipSale.objects.filter(
-                            status=MembershipSale.Status.FAILED).count()
-                        if user.has_perm("boxoffice.view_membershipsale") else 0),
                 )
                 if user.has_perm(alert["perm"])
             ],

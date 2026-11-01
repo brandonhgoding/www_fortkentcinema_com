@@ -148,15 +148,6 @@ class VoicemailAlertTests(TestCase):
         two = build_smart_alerts([], 1, self.today, square_sync_failures=2)
         self.assertEqual(two[0]["message"], "2 runs failed to sync to Square")
 
-    def test_square_membership_failed_pluralises(self) -> None:
-        one = build_smart_alerts([], 1, self.today, square_membership_failures=1)
-        self.assertIn(
-            "1 Square membership sale needs attention", [a["message"] for a in one])
-        two = build_smart_alerts([], 1, self.today, square_membership_failures=2)
-        self.assertIn(
-            "2 Square membership sales need attention", [a["message"] for a in two])
-        self.assertNotIn("square-membership-failed", self._square_ids())
-
 
 class AdInquiryAlertTests(TestCase):
     def setUp(self) -> None:
@@ -191,7 +182,6 @@ class AlertPermTests(TestCase):
             engagements, 0, today,
             new_rental_inquiries=1, new_ad_inquiries=1, new_voicemails=1,
             square_pull_status="FAILED", square_sync_failures=1,
-            square_membership_failures=1,
         )
         by_prefix = {
             "no-showtimes-tomorrow": "cinema.view_showtime",
@@ -202,9 +192,8 @@ class AlertPermTests(TestCase):
             "new-voicemails": "phone.view_voicemail",
             "square-pull-": "boxoffice.view_salespull",
             "square-sync-failed": "cinema.view_engagement",
-            "square-membership-failed": "boxoffice.view_membershipsale",
         }
-        self.assertEqual(len(alerts), 9)
+        self.assertEqual(len(alerts), 8)
         for alert in alerts:
             expected = next(
                 perm for prefix, perm in by_prefix.items()

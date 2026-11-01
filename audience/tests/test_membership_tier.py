@@ -1,6 +1,5 @@
 import uuid
 
-from django.db import IntegrityError
 from django.test import TestCase
 
 from audience.models import MembershipBenefit, MembershipTier
@@ -64,7 +63,6 @@ class MembershipTierTests(TestCase):
         self.assertFalse(tier.featured)
         self.assertFalse(tier.is_family_tier)
         self.assertEqual(tier.eyebrow, "")
-        self.assertEqual(tier.checkout_url, "")
 
     def test_shown_on_the_membership_page_by_default(self) -> None:
         """Retiring is the deliberate act; being listed is the norm."""
@@ -78,7 +76,6 @@ class MembershipTierTests(TestCase):
             name="Zero",
             price=10,
             duration_months=0,
-            checkout_url="https://square.link/u/zero",
         )
         with self.assertRaises(ValidationError) as caught:
             tier.full_clean()
@@ -271,23 +268,3 @@ class SlugImmutabilityTests(TestCase):
 
     def test_a_new_tier_chooses_its_slug(self) -> None:
         self.assertEqual(make_tier(slug="brand-new").slug, "brand-new")
-
-
-class SquareVariationIdTests(TestCase):
-    def test_defaults_blank_and_two_blanks_coexist(self) -> None:
-        a = MembershipTier.objects.create(
-            slug="a", name="A", price=1, checkout_url="https://square.link/u/a"
-        )
-        b = MembershipTier.objects.create(
-            slug="b", name="B", price=1, checkout_url="https://square.link/u/b"
-        )
-        self.assertEqual((a.square_variation_id, b.square_variation_id), ("", ""))
-
-    def test_set_ids_are_unique(self) -> None:
-        MembershipTier.objects.create(
-            slug="a", name="A", price=1, square_variation_id="VAR1"
-        )
-        with self.assertRaises(IntegrityError):
-            MembershipTier.objects.create(
-                slug="b", name="B", price=1, square_variation_id="VAR1"
-            )

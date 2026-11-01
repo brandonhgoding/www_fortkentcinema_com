@@ -10,9 +10,6 @@
       <p class="page-subtitle">The tiers sold on the membership page, and the perks they list.</p>
     </div>
     <div class="actions">
-      {% if perms.boxoffice.view_membershipsale %}
-      <a class="btn btn-secondary" href="{% url 'dashboard:square_sales' %}">Square sales</a>
-      {% endif %}
       {% if perms.audience.view_membershipterm %}
       <a class="btn btn-secondary" href="{% url 'dashboard:terms' %}">Terms sold</a>
       {% endif %}
