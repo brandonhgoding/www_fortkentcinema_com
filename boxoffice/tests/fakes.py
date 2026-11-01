@@ -4,13 +4,9 @@ import datetime
 import itertools
 
 from boxoffice.gateway import (
-    CheckoutResult,
-    CheckoutSpec,
     GatewayError,
-    InvalidPhone,
     NotFound,
     OrderData,
-    OrderLine,
     RemoteItem,
     Tender,
     UpsertResult,
@@ -20,28 +16,16 @@ from boxoffice.spec import ItemSpec
 
 
 class FakeGateway:
-    def __init__(self, *, fail_with: GatewayError | None = None,
-                 fail_on: set[str] | None = None, reject_phone: bool = False) -> None:
+    def __init__(self, *, fail_with: GatewayError | None = None) -> None:
         self.items: dict[str, RemoteItem] = {}
         self.orders: list[OrderData] = []
         self.categories: dict[str, str] = {}
         self.images: dict[str, tuple[str, bytes]] = {}
-        # Customer id -> the fields it was created with (email, given_name, ...).
-        self.customers: dict[str, dict] = {}
         self.calls: list[tuple[str, dict]] = []
         self.fail_with = fail_with
-        # Payment IDs whose refund_payment raises GatewayError("boom").
-        self.fail_on: set[str] = set() if fail_on is None else fail_on
-        # Like Square: a payment link with a phone it cannot parse is refused.
-        self.reject_phone = reject_phone
         self._item_ids = itertools.count(1)
         self._var_ids = itertools.count(1)
         self._image_ids = itertools.count(1)
-        self._link_ids = itertools.count(1)
-        self._refund_ids = itertools.count(1)
-        # Like Square: an idempotency key names one refund for good.
-        self.refunds_by_key: dict[str, str] = {}
-        self._customer_ids = itertools.count(1)
 
     def _record(self, method: str, **kwargs) -> None:
         self.calls.append((method, kwargs))
@@ -108,65 +92,10 @@ class FakeGateway:
                 if o.closed_at is None
                 and (o.paid_at is None or start <= o.paid_at < end)]
 
-    def retrieve_order(self, order_id: str) -> OrderData:
-        self._record("retrieve_order", order_id=order_id)
-        for order in self.orders:
-            if order.order_id == order_id:
-                return order
-        raise NotFound(f"Unknown order {order_id}")
-
-    def create_payment_link(self, spec: CheckoutSpec) -> CheckoutResult:
-        self._record("create_payment_link", spec=spec)
-        if self.reject_phone and spec.buyer_phone:
-            raise InvalidPhone("INVALID_PHONE_NUMBER")
-        n = next(self._link_ids)
-        order_id = f"SQ-{n}"
-        lines = tuple(
-            OrderLine(uid=f"{order_id}-{i}", name=line.name, variation_name=line.name,
-                      catalog_object_id=line.variation_id, quantity=line.quantity,
-                      gross_cents=line.unit_cents * line.quantity)
-            for i, line in enumerate(spec.lines)
-        )
-        self.orders.append(OrderData(order_id=order_id, closed_at=None, lines=lines,
-                                     reference_id=spec.reference,
-                                     showtime_id=spec.showtime_id))
-        return CheckoutResult(order_id=order_id, url=f"https://square.link/u/{n}")
-
-    def refund_payment(self, *, payment_id: str, amount_cents: int,
-                       idempotency_key: str, reason: str) -> str:
-        self._record("refund_payment", payment_id=payment_id,
-                     amount_cents=amount_cents, idempotency_key=idempotency_key,
-                     reason=reason)
-        if payment_id in self.fail_on:
-            raise GatewayError("boom")
-        if idempotency_key not in self.refunds_by_key:
-            self.refunds_by_key[idempotency_key] = f"R-{next(self._refund_ids)}"
-        return self.refunds_by_key[idempotency_key]
-
-    def find_customer(self, email: str) -> str | None:
-        self._record("find_customer", email=email)
-        for customer_id, fields in self.customers.items():
-            if fields["email"] == email:
-                return customer_id
-        return None
-
-    def create_customer(self, *, given_name: str, family_name: str, email: str,
-                        phone: str, idempotency_key: str) -> str:
-        self._record("create_customer", given_name=given_name,
-                     family_name=family_name, email=email, phone=phone,
-                     idempotency_key=idempotency_key)
-        if self.reject_phone and phone:
-            raise InvalidPhone("INVALID_PHONE_NUMBER")
-        customer_id = f"C-{next(self._customer_ids)}"
-        self.customers[customer_id] = {
-            "given_name": given_name, "family_name": family_name,
-            "email": email, "phone": phone}
-        return customer_id
-
     def pay(self, order_id: str, payment_id: str = "P1",
             paid_at: datetime.datetime | None = None, *,
             tender_type: str = "CARD", amount_cents: int | None = None) -> None:
-        """Test helper: the buyer completes the payment link's checkout.
+        """Test helper: the buyer pays an open (payment-link) order.
 
         The tender covers the order unless ``amount_cents`` says otherwise. A
         card tender reads CAPTURED; any other kind carries no status, as in

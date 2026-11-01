@@ -28,10 +28,6 @@ class VersionMismatch(GatewayError):
     pass
 
 
-class InvalidPhone(GatewayError):
-    """Square could not parse the buyer phone sent as a checkout prefill."""
-
-
 class NotFound(GatewayError):
     """Square has no such object: the one failure a retry cannot fix."""
 
@@ -59,13 +55,6 @@ class OrderLine:
     catalog_object_id: str  # "" when absent
     quantity: int
     gross_cents: int  # total_money.amount
-
-
-@dataclass(frozen=True)
-class Recipient:
-    display_name: str  # each "" when Square omits it
-    email_address: str
-    phone_number: str
 
 
 @dataclass(frozen=True)
@@ -105,7 +94,6 @@ class OrderData:
     order_id: str
     closed_at: datetime.datetime | None  # aware; None when Square omits it
     lines: tuple[OrderLine, ...]
-    recipient: Recipient | None = None  # the buyer, on payment-link orders
     # When the buyer paid: the first tender's created_at, else the order's
     # created_at; aware, None when Square gives neither. Payment-link orders
     # reach COMPLETED (closed_at) only when staff mark the shipment done.
@@ -113,36 +101,6 @@ class OrderData:
     tenders: tuple[Tender, ...] = ()
     reference_id: str = ""  # the website's order number on payment-link orders
     showtime_id: int | None = None  # from metadata.showtime, which we write
-
-
-@dataclass(frozen=True)
-class CheckoutLine:
-    variation_id: str
-    name: str
-    quantity: int
-    unit_cents: int  # the price the buyer pays per ticket
-    discount_cents: int  # the per-line matinee total; 0 for none
-
-
-@dataclass(frozen=True)
-class CheckoutSpec:
-    reference: str
-    lines: tuple[CheckoutLine, ...]
-    redirect_url: str
-    buyer_email: str
-    buyer_phone: str
-    support_email: str
-    idempotency_key: str
-    customer_id: str = ""  # the buyer's Square customer; "" sends none
-    # The showtime a ticket order is for, written to metadata.showtime so the
-    # nightly pull can attribute the order; None for anything but a ticket.
-    showtime_id: int | None = None
-
-
-@dataclass(frozen=True)
-class CheckoutResult:
-    order_id: str
-    url: str
 
 
 def _call(fn: Callable[..., T], *args: Any, **kwargs: Any) -> T:
@@ -159,8 +117,6 @@ def _call(fn: Callable[..., T], *args: Any, **kwargs: Any) -> T:
         codes = {getattr(e, "code", None) for e in exc.errors}
         if "VERSION_MISMATCH" in codes:
             raise VersionMismatch(str(exc.body)) from exc
-        if "INVALID_PHONE_NUMBER" in codes:
-            raise InvalidPhone(str(exc.body)) from exc
         if "NOT_FOUND" in codes or exc.status_code == 404:
             raise NotFound(str(exc.body)) from exc
         raise GatewayError(str(exc.body)) from exc
@@ -224,17 +180,6 @@ def _whole_units(quantity: str) -> int:
     return int(decimal.Decimal(quantity).to_integral_value(decimal.ROUND_HALF_UP))
 
 
-def _recipient(order: Any) -> Recipient | None:
-    for fulfillment in order.fulfillments or []:
-        for kind in ("pickup_details", "shipment_details", "delivery_details"):
-            recipient = getattr(getattr(fulfillment, kind, None), "recipient", None)
-            if recipient is not None:
-                return Recipient(*(getattr(recipient, field, None) or ""
-                                   for field in ("display_name", "email_address",
-                                                 "phone_number")))
-    return None
-
-
 def parse_timestamp(value: str | None) -> datetime.datetime | None:
     """Square's RFC 3339 timestamps ("...Z") as aware datetimes; None stays None.
 
@@ -280,7 +225,6 @@ def _order_data(order: Any) -> OrderData:
         order_id=order.id,
         closed_at=parse_timestamp(order.closed_at),
         lines=tuple(_order_line(li) for li in (order.line_items or [])),
-        recipient=_recipient(order),
         paid_at=_paid_at(order),
         tenders=tuple(_tender(t) for t in (order.tenders or [])),
         reference_id=order.reference_id or "",
@@ -291,70 +235,6 @@ def _order_data(order: Any) -> OrderData:
 def _showtime_id(metadata: dict[str, str] | None) -> int | None:
     value = (metadata or {}).get("showtime", "")
     return int(value) if value.isdigit() else None
-
-
-def _usd(cents: int) -> dict:
-    return {"amount": cents, "currency": "USD"}
-
-
-def _matinee_uid(line: CheckoutLine) -> str:
-    return f"matinee-{line.variation_id}"
-
-
-def _checkout_line_item(line: CheckoutLine) -> dict:
-    # Square prices the line at the catalog variation's price unless told
-    # otherwise; the matinee discount then brings it down to unit_cents.
-    if line.discount_cents % line.quantity:
-        raise ValueError(
-            f"Discount {line.discount_cents} is not a whole number of cents per "
-            f"ticket for quantity {line.quantity}")
-    item: dict[str, Any] = {
-        "catalog_object_id": line.variation_id,
-        "quantity": str(line.quantity),
-        "base_price_money": _usd(
-            line.unit_cents + line.discount_cents // line.quantity),
-    }
-    if line.discount_cents:
-        item["applied_discounts"] = [{"discount_uid": _matinee_uid(line)}]
-    return item
-
-
-def payment_link_body(spec: CheckoutSpec, location_id: str) -> dict:
-    """The keyword arguments for checkout.payment_links.create."""
-    order: dict[str, Any] = {
-        "location_id": location_id,
-        "reference_id": spec.reference,
-        "line_items": [_checkout_line_item(line) for line in spec.lines],
-    }
-    if spec.showtime_id is not None:
-        order["metadata"] = {"showtime": str(spec.showtime_id)}
-    if spec.customer_id:
-        order["customer_id"] = spec.customer_id
-    discounts = [
-        {"uid": _matinee_uid(line), "name": "Matinee", "type": "FIXED_AMOUNT",
-         "scope": "LINE_ITEM", "amount_money": _usd(line.discount_cents)}
-        for line in spec.lines if line.discount_cents
-    ]
-    if discounts:
-        order["discounts"] = discounts
-    options: dict[str, Any] = {
-        "redirect_url": spec.redirect_url,
-        "ask_for_shipping_address": False,
-        "allow_tipping": False,
-        "accepted_payment_methods": {"apple_pay": True, "google_pay": True},
-    }
-    # Leave out a blank support email or phone rather than send Square "".
-    if spec.support_email:
-        options["merchant_support_email"] = spec.support_email
-    prefill = {"buyer_email": spec.buyer_email}
-    if spec.buyer_phone:
-        prefill["buyer_phone_number"] = spec.buyer_phone
-    return {
-        "idempotency_key": spec.idempotency_key,
-        "order": order,
-        "checkout_options": options,
-        "pre_populated_data": prefill,
-    }
 
 
 class Gateway(Protocol):
@@ -375,18 +255,6 @@ class Gateway(Protocol):
 
     def search_open_orders(self, start: datetime.datetime,
                            end: datetime.datetime) -> list[OrderData]: ...
-
-    def retrieve_order(self, order_id: str) -> OrderData: ...
-
-    def create_payment_link(self, spec: CheckoutSpec) -> CheckoutResult: ...
-
-    def refund_payment(self, *, payment_id: str, amount_cents: int,
-                       idempotency_key: str, reason: str) -> str: ...
-
-    def find_customer(self, email: str) -> str | None: ...
-
-    def create_customer(self, *, given_name: str, family_name: str, email: str,
-                        phone: str, idempotency_key: str) -> str: ...
 
     def list_ticket_items(self) -> list[RemoteItem]: ...
 
@@ -479,45 +347,6 @@ class SquareGateway:
             cursor = _call(lambda: response.cursor)
             if not cursor:
                 return orders
-
-    def retrieve_order(self, order_id: str) -> OrderData:
-        return _call(lambda: _order_data(self.client.orders.get(order_id).order))
-
-    def create_payment_link(self, spec: CheckoutSpec) -> CheckoutResult:
-        # Built first: a bad spec is a programming error, not a gateway one.
-        body = payment_link_body(spec, self.location_id)
-
-        def create() -> CheckoutResult:
-            link = self.client.checkout.payment_links.create(**body).payment_link
-            return CheckoutResult(order_id=link.order_id, url=link.url)
-
-        return _call(create)
-
-    def find_customer(self, email: str) -> str | None:
-        """The id of the customer whose email is exactly ``email``, if any."""
-        def search() -> str | None:
-            response = self.client.customers.search(
-                query={"filter": {"email_address": {"exact": email}}}, limit=1)
-            customers = response.customers or []
-            return customers[0].id if customers else None
-
-        return _call(search)
-
-    def create_customer(self, *, given_name: str, family_name: str, email: str,
-                        phone: str, idempotency_key: str) -> str:
-        """Make a customer profile and return its id. ``phone`` is E.164 or ""."""
-        # Square rejects an empty string for the optional fields; omit them.
-        fields = {"given_name": given_name, "family_name": family_name,
-                  "email_address": email, "phone_number": phone}
-        return _call(lambda: self.client.customers.create(
-            idempotency_key=idempotency_key,
-            **{k: v for k, v in fields.items() if v}).customer.id)
-
-    def refund_payment(self, *, payment_id: str, amount_cents: int,
-                       idempotency_key: str, reason: str) -> str:
-        return _call(lambda: self.client.refunds.refund_payment(
-            idempotency_key=idempotency_key, payment_id=payment_id,
-            amount_money=_usd(amount_cents), reason=reason).refund.id)
 
     def list_ticket_items(self) -> list[RemoteItem]:
         return _call(lambda: [
