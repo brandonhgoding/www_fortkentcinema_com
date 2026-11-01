@@ -209,30 +209,7 @@
   flex: 1 1 auto;
 }
 
-/* CTA */
-.tier-card__cta {
-  margin-top: auto;
-  align-self: stretch;
-  letter-spacing: 4px;
-  font-size: 1rem;
-  padding: 0.85rem 1.5rem;
-}
-
-.tier-card--featured .tier-card__cta {
-  background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-warm) 100%);
-  color: var(--color-on-accent);
-  border: 1px solid var(--color-gold);
-  box-shadow: 0 4px 15px var(--color-gold-glow);
-}
-
-.tier-card--featured .tier-card__cta:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px var(--color-gold-glow);
-  background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-warm) 100%);
-  color: var(--color-on-accent);
-}
-
-/* Where to join when the tier is not sold online (Square off, or no item). */
+/* "Join at the box office": memberships are sold at the counter only. */
 .tier-card__box-office {
   margin-top: auto;
   font-size: 0.85rem;

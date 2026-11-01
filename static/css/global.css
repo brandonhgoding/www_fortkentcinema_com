@@ -246,44 +246,6 @@ button {
   outline-offset: 2px;
 }
 
-.btn-ticket {
-  position: relative;
-  background: linear-gradient(180deg, var(--color-gold) 0%, var(--color-gold-warm) 100%);
-  color: var(--color-on-accent);
-  padding: 1rem 2.5rem;
-  box-shadow: 0 4px 15px var(--color-gold-glow);
-}
-
-.btn-ticket::before,
-.btn-ticket::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 12px;
-  height: 12px;
-  background: var(--color-bg-charcoal-dark);
-  border-radius: 50%;
-}
-
-.btn-ticket::before {
-  left: -6px;
-}
-
-.btn-ticket::after {
-  right: -6px;
-}
-
-.btn-ticket:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px var(--color-gold-glow);
-}
-
-.btn-ticket:focus-visible {
-  outline: 3px solid var(--color-on-accent);
-  outline-offset: 2px;
-}
-
 /* ============================================
    SECTION STYLES
 ============================================ */
@@ -510,23 +472,13 @@ button {
 /* The hero's own guard lives at the end of Hero.css: this sheet is bundled
  * before it, so a rule here loses to the animations declared there. */
 @media (prefers-reduced-motion: reduce) {
-  .movie-card:hover,
   .blog-card:hover {
     transform: none;
   }
 
-  .movie-card:hover .movie-poster-img {
-    transform: none;
-  }
-
   .btn:hover,
-  .btn-primary:hover,
-  .btn-ticket:hover {
+  .btn-primary:hover {
     transform: none;
-  }
-
-  .date-nav__arrow:hover:not(:disabled) {
-    transition: none;
   }
 }
 

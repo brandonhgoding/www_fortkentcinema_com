@@ -398,8 +398,7 @@ a:hover {
    status value lower-cased, so templates write status-{{ x.status|lower }}. */
 .status-confirmed,
 .status-active,
-.status-published,
-.status-open {
+.status-published {
   background: var(--status-confirmed-bg);
   color: var(--status-confirmed);
 }
@@ -411,7 +410,6 @@ a:hover {
 
 .status-ended,
 .status-lapsed,
-.status-closed,
 .status-unsubscribed {
   background: var(--status-ended-bg);
   color: var(--status-ended);

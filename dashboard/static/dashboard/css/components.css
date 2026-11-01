@@ -508,12 +508,10 @@ textarea.input,
 }
 
 /* ===== Tags =====
-   Square-cornered labels for a fact about a row: screen type, 3D,
-   captions, format, kind, language, hidden. A status (something that
+   Square-cornered labels for a fact about a row: captions, format,
+   kind, language, hidden. A status (something that
    changes) is a .status-badge pill instead. The class names are the ones the templates
    already used; they share one shape here. */
-.typeBadge,
-.badge3d,
 .captionsBadge,
 .formatBadge,
 .kindBadge,
@@ -537,21 +535,14 @@ textarea.input,
   color: var(--text-tertiary);
 }
 
-.kindBadge,
-.typedolby_cinema {
+.kindBadge {
   background: var(--brass-glow);
   color: var(--brass-dark);
 }
 
-.typeimax,
 .captionsBadge {
   background: var(--status-info-bg);
   color: var(--status-info);
-}
-
-.badge3d {
-  background: var(--status-confirmed-bg);
-  color: var(--status-confirmed);
 }
 
 .hiddenBadge {
