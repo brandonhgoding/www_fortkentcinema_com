@@ -9,7 +9,8 @@ from django.urls import reverse
 from audience.models import MembershipTier
 
 
-PRICE_35 = 'From <span class="home-membership__amount">$35</span> a year.'
+def band(html: str) -> str:
+    return html.split('id="membership"')[1].split("</section>")[0]
 
 
 @mock.patch("web.views.get_coming_soon", return_value=[])
@@ -43,36 +44,30 @@ class HomeMembershipBandTests(TestCase):
         self._tier("standard", 60)
         self._tier("senior", 35)
         self._tier("retired", 10, listed=False)
-        html = self._html()
-        self.assertIn(PRICE_35, html)
-        self.assertNotIn("From $10", html)
+        section = band(self._html())
+        self.assertIn("$35", section)
+        self.assertNotIn("$10", section)
 
     def test_cheaper_six_month_tier_does_not_set_the_price(self, _ns, _cs) -> None:
         self._tier("half", 20, months=6)
         self._tier("senior", 35)
-        html = self._html()
-        self.assertIn(PRICE_35, html)
-        self.assertNotIn("From $20", html)
+        section = band(self._html())
+        self.assertIn("$35", section)
+        self.assertNotIn("$20", section)
 
     def test_only_a_six_month_tier_omits_price_line(self, _ns, _cs) -> None:
         self._tier("half", 20, months=6)
-        html = self._html()
-        self.assertNotIn(
-            "From $", html.split('id="membership"')[1].split("</section>")[0]
-        )
+        self.assertNotIn("From $", band(self._html()))
 
     def test_no_tiers_omits_price_line(self, _ns, _cs) -> None:
         html = self._html()
         self.assertIn('id="membership"', html)
         self.assertIn(reverse("membership"), html)
-        self.assertNotIn(
-            "From $", html.split('id="membership"')[1].split("</section>")[0]
-        )
+        self.assertNotIn("From $", band(html))
 
     def test_button(self, _ns, _cs) -> None:
-        html = self._html()
-        self.assertEqual(html.count("btn-member"), 1)
-        links = re.findall(r"<a\b[^>]*\bbtn-member\b[^>]*>", html)
+        links = re.findall(
+            r'<a\b[^>]*data-track="membership_cta_click"[^>]*>', self._html()
+        )
         self.assertEqual(len(links), 1)
         self.assertIn(f'href="{reverse("membership")}"', links[0])
-        self.assertIn('data-track="membership_cta_click"', links[0])

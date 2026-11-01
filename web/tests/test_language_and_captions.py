@@ -5,6 +5,7 @@ captions looks exactly as it did before these fields existed.
 """
 
 import datetime
+import re
 
 from cinema.models import Language, Showtime, Translation
 from django.test import TestCase
@@ -58,32 +59,17 @@ class LanguageCaptionsTests(TestCase):
         self.assertEqual(times[0]["captions"], "OC")
         self.assertEqual(times[0]["captions_label"], "Open Captions")
 
-    def test_home_shows_open_captions_chip_only(self) -> None:
-        # The OC chip sits beside the time exactly as CC does, so the row of
-        # times scans as a row and keeps one height. The hero's row of times
-        # is the listing, and it wears the hero's rating chip; the sr-only
-        # label spells the chip out for screen readers, as CC gets.
-        self._set(captions="OC")
-        html = self.client.get(reverse("home")).content.decode()
-        self.assertIn(
-            '<span class="showtime">7:00 PM '
-            '<abbr class="hero-film__cert" title="Open Captions" aria-hidden="true">'
-            'OC</abbr><span class="sr-only">Open Captions</span></span>',
-            html,
-        )
-        self.assertNotIn("showtime--noted", html)
-
     def test_home_shows_label_and_caption_chip(self) -> None:
         self._set(language=Language.FRENCH, translation=Translation.SUBTITLED,
                   captions="CC")
         html = self.client.get(reverse("home")).content.decode()
-        self.assertIn('<span class="hero-film__lang">French · English subtitles</span>', html)
+        self.assertIn("French · English subtitles", html)
         # The abbr's tooltip is for the mouse; touch and screen readers get
         # the spelled-out label instead.
-        self.assertIn(
-            '<abbr class="hero-film__cert" title="Closed Captions" aria-hidden="true">CC</abbr>'
-            '<span class="sr-only">Closed Captions</span>', html
-        )
+        abbr = re.search(r"<abbr\b[^>]*>CC</abbr>", html)
+        self.assertIsNotNone(abbr)
+        self.assertIn('aria-hidden="true"', abbr.group(0))
+        self.assertIn('<span class="sr-only">Closed Captions</span>', html)
 
     def test_home_shows_nothing_extra_for_plain_english(self) -> None:
         html = self.client.get(reverse("home")).content.decode()

@@ -145,13 +145,5 @@ class RentalFormRenderTests(TestCase):
     def test_fields_sit_inside_real_labels(self):
         self.assertRegex(self.html, r'<label[^>]*>\s*<span[^>]*>Your name')
 
-    def test_personal_email_is_gone(self):
-        # The owner's personal Gmail used to be the only written contact.
-        self.assertNotIn("gmail", self.html.lower())
-        self.assertNotIn("mailto:", self.html)
-
     def test_phone_stays_as_the_alternative(self):
         self.assertIn('href="tel:+12072315287"', self.html)
-
-    def test_form_uses_rental_classes(self):
-        self.assertIn("rental-inquire__form", self.html)

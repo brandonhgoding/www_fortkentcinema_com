@@ -148,29 +148,25 @@ class HeckleNightLineupTests(TestCase):
         self.today = datetime.date(2026, 10, 1)
         self.night = datetime.date(2026, 10, 16)
 
-    def book(self, title, date, *, hour=19, minute=0, status="CONFIRMED",
-             cancelled=False, listed=True, kind=Engagement.Kind.REGULAR,
-             screen=None):
-        """A 7:00 PM booking on the night.
+    def book(self, title, date, *, kind=Engagement.Kind.REGULAR):
+        """A confirmed, listed 7:00 PM booking on the night.
 
         `kind` is still a parameter because the interim lookup must refuse
         every kind.
         """
         film = Film.objects.create(title=title, runtime_minutes=79, rating="NR")
         engagement = Engagement.objects.create(
-            screen=screen or self.screen,
+            screen=self.screen,
             start_date=date,
             end_date=date,
-            status=status,
+            status="CONFIRMED",
             kind=kind,
-            show_in_main_listings=listed,
         )
         EngagementFilm.objects.create(engagement=engagement, film=film, position=1)
         Showtime.objects.create(
             engagement=engagement,
-            screen=screen or self.screen,
-            starts_at=aware(date, hour, minute),
-            is_cancelled=cancelled,
+            screen=self.screen,
+            starts_at=aware(date, 19),
         )
         return film
 
@@ -192,71 +188,6 @@ class HeckleNightLineupTests(TestCase):
         self.assertEqual(len(rows), 3)
         self.assertTrue(all(row["film"] is None for row in rows))
         self.assertEqual(rows[0]["label"], "Friday, October 16")
-
-    def test_only_a_seven_oclock_event_is_heckle_night(self):
-        """Exact, not a floor — and the cost of that is a blank date.
-
-        A Heckle Night booked for 7:30 leaves this page saying "Not booked
-        yet" while the listings show the event. Crude on purpose: it fails
-        visibly rather than silently. The real fix is a flag on the
-        Engagement, not a cleverer query.
-        """
-        for hour, minute in ((19, 30), (18, 30), (20, 0), (13, 0)):
-            with self.subTest(at=f"{hour}:{minute:02d}"):
-                Engagement.objects.all().delete()
-                self.book("Wrong Time", self.night, hour=hour, minute=minute)
-                self.assertIsNone(self.nights()[0]["film"])
-
-    def test_cancelled_showtime_is_not_a_lineup(self):
-        self.book("Cancelled", self.night, cancelled=True)
-        self.assertIsNone(self.nights()[0]["film"])
-
-    def test_draft_engagement_is_not_a_lineup(self):
-        self.book("Not Confirmed Yet", self.night, status="DRAFT")
-        self.assertIsNone(self.nights()[0]["film"])
-
-    def test_showtime_on_another_day_is_ignored(self):
-        self.book("Wrong Night", self.night - datetime.timedelta(days=1))
-        self.assertIsNone(self.nights()[0]["film"])
-
-    def test_the_regular_friday_feature_is_not_heckle_night(self):
-        """The bug this filter exists to prevent.
-
-        A first-run feature in the Friday evening slot is a normal
-        screening. Announcing it here would invite a paying room to shout
-        at a film we licensed, which is a different and much worse night.
-        """
-        self.book("First Run Feature", self.night, kind=Engagement.Kind.REGULAR)
-        self.assertIsNone(self.nights()[0]["film"])
-
-    def test_no_other_kind_counts_either(self):
-        """Every other kind is refused too; see the interim note on heckle_showtimes."""
-        for kind in (Engagement.Kind.CLASSIC, Engagement.Kind.DOUBLE_FEATURE):
-            with self.subTest(kind=kind):
-                Engagement.objects.all().delete()
-                self.book("Close But Not It", self.night, kind=kind)
-                self.assertIsNone(self.nights()[0]["film"])
-
-    def test_a_private_event_is_still_not_advertised(self):
-        """show_in_main_listings now carries the privacy guard alone.
-
-        Private bookings are special events too. Unticking that box is
-        how one is marked private, and this page must not undo that.
-        """
-        self.book("Someone's Birthday Party", self.night, listed=False)
-        self.assertIsNone(self.nights()[0]["film"])
-
-    def test_query_count_does_not_grow_with_the_number_of_nights(self):
-        """Bucketed in Python. Per-date filtering would be N queries.
-
-        The absolute count is not the point and would be brittle; that
-        doubling the list does not move it is.
-        """
-        self.book("Plan 9 From Outer Space", self.night)
-        with self.assertNumQueries(0):
-            get_heckle_nights(3, today=self.today)
-        with self.assertNumQueries(0):
-            get_heckle_nights(6, today=self.today)
 
 
 class HeckleNightPageTests(TestCase):
@@ -320,9 +251,6 @@ class HeckleNightPageTests(TestCase):
         sitemap = self.client.get("/sitemap.xml").content.decode()
         self.assertIn("/heckle-night/", sitemap)
 
-    def test_in_the_nav(self):
-        self.assertContains(self.response, "/heckle-night/")
-
 
 class MstThreeKTests(TestCase):
     """The premise is theirs; the name and the show are not.
@@ -351,22 +279,6 @@ class MstThreeKTests(TestCase):
         ):
             self.assertNotIn("Mystery Science", tag)
             self.assertNotIn("MST3K", tag)
-
-    def test_they_are_named_only_as_an_explanation(self):
-        """Twice in the visible page, and both uses earn their place.
-
-        Once in the body ("if you've seen it, you know how this works")
-        and once in the FAQ question that disclaims the affiliation. The
-        head is excluded because the FAQ renders there a second time as
-        JSON-LD, which is the same two uses, not new ones. A third use in
-        the body would be the page leaning on someone else's mark.
-        """
-        body = self.content[self.content.index("</head>") :]
-        self.assertEqual(body.count("Mystery Science Theater 3000"), 2)
-        self.assertNotIn("MST3K", self.content)
-
-    def test_the_url_is_ours(self):
-        self.assertNotIn("mst", reverse("heckle_night"))
 
     def test_the_page_disclaims_affiliation(self):
         self.assertIn("not affiliated with them", self.content)

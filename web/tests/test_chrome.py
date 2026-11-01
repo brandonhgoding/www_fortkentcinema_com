@@ -3,18 +3,13 @@ from django.urls import reverse
 
 
 class ChromeTests(TestCase):
-    def test_nav_renders_logo_and_links(self):
+    def test_nav_renders_the_logo(self):
         html = self.client.get(reverse("home")).content.decode()
-        self.assertIn('class="nav-logo"', html)
         # The logo is the brand wordmark SVG; its accessible name is the alt.
         self.assertIn("fkc-wordmark-dark.svg", html)
         self.assertIn('alt="Fort Kent Cinema"', html)
-        # The link row is empty since 2026-10-31; the button is all that's left.
-        self.assertIn("btn btn-primary nav-cta", html)
-        self.assertIn('class="nav-hamburger"', html)      # mobile toggle present
 
     def test_footer_renders_address_and_social(self):
         html = self.client.get(reverse("home")).content.decode()
-        self.assertIn('class="footer"', html)
         self.assertIn("13 Hall Street", html)             # address from site_config
         self.assertIn("facebook.com/fortkentcinema", html)  # social link

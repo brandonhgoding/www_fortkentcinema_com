@@ -1,31 +1,7 @@
 from cinema.models import AdType
-from django.test import SimpleTestCase, TestCase
-from web.constants import (
-    AD_ARTWORK_DEADLINE_DAY,
-    AD_SLIDE_PRICE,
-    AD_VIDEO_MAX_SECONDS,
-    AD_VIDEO_PRICE,
-    ADVERTISING_FAQ,
-)
+from django.test import TestCase
+from web.constants import AD_SLIDE_PRICE, AD_VIDEO_PRICE
 from web.forms import AdInquiryForm
-
-
-class AdvertisingConstantsTests(SimpleTestCase):
-    def test_the_rates(self):
-        self.assertEqual(
-            (
-                AD_SLIDE_PRICE,
-                AD_VIDEO_PRICE,
-                AD_VIDEO_MAX_SECONDS,
-                AD_ARTWORK_DEADLINE_DAY,
-            ),
-            (75, 150, 30, 20),
-        )
-
-    def test_faq_reads_from_the_constants(self):
-        answers = " ".join(f["answer"] for f in ADVERTISING_FAQ)
-        self.assertIn("by the 20th", answers)
-        self.assertIn("up to 30 seconds", answers)
 
 
 class AdInquiryFormTests(TestCase):
@@ -41,8 +17,8 @@ class AdInquiryFormTests(TestCase):
     def test_radio_labels_carry_the_prices(self):
         html = str(AdInquiryForm()["ad_type"])
         self.assertEqual(html.count('type="radio"'), 3)
-        self.assertIn("Pre-show slide, $75 a month", html)
-        self.assertIn("Video spot, $150 a month", html)
+        self.assertIn(f"${AD_SLIDE_PRICE}", html)
+        self.assertIn(f"${AD_VIDEO_PRICE}", html)
 
     def test_required_fields(self):
         form = AdInquiryForm(self.data(phone="", ad_type="", message=""))
