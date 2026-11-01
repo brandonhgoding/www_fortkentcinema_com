@@ -9,8 +9,8 @@ class ChromeTests(TestCase):
         # The logo is the brand wordmark SVG; its accessible name is the alt.
         self.assertIn("fkc-wordmark-dark.svg", html)
         self.assertIn('alt="Fort Kent Cinema"', html)
-        self.assertIn('class="nav-link"', html)
-        self.assertIn("/blog", html)                      # a route nav item
+        # The link row is empty since 2026-10-31; the button is all that's left.
+        self.assertIn("btn btn-primary nav-cta", html)
         self.assertIn('class="nav-hamburger"', html)      # mobile toggle present
 
     def test_footer_renders_address_and_social(self):

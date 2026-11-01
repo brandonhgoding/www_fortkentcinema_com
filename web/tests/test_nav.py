@@ -44,19 +44,11 @@ class NavigationConfigTests(TestCase):
         # slot, the same as a link, so this counts menus and links together.
         self.assertLessEqual(len(SITE_CONFIG["navigation"]), 5)
 
-    def test_top_level_order(self):
-        # The owner's call on 2026-10-14: the nav names the pages they want
-        # Google to offer as sitelinks, in this order. Coming Soon stays a
-        # home-page section; it is an anchor, and Google won't sitelink a
-        # fragment of the page it is already showing.
-        self.assertEqual(
-            SITE_CONFIG["navigation"],
-            [
-                {"label": "Now Showing", "href": "#now-showing"},
-                {"label": "Buy Ad Space", "href": "/advertise/"},
-                {"label": "Rent the Cinema", "href": "/rentals/"},
-            ],
-        )
+    def test_nav_row_is_empty(self):
+        # The owner's call on 2026-10-31: Now Showing, Buy Ad Space and Rent
+        # the Cinema all left the nav. The bar is the logo and the Become a
+        # Member button; advertising and rentals are footer links.
+        self.assertEqual(SITE_CONFIG["navigation"], [])
 
     def test_membership_is_the_nav_button_not_a_link(self):
         # The owner's call on 2026-10-13: Membership leaves the link row and
@@ -131,13 +123,12 @@ class NavigationRenderTests(TestCase):
             last_li = html.rindex("<li")
             self.assertIn('href="/membership/"', html[last_li:], path)
 
-    def test_rentals_and_advertise_are_linked_from_the_nav_on_every_page(self):
-        # Sitelink candidates: Google weights a main-nav link over a footer
-        # one, and the anchor text is what it leans on for the label.
+    def test_rentals_and_advertise_are_not_in_the_nav(self):
+        # Removed from the nav on 2026-10-31; the footer still links both.
         for path in ("/", "/rentals/", "/advertise/", "/blog/"):
             html = nav_html(self.client.get(path).content.decode())
-            self.assertIn('href="/advertise/"', html, path)
-            self.assertIn('href="/rentals/"', html, path)
+            self.assertNotIn('href="/advertise/"', html, path)
+            self.assertNotIn('href="/rentals/"', html, path)
 
     def test_nav_labels_never_wrap(self):
         # Three links plus the button is enough that between 769 and about

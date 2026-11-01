@@ -49,10 +49,11 @@ SITE_CONFIG = {
     # its footer label. Coming Soon came out: it is an anchor on the home
     # page, and Google won't sitelink a fragment of the page it already
     # shows. Now Showing stays as the one-click route to tonight's films.
-    "navigation": [
-        {"label": "Buy Ad Space", "href": "/advertise/"},
-        {"label": "Rent the Cinema", "href": "/rentals/"},
-    ],
+    #
+    # Empty since 2026-10-31 (the owner's call): Buy Ad Space and Rent the
+    # Cinema left the nav and are linked from the footer only, so the bar
+    # carries just the logo and the Become a Member button.
+    "navigation": [],
     # Membership, as a button at the right end of the nav rather than a link
     # in the row (the owner's call, 2026-10-13). The Events menu came out the
     # same day; Heckle Night and Open Mic are on the home page's "Be part of
