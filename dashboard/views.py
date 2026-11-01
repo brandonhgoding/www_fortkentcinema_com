@@ -24,21 +24,11 @@ from cinema.showtimes_overlap import (
     check_overlap_against_existing,
     format_overlap_error,
 )
-from cinema.social_cards import (
-    BADGE_BY_PARAM,
-    FACEBOOK,
-    FACEBOOK_BANNER,
-    INSTAGRAM,
-    PARAM_BY_BADGE,
-    PLATFORMS,
-    default_badge,
-    render_card,
-)
 from cinema.tmdb import TMDBAPIError
 from cinema.tmdb.services import TMDBService
 from django.db import transaction
 from django.db.models import Q
-from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -235,17 +225,6 @@ class EngagementDetailView(StaffRequiredMixin, TemplateView):
         ctx["films"] = [ef.film for ef in engagement.engagement_films.all()]
         ctx["showtimes"] = engagement_showtimes(engagement)
         ctx["KIND_LABELS"] = KIND_LABELS
-        ctx["social_default_badge"] = PARAM_BY_BADGE[default_badge(engagement)]
-        ctx["social_facebook_url"] = reverse(
-            "dashboard:engagement_social_card", args=[engagement.pk, FACEBOOK]
-        )
-        ctx["social_instagram_url"] = reverse(
-            "dashboard:engagement_social_card", args=[engagement.pk, INSTAGRAM]
-        )
-        ctx["social_banner_url"] = reverse(
-            "dashboard:engagement_social_card",
-            args=[engagement.pk, FACEBOOK_BANNER],
-        )
         ctx["square_enabled"] = square_enabled()
         ctx["square_item"] = live_item(engagement)
         return ctx
@@ -634,35 +613,3 @@ class ShowtimeBulkView(StaffRequiredMixin, View):
         return _showtime_list_response(
             request, engagement,
             {"kind": "success", "message": f"Created {len(proposed_showtimes)} showtimes"}, close_drawer=True)
-
-
-class EngagementSocialCardView(StaffRequiredMixin, View):
-    """Render an engagement's promo image as a PNG.
-
-    Served inline for the dashboard preview; with ?download=1 as an
-    attachment for the download buttons.
-    """
-
-    permission_required = "cinema.view_engagement"
-
-    def get(
-        self, request: HttpRequest, pk: int, platform: str
-    ) -> HttpResponse:
-        if platform not in PLATFORMS:
-            return HttpResponseBadRequest("Unknown platform")
-        engagement = get_object_or_404(
-            Engagement.objects.prefetch_related("engagement_films__film"),
-            pk=pk,
-        )
-        badge = BADGE_BY_PARAM.get(request.GET.get("badge", ""))
-        png, filename = render_card(engagement, platform, badge)
-        disposition = "attachment" if "download" in request.GET else "inline"
-
-        response = HttpResponse(png, content_type="image/png")
-        response["Content-Disposition"] = (
-            f'{disposition}; filename="{filename}"'
-        )
-        # Must always reflect the current state of the engagement — never
-        # let a browser heuristic-cache it or a shared proxy store it.
-        response["Cache-Control"] = "no-store"
-        return response

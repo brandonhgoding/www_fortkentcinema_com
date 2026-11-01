@@ -30,12 +30,6 @@ PERMISSION_TABLE: list[tuple[str, dict, str, str | tuple[str, ...]]] = [
     ("film_from_tmdb", {}, "post", "cinema.add_film"),
     ("engagements", {}, "get", "cinema.view_engagement"),
     ("engagement_detail", {"pk": 999999}, "get", "cinema.view_engagement"),
-    (
-        "engagement_social_card",
-        {"pk": 999999, "platform": "facebook"},
-        "get",
-        "cinema.view_engagement",
-    ),
     ("engagement_create", {}, "get", "cinema.add_engagement"),
     ("engagement_edit", {"pk": 999999}, "get", "cinema.change_engagement"),
     ("engagement_status", {"pk": 999999}, "post", "cinema.change_engagement"),

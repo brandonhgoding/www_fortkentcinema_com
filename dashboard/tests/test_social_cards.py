@@ -1,196 +1,39 @@
+"""The engagement social cards were removed on 2026-11-01: nothing renders or
+serves them any more."""
+
 import datetime
-from io import BytesIO
-from unittest import mock
 
+from django.conf import settings
 from django.test import TestCase
-from django.urls import reverse
-from PIL import Image
+from django.urls import NoReverseMatch, reverse
 
-from accounts.tests.factories import make_user
-from cinema.models import Engagement, EngagementFilm, Film, Screen
+from cinema.models import Engagement, Screen
 from dashboard.tests.helpers import make_staff
 
 
-def an_image() -> Image.Image:
-    return Image.new("RGB", (400, 600), (200, 40, 40))
-
-
-class SocialCardViewTests(TestCase):
+class SocialCardsRemovedTests(TestCase):
     def setUp(self) -> None:
         make_staff(email="s@example.com", password="pw12345")
         self.client.login(username="s@example.com", password="pw12345")
-        self.screen = Screen.objects.create(name="Screen 1", capacity=100)
-        self.film = Film.objects.create(
-            title="Dune", poster_url="https://image.tmdb.org/t/p/w500/d.jpg"
-        )
         self.eng = Engagement.objects.create(
-            screen=self.screen,
+            screen=Screen.objects.create(name="Screen 1", capacity=100),
             start_date=datetime.date(2026, 7, 1),
             end_date=datetime.date(2026, 7, 7),
         )
-        EngagementFilm.objects.create(
-            engagement=self.eng, film=self.film, position=1
-        )
-        patcher = mock.patch(
-            "cinema.social_cards.fetch_artwork", return_value=an_image()
-        )
-        self.addCleanup(patcher.stop)
-        patcher.start()
 
-    def url(self, platform: str = "instagram", **params: str) -> str:
-        base = reverse(
-            "dashboard:engagement_social_card", args=[self.eng.pk, platform]
-        )
-        if not params:
-            return base
-        query = "&".join(f"{k}={v}" for k, v in params.items())
-        return f"{base}?{query}"
-
-    def test_returns_a_png(self) -> None:
-        response = self.client.get(self.url())
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response["Content-Type"], "image/png")
-        self.assertEqual(Image.open(BytesIO(response.content)).size, (1080, 1080))
-
-    def test_facebook_dimensions(self) -> None:
-        response = self.client.get(self.url("facebook"))
-        self.assertEqual(Image.open(BytesIO(response.content)).size, (1200, 630))
-
-    def test_facebook_banner_dimensions(self) -> None:
-        response = self.client.get(self.url("facebook-banner"))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(Image.open(BytesIO(response.content)).size, (1640, 624))
-
-    def test_facebook_banner_download_filename(self) -> None:
-        response = self.client.get(
-            self.url("facebook-banner", download="1")
-        )
-        self.assertIn(
-            'filename="fkc-dune-now-playing-facebook-banner.png"',
-            response["Content-Disposition"],
-        )
-
-    def test_served_inline_by_default(self) -> None:
-        response = self.client.get(self.url())
-        self.assertIn("inline", response["Content-Disposition"])
-
-    def test_response_is_never_cached(self) -> None:
-        # The rendered PNG must always reflect the current state of the
-        # engagement — no browser heuristic caching, no shared-proxy storage.
-        response = self.client.get(self.url())
-        self.assertEqual(response["Cache-Control"], "no-store")
-
-    def test_download_param_forces_an_attachment(self) -> None:
-        response = self.client.get(self.url("instagram", download="1"))
-        self.assertIn("attachment", response["Content-Disposition"])
-        self.assertIn(
-            'filename="fkc-dune-now-playing-instagram.png"',
-            response["Content-Disposition"],
-        )
-
-    def test_badge_param_is_honoured(self) -> None:
-        response = self.client.get(
-            self.url("facebook", badge="coming_soon", download="1")
-        )
-        self.assertIn(
-            'filename="fkc-dune-coming-soon-facebook.png"',
-            response["Content-Disposition"],
-        )
-
-    def test_unrecognised_badge_falls_back_to_the_default(self) -> None:
-        response = self.client.get(
-            self.url("facebook", badge="whenever", download="1")
-        )
-        self.assertIn("now-playing", response["Content-Disposition"])
-
-    def test_unknown_platform_is_a_400(self) -> None:
-        response = self.client.get(
-            reverse(
-                "dashboard:engagement_social_card", args=[self.eng.pk, "tiktok"]
-            )
-        )
-        self.assertEqual(response.status_code, 400)
-
-    def test_unknown_engagement_is_a_404(self) -> None:
-        response = self.client.get(
-            reverse("dashboard:engagement_social_card", args=[9999, "facebook"])
-        )
-        self.assertEqual(response.status_code, 404)
-
-    def test_anonymous_users_are_redirected(self) -> None:
-        self.client.logout()
-        self.assertEqual(self.client.get(self.url()).status_code, 302)
-
-    def test_non_staff_users_are_forbidden(self) -> None:
-        make_user(email="u@example.com", password="pw12345")
-        self.client.logout()
-        self.client.login(username="u@example.com", password="pw12345")
-        self.assertEqual(self.client.get(self.url()).status_code, 403)
-
-
-class SocialPanelTests(TestCase):
-    def setUp(self) -> None:
-        make_staff(email="s@example.com", password="pw12345")
-        self.client.login(username="s@example.com", password="pw12345")
-        self.screen = Screen.objects.create(name="Screen 1", capacity=100)
-        self.film = Film.objects.create(title="Dune")
-
-    def make_eng(self, start: datetime.date, end: datetime.date) -> Engagement:
-        eng = Engagement.objects.create(
-            screen=self.screen, start_date=start, end_date=end
-        )
-        EngagementFilm.objects.create(engagement=eng, film=self.film, position=1)
-        return eng
-
-    def detail_html(self, eng: Engagement) -> str:
-        return self.client.get(
-            reverse("dashboard:engagement_detail", args=[eng.pk])
+    def test_engagement_page_has_no_social_cards_panel(self) -> None:
+        html = self.client.get(
+            reverse("dashboard:engagement_detail", args=[self.eng.pk])
         ).content.decode()
+        self.assertNotIn("socialCards", html)
+        self.assertNotIn("social_cards.css", html)
 
-    def test_panel_links_to_both_platforms(self) -> None:
-        eng = self.make_eng(
-            datetime.date(2026, 7, 1), datetime.date(2026, 7, 7)
-        )
-        html = self.detail_html(eng)
-        for platform in ("facebook", "instagram", "facebook-banner"):
-            self.assertIn(
-                reverse(
-                    "dashboard:engagement_social_card", args=[eng.pk, platform]
-                ),
-                html,
-            )
+    def test_the_card_route_is_gone(self) -> None:
+        with self.assertRaises(NoReverseMatch):
+            reverse("dashboard:engagement_social_card", args=[self.eng.pk, "facebook"])
+        url = f"/dashboard/engagements/{self.eng.pk}/social/facebook.png"
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 404)
 
-    def test_future_run_defaults_to_coming_soon(self) -> None:
-        today = datetime.date.today()
-        eng = self.make_eng(
-            today + datetime.timedelta(days=30),
-            today + datetime.timedelta(days=37),
-        )
-        response = self.client.get(
-            reverse("dashboard:engagement_detail", args=[eng.pk])
-        )
-        self.assertEqual(response.context["social_default_badge"], "coming_soon")
-
-    def test_current_run_defaults_to_now_playing(self) -> None:
-        today = datetime.date.today()
-        eng = self.make_eng(
-            today - datetime.timedelta(days=2),
-            today + datetime.timedelta(days=2),
-        )
-        response = self.client.get(
-            reverse("dashboard:engagement_detail", args=[eng.pk])
-        )
-        self.assertEqual(response.context["social_default_badge"], "now_playing")
-
-
-class SocialCardCssTests(TestCase):
-    def test_stylesheet_exists(self) -> None:
-        from pathlib import Path
-
-        from django.conf import settings
-
-        path = (
-            Path(settings.BASE_DIR)
-            / "dashboard/static/dashboard/css/social_cards.css"
-        )
-        self.assertIn(".socialPreview", path.read_text())
+    def test_no_artwork_cache(self) -> None:
+        self.assertNotIn("social_cards", settings.CACHES)
