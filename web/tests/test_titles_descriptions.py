@@ -16,7 +16,6 @@ DESCRIPTION_LIMIT = 155
 
 SECTION_PAGES = (
     "home",
-    "membership",
     "rentals",
     "advertise",
     "blog_list",

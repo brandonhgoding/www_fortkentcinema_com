@@ -48,12 +48,6 @@ class TicketInfoContentTests(TestCase):
         line = ticket_info(self.client.get(reverse("home")).content.decode())
         self.assertIn(SITE_CONFIG["cinema"]["address"]["street"], line)
 
-    @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_hero_films")
-    def test_member_price_links_to_membership(self, ns, _cs):
-        ns.return_value = [hero_film()]
-        line = ticket_info(self.client.get(reverse("home")).content.decode())
-        self.assertIn(f'href="{reverse("membership")}"', line)
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_hero_films", return_value=[])

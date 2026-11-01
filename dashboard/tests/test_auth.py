@@ -48,9 +48,9 @@ class DashboardAuthTests(TestCase):
         self.assertIn("next=", resp["Location"])
 
     def test_non_staff_forbidden(self) -> None:
-        # /dashboard/ is the member home for non-staff; other pages are 403.
+        # Non-staff are 403 on every dashboard page.
         self.client.login(username="plain@example.com", password="pw12345")
-        resp = self.client.get(reverse("dashboard:members"))
+        resp = self.client.get(reverse("dashboard:blog"))
         self.assertEqual(resp.status_code, 403)
 
     def test_staff_ok(self) -> None:

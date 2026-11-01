@@ -33,7 +33,6 @@ from web.constants import SITE_CONFIG, TICKET_PRICES
 SECTION_MARKERS = (
     "hero",
     "now-showing",
-    "membership",
     "coming-soon",
     "get-involved",
     "from-the-booth",
@@ -128,7 +127,6 @@ class SectionCompositionTests(TestCase):
             seq,
             [
                 "now-showing",
-                "membership",
                 "coming-soon",
                 "get-involved",
                 "from-the-booth",
@@ -173,7 +171,7 @@ class FooterHoursTests(TestCase):
         minutes = SITE_CONFIG["box_office"]["opens_before_show_minutes"]
         self.assertIn(
             f"opens {minutes} minutes before showtime",
-            self.footer(reverse("membership")),
+            self.footer(reverse("rentals")),
         )
 
 
@@ -266,7 +264,6 @@ class EmptyStateTests(TestCase):
         # Through the links list: the signup form's honeypot has its own </div>.
         empty = re.search(r'<div class="no-showtimes">.*?</ul>', html, re.S).group(0)
         self.assertIn(SITE_CONFIG["social"]["facebook"], empty)
-        self.assertIn("/membership/", empty)
         self.assertIn("#coming-soon", empty)
 
     @mock.patch("web.views.get_coming_soon", return_value=[])

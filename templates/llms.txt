@@ -31,8 +31,8 @@ There is no online ticketing. Pay at the box office, which opens
 
 A yearly membership: cheaper tickets at every show, up to $2 off every
 popcorn, a free small popcorn in your birthday month, and discounts on
-private rentals. Family tiers cover the whole household.
-Tiers and prices: {{ base }}/membership/
+private rentals. Family tiers cover the whole household. Join or renew at
+the box office.
 
 ## Rentals, advertising
 

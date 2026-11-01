@@ -6,14 +6,12 @@ from .views import (
     AdvertiseView,
     CalendarMonthView,
     HomeView,
-    MembershipView,
     RentalInquiryView,
     RentalsView,
 )
 
 urlpatterns = [
     path("", HomeView.as_view(), name="home"),
-    path("membership/", MembershipView.as_view(), name="membership"),
     path("rentals/", RentalsView.as_view(), name="rentals"),
     path("rentals/inquire", RentalInquiryView.as_view(), name="rentals_inquire"),
     path("advertise/", AdvertiseView.as_view(), name="advertise"),

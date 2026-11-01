@@ -38,8 +38,6 @@ class ChromeTests(TestCase):
                 "Ad Inquiries",
                 "Blog",
                 "Engagements",
-                "Members",
-                "Memberships",
                 "Rental Inquiries",
                 "Subscribers",
                 "Voicemails",
@@ -62,25 +60,25 @@ class ChromeTests(TestCase):
         self.assertIn("staffer@example.com", html)
 
     def test_active_nav_marked(self) -> None:
-        html = self.client.get(reverse("dashboard:members")).content.decode()
-        # the Members link carries the active class on its own page
-        self.assertRegex(html, r'href="/dashboard/members"[^>]*class="[^"]*\bactive\b')
+        html = self.client.get(reverse("dashboard:subscribers")).content.decode()
+        # the Subscribers link carries the active class on its own page
+        self.assertRegex(
+            html, r'href="/dashboard/subscribers"[^>]*class="[^"]*\bactive\b'
+        )
 
     def test_sidebar_shows_only_viewable_sections(self) -> None:
         from phone.models import Voicemail
 
         Voicemail.objects.create(recording_sid="RE-badge")
-        make_staff(email="box@example.com", perms=("audience.view_member",))
+        make_staff(email="box@example.com", perms=("audience.view_subscriber",))
         self.client.login(username="box@example.com", password="pw12345")
         html = self.client.get(reverse("dashboard:home")).content.decode()
-        self.assertIn(f'href="{reverse("dashboard:members")}"', html)
+        self.assertIn(f'href="{reverse("dashboard:subscribers")}"', html)
         for name in (
             "ad_inquiries",
             "blog",
             "engagements",
-            "tiers",
             "rental_inquiries",
-            "subscribers",
             "voicemails",
         ):
             self.assertNotIn(f'href="{reverse(f"dashboard:{name}")}"', html)
@@ -100,8 +98,6 @@ class ChromeTests(TestCase):
             "ad_inquiries",
             "blog",
             "engagements",
-            "members",
-            "tiers",
             "rental_inquiries",
             "subscribers",
             "voicemails",

@@ -51,16 +51,10 @@ SITE_CONFIG = {
     # shows. Now Showing stays as the one-click route to tonight's films.
     #
     # Empty since 2026-10-31 (the owner's call): Buy Ad Space and Rent the
-    # Cinema left the nav and are linked from the footer only, so the bar
-    # carries just the logo and the Become a Member button.
+    # Cinema left the nav and are linked from the footer only. The Become a
+    # Member button went with /membership/ on 2026-11-01, so the bar carries
+    # just the logo.
     "navigation": [],
-    # Membership, as a button at the right end of the nav rather than a link
-    # in the row (the owner's call, 2026-10-13). The Events menu came out the
-    # same day. The Heckle Night, Open Mic and History pages were removed
-    # 2026-11-01 (the owner's call, to simplify the site).
-    # Trailing slash required — the route is defined with it, and a bare
-    # /membership costs a 301 on every click and every crawl.
-    "nav_cta": {"label": "Become a Member", "href": "/membership/"},
     # The footer's Events column. Empty since 2026-10-13; the event pages it
     # once linked are gone. The owner kept the heading; the footer renders it alone until
     # this has links again (same shape as footer_navigation).
@@ -100,9 +94,6 @@ SITE_CONFIG = {
 # Square ticket items carry only the adult, senior and child prices
 # (boxoffice/spec.py SQUARE_TIERS); matinee and member are register discounts
 # set up by hand in Square, so a change to either has to be made there too.
-#
-# NOTE: /membership/'s "$4 off evening tickets" restates these numbers; a
-# reprice has to move them together.
 TICKET_PRICES = {
     "adult": 8,
     "senior": 7,
@@ -267,43 +258,5 @@ ADVERTISING_FAQ = [
         "answer": (
             "We reserve the right to decline any ad, and we don't run political ads."
         ),
-    },
-]
-
-# Ported verbatim from the React SPA's src/data/membershipFaq.json.
-MEMBERSHIP_FAQ = [
-    {
-        "question": "How long does a membership last?",
-        "answer": (
-            "The length shown on your tier, counted from the day you join. "
-            "Your welcome email and your member page show the exact end date."
-        ),
-    },
-    {
-        "question": "What's included with a family tier?",
-        "answer": (
-            "Everyone in your household, with no headcount limit. Just give "
-            "your name at the box office."
-        ),
-    },
-    {
-        # The badge this answer points at is Engagement.is_free_for_members,
-        # which paints "Free for Members" on the home page listings and on the
-        # film's own page. The answer describes what the site already shows —
-        # it does not promise how often one is booked.
-        "question": "Which films are free for members?",
-        "answer": (
-            "The ones marked Free for Members — you'll see the badge on the "
-            "poster on the home page and on the film's own page. Give your "
-            "name at the box office, the same as any other visit."
-        ),
-    },
-    {
-        "question": "How do I use my membership at the box office?",
-        "answer": "Tell us your name. We'll look you up and apply your member benefits.",
-    },
-    {
-        "question": "Can I get a refund?",
-        "answer": "Memberships are non-refundable. Reach out to the box office if you have questions.",
     },
 ]

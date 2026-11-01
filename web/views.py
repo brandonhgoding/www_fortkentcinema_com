@@ -1,7 +1,6 @@
 import calendar
 import datetime
 
-from django.db.models import Min
 from django.http import Http404
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -9,7 +8,6 @@ from django.utils import timezone
 from django.views.generic import TemplateView
 
 from accounts.client_ip import request_ip
-from audience.models import Member, MembershipTier
 from blog.models import BlogPost
 from web.constants import (
     AD_ARTWORK_DEADLINE_DAY,
@@ -17,7 +15,6 @@ from web.constants import (
     AD_VIDEO_MAX_SECONDS,
     AD_VIDEO_PRICE,
     ADVERTISING_FAQ,
-    MEMBERSHIP_FAQ,
     RENTALS_FAQ,
 )
 from web.forms import AdInquiryForm, RentalInquiryForm
@@ -56,20 +53,6 @@ class HomeView(TemplateView):
             .select_related("author", "category")
             .order_by("-post_date", "-id")[:3]
         )
-
-        # Membership band: "From $N a year" is the cheapest tier the public
-        # membership page lists, so a retired (unlisted) cheaper tier cannot
-        # set the price. Only 12-month tiers count: duration_months is
-        # editable, and a cheaper 6-month tier would make "a year" false.
-        # None with no listed 12-month tier; the band drops the line.
-        ctx["membership_from_price"] = MembershipTier.objects.filter(
-            show_on_membership_page=True, duration_months=12
-        ).aggregate(Min("price"))["price__min"]
-
-        # Hero member count: people, not terms. Member.objects.active() is
-        # DISTINCT on the member, so a renewal overlapping the term it
-        # replaces still counts once, and .count() keeps it to one query.
-        ctx["member_count"] = Member.objects.active().count()
 
         today = today_eastern()
 
@@ -268,25 +251,13 @@ class LlmsTxtView(TemplateView):
         return ctx
 
 
-class MembershipView(TemplateView):
-    template_name = "web/membership.html"
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["tiers"] = MembershipTier.objects.filter(
-            show_on_membership_page=True
-        ).prefetch_related("benefits")
-        ctx["faqs"] = MEMBERSHIP_FAQ
-        return ctx
-
-
 class RentalsView(TemplateView):
     template_name = "web/rentals.html"
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         # One list, two renderings: the visible FAQ and the FAQPage markup in
-        # the head. Same arrangement as /membership/.
+        # the head. Same arrangement as /advertise/.
         ctx["faqs"] = RENTALS_FAQ
         # A bound form arrives via kwargs when RentalInquiryView re-renders
         # after a validation error; otherwise start empty.

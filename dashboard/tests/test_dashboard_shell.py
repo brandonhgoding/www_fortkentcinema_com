@@ -1,9 +1,9 @@
-"""Dashboard-wide plumbing, checked through the Members page: HTMX posts
+"""Dashboard-wide plumbing, checked through the Blog page: HTMX posts
 carry the CSRF token, and the film search
 offers TMDB only to staff who may add films. (These rode on the Screens
 page until it left the dashboard, 2026-10-31.)"""
 
-from audience.models import Member
+from blog.models import BlogAuthor
 from cinema.models import Film
 from django.test import Client, TestCase
 from django.urls import reverse
@@ -12,7 +12,7 @@ from dashboard.tests.helpers import make_staff
 
 
 class HtmxCsrfTests(TestCase):
-    """The Delete buttons in _member_list.html are hx-post on a bare
+    """The Delete buttons in _blog_author_list.html are hx-post on a bare
     <button> (not inside a <form>), so htmx must supply the header itself."""
 
     def setUp(self) -> None:
@@ -20,7 +20,7 @@ class HtmxCsrfTests(TestCase):
 
     def test_body_has_csrf_hx_headers(self) -> None:
         self.client.login(username="s@example.com", password="pw12345")
-        html = self.client.get(reverse("dashboard:members")).content.decode()
+        html = self.client.get(reverse("dashboard:blog")).content.decode()
         self.assertIn("hx-headers", html)
         self.assertIn("X-CSRFToken", html)
 
@@ -29,25 +29,25 @@ class HtmxCsrfTests(TestCase):
         client = Client(enforce_csrf_checks=True)
         client.login(username="s@example.com", password="pw12345")
         # Load a page first so the CSRF cookie is set, as a browser would.
-        client.get(reverse("dashboard:members"))
+        client.get(reverse("dashboard:blog"))
         return client
 
     def test_delete_with_csrf_header_succeeds_under_enforcement(self) -> None:
         client = self._client()
-        member = Member.objects.create(first_name="Csrf", last_name="Target")
+        author = BlogAuthor.objects.create(first_name="Csrf", last_name="Target")
         resp = client.post(
-            reverse("dashboard:member_delete", args=[member.pk]),
+            reverse("dashboard:blog_author_delete", args=[author.pk]),
             HTTP_X_CSRFTOKEN=client.cookies["csrftoken"].value,
         )
         self.assertEqual(resp.status_code, 200)
-        self.assertFalse(Member.objects.filter(pk=member.pk).exists())
+        self.assertFalse(BlogAuthor.objects.filter(pk=author.pk).exists())
 
     def test_delete_without_csrf_header_is_rejected_under_enforcement(self) -> None:
         client = self._client()
-        member = Member.objects.create(first_name="Csrf", last_name="Target")
-        resp = client.post(reverse("dashboard:member_delete", args=[member.pk]))
+        author = BlogAuthor.objects.create(first_name="Csrf", last_name="Target")
+        resp = client.post(reverse("dashboard:blog_author_delete", args=[author.pk]))
         self.assertEqual(resp.status_code, 403)
-        self.assertTrue(Member.objects.filter(pk=member.pk).exists())
+        self.assertTrue(BlogAuthor.objects.filter(pk=author.pk).exists())
 
 
 class FilmSearchTests(TestCase):

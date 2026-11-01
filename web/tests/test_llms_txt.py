@@ -61,7 +61,7 @@ class LlmsTxtTests(TestCase):
     def test_every_site_link_is_a_live_page(self, *_):
         text = self.get().content.decode()
         paths = set(re.findall(r"https?://testserver(/[^\s)#]*)", text))
-        self.assertGreater(len(paths), 4, "expected links to the site's pages")
+        self.assertGreater(len(paths), 3, "expected links to the site's pages")
         for path in sorted(paths):
             with self.subTest(path=path):
                 self.assertEqual(self.client.get(path).status_code, 200)
