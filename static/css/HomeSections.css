@@ -22,7 +22,6 @@
 }
 
 /* Grounds. Alternate these so neighbours never share one. */
-.home-section--raised { background: var(--color-surface-raised); }
 .home-section--alt { background: var(--color-surface-alt); }
 .home-section--surface { background: var(--color-surface); }
 .home-section--accent {
@@ -43,7 +42,6 @@
 }
 
 /* Eyebrow: --type-label, Cabin Condensed, uppercase, muted. */
-.home-eyebrow,
 .home-card__eyebrow {
   margin: 0;
   font-family: var(--font-condensed);

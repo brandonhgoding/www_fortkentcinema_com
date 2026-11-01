@@ -189,11 +189,6 @@
   color: var(--color-gold);
 }
 
-.hero-film__when {
-  font-weight: 600;
-  color: var(--neon-gold-inner);
-}
-
 .hero-film__cert,
 .hero-film__lang {
   display: inline-block;
@@ -205,11 +200,6 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   vertical-align: 0.1em;
-}
-
-.hero-film__note {
-  font-style: italic;
-  color: var(--color-text-muted);
 }
 
 .hero-film__lede {
