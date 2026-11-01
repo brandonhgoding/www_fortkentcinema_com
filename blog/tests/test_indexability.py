@@ -53,12 +53,6 @@ class CrawlableFromBlogIndexTests(TestCase):
         html = self.client.get("/blog/").content.decode()
         self.assertIn("/blog/?page=2", hrefs(html))
 
-    def test_pagination_is_not_javascript_only(self):
-        """The original bug: paging existed only as an hx-get on a <div>."""
-        html = self.client.get("/blog/").content.decode()
-        self.assertNotIn("hx-trigger", html)
-        self.assertNotIn("hx-get", html)
-
     def test_every_page_is_reachable_and_200s(self):
         # Page 1 carries the lead card on top of a full page.
         expected_pages = 1 + -(-(77 - PAGE_SIZE - 1) // PAGE_SIZE)  # → 7

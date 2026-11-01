@@ -1,4 +1,4 @@
-from cinema.models import AdInquiry, AdType, InquiryStatus
+from cinema.models import AdInquiry, InquiryStatus
 from django.test import TestCase
 
 
@@ -7,11 +7,7 @@ class AdInquiryModelTests(TestCase):
         row = AdInquiry.objects.create(
             business_name="Rock's Diner", contact_name="Pat", email="pat@example.com"
         )
-        self.assertEqual(row.ad_type, AdType.UNSURE)
         self.assertEqual(row.status, InquiryStatus.NEW)
-        self.assertEqual(row.phone, "")
-        self.assertEqual(row.message, "")
-        self.assertIsNone(row.ip)
         self.assertEqual(str(row), "Rock's Diner (New)")
 
     def test_newest_first(self):

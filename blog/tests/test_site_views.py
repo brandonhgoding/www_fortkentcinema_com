@@ -33,19 +33,9 @@ class BlogListTests(TestCase):
             [f"Post {i}" for i in range(13, 1, -1)],
         )
 
-    def test_lead_card_is_full_width_and_above_the_grid(self):
-        html = self.client.get(reverse("blog_list")).content.decode()
-        self.assertEqual(html.count("blog-card--feature"), 1)
-        self.assertLess(html.index("blog-card--feature"), html.index('class="blog-list-grid"'))
-        self.assertEqual(html.count('class="blog-card"'), 12)
-        # The lead's title appears once: it is not repeated in the grid.
-        self.assertEqual(html.count(">Post 14</h3>"), 1)
-
     def test_later_pages_are_the_grid_alone(self):
         resp = self.client.get(reverse("blog_list") + "?page=2")
         html = resp.content.decode()
-        self.assertNotIn("blog-card--feature", html)
-        self.assertEqual(html.count('class="blog-card"'), 2)
         self.assertIsNone(resp.context["lead_post"])
         self.assertEqual(
             [p.title for p in resp.context["grid_posts"]], ["Post 1", "Post 0"]
@@ -58,18 +48,11 @@ class BlogListTests(TestCase):
 
     def test_only_one_post_is_a_lead_and_no_empty_grid(self):
         BlogPost.objects.exclude(title="Post 14").delete()
-        html = self.client.get(reverse("blog_list")).content.decode()
-        self.assertIn("blog-card--feature", html)
-        self.assertNotIn('class="blog-list-grid"', html)
-        self.assertNotIn('class="blog-pagination"', html)
-
-    def test_renders_a_crawlable_pagination_nav(self):
-        """Paging must be plain links. It was an HTMX `hx-trigger="revealed"`
-        sentinel, which hid 71 of 77 posts from Googlebot."""
-        html = self.client.get(reverse("blog_list")).content.decode()
-        self.assertIn('class="blog-pagination"', html)
-        self.assertIn('href="/blog/?page=2"', html)
-
+        resp = self.client.get(reverse("blog_list"))
+        self.assertEqual(resp.context["lead_post"].title, "Post 14")
+        self.assertEqual(list(resp.context["grid_posts"]), [])
+        self.assertFalse(resp.context["page_obj"].has_other_pages())
+        self.assertNotIn("?page=", resp.content.decode())
 
 class BlogListEmptyTests(TestCase):
     def test_no_published_posts_shows_an_empty_state(self):

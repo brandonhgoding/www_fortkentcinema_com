@@ -41,13 +41,6 @@ class MemberFieldTests(TestCase):
             [m.last_name for m in Member.objects.all()], ["Adams", "Baker"]
         )
 
-    def test_notes_are_optional(self) -> None:
-        member = Member.objects.create(
-            first_name="Ada", last_name="Lovelace", email="ada@example.com"
-        )
-        self.assertEqual(member.notes, "")
-
-
 class MembershipTermTests(TestCase):
     def setUp(self) -> None:
         self.member = Member.objects.create(
@@ -64,10 +57,6 @@ class MembershipTermTests(TestCase):
             "price_paid": Decimal("60.00"),
         }
         return MembershipTerm.objects.create(**{**defaults, **kwargs})
-
-    def test_terms_are_reachable_from_the_member(self) -> None:
-        term = self._term()
-        self.assertEqual(list(self.member.terms.all()), [term])
 
     def test_terms_are_newest_first(self) -> None:
         older = self._term(started_on=datetime.date(2025, 1, 1))

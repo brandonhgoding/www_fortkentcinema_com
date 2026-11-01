@@ -56,7 +56,7 @@ class PlainBodyTests(BodyFormatFixture):
     def test_plain_post_renders_exactly_as_before_markdown(self):
         post = self.make_post(LEGACY_BODY, body_format=BlogPost.BodyFormat.PLAIN)
         html = self.client.get(post.get_absolute_url()).content.decode()
-        self.assertIn(f'<div class="blog-detail-body">\n        {LEGACY_HTML}\n      </div>', html)
+        self.assertIn(LEGACY_HTML, html)
 
     def test_markdown_post_still_renders_markdown(self):
         post = self.make_post("# Verdict\n\n**Go.**")

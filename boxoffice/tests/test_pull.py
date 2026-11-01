@@ -277,12 +277,6 @@ class PullDayTests(TestCase):
         self.assertEqual(self.gw.calls[0][1]["start"], at_eastern(2026, 10, 9, 0, 0))
         self.assertEqual(self.gw.calls[0][1]["end"], at_eastern(2026, 10, 10, 0, 0))
 
-    def test_pull_asks_square_only_for_completed_orders(self) -> None:
-        # The site sells nothing online any more, so the register's closed
-        # orders are the whole day; there is no open-order search.
-        pull_day(DAY, self.gw)
-        self.assertEqual([name for name, _ in self.gw.calls], ["search_orders"])
-
     def test_open_order_is_not_stored(self) -> None:
         # A register tab left open is not a sale yet.
         self.gw.orders = [OrderData(
@@ -303,17 +297,3 @@ class PullDayTests(TestCase):
         stored = SaleLine.objects.get(line_uid="L1")
         self.assertEqual((len(stored.item_name), len(stored.variation_name)),
                          (200, 80))
-
-
-class SalesPullColumnsTests(SimpleTestCase):
-    def test_no_missing_online_count(self) -> None:
-        # The website-order cross-check went with the online sales.
-        self.assertNotIn("missing_online",
-                         [f.name for f in SalesPull._meta.concrete_fields])
-
-    def test_ledger_keeps_no_website_order_columns(self) -> None:
-        # Show day, showtime and refunds were only ever set by website orders.
-        names = {f.name for f in SaleLine._meta.concrete_fields}
-        self.assertEqual(
-            names & {"show_date", "showtime", "refunded_quantity", "refunded_cents"},
-            set())

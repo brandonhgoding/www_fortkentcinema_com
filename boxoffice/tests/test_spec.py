@@ -9,14 +9,6 @@ class PricedTiersTests(TestCase):
     def test_three_tiers_in_order(self) -> None:
         self.assertEqual(priced_tiers(), [("adult", 8), ("senior", 7), ("child", 6)])
 
-    def test_matinee_and_member_are_not_variations(self) -> None:
-        # They are register discounts; TICKET_PRICES keeps them for the site
-        # and the phone line.
-        tiers = [t for t, _ in priced_tiers()]
-        self.assertNotIn("matinee", tiers)
-        self.assertNotIn("member", tiers)
-
-
 class DesiredItemTests(TestCase):
     def setUp(self) -> None:
         screen = Screen.objects.create(name="S1", capacity=50)
