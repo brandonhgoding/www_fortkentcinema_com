@@ -44,8 +44,8 @@ class SiteConfigContextTests(TestCase):
         # the structure's own tests.
         from web.constants import SITE_CONFIG
 
-        labels = [item["label"] for item in SITE_CONFIG["navigation"]]
-        self.assertIn("Now Showing", labels)
+        # The nav row is empty since 2026-10-31.
+        self.assertEqual(SITE_CONFIG["navigation"], [])
         footer = [item["label"] for item in SITE_CONFIG["footer_navigation"]]
         self.assertIn("From the Booth", footer)
 
