@@ -116,3 +116,60 @@ class AdvertiseMetaPriceTests(TestCase):
             content = self.meta(html, attr)
             self.assertIn("$81 a month", content, attr)
             self.assertIn("$163", content, attr)
+
+
+class AdvertiseOfferMarkupTests(TestCase):
+    """The two rates as schema.org Offers on a Service the theater provides,
+    so a search engine or an assistant reads the price instead of guessing
+    it from prose. Every value comes from web/constants.py."""
+
+    def service(self, html: str) -> dict:
+        blocks = re.findall(
+            r'<script type="application/ld\+json">(.*?)</script>', html, re.S
+        )
+        found = [b for b in map(json.loads, blocks) if b.get("@type") == "Service"]
+        self.assertEqual(len(found), 1)
+        return found[0]
+
+    def test_service_is_provided_by_the_theater(self):
+        node = self.service(self.client.get(reverse("advertise")).content.decode())
+        self.assertEqual(
+            node["provider"], {"@id": "https://www.fortkentcinema.com/#theater"}
+        )
+        self.assertEqual(node["areaServed"]["name"], "Fort Kent, Maine")
+        self.assertEqual(node["url"], "http://testserver/advertise/")
+
+    def test_offers_carry_the_monthly_rates_in_dollars(self):
+        node = self.service(self.client.get(reverse("advertise")).content.decode())
+        offers = {o["name"]: o["priceSpecification"] for o in node["offers"]}
+        self.assertEqual(set(offers), {"Pre-show slide", "Video spot"})
+        self.assertEqual(offers["Pre-show slide"]["price"], AD_SLIDE_PRICE)
+        self.assertEqual(offers["Video spot"]["price"], AD_VIDEO_PRICE)
+        for spec in offers.values():
+            self.assertEqual(spec["priceCurrency"], "USD")
+            self.assertEqual(spec["unitText"], "MONTH")
+
+    def test_offers_follow_a_rate_change(self):
+        with mock.patch("web.views.AD_SLIDE_PRICE", 81):
+            html = self.client.get(reverse("advertise")).content.decode()
+        offers = {
+            o["name"]: o["priceSpecification"] for o in self.service(html)["offers"]
+        }
+        self.assertEqual(offers["Pre-show slide"]["price"], 81)
+
+
+class AdvertisePlaceTests(TestCase):
+    """The page says where it is: a search for advertising in Fort Kent or
+    the St. John Valley has words to match."""
+
+    def setUp(self):
+        self.html = self.client.get(reverse("advertise")).content.decode()
+
+    def test_descriptions_name_the_town(self):
+        for attr in ('name="description"', 'property="og:description"'):
+            content = re.search(rf'<meta {attr} content="([^"]*)"', self.html).group(1)
+            self.assertIn("Fort Kent, Maine", content, attr)
+            self.assertLessEqual(len(content), 155, attr)
+
+    def test_intro_names_the_valley(self):
+        self.assertIn("St. John Valley", self.html)

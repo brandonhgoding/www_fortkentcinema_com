@@ -239,6 +239,9 @@ class LlmsTxtView(TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["base"] = f"{self.request.scheme}://{self.request.get_host()}"
+        ctx["ad_slide_price"] = AD_SLIDE_PRICE
+        ctx["ad_video_price"] = AD_VIDEO_PRICE
+        ctx["ad_video_max_seconds"] = AD_VIDEO_MAX_SECONDS
         return ctx
 
 

@@ -2,9 +2,9 @@
 {% load static %}
 
 {% block title %}Advertise on the Big Screen in Fort Kent, Maine | Fort Kent Cinema{% endblock %}
-{% block description %}Put your business in front of a room full of neighbors before every show at Fort Kent Cinema. Pre-show slides from ${{ slide_price }} a month, video spots from ${{ video_price }}.{% endblock %}
+{% block description %}Your business on the big screen before every show at Fort Kent Cinema in Fort Kent, Maine. Pre-show slides ${{ slide_price }} a month, video spots ${{ video_price }}.{% endblock %}
 {% block og_title %}Advertise on the Big Screen in Fort Kent, Maine | Fort Kent Cinema{% endblock %}
-{% block og_description %}Put your business in front of a room full of neighbors before every show at Fort Kent Cinema. Pre-show slides from ${{ slide_price }} a month, video spots from ${{ video_price }}.{% endblock %}
+{% block og_description %}Your business on the big screen before every show at Fort Kent Cinema in Fort Kent, Maine. Pre-show slides ${{ slide_price }} a month, video spots ${{ video_price }}.{% endblock %}
 {% comment %}
   The card art is 1200 x 675, not the default card's 1200 x 630, so the size
   and alt are overridden together with the image (see base.html).
@@ -38,6 +38,46 @@ page, so both renderings read from the one list — same as /rentals/.
   ]
 }
 </script>
+{% comment %}
+  The two rates as Offers on a Service the theater (base.html's
+  MovieTheater node, by @id) provides, so a reader takes the price from
+  data rather than prose. Prices are US dollars, per calendar month.
+{% endcomment %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "name": "Advertising on the big screen at Fort Kent Cinema",
+  "serviceType": "Cinema pre-show advertising",
+  "url": "{{ request.scheme }}://{{ request.get_host }}{{ request.path }}",
+  "provider": {"@id": "https://www.fortkentcinema.com/#theater"},
+  "areaServed": {"@type": "City", "name": "Fort Kent, Maine"},
+  "offers": [
+    {
+      "@type": "Offer",
+      "name": "Pre-show slide",
+      "description": "A still slide in the loop before every show.",
+      "priceSpecification": {
+        "@type": "UnitPriceSpecification",
+        "price": {{ slide_price }},
+        "priceCurrency": "USD",
+        "unitText": "MONTH"
+      }
+    },
+    {
+      "@type": "Offer",
+      "name": "Video spot",
+      "description": "A video of up to {{ video_max_seconds }} seconds in the loop before every show.",
+      "priceSpecification": {
+        "@type": "UnitPriceSpecification",
+        "price": {{ video_price }},
+        "priceCurrency": "USD",
+        "unitText": "MONTH"
+      }
+    }
+  ]
+}
+</script>
 {% endblock %}
 
 {% block content %}
@@ -52,6 +92,11 @@ page, so both renderings read from the one list — same as /rentals/.
         <h1 class="advertise-title">ADVERTISE</h1>
         <p class="advertise-subtitle">
           Your business on the big screen: a room full of neighbors, every show, from the moment the doors open.
+        </p>
+        <p class="advertise-intro">
+          Fort Kent Cinema is the movie theater on Hall Street in downtown
+          Fort Kent, in Maine's St. John Valley. Before every film we run a
+          loop of ads for local businesses. Yours can be one of them.
         </p>
       </div>
 

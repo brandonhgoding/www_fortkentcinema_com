@@ -11,7 +11,7 @@ from unittest import mock
 
 from django.test import TestCase
 
-from web.constants import SITE_CONFIG, TICKET_PRICES
+from web.constants import AD_SLIDE_PRICE, AD_VIDEO_PRICE, SITE_CONFIG, TICKET_PRICES
 
 
 @mock.patch("web.views.get_calendar_month", return_value={})
@@ -57,6 +57,12 @@ class LlmsTxtTests(TestCase):
         text = self.get().content.decode()
         self.assertIn("http://testserver/rentals/", text)
         self.assertIn("http://testserver/advertise/", text)
+
+    def test_advertising_rates_are_listed(self, *_):
+        text = self.get().content.decode()
+        self.assertIn(f"${AD_SLIDE_PRICE} a month", text)
+        self.assertIn(f"${AD_VIDEO_PRICE} a month", text)
+        self.assertIn("US dollars", text)
 
     def test_every_site_link_is_a_live_page(self, *_):
         text = self.get().content.decode()
