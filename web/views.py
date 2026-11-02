@@ -22,6 +22,7 @@ from web.services.cinema_data import (
     get_coming_soon,
     get_calendar_month,
     get_hero_films,
+    last_month_shows,
 )
 from web.services.showtimes import (
     today_eastern,
@@ -303,6 +304,11 @@ class AdvertiseView(TemplateView):
         ctx["video_price"] = AD_VIDEO_PRICE
         ctx["video_max_seconds"] = AD_VIDEO_MAX_SECONDS
         ctx["artwork_deadline_day"] = AD_ARTWORK_DEADLINE_DAY
+        # "In October that came to 42 shows": a count of plays, never an
+        # audience figure.
+        ctx["last_month"], ctx["last_month_shows"] = last_month_shows(
+            datetime.datetime.now(CINEMA_TZ).date()
+        )
         # A bound form arrives via kwargs when AdInquiryView re-renders after
         # a validation error; otherwise start empty.
         ctx["form"] = kwargs.get("form") or AdInquiryForm()

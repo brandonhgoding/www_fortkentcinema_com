@@ -111,7 +111,18 @@ page, so both renderings read from the one list — same as /rentals/.
         <p class="advertise-section-note">
           Both run in the loop before every show, from the time the doors open,
           {{ site_config.box_office.opens_before_show_minutes }} minutes before showtime.
+          {% if last_month_shows %}In {{ last_month|date:"F" }} that came to {{ last_month_shows }} show{{ last_month_shows|pluralize }}.{% endif %}
         </p>
+        {% comment %}
+          An illustration, not a photo of the screen: what a slide is, at the
+          shape it runs (16:9). Below the fold on phones, hence lazy.
+        {% endcomment %}
+        <figure class="advertise-sample">
+          <img src="{% static 'img/involved/your-ad-here.jpg' %}"
+               width="1200" height="675" loading="lazy" decoding="async"
+               alt="Illustration of a 'Your ad here' slide on the cinema screen, with the audience in front">
+          <figcaption>Your slide fills the screen at 1920 × 1080.</figcaption>
+        </figure>
         <div class="advertise-grid">
           <div class="ad-card">
             <h3 class="ad-card-title">PRE-SHOW SLIDE</h3>

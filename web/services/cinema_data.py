@@ -204,3 +204,22 @@ def get_coming_soon(now=None):
 
     return list(cards.values())
 
+
+def last_month_shows(today):
+    """(first day of the month before `today`, its showing count).
+
+    For /advertise/: an ad in the pre-show loop plays before every show, so
+    last month's count is how many times it would have played. Same set as
+    the calendar: announced runs (CONFIRMED, or ENDED since), not cancelled.
+    Month boundaries are Eastern, so a 11:30 PM show stays in its month."""
+    first = (today.replace(day=1) - datetime.timedelta(days=1)).replace(day=1)
+    next_first = today.replace(day=1)
+    start = datetime.datetime.combine(first, datetime.time.min, tzinfo=CINEMA_TZ)
+    end = datetime.datetime.combine(next_first, datetime.time.min, tzinfo=CINEMA_TZ)
+    count = Showtime.objects.filter(
+        is_cancelled=False,
+        starts_at__gte=start,
+        starts_at__lt=end,
+        engagement__status__in=["CONFIRMED", "ENDED"],
+    ).count()
+    return first, count
