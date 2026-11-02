@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   handleClick,
+  handleViews,
   installAnalytics,
   paramsFor,
   send,
@@ -21,6 +22,11 @@ describe('paramsFor', () => {
   it('kebab-cases into snake_case', () => {
     const node = el('<a data-track="x" data-track-item-name="Cinema Supporter"></a>');
     expect(paramsFor(node)).toEqual({ item_name: 'Cinema Supporter' });
+  });
+
+  it('ignores data-track-view, which names the event', () => {
+    const node = el('<div data-track-view="generate_lead" data-track-form="advertise"></div>');
+    expect(paramsFor(node)).toEqual({ form: 'advertise' });
   });
 
   it('ignores data-track itself and unrelated attributes', () => {
@@ -86,5 +92,25 @@ describe('click handling', () => {
     document.body.innerHTML = '<a data-track="phone_click" data-track-location="footer">Call</a>';
     document.querySelector('[data-track]').click();
     expect(gtag).toHaveBeenCalledWith('event', 'phone_click', { location: 'footer' });
+  });
+});
+
+describe('view events', () => {
+  // A confirmation that renders on load (the inquiry thank-you) is the
+  // confirmed conversion; the Send click is only intent.
+  it('fires each declared view event once with its params', () => {
+    const gtag = vi.fn();
+    document.body.innerHTML =
+      '<div data-track-view="generate_lead" data-track-form="advertise">Thanks</div>';
+    handleViews(document, gtag);
+    expect(gtag).toHaveBeenCalledTimes(1);
+    expect(gtag).toHaveBeenCalledWith('event', 'generate_lead', { form: 'advertise' });
+  });
+
+  it('does nothing on a page without one', () => {
+    const gtag = vi.fn();
+    document.body.innerHTML = '<a data-track="phone_click">Call</a>';
+    handleViews(document, gtag);
+    expect(gtag).not.toHaveBeenCalled();
   });
 });

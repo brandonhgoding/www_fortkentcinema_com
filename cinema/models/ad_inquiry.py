@@ -9,6 +9,18 @@ class AdType(models.TextChoices):
     UNSURE = "UNSURE", "Not sure yet"
 
 
+class HeardFrom(models.TextChoices):
+    """Where the lead came from. Asked on the form because most ad leads
+    arrive by word of mouth or off the screen, which analytics cannot see."""
+
+    SCREEN = "SCREEN", "On the big screen"
+    FACEBOOK = "FACEBOOK", "Facebook"
+    SEARCH = "SEARCH", "Searching online"
+    CHAMBER = "CHAMBER", "Chamber of Commerce"
+    WORD_OF_MOUTH = "WORD_OF_MOUTH", "Word of mouth"
+    OTHER = "OTHER", "Somewhere else"
+
+
 class AdInquiry(models.Model):
     """A local business asking to advertise before the show.
 
@@ -25,6 +37,9 @@ class AdInquiry(models.Model):
         max_length=10, choices=AdType.choices, default=AdType.UNSURE
     )
     message = models.TextField(blank=True)
+    heard_from = models.CharField(
+        max_length=20, choices=HeardFrom.choices, blank=True
+    )
 
     status = models.CharField(
         max_length=20, choices=InquiryStatus.choices, default=InquiryStatus.NEW

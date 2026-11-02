@@ -1,4 +1,4 @@
-from cinema.models import AdInquiry, AdType, InquiryStatus
+from cinema.models import AdInquiry, AdType, HeardFrom, InquiryStatus
 from django.test import TestCase
 from django.urls import reverse
 from dashboard.tests.helpers import make_staff
@@ -35,6 +35,14 @@ class AdInquiryListTests(TestCase):
         ):
             self.assertContains(response, text)
         self.assertEqual(response.context["new_count"], 1)
+
+    def test_shows_how_they_heard(self):
+        self.inquiry.heard_from = HeardFrom.CHAMBER
+        self.inquiry.save()
+        self.client.force_login(self.staff)
+        response = self.client.get(reverse("dashboard:ad_inquiries"))
+        self.assertContains(response, "<th>Heard from</th>", html=True)
+        self.assertContains(response, "Chamber of Commerce")
 
     def test_message_is_escaped(self):
         self.inquiry.message = "<script>alert(1)</script>"

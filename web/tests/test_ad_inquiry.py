@@ -1,4 +1,4 @@
-from cinema.models import AdInquiry, AdType, InquiryStatus
+from cinema.models import AdInquiry, AdType, HeardFrom, InquiryStatus
 from django.test import TestCase
 from django.urls import reverse
 
@@ -97,3 +97,63 @@ class AdInquiryTests(TestCase):
         self.assertRedirects(
             self.client.get(reverse("advertise_inquire")), reverse("advertise")
         )
+
+
+class AdInquirySourceTests(TestCase):
+    """Most ad leads come by word of mouth or off the screen, which analytics
+    cannot see, so the form asks."""
+
+    def post(self, **extra):
+        data = {"business_name": "Rock's Diner", "contact_name": "Pat Harper",
+                "email": "pat@example.com", "website": ""}
+        data.update(extra)
+        return self.client.post(reverse("advertise_inquire"), data)
+
+    def test_source_is_stored(self):
+        self.post(heard_from=HeardFrom.SCREEN)
+        self.assertEqual(AdInquiry.objects.get().heard_from, HeardFrom.SCREEN)
+
+    def test_source_is_optional(self):
+        self.post()
+        self.assertEqual(AdInquiry.objects.get().heard_from, "")
+
+    def test_bogus_source_is_rejected(self):
+        response = self.post(heard_from="TELEPATHY")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(AdInquiry.objects.count(), 0)
+
+    def test_question_is_on_the_form(self):
+        html = self.client.get(reverse("advertise")).content.decode()
+        self.assertIn("How did you hear about us?", html)
+        self.assertIn('name="heard_from"', html)
+        self.assertIn('<option value="" selected>Choose one</option>', html)
+
+
+class AdLeadEventTests(TestCase):
+    """GA4 used to see only the click on Send, which a validation error
+    also produces. The thank-you is the confirmed lead."""
+
+    def test_thank_you_fires_the_lead_event(self):
+        html = self.client.get(reverse("advertise"), {"sent": "1"}).content.decode()
+        self.assertRegex(
+            html, r'data-track-view="generate_lead"[^>]*data-track-form="advertise"'
+        )
+
+    def test_the_blank_form_does_not(self):
+        html = self.client.get(reverse("advertise")).content.decode()
+        self.assertNotIn("generate_lead", html)
+
+
+class AdsShortLinkTests(TestCase):
+    """/ads is what the pre-show slide prints: short enough to type, and
+    tagged so GA4 can count the visits the screen sends."""
+
+    def test_redirects_to_the_page_tagged_as_the_screen(self):
+        for path in ("/ads", "/ads/"):
+            response = self.client.get(path)
+            self.assertEqual(response.status_code, 302, path)
+            self.assertEqual(
+                response["Location"],
+                "/advertise/?utm_source=fort-kent-cinema&utm_medium=pre-show"
+                "&utm_campaign=advertise",
+            )

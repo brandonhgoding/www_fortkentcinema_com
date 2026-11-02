@@ -4,7 +4,11 @@
   A copy of rental_inquiry_form.html with one difference: ad_type.
 {% endcomment %}
 {% if sent %}
-  <div class="ad-inquire__sent">
+  {% comment %}
+    data-track-view fires generate_lead when this renders (analytics.js):
+    the confirmed lead, where the Send click below is only intent.
+  {% endcomment %}
+  <div class="ad-inquire__sent" data-track-view="generate_lead" data-track-form="advertise">
     <h3>Thanks — we've got it.</h3>
     <p>
       We'll be in touch within a few days to confirm your spot and talk
