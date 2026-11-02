@@ -22,6 +22,13 @@ class AdvertisePageTests(TestCase):
         self.assertEqual(self.response.status_code, 200)
         self.assertTemplateUsed(self.response, "web/advertise.html")
 
+    def test_title_names_the_place(self):
+        # Starts with the nav label (sitelinks) and says where, so a search
+        # for advertising in Fort Kent can match it.
+        title = "Advertise on the Big Screen in Fort Kent, Maine | Fort Kent Cinema"
+        self.assertIn(f"<title>{title}</title>", self.html)
+        self.assertIn(f'property="og:title" content="{title}"', self.html)
+
     def test_the_two_rates(self):
         for text in (f"${AD_SLIDE_PRICE}", f"${AD_VIDEO_PRICE}",
                      f"{AD_VIDEO_MAX_SECONDS} seconds"):
