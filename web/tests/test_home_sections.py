@@ -57,7 +57,6 @@ def movie(**over):
         "genre": "Sci-fi",
         "poster": "d.jpg",
         "youtube_id": "abc",
-        "is_free_for_members": False,
         "showtimes": {"2999-01-15": [{"time": "6:00 PM", "captions": "", "captions_label": ""}, {"time": "9:00 PM", "captions": "", "captions_label": ""}]},
     }
     base.update(over)
@@ -86,7 +85,6 @@ def hero_film(**over):
         "time": "6:00 PM",
         "youtube_id": "abc",
         "language_label": "",
-        "is_free_for_members": False,
         "upcoming": [
             {
                 "key": "2999-01-15",
@@ -207,8 +205,9 @@ class TheaterSchemaTests(TestCase):
         )
 
     def test_price_range_is_the_real_ticket_range(self):
-        """"$$" is a vague tier; the page states real prices."""
-        with mock.patch.dict(TICKET_PRICES, member=3, adult=9):
+        """"$$" is a vague tier; the page states real prices, from the
+        cheapest ticket to adult admission."""
+        with mock.patch.dict(TICKET_PRICES, adult=9, senior=7, child=5, matinee=3):
             self.assertEqual(self.theater()["priceRange"], "$3 - $9")
 
     def test_screen_count_and_capacity_come_from_the_config(self):
@@ -282,7 +281,6 @@ class EmptyStateTests(TestCase):
                 "poster": "w.jpg",
                 "youtube_id": "",
                 "films": [],
-                "is_free_for_members": False,
                 "start_date": "2999-11-22",
             }
         ]
@@ -354,7 +352,8 @@ class ScreeningEventSchemaTests(TestCase):
         self.assertEqual(ev["workPresented"]["name"], "Dune")
         self.assertEqual(ev["workPresented"]["image"], "http://p/d.jpg")
         self.assertEqual(ev["workPresented"]["contentRating"], "PG-13")
-        self.assertEqual(ev["offers"]["lowPrice"], str(TICKET_PRICES["member"]))
+        self.assertEqual(ev["offers"]["lowPrice"], str(min(
+            TICKET_PRICES[t] for t in ("adult", "senior", "child", "matinee"))))
         self.assertEqual(ev["offers"]["highPrice"], str(TICKET_PRICES["adult"]))
         self.assertEqual(ev["offers"]["priceCurrency"], "USD")
 

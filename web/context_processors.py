@@ -9,6 +9,10 @@ def site_config(request):
         # For partials/ticket_info.html — the same numbers the phone line
         # reads, so the site and the phone can't quote different prices.
         "ticket_prices": TICKET_PRICES,
+        # The cheapest ticket, for the price range Google shows.
+        "lowest_ticket_price": min(
+            v for k, v in TICKET_PRICES.items() if k != "matinee_until"
+        ),
         # Empty outside production — that's what keeps dev traffic out of GA4.
         "ga_measurement_id": settings.GA_MEASUREMENT_ID,
     }

@@ -73,7 +73,7 @@
 
 /* Poster is first in the markup (phone reading order) and last on the
  * desktop grid. The wrap is the poster's box, sized to it and tilted with
- * it, so the ribbon and the play badge sit on the one-sheet and not on the
+ * it, so the play badge sits on the one-sheet and not on the
  * column around it. */
 .hero-film__poster-wrap {
   order: 2;
@@ -115,26 +115,6 @@
 .hero-film__poster-wrap--playable:focus-visible .hero-film__play svg {
   opacity: 1;
   transform: scale(1.1);
-}
-
-/* "Free for Members", the ribbon the listing card wore, pinned to the
- * poster's top-left over the frame. Ink on the accent fill, never the
- * cream alias (see the note that used to sit on .movie-free-banner). */
-.hero-film__ribbon {
-  position: absolute;
-  top: 14px;
-  left: -4px;
-  z-index: 3;
-  padding: 0.3rem 0.75rem;
-  background: var(--color-accent);
-  color: var(--color-on-accent);
-  font-family: var(--font-condensed);
-  font-size: 0.85rem;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  border-radius: 0 3px 3px 0;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
-  pointer-events: none;
 }
 
 .hero-film__copy {
@@ -507,12 +487,6 @@
   .hero-film__play svg {
     width: 44px;
     height: 44px;
-  }
-
-  .hero-film__ribbon {
-    top: 8px;
-    font-size: 0.7rem;
-    padding: 0.2rem 0.5rem;
   }
 
   .hero-film__more,

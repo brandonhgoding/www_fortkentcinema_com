@@ -48,9 +48,6 @@
         {% else %}
         <div class="coming-movie-poster">
         {% endif %}
-          {% if movie.is_free_for_members %}
-          <div class="coming-free-banner">Free for Members</div>
-          {% endif %}
           {% if movie.films|length > 1 %}
           <div class="coming-poster-multi">
             {% for f in movie.films %}

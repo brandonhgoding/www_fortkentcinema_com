@@ -81,15 +81,6 @@ class HeroIsTheListingTests(HeroBase):
     def test_plain_english_has_no_language_span(self):
         self.assertNotIn("hero-film__lang", self.hero())
 
-    def test_free_for_members_is_a_ribbon_on_the_poster(self):
-        eng = self.st.engagement
-        eng.is_free_for_members = True
-        eng.save()
-        self.assertIn("Free for Members", self.hero())
-
-    def test_no_ribbon_when_not_free(self):
-        self.assertNotIn("Free for Members", self.hero())
-
     def test_screening_events_come_from_the_hero_films(self):
         self.st.engagement.showtimes.create(
             screen=self.st.screen, starts_at=in_two_days(21)

@@ -67,7 +67,7 @@ def _spoken_list(items: list[str]) -> str:
 
 def _describe(showtimes: Iterable[Showtime]) -> str:
     """One sentence per title, in order of its first show:
-    "Hamnet at 4:00 PM and 7:15 PM. Weapons, free for members, at 7:00 PM."
+    "Hamnet at 4:00 PM and 7:15 PM. Weapons at 7:00 PM."
     """
     by_engagement: dict[int, list[Showtime]] = {}
     for showtime in showtimes:
@@ -81,8 +81,6 @@ def _describe(showtimes: Iterable[Showtime]) -> str:
         title = engagement.display_title or _spoken_list(
             [film.title for film in engagement.ordered_films]
         )
-        if engagement.is_free_for_members:
-            title += ", free for members,"
         times = _spoken_list([format_showtime(s.starts_at) for s in group])
         sentences.append(f"{title} at {times}.")
     return " ".join(sentences)
@@ -155,7 +153,5 @@ def hours_and_prices_speech() -> str:
         f"Tickets are ${p['adult']} for adults, ${p['senior']} for seniors, "
         f"and ${p['child']} for children. "
         f"Matinees, for shows starting at {_clock(p['matinee_until'])} or earlier, "
-        f"are ${p['matinee']}. "
-        f"Members pay ${p['member']} for any show, and some shows are free "
-        f"for members."
+        f"are ${p['matinee']}."
     )

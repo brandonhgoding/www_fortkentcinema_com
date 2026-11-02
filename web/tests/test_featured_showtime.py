@@ -202,28 +202,25 @@ class FeaturedShowtimeRowsTests(FeaturedBase):
             [(self.today + datetime.timedelta(days=d)).isoformat() for d in range(7)],
         )
 
-    def test_carries_the_trailer_language_and_free_flag(self) -> None:
+    def test_carries_the_trailer_and_language(self) -> None:
         """What the listing card used to show and the fold did not: the
-        trailer id, the language label, and the free-for-members ribbon."""
+        trailer id and the language label."""
         self.film.youtube_id = "yt123"
         self.film.save()
         self.eng.language = Language.FRENCH
         self.eng.translation = Translation.SUBTITLED
-        self.eng.is_free_for_members = True
         self.eng.save()
         self.show(0, 19)
         out = get_hero_films(now=self.at(0, 15))[0]
         self.assertEqual(out["youtube_id"], "yt123")
         self.assertEqual(out["language_label"], self.eng.language_label)
         self.assertNotEqual(out["language_label"], "")
-        self.assertTrue(out["is_free_for_members"])
 
     def test_plain_english_film_without_a_trailer(self) -> None:
         self.show(0, 19)
         out = get_hero_films(now=self.at(0, 15))[0]
         self.assertEqual(out["youtube_id"], "")
         self.assertEqual(out["language_label"], "")
-        self.assertFalse(out["is_free_for_members"])
 
     def test_alone_is_a_list_of_one(self) -> None:
         self.show(0, 19)

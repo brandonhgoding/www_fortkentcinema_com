@@ -30,12 +30,12 @@ advisory databases and must report "No known vulnerabilities found". Upgrading
 
 ## Square
 
-Tickets and memberships are sold at the box office only; the site sells
+Tickets are sold at the box office only; the site sells
 nothing online (online tickets were removed 2026-10-31, online membership
 checkout and the Square payment webhook on 2026-11-01). Square is used for
 the catalogue sync (`python manage.py sync_square_catalog`) and the nightly
 sales pull (`python manage.py pull_square_sales`), both of which call Square
-and receive nothing from it. Staff enter memberships in the dashboard.
+and receive nothing from it.
 
 There is no webhook endpoint, so the Square webhook subscription
 (Developer dashboard → Webhooks) should be deleted, and the

@@ -18,7 +18,7 @@ def run(start_date):
     return {
         "id": start_date, "title": f"Run {start_date}", "release_date": "",
         "genre": "", "poster": "", "youtube_id": "", "films": [],
-        "is_free_for_members": False, "start_date": start_date,
+        "start_date": start_date,
     }
 
 

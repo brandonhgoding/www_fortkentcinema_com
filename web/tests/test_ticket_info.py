@@ -30,7 +30,7 @@ class TicketInfoContentTests(TestCase):
         line = ticket_info(self.client.get(reverse("home")).content.decode())
         self.assertIsNotNone(line, "no ticket line on the home page")
         p = TICKET_PRICES
-        for price in (p["adult"], p["senior"], p["child"], p["matinee"], p["member"]):
+        for price in (p["adult"], p["senior"], p["child"], p["matinee"]):
             self.assertIn(f"${price}", line)
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
