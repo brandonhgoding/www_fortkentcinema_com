@@ -13,9 +13,8 @@
       >
     </a>
     {% comment %}
-      With no links (SITE_CONFIG["navigation"] is empty since 2026-11-01,
-      when the Become a Member button went) the bar is just the logo: no
-      hamburger that opens an empty panel.
+      With no links in SITE_CONFIG["navigation"] the bar is just the logo:
+      no hamburger that opens an empty panel.
     {% endcomment %}
     {% if site_config.navigation %}
     <button

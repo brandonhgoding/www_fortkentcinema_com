@@ -52,9 +52,15 @@ SITE_CONFIG = {
     #
     # Empty since 2026-10-31 (the owner's call): Buy Ad Space and Rent the
     # Cinema left the nav and are linked from the footer only. The Become a
-    # Member button went with /membership/ on 2026-11-01, so the bar carries
+    # Member button went with /membership/ on 2026-11-01, so the bar carried
     # just the logo.
-    "navigation": [],
+    #
+    # Advertise came back on 2026-11-02 (the owner's call, and the owner's
+    # label). The footer link, the page's title and heading, and llms.txt
+    # all say the same.
+    "navigation": [
+        {"label": "Advertise", "href": "/advertise/"},
+    ],
     # The footer's Events column. Empty since 2026-10-13; the event pages it
     # once linked are gone. The owner kept the heading; the footer renders it alone until
     # this has links again (same shape as footer_navigation).
@@ -66,10 +72,9 @@ SITE_CONFIG = {
     "footer_navigation": [
         # Alphabetical by label (the owner's call). "note" renders as a
         # second line inside the same link, saying what the name alone
-        # doesn't. Rentals and
-        # advertising carry the same label as the nav and their page title.
+        # doesn't. Labels match the nav and the page title.
         {
-            "label": "Buy Ad Space",
+            "label": "Advertise",
             "note": "Your business on the big screen",
             "href": "/advertise/",
         },
