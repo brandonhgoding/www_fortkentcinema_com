@@ -151,6 +151,10 @@ so both renderings read from the one list — same as /advertise/.
         <p class="rentals-cta-contact">
           Or call <a href="tel:{{ site_config.cinema.phone_e164 }}" data-track="phone_click" data-track-location="rentals">{{ site_config.cinema.phone }}</a>
         </p>
+        {% comment %} Its sibling page, by its nav label. {% endcomment %}
+        <p class="cross-link">
+          Running a business? <a href="{% url 'advertise' %}">Advertise</a> on the big screen before every show.
+        </p>
       </section>
     </div>
   </div>

@@ -205,3 +205,16 @@ class AdvertiseSampleSlideTests(TestCase):
         self.assertIsNotNone(img)
         for attr in ('width="1200"', 'height="675"', 'loading="lazy"', 'alt="'):
             self.assertIn(attr, img.group(0))
+
+
+class CrossLinkTests(TestCase):
+    """The two inquiry pages point at each other: a business that came to
+    rent the room may also want a slide, and the other way round."""
+
+    def test_advertise_links_to_rentals(self):
+        html = self.client.get(reverse("advertise")).content.decode()
+        self.assertRegex(html, r'class="cross-link"[^>]*>[^<]*<a href="/rentals/"')
+
+    def test_rentals_links_to_advertise(self):
+        html = self.client.get(reverse("rentals")).content.decode()
+        self.assertRegex(html, r'class="cross-link"[^>]*>[^<]*<a href="/advertise/"')

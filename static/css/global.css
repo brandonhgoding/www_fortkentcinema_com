@@ -706,3 +706,22 @@ button {
     padding: 0 var(--spacing-sm);
   }
 }
+
+/* The line under each inquiry page's call-to-action that points at its
+   sibling (Advertise <-> Rent the Cinema). */
+.cross-link {
+  margin-top: var(--spacing-md);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--color-cream-muted);
+}
+
+.cross-link a {
+  color: var(--color-cream);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.cross-link a:hover {
+  color: var(--color-gold);
+}

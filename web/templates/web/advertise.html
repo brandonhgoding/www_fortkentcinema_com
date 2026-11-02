@@ -200,6 +200,10 @@ page, so both renderings read from the one list — same as /rentals/.
         <p class="advertise-cta-contact">
           Or call <a href="tel:{{ site_config.cinema.phone_e164 }}" data-track="phone_click" data-track-location="advertise">{{ site_config.cinema.phone }}</a>
         </p>
+        {% comment %} Its sibling page, by its nav label. {% endcomment %}
+        <p class="cross-link">
+          Planning a private event? <a href="{% url 'rentals' %}">Rent the Cinema</a>: the whole theater, your film.
+        </p>
       </section>
     </div>
   </div>
