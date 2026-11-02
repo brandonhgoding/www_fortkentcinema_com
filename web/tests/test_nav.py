@@ -37,6 +37,25 @@ class NavigationConfigTests(TestCase):
         html = footer_html(self.client.get("/").content.decode())
         self.assertIn('href="/advertise/"', html)
 
+    def test_footer_and_nav_name_advertise_the_same(self):
+        # The owner's call on 2026-11-02: both say "Advertise".
+        def label(links):
+            return next(i["label"] for i in links if i["href"] == "/advertise/")
+
+        self.assertEqual(label(SITE_CONFIG["footer_navigation"]), "Advertise")
+        self.assertEqual(label(SITE_CONFIG["navigation"]), "Advertise")
+
+    def test_advertise_page_and_llms_txt_use_the_same_name(self):
+        # Everything says "Advertise" (2026-11-02): the page's title, share
+        # title and heading, and its line in llms.txt.
+        html = self.client.get("/advertise/").content.decode()
+        self.assertIn("<title>Advertise | Fort Kent Cinema</title>", html)
+        self.assertIn('content="Advertise | Fort Kent Cinema"', html)
+        self.assertIn('<h1 class="advertise-title">ADVERTISE</h1>', html)
+        llms = self.client.get("/llms.txt").content.decode()
+        self.assertIn("- Advertise, advertising on the big screen", llms)
+        self.assertNotIn("Buy Ad Space", html + llms)
+
     def test_footer_events_column_is_kept_empty_for_now(self):
         # Heckle Night left it on 2026-10-13 and Craft Night was deleted the
         # same day. The owner kept the heading to fill later; until then it
@@ -54,10 +73,10 @@ class NavigationRenderTests(TestCase):
             for href in footer_destinations():
                 self.assertIn(f'href="{href}"', html, path)
 
-    def test_with_no_links_the_bar_is_just_the_logo(self):
-        # navigation is empty and the Become a Member button went with
-        # /membership/ on 2026-11-01: no hamburger opening an empty panel.
-        html = nav_html(self.client.get("/").content.decode())
-        self.assertIn('class="nav-logo"', html)
-        self.assertNotIn("nav-hamburger", html)
-        self.assertNotIn("nav-links", html)
+    def test_advertise_is_the_one_top_nav_link_on_every_page(self):
+        # The owner put Advertise back in the nav on 2026-11-02.
+        for path in ("/", "/rentals/", "/advertise/"):
+            html = nav_html(self.client.get(path).content.decode())
+            self.assertIn('href="/advertise/"', html, path)
+            self.assertIn(">Advertise</a>", html, path)
+            self.assertEqual(html.count('class="nav-link"'), 1, path)

@@ -37,7 +37,7 @@ the box office.
 ## Rentals, advertising
 
 - Rent the Cinema, private rentals of the whole theater: {{ base }}/rentals/
-- Buy Ad Space, advertising on the big screen before every show: {{ base }}/advertise/
+- Advertise, advertising on the big screen before every show: {{ base }}/advertise/
 
 ## Contact
 
