@@ -57,9 +57,11 @@ SITE_CONFIG = {
     #
     # Advertise came back on 2026-11-02 (the owner's call, and the owner's
     # label). The footer link, the page's title and heading, and llms.txt
-    # all say the same.
+    # all say the same. Rent the Cinema came back the same day (the owner's
+    # call), under the label its footer link, title and heading already use.
     "navigation": [
         {"label": "Advertise", "href": "/advertise/"},
+        {"label": "Rent the Cinema", "href": "/rentals/"},
     ],
     # The footer's Events column. Empty since 2026-10-13; the event pages it
     # once linked are gone. The owner kept the heading; the footer renders it alone until

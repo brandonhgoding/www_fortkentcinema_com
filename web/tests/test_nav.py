@@ -54,9 +54,13 @@ class NavigationRenderTests(TestCase):
             for href in footer_destinations():
                 self.assertIn(f'href="{href}"', html, path)
 
-    def test_advertise_is_the_one_top_nav_link_on_every_page(self):
-        # The owner put Advertise back in the nav on 2026-11-02.
+    def test_advertise_and_rentals_are_the_top_nav_links_on_every_page(self):
+        # Advertise came back on 2026-11-02, Rent the Cinema joined it the
+        # same day (the owner's calls). Labels match the footer and page H1s.
         for path in ("/", "/rentals/", "/advertise/"):
             html = nav_html(self.client.get(path).content.decode())
             self.assertIn('href="/advertise/"', html, path)
-            self.assertEqual(html.count('class="nav-link"'), 1, path)
+            self.assertIn(">Advertise</a>", html, path)
+            self.assertIn('href="/rentals/"', html, path)
+            self.assertIn(">Rent the Cinema</a>", html, path)
+            self.assertEqual(html.count('class="nav-link"'), 2, path)
