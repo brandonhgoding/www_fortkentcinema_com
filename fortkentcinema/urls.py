@@ -25,20 +25,15 @@ from django.urls import include, path
 from django.views.generic import TemplateView
 
 from web.redirects import legacy_urlpatterns
-from web.sitemaps import (
-    BlogPostSitemap,
-    StaticViewSitemap,
-)
+from web.sitemaps import StaticViewSitemap
 from web.views import LlmsTxtView
 
 sitemaps = {
     "static": StaticViewSitemap,
-    "posts": BlogPostSitemap,
 }
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("blog/", include("blog.urls_site")),
     path(
         "sitemap.xml",
         sitemap,

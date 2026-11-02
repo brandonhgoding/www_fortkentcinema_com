@@ -5,71 +5,33 @@ still holds those URLs (they were 404ing after the Django migration), so every
 one of them must 301 to its modern equivalent rather than die.
 """
 
-import datetime
-
-from blog.models import BlogAuthor, BlogCategory, BlogPost
 from django.test import TestCase
 
 
 class LegacyBlogRedirectTests(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        author = BlogAuthor.objects.create(first_name="Brandon", last_name="Goding")
-        category = BlogCategory.objects.create(name="Reviews")
-        # slug auto-derives from subtitle (BlogPost.slug_field)
-        cls.post = BlogPost.objects.create(
-            title="Bullet Train",
-            subtitle="A Review of Bullet Train",
-            author=author,
-            category=category,
-            post_date=datetime.date(2022, 8, 6),
-            content="...",
-        )
+    """The blog was discontinued 2026-11-01. Its current addresses and the
+    older /fort-kent-cinema-blog/ ones all go home in one hop."""
 
-    def test_legacy_post_url_redirects_to_modern_post(self):
-        resp = self.client.get("/fort-kent-cinema-blog/a-review-of-bullet-train/")
-        self.assertRedirects(
-            resp,
+    def test_blog_addresses_redirect_home(self):
+        for path in (
+            "/blog/",
+            "/blog",
             "/blog/a-review-of-bullet-train",
-            status_code=301,
-            target_status_code=200,
-        )
+            "/blog/a-review-of-bullet-train/",
+            "/blog/category/reviews/",
+            "/blog/?page=2",
+            "/fort-kent-cinema-blog/",
+            "/fort-kent-cinema-blog/a-review-of-bullet-train/",
+            "/fort-kent-cinema-blog/кино/",
+        ):
+            with self.subTest(path=path):
+                resp = self.client.get(path)
+                self.assertRedirects(
+                    resp, "/", status_code=301, target_status_code=200
+                )
 
-    def test_legacy_post_url_without_trailing_slash_also_redirects(self):
-        """Google holds the trailing-slash form, but don't rely on APPEND_SLASH
-        to bounce the bare form through a second hop."""
-        resp = self.client.get("/fort-kent-cinema-blog/a-review-of-bullet-train")
-        self.assertRedirects(
-            resp,
-            "/blog/a-review-of-bullet-train",
-            status_code=301,
-            target_status_code=200,
-        )
-
-    def test_legacy_post_url_with_non_ascii_slug_is_a_404(self):
-        """`[-\w]+` matched Unicode, which can't reverse into the ASCII
-        <slug:> route on /blog/ — a NoReverseMatch, so a 500."""
-        resp = self.client.get("/fort-kent-cinema-blog/кино/")
-        self.assertEqual(resp.status_code, 404)
-
-    def test_legacy_blog_index_redirects_to_blog_list(self):
-        resp = self.client.get("/fort-kent-cinema-blog/")
-        self.assertRedirects(resp, "/blog/", status_code=301, target_status_code=200)
-
-    def test_redirect_is_a_single_hop(self):
-        """A 301 chain leaks the equity we're trying to recover."""
-        resp = self.client.get(
-            "/fort-kent-cinema-blog/a-review-of-bullet-train/", follow=True
-        )
-        self.assertEqual(len(resp.redirect_chain), 1)
-        self.assertEqual(resp.status_code, 200)
-
-    def test_legacy_url_for_unknown_slug_still_redirects(self):
-        """We redirect on URL shape, not on post existence — the modern blog
-        route can 404 on its own if the post is genuinely gone."""
-        resp = self.client.get("/fort-kent-cinema-blog/a-post-that-never-existed/")
-        self.assertEqual(resp.status_code, 301)
-        self.assertEqual(resp["Location"], "/blog/a-post-that-never-existed")
+    def test_a_lookalike_path_is_not_swallowed(self):
+        self.assertEqual(self.client.get("/blogger/").status_code, 404)
 
 
 class LegacyPageRedirectTests(TestCase):
@@ -176,8 +138,5 @@ class LegacyPageRedirectTests(TestCase):
 
 
 class LegacyRedirectsDoNotShadowLiveRoutesTests(TestCase):
-    def test_modern_blog_routes_still_resolve(self):
-        self.assertEqual(self.client.get("/blog/").status_code, 200)
-
     def test_homepage_still_resolves(self):
         self.assertEqual(self.client.get("/").status_code, 200)

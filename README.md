@@ -157,9 +157,5 @@ Permissions that go together:
   `cinema.add_film`.
 - The home page's Today's Showtimes needs `cinema.view_showtime`; Yesterday's
   Sales needs `boxoffice.view_salespull`.
-- The blog page's Authors and Categories panels need `blog.view_blogauthor` and
-  `blog.view_blogcategory`.
-- Writing blog posts needs `blog.add_blogpost` and `blog.change_blogpost`
-  together (saving opens the editor).
 - Door lists on an engagement's showtimes need `tickets.view_ticketorder`; the
   back link from a door list needs `cinema.view_engagement`.

@@ -129,8 +129,8 @@
   padding: 0;
 }
 
-/* A link with a subtitle under it ("From the Booth" / "The Fort Kent Cinema
-   Blog"). Stacked, and the underline moves from the <a> to the title alone:
+/* A link with a subtitle under it ("Rent the Cinema" / "Rent the whole
+   theater"). Stacked, and the underline moves from the <a> to the title alone:
    an underline set on the <a> propagates to every line inside it, and a
    muted subtitle with a gold rule under it reads as a second link. The
    whole block stays one tap target. */

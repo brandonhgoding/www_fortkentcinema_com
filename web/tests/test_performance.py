@@ -34,7 +34,7 @@ class SingleStylesheetTests(TestCase):
         """15 render-blocking stylesheets cost ~1,680ms. Adding a per-page
         <link> back would silently undo this — add it to
         frontend/styles/main.css instead."""
-        for name in ["home", "rentals", "advertise", "blog_list"]:
+        for name in ["home", "rentals", "advertise"]:
             html = self.client.get(reverse(name)).content.decode()
             links = stylesheet_links(html)
             self.assertEqual(
@@ -45,7 +45,7 @@ class SingleStylesheetTests(TestCase):
     def test_no_third_party_font_host_anywhere(self):
         """Self-hosted. A reintroduced Google Fonts link puts two cross-origin
         hosts back on the critical path."""
-        for name in ["home", "blog_list"]:
+        for name in ["home", "rentals"]:
             html = self.client.get(reverse(name)).content.decode()
             self.assertNotIn("fonts.googleapis.com", html)
             self.assertNotIn("fonts.gstatic.com", html)

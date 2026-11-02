@@ -13,19 +13,14 @@ from django.urls import re_path
 from django.views.generic import RedirectView
 
 legacy_urlpatterns = [
-    # Blog lived at /fort-kent-cinema-blog/<slug>/. Slugs carried over to the
-    # modern /blog/<slug> route unchanged, so this maps 1:1. ASCII only, to
-    # match <slug:>: `\w` let a Unicode slug through, which then failed to
-    # reverse and 500'd instead of 404ing.
+    # The blog ("From the Booth") was discontinued 2026-11-01. /blog/, its
+    # posts and its category pages were in the sitemap, and the older
+    # /fort-kent-cinema-blog/ addresses still carry inbound links, so all of
+    # them redirect rather than 404.
     re_path(
-        r"^fort-kent-cinema-blog/(?P<slug>[-a-zA-Z0-9_]+)/?$",
-        RedirectView.as_view(pattern_name="blog_detail", permanent=True),
-        name="legacy_blog_detail",
-    ),
-    re_path(
-        r"^fort-kent-cinema-blog/?$",
-        RedirectView.as_view(pattern_name="blog_list", permanent=True),
-        name="legacy_blog_list",
+        r"^(?:blog|fort-kent-cinema-blog)(?:/.*)?$",
+        RedirectView.as_view(url="/", permanent=True),
+        name="legacy_blog",
     ),
     # /coming-soon/ has no modern page; the homepage carries the section.
     re_path(

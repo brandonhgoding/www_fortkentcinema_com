@@ -8,7 +8,6 @@ from django.urls import reverse
 
 from web.tests.test_home_sections import _time, hero_film
 
-from blog.models import BlogAuthor, BlogCategory, BlogPost
 from web.constants import RENTALS_FAQ
 
 
@@ -205,10 +204,10 @@ class HomeIntegrationTests(TestCase):
     def test_full_home_composition_order(self, _ns, _cs):
         html = self.client.get(reverse("home")).content.decode()
         # The empty-week fold (the hero, carrying #now-showing), then the
-        # two sections below it, each rendered once.
+        # Coming Soon below it, each rendered once.
         markers = (
             'class="hero hero--empty"', 'id="now-showing"',
-            'id="coming-soon"', 'id="from-the-booth"',
+            'id="coming-soon"',
         )
         for marker in markers:
             self.assertEqual(html.count(marker), 1, marker)
@@ -218,64 +217,6 @@ class HomeIntegrationTests(TestCase):
         order = [html.index(s) for s in markers]
         self.assertEqual(order, sorted(order))
         self.assertIn('class="skip-link"', html)  # base chrome intact
-
-
-class BlogTeaserTests(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls.author = BlogAuthor.objects.create(
-            first_name="Jane", last_name="Doe"
-        )
-        cls.category = BlogCategory.objects.create(name="News")
-        cls.post = BlogPost.objects.create(
-            title="Fort Kent Cinema Turns 90",
-            subtitle="A look back at the history of the theater",
-            author=cls.author,
-            category=cls.category,
-            content="Nine decades of movies in the St. John Valley.",
-            post_date="2026-01-01",
-        )
-
-    @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_hero_films", return_value=[])
-    def test_recent_post_renders_on_home(self, _ns, _cs):
-        html = self.client.get(reverse("home")).content.decode()
-        self.assertIn("Fort Kent Cinema Turns 90", html)
-
-    @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_hero_films", return_value=[])
-    def test_recent_post_renders_as_a_home_card(self, _ns, _cs):
-        # The From the booth post cards are home cards, not the /blog/ list
-        # card: category and date eyebrow, the title as the link, the
-        # subtitle, and a byline.
-        html = self.client.get(reverse("home")).content.decode()
-        self.assertIn("Fort Kent Cinema Turns 90", html)
-        self.assertIn("A look back at the history of the theater", html)
-        self.assertIn("By Jane Doe", html)
-
-    @mock.patch("web.views.get_coming_soon", return_value=[])
-    @mock.patch("web.views.get_hero_films", return_value=[])
-    def test_teaser_shows_three_newest_posts(self, _ns, _cs):
-        # From the booth carries the three newest posts, one row of three. Newest first, the rest dropped.
-        for i in range(8):
-            BlogPost.objects.create(
-                title=f"Filler {i}",
-                # BlogPost slugs come from the subtitle, not the title.
-                subtitle=f"Filler subtitle {i}",
-                author=self.author,
-                category=self.category,
-                content="Body.",
-                post_date=f"2026-02-{i + 1:02d}",
-            )
-        resp = self.client.get(reverse("home"))
-        posts = list(resp.context["recent_posts"])
-        self.assertEqual(len(posts), 3)
-        self.assertEqual(
-            [p.title for p in posts],
-            [f"Filler {i}" for i in range(7, 4, -1)],
-        )
-        # The 2026-01-01 post from setUpTestData is the oldest and falls off.
-        self.assertNotIn("Fort Kent Cinema Turns 90", [p.title for p in posts])
 
 
 class RentalsPageTests(TestCase):

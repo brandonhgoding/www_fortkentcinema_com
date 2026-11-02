@@ -36,7 +36,6 @@ class ChromeTests(TestCase):
             [
                 "Home",
                 "Ad Inquiries",
-                "Blog",
                 "Engagements",
                 "Rental Inquiries",
                 "Subscribers",
@@ -76,7 +75,6 @@ class ChromeTests(TestCase):
         self.assertIn(f'href="{reverse("dashboard:subscribers")}"', html)
         for name in (
             "ad_inquiries",
-            "blog",
             "engagements",
             "rental_inquiries",
             "voicemails",
@@ -96,7 +94,6 @@ class ChromeTests(TestCase):
         html = self.client.get(reverse("dashboard:home")).content.decode()
         for name in (
             "ad_inquiries",
-            "blog",
             "engagements",
             "rental_inquiries",
             "subscribers",

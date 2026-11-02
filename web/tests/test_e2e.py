@@ -1,5 +1,5 @@
-"""Selenium E2E tests for the JS-driven flows (nav mobile menu, blog infinite
-scroll, coming-soon calendar toggle).
+"""Selenium E2E tests for the JS-driven flows (nav mobile menu, coming-soon
+calendar toggle).
 
 These tests spin up a real headless Chrome via Selenium 4's Selenium Manager
 (which auto-provisions a matching chromedriver). Chrome is not guaranteed to
@@ -15,8 +15,6 @@ import unittest
 from unittest import mock
 
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
-
-from blog.models import BlogAuthor, BlogCategory, BlogPost
 
 
 def _make_driver():
@@ -59,58 +57,6 @@ class SeleniumTestCase(StaticLiveServerTestCase):
         from selenium.webdriver.support.ui import WebDriverWait
 
         return WebDriverWait(self.driver, timeout)
-
-
-class BlogPaginationE2E(SeleniumTestCase):
-    """Blog listing's numbered pagination. This replaced an HTMX infinite
-    scroll, which hid every post past the first page from crawlers — see
-    blog/tests/test_indexability.py. Seeds more posts than one page so the
-    pagination nav must render and navigate.
-    """
-
-    def setUp(self):
-        # NOTE: setUpTestData is a django.test.TestCase-only mechanism; this
-        # base class is a LiveServerTestCase (-> TransactionTestCase), which
-        # never calls it. Seed per-test in setUp instead.
-        super().setUp()
-        author = BlogAuthor.objects.create(first_name="Jane", last_name="Doe")
-        category = BlogCategory.objects.create(name="News")
-        for i in range(15):  # > 13, page 1's lead + paginate_by (12)
-            BlogPost.objects.create(
-                title=f"Post {i}",
-                subtitle=f"Subtitle {i}",
-                author=author,
-                category=category,
-                content=f"Body content for post {i}.",
-                post_date=f"2026-01-{i + 1:02d}",
-            )
-
-    def test_next_link_navigates_to_page_two(self):
-        from selenium.webdriver.common.by import By
-
-        self.driver.get(self.live_server_url + "/blog/")
-
-        cards = self.wait().until(
-            lambda d: d.find_elements(By.CSS_SELECTOR, ".blog-card") or False
-        )
-        self.assertEqual(len(cards), 13)  # the lead + PostListView.paginate_by
-
-        next_link = self.driver.find_element(
-            By.CSS_SELECTOR, ".blog-pagination a[rel='next']"
-        )
-        # global.css sets `scroll-behavior: smooth`, so Selenium's own
-        # scroll-into-view is still animating when it hit-tests the click.
-        # `behavior: 'instant'` overrides it.
-        self.driver.execute_script(
-            "arguments[0].scrollIntoView({block: 'center', behavior: 'instant'});",
-            next_link,
-        )
-        next_link.click()
-
-        self.wait(15).until(lambda d: "page=2" in d.current_url)
-        self.assertEqual(
-            len(self.driver.find_elements(By.CSS_SELECTOR, ".blog-card")), 2
-        )
 
 
 class ComingSoonCalendarE2E(SeleniumTestCase):

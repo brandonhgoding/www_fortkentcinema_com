@@ -58,20 +58,16 @@ class StaticSitemapLastmodTests(TestCase):
             self.assertTrue(urls[found[0]], f"{path} has an empty lastmod")
 
     def test_a_data_driven_page_beats_its_template_date(self):
-        """/blog/ moves when a post lands, with nobody touching the template.
-        A fixed date would go stale the same day."""
-        from blog.models import BlogAuthor, BlogCategory, BlogPost
+        """The homepage moves when a run is booked, with nobody touching the
+        template. A fixed date would go stale the same day."""
+        from cinema.models import Screen
+        from dashboard.tests.test_engagements import make_engagement
+        from django.utils import timezone
         from web.sitemaps import STATIC_PAGE_LASTMOD, StaticViewSitemap
 
-        future = datetime.date.today()
-        BlogPost.objects.create(
-            title="A new post",
-            post_date=future,
-            content="x",
-            author=BlogAuthor.objects.create(
-                first_name="Brandon", last_name="Goding"
-            ),
-            category=BlogCategory.objects.create(name="News"),
+        today = timezone.localdate()
+        make_engagement(
+            Screen.objects.create(name="S1", capacity=50), start=today, end=today
         )
-        self.assertEqual(StaticViewSitemap().lastmod("blog_list"), future)
-        self.assertGreater(future, STATIC_PAGE_LASTMOD["blog_list"])
+        self.assertEqual(StaticViewSitemap().lastmod("home"), today)
+        self.assertGreater(today, STATIC_PAGE_LASTMOD["home"])

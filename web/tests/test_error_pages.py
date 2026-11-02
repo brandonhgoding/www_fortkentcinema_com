@@ -8,7 +8,6 @@ home: see test_legacy_redirects.)
 
 from django.template.loader import get_template
 from django.test import SimpleTestCase, TestCase
-from django.urls import reverse
 
 from web.constants import SITE_CONFIG
 
@@ -31,7 +30,7 @@ class NotFoundPageTests(TestCase):
 
     def test_offers_somewhere_to_go(self):
         main = self.html.split('<main id="main-content">', 1)[1].split("</main>", 1)[0]
-        for href in ("/#now-showing", "/#coming-soon", reverse("blog_list")):
+        for href in ("/#now-showing", "/#coming-soon"):
             self.assertIn(f'href="{href}"', main)
         self.assertIn(SITE_CONFIG["cinema"]["phone"], main)
 

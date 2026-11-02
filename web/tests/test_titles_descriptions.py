@@ -18,7 +18,6 @@ SECTION_PAGES = (
     "home",
     "rentals",
     "advertise",
-    "blog_list",
 )
 
 

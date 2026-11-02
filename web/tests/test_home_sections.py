@@ -27,14 +27,12 @@ from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
 
-from blog.models import BlogAuthor, BlogCategory, BlogPost
 from web.constants import SITE_CONFIG, TICKET_PRICES
 
 SECTION_MARKERS = (
     "hero",
     "now-showing",
     "coming-soon",
-    "from-the-booth",
 )
 
 
@@ -120,14 +118,13 @@ class SectionCompositionTests(TestCase):
 
     @mock.patch("web.views.get_coming_soon", return_value=[])
     @mock.patch("web.views.get_hero_films", return_value=[])
-    def test_section_order_ends_with_from_the_booth(self, _ns, _cs):
+    def test_section_order_ends_with_coming_soon(self, _ns, _cs):
         seq = section_sequence(self.home())
         self.assertEqual(
             seq,
             [
                 "now-showing",
                 "coming-soon",
-                "from-the-booth",
             ],
         )
 
@@ -271,7 +268,6 @@ class EmptyStateTests(TestCase):
         self.assertIn('class="coming-empty"', html)
         empty = html.split('class="coming-empty"', 1)[1].split("</div>", 1)[0]
         self.assertIn(SITE_CONFIG["social"]["facebook"], empty)
-        self.assertIn(reverse("blog_list"), empty)
 
     @mock.patch("web.views.get_coming_soon")
     @mock.patch("web.views.get_hero_films")
@@ -293,79 +289,6 @@ class EmptyStateTests(TestCase):
         html = self.client.get(reverse("home")).content.decode()
         self.assertNotIn("no-showtimes", html)
         self.assertNotIn("coming-empty", html)
-
-
-class FromTheBoothTests(TestCase):
-    """Up to three image-led post cards and a way to the rest."""
-
-    @classmethod
-    def setUpTestData(cls):
-        cls.author = BlogAuthor.objects.create(first_name="Rick", last_name="Douglas")
-        cls.category = BlogCategory.objects.create(name="Rick's Reviews")
-
-    def make_posts(self, n, **over):
-        return [
-            BlogPost.objects.create(
-                title=f"Post {i}",
-                subtitle=f"Subtitle {i}",
-                author=self.author,
-                category=self.category,
-                content=f"Body {i}.",
-                post_date=f"2026-02-{i + 1:02d}",
-                **over,
-            )
-            for i in range(n)
-        ]
-
-    def section(self):
-        html = self.client.get(reverse("home")).content.decode()
-        self.assertEqual(html.count('id="from-the-booth"'), 1)
-        start = html.index('id="from-the-booth"')
-        return html[html.rindex("<section", 0, start) : html.index("</section>", start)]
-
-    def test_five_posts_show_the_newest_three(self):
-        self.make_posts(5)
-        section = self.section()
-        self.assertEqual(section.count('class="home-card blog-post-card"'), 3)
-        for shown in ("Post 4", "Post 3", "Post 2"):
-            self.assertIn(shown, section)
-        for hidden in ("Post 1", "Post 0"):
-            self.assertNotIn(hidden, section)
-        self.assertLess(section.index("Post 4"), section.index("Post 3"))
-
-    def test_post_card_shape(self):
-        post = self.make_posts(1, header_image="blog/headers/post-0.webp")[0]
-        section = self.section()
-        self.assertIn("Rick&#x27;s Reviews &middot; February 1, 2026", section)
-        self.assertRegex(
-            section,
-            r'<a href="%s"[^>]*>Post 0</a>' % re.escape(post.get_absolute_url()),
-        )
-        # One link per card: the title, stretched over the card.
-        self.assertEqual(section.count(f'href="{post.get_absolute_url()}"'), 1)
-        self.assertIn("Subtitle 0", section)
-        self.assertIn("By Rick Douglas", section)
-        # The image is decorative; the title beside it names the post.
-        self.assertRegex(
-            section,
-            r'<img src="%s" alt="" loading="lazy"' % re.escape(post.header_image.url),
-        )
-
-    def test_post_without_an_image_has_no_img(self):
-        self.make_posts(1)
-        self.assertNotIn("<img", self.section())
-
-    def test_all_posts_link_goes_to_the_blog(self):
-        self.make_posts(1)
-        self.assertRegex(
-            self.section(), r'<a href="%s"[^>]*>\s*All posts' % reverse("blog_list")
-        )
-
-    def test_without_posts_there_is_no_empty_grid(self):
-        section = self.section()
-        self.assertIn("All posts", section)
-        self.assertNotIn("home-cards", section)
-        self.assertNotIn("blog-post-card", section)
 
 
 class ScreeningEventSchemaTests(TestCase):

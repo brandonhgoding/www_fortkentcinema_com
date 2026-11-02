@@ -6,11 +6,9 @@ content. It's a bare fragment with no <head>, so it can't carry a robots meta â€
 the X-Robots-Tag header is the only mechanism available.
 """
 
-import datetime
 import json
 import re
 
-from blog.models import BlogAuthor, BlogCategory, BlogPost
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -40,7 +38,7 @@ class CalendarCrawlTrapTests(TestCase):
         self.assertEqual(resp["X-Robots-Tag"], "noindex, nofollow")
 
     def test_real_pages_are_not_noindexed(self):
-        for name in ["home", "rentals", "advertise", "blog_list"]:
+        for name in ["home", "rentals", "advertise"]:
             resp = self.client.get(reverse(name))
             self.assertNotIn("X-Robots-Tag", resp)
 
@@ -128,38 +126,6 @@ class FaviconTests(TestCase):
         self.assertIn('sizes="32x32"', html)
         self.assertIn('sizes="16x16"', html)
         self.assertIn('type="image/svg+xml"', html)  # modern browsers still get the SVG
-
-
-class BlogPostingSchemaTests(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        author = BlogAuthor.objects.create(first_name="Brandon", last_name="Goding")
-        cat = BlogCategory.objects.create(name="Reviews")
-        cls.post = BlogPost.objects.create(
-            title="A Review of Something",
-            subtitle="It was good",
-            author=author,
-            category=cat,
-            post_date=datetime.date(2026, 3, 23),
-            content="...",
-        )
-
-    def schema(self):
-        html = self.client.get(f"/blog/{self.post.slug}").content.decode()
-        return jsonld(html, "BlogPosting")
-
-    def test_emits_blogposting(self):
-        s = self.schema()
-        self.assertIsNotNone(s, "no BlogPosting JSON-LD")
-        self.assertEqual(s["headline"], "A Review of Something")
-        self.assertEqual(s["datePublished"], "2026-03-23")
-        self.assertEqual(s["author"]["name"], "Brandon Goding")
-        self.assertEqual(s["articleSection"], "Reviews")
-
-    def test_no_fabricated_datemodified(self):
-        """BlogPost has no updated_at field. Emitting post_date as dateModified
-        would tell Google an edited post was last touched the day it went up."""
-        self.assertNotIn("dateModified", self.schema())
 
 
 class FaqSchemaTests(TestCase):

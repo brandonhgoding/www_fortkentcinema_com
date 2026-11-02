@@ -133,8 +133,7 @@ select.input.inputCompact:not([multiple]) {
 }
 
 /* ===== Forms =====
-   One pattern for every drawer form, and the blog editor shares its
-   fields. In a drawer:
+   One pattern for every drawer form. In a drawer:
 
      form.form
        .formAlert          errors that belong to no one field, first

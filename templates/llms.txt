@@ -44,8 +44,4 @@ the box office.
 - Address: {{ site_config.cinema.address.street }}, {{ site_config.cinema.address.city }}, {{ site_config.cinema.address.state }} {{ site_config.cinema.address.zip }}
 - Phone: {{ site_config.cinema.phone }}
 - Facebook: {{ site_config.social.facebook }}
-
-## More
-
-- Blog: {{ base }}/blog/
 {% endautoescape %}

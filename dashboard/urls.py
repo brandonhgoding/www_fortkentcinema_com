@@ -2,7 +2,6 @@ from django.urls import path
 
 from . import (
     ad_inquiry_views,
-    blog_views,
     rental_inquiry_views,
     subscriber_views,
     views,
@@ -78,58 +77,6 @@ urlpatterns = [
         "subscribers/export.csv",
         subscriber_views.SubscriberExportView.as_view(),
         name="subscribers_export",
-    ),
-    path("blog", blog_views.BlogListView.as_view(), name="blog"),
-    path("blog/new", blog_views.BlogPostCreateView.as_view(), name="blog_post_create"),
-    path(
-        "blog/markdown-preview",
-        blog_views.MarkdownPreviewView.as_view(),
-        name="blog_markdown_preview",
-    ),
-    path(
-        "blog/<uuid:pk>/edit",
-        blog_views.BlogPostEditView.as_view(),
-        name="blog_post_edit",
-    ),
-    path(
-        "blog/<uuid:pk>/preview",
-        blog_views.BlogPostPreviewView.as_view(),
-        name="blog_post_preview",
-    ),
-    path(
-        "blog/<uuid:pk>/delete",
-        blog_views.BlogPostDeleteView.as_view(),
-        name="blog_post_delete",
-    ),
-    path(
-        "blog/authors/new",
-        blog_views.AuthorCreateView.as_view(),
-        name="blog_author_create",
-    ),
-    path(
-        "blog/authors/<uuid:pk>/edit",
-        blog_views.AuthorEditView.as_view(),
-        name="blog_author_edit",
-    ),
-    path(
-        "blog/authors/<uuid:pk>/delete",
-        blog_views.AuthorDeleteView.as_view(),
-        name="blog_author_delete",
-    ),
-    path(
-        "blog/categories/new",
-        blog_views.CategoryCreateView.as_view(),
-        name="blog_category_create",
-    ),
-    path(
-        "blog/categories/<uuid:pk>/edit",
-        blog_views.CategoryEditView.as_view(),
-        name="blog_category_edit",
-    ),
-    path(
-        "blog/categories/<uuid:pk>/delete",
-        blog_views.CategoryDeleteView.as_view(),
-        name="blog_category_delete",
     ),
     path(
         "rental-inquiries",

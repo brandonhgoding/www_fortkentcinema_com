@@ -96,8 +96,7 @@
         <p class="coming-empty__lead">Nothing on the calendar yet.</p>
         <p class="coming-empty__body">
           Upcoming titles land here as soon as a run is booked. We announce
-          each one on Facebook first, and the blog covers the ones worth a
-          longer look.
+          each one on Facebook first.
         </p>
         <ul class="coming-empty__links">
           {% if site_config.social.facebook %}
@@ -109,7 +108,6 @@
             </a>
           </li>
           {% endif %}
-          <li><a href="{% url 'blog_list' %}">Read the blog</a></li>
         </ul>
       </div>
       {% endfor %}

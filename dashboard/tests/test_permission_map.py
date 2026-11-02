@@ -1,7 +1,6 @@
 """Every dashboard view must 403 without its model permission."""
 
 import re
-import uuid
 from pathlib import Path
 
 from django.conf import settings
@@ -18,7 +17,6 @@ from dashboard.tests.helpers import (
 )
 from dashboard.views import HomeView
 
-UUID_NONE = uuid.UUID(int=0)
 
 # (url_name, kwargs, method, permission). `permission` is one codename, or a
 # tuple of alternatives for an any-of view. Kwargs use non-existent pks: the
@@ -50,23 +48,6 @@ PERMISSION_TABLE: list[tuple[str, dict, str, str | tuple[str, ...]]] = [
     ("voicemail_delete", {"pk": 999999}, "post", "phone.delete_voicemail"),
     ("subscribers", {}, "get", "audience.view_subscriber"),
     ("subscribers_export", {}, "get", "audience.view_subscriber"),
-    ("blog", {}, "get", "blog.view_blogpost"),
-    ("blog_post_preview", {"pk": UUID_NONE}, "get", "blog.view_blogpost"),
-    ("blog_post_create", {}, "get", "blog.add_blogpost"),
-    ("blog_post_edit", {"pk": UUID_NONE}, "get", "blog.change_blogpost"),
-    (
-        "blog_markdown_preview",
-        {},
-        "post",
-        ("blog.add_blogpost", "blog.change_blogpost"),
-    ),
-    ("blog_post_delete", {"pk": UUID_NONE}, "post", "blog.delete_blogpost"),
-    ("blog_author_create", {}, "get", "blog.add_blogauthor"),
-    ("blog_author_edit", {"pk": UUID_NONE}, "get", "blog.change_blogauthor"),
-    ("blog_author_delete", {"pk": UUID_NONE}, "post", "blog.delete_blogauthor"),
-    ("blog_category_create", {}, "get", "blog.add_blogcategory"),
-    ("blog_category_edit", {"pk": UUID_NONE}, "get", "blog.change_blogcategory"),
-    ("blog_category_delete", {"pk": UUID_NONE}, "post", "blog.delete_blogcategory"),
 ]
 
 
@@ -112,12 +93,10 @@ class PermissionMapTests(TestCase):
     def test_declared_permissions_match_the_spec(self) -> None:
         declared = _declared_by_views()
         self.assertEqual(declared - SPEC_PERMISSIONS, set())
-        # Only templates and the home page use these four; no view declares them.
+        # Only templates and the home page use these two; no view declares them.
         self.assertEqual(
             SPEC_PERMISSIONS - declared,
             {
-                "blog.view_blogauthor",
-                "blog.view_blogcategory",
                 "boxoffice.view_salespull",
                 "cinema.view_showtime",
             },
@@ -128,12 +107,11 @@ class TemplatePermissionStringTests(TestCase):
     def test_template_permission_strings_exist(self) -> None:
         base = Path(settings.BASE_DIR)
         found = set()
-        for rel in ("dashboard/templates/dashboard", "blog/templates/blog"):
-            for path in (base / rel).rglob("*.html"):
-                text = path.read_text(encoding="utf-8")
-                found.update(
-                    f"{app}.{code}"
-                    for app, code in re.findall(r"perms\.(\w+)\.(\w+)", text)
-                )
+        for path in (base / "dashboard/templates/dashboard").rglob("*.html"):
+            text = path.read_text(encoding="utf-8")
+            found.update(
+                f"{app}.{code}"
+                for app, code in re.findall(r"perms\.(\w+)\.(\w+)", text)
+            )
         self.assertTrue(found)
         self.assertEqual(sorted(found - set(DASHBOARD_PERMISSIONS)), [])

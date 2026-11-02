@@ -119,15 +119,15 @@ button {
    wrapped to two lines on a 390px phone. Widths below are measured from the
    shipped EB Garamond woff2, instanced at wght 700 (the weight these actually
    render at), against the 326px available inside .section-container's 2rem
-   gutters at 390px. NOW SHOWING is the widest of the three titles:
+   gutters at 390px. NOW SHOWING is the wider of the two titles:
 
      old, 48px / 8px fixed ......... 461px  — wrapped
      phone step, 2rem / 0.08em ..... 278px  — fits, 48px to spare
      tablet step at 601px .......... 356px  of 537px
      desktop step .................. 437px  of 1336px
 
-   COMING SOON is 263px at the phone step and BLOG is 96px, so the phone step
-   is set by NOW SHOWING and the other two inherit the headroom.
+   COMING SOON is 263px at the phone step, so the phone step is set by NOW
+   SHOWING and the other inherits the headroom.
 
    BREAKPOINTS. Only the two this page already uses: 600px, which is the Now
    Showing desktop/phone layout split (see home.css) and the breakpoint every
@@ -260,8 +260,8 @@ button {
   margin-bottom: var(--spacing-2xl);
 }
 
-/* Step 1 of the type scale: the section heading. Used on exactly three
- * elements, all on the home page — NOW SHOWING, COMING SOON and BLOG.
+/* Step 1 of the type scale: the section heading. Used on exactly two
+ * elements, all on the home page — NOW SHOWING and COMING SOON.
  *
  * font-weight was never declared here; it rendered at 700 only because these
  * happen to be <h2> and the UA stylesheet says bold. Stating it means the
@@ -472,10 +472,6 @@ button {
 /* The hero's own guard lives at the end of Hero.css: this sheet is bundled
  * before it, so a rule here loses to the animations declared there. */
 @media (prefers-reduced-motion: reduce) {
-  .blog-card:hover {
-    transform: none;
-  }
-
   .btn:hover,
   .btn-primary:hover {
     transform: none;
@@ -582,8 +578,6 @@ button {
    the highest-value page on the domain whenever the screen is dark. An empty
    section is an invitation to act, not a status message.
 
-   The blog list uses the same block (.blog-empty) when nothing is published.
-
    The blocks are structurally identical (lead / body / link list) but keep
    separate class names because they belong to different components. They are
    grouped here, in BASE, rather than duplicated into NowShowing.css and
@@ -592,8 +586,7 @@ button {
 ============================================ */
 
 .no-showtimes,
-.coming-empty,
-.blog-empty {
+.coming-empty {
   max-width: 34rem;
   margin: 0 auto;
   padding: var(--spacing-xl) var(--spacing-md);
@@ -611,8 +604,7 @@ button {
 }
 
 .no-showtimes__lead,
-.coming-empty__lead,
-.blog-empty__lead {
+.coming-empty__lead {
   font-family: var(--font-display);
   font-size: var(--type-lead);
   font-weight: 700;
@@ -622,8 +614,7 @@ button {
 }
 
 .no-showtimes__body,
-.coming-empty__body,
-.blog-empty__body {
+.coming-empty__body {
   font-family: var(--font-body);
   color: var(--color-text-muted);
   /* Under 80 characters at this size; serif lead above, sans body below. */
@@ -636,8 +627,7 @@ button {
  * because <ul> carries a default marker and indent that would pull the
  * centred layout off axis. */
 .no-showtimes__links,
-.coming-empty__links,
-.blog-empty__links {
+.coming-empty__links {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -648,8 +638,7 @@ button {
 }
 
 .no-showtimes__links a,
-.coming-empty__links a,
-.blog-empty__links a {
+.coming-empty__links a {
   display: inline-flex;
   align-items: center;
   /* 44px touch target — these are the only things to tap in an empty section. */
@@ -672,29 +661,22 @@ button {
   color: var(--color-accent-warm);
 }
 
-.blog-empty__links a:hover {
-  color: var(--color-accent-warm);
-}
-
 .no-showtimes__links a:focus-visible,
-.coming-empty__links a:focus-visible,
-.blog-empty__links a:focus-visible {
+.coming-empty__links a:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 3px;
 }
 
 @media (max-width: 600px) {
   .no-showtimes,
-  .coming-empty,
-  .blog-empty {
+  .coming-empty {
     padding: var(--spacing-lg) var(--spacing-sm);
   }
 
   /* Stacked, not wrapped: four links wrapping across a 390px screen produce a
    * ragged two-and-a-half-line block. One per row reads as a menu. */
   .no-showtimes__links,
-  .coming-empty__links,
-  .blog-empty__links {
+  .coming-empty__links {
     flex-direction: column;
     gap: 0;
   }
@@ -709,7 +691,7 @@ button {
    34% of the viewport spent on margin.
 
    It went unnoticed because the three worst-hit sections were either hidden on
-   phones (.blog) or never checked against a real layout. It is what made
+   phones or never checked against a real layout. It is what made
    "NOW SHOWING" wrap at the new 2rem phone step: the glyphs measure 275px and
    the type scale was sized against the ~326px the viewport suggests, but the
    title only ever had 247px to sit in.

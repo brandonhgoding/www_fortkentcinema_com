@@ -118,11 +118,11 @@ class StaffNextTests(TestCase):
             {
                 "username": "staffer@example.com",
                 "password": "pw12345",
-                "next": "/dashboard/blog",
+                "next": "/dashboard/engagements",
             },
         )
         self.assertEqual(resp.status_code, 302)
-        self.assertEqual(resp["Location"], "/dashboard/blog")
+        self.assertEqual(resp["Location"], "/dashboard/engagements")
 
 
 class NonStaffSignInTests(TestCase):
@@ -160,7 +160,7 @@ class NonStaffSignInTests(TestCase):
     def test_signed_in_staff_with_next_sees_the_form(self) -> None:
         make_staff(email="staffer@example.com", password="pw12345")
         self.client.login(username="staffer@example.com", password="pw12345")
-        resp = self.client.get("/login?next=/dashboard/blog")
+        resp = self.client.get("/login?next=/dashboard/engagements")
         self.assertEqual(resp.status_code, 200)
 
 
