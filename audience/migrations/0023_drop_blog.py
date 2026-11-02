@@ -5,9 +5,25 @@ it to zero; its tables, content types, permissions and migration records are
 dropped here instead. Every step is a no-op on a database that never had the
 app (a fresh test database). Uploaded header images stay in MEDIA_ROOT/blog/
 until someone deletes the folder.
+
+Production also holds tables from an older generation of the site that no
+app here owns (website_blogpage, with a foreign key to blog_blogauthor). On
+Postgres the drops CASCADE, which removes those foreign-key constraints and
+nothing else: the old tables and their rows stay. SQLite has no CASCADE and
+no such tables.
 """
 
 from django.db import migrations
+
+
+# Posts first: they point at authors and categories.
+BLOG_TABLES = ("blog_blogpost", "blog_blogauthor", "blog_blogcategory")
+
+
+def drop_blog_tables(apps, schema_editor):
+    cascade = " CASCADE" if schema_editor.connection.vendor == "postgresql" else ""
+    for table in BLOG_TABLES:
+        schema_editor.execute(f"DROP TABLE IF EXISTS {table}{cascade}")
 
 
 def forget_blog_app(apps, schema_editor):
@@ -26,18 +42,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Posts first: they point at authors and categories.
-        migrations.RunSQL(
-            "DROP TABLE IF EXISTS blog_blogpost",
-            reverse_sql=migrations.RunSQL.noop,
-        ),
-        migrations.RunSQL(
-            "DROP TABLE IF EXISTS blog_blogauthor",
-            reverse_sql=migrations.RunSQL.noop,
-        ),
-        migrations.RunSQL(
-            "DROP TABLE IF EXISTS blog_blogcategory",
-            reverse_sql=migrations.RunSQL.noop,
-        ),
+        migrations.RunPython(drop_blog_tables, migrations.RunPython.noop),
         migrations.RunPython(forget_blog_app, migrations.RunPython.noop),
     ]
