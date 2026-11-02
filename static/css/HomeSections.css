@@ -1,10 +1,8 @@
 /* Homepage sections below the hero: the shared vocabulary.
  *
- * One flat ground per section, two heading sizes (--type-title for the
- * section h2, --type-lead for card h3), and one card shape. Spacing halves with each level of nesting:
- * 96px between sections, 32px header to content, 24px between cards, 16px
- * inside a card. Only sections carrying .home-section opt in, so other pages
- * that reuse .section-header keep their own 4rem gap.
+ * One flat ground per section, 96px of padding, 32px from header to content.
+ * Only sections carrying .home-section opt in, so other pages that reuse
+ * .section-header keep their own 4rem gap.
  */
 
 /* Section: padding and a ground hook. 96px desktop, 64px phone. */
@@ -22,162 +20,15 @@
 
 /* Grounds. Alternate these so neighbours never share one. */
 .home-section--alt { background: var(--color-surface-alt); }
-.home-section--surface { background: var(--color-surface); }
 
 /* 32px from header to content, homepage only. */
 .home-section .section-header {
   margin-bottom: var(--spacing-lg);
 }
 
-/* One casing for every section h2 below the hero. NOW SHOWING and COMING SOON
- * are typed in capitals; the newer sections are typed in sentence case so the
- * markup reads naturally, and this sets them all like a marquee. */
+/* One casing for every section h2 below the hero, set like a marquee. */
 .home-section .section-title {
   text-transform: uppercase;
-}
-
-/* Eyebrow: --type-label, Cabin Condensed, uppercase, muted. */
-.home-card__eyebrow {
-  margin: 0;
-  font-family: var(--font-condensed);
-  font-size: var(--type-label);
-  text-transform: uppercase;
-  letter-spacing: var(--track-label);
-  color: var(--color-text-muted);
-}
-
-/* Card row: 24px gap, stacks at 900px and below. */
-.home-cards {
-  display: grid;
-  grid-auto-flow: column;
-  /* 28rem is wider than a card in a full row at any width (a row of three
-   * in the 1336px container is 429px), so full rows still fill the width.
-   * It only stops a sparse row (no posts) from stretching one
-   * or two cards across the whole section. */
-  grid-auto-columns: minmax(0, 28rem);
-  justify-content: start;
-  gap: var(--spacing-md);
-  align-items: stretch;
-}
-
-@media (max-width: 900px) {
-  .home-cards {
-    grid-auto-flow: row;
-    grid-template-columns: 1fr;
-  }
-}
-
-/* One card shape: eyebrow, h3, a sentence, then the link at the bottom. */
-/* 1rem inside a card, not the page's 18px: the h3 is --type-lead in EB
- * Garamond, which at 17px on a phone read smaller than an 18px Cabin
- * sentence under it. */
-.home-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm);
-  font-size: 1rem;
-  line-height: 1.5;
-  background: var(--color-surface-raised);
-  border: 1px solid var(--color-accent-dim);
-  border-radius: var(--radius-lg);
-}
-
-.home-card__title {
-  margin: 0;
-  font-family: var(--font-heading);
-  font-size: var(--type-lead);
-  line-height: 1.25;
-  color: var(--color-text);
-}
-
-.home-card__body {
-  margin: 0;
-  color: var(--color-text);
-}
-
-/* From the booth: three post cards, each led by its header image, full
- * bleed to the card's edge. 16:9 crops the wide header art the way /blog/
- * shows it; a post without one keeps the block, tinted, so the row stays
- * level. */
-.home-booth__lede {
-  margin: var(--spacing-xs) 0 0;
-  color: var(--color-text-muted);
-}
-
-.blog-post-card {
-  position: relative;
-  overflow: hidden;
-}
-
-.blog-post-card__media {
-  margin: calc(-1 * var(--spacing-sm)) calc(-1 * var(--spacing-sm)) 0;
-  aspect-ratio: 16 / 9;
-  background: var(--color-surface-sunken);
-  border-bottom: 1px solid var(--color-accent-dim);
-  overflow: hidden;
-}
-
-.blog-post-card__img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.blog-post-card:hover .blog-post-card__img {
-  transform: scale(1.03);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .blog-post-card__img {
-    transition: none;
-  }
-
-  .blog-post-card:hover .blog-post-card__img {
-    transform: none;
-  }
-}
-
-/* The title is the card's one link; its ::after covers the whole card so
- * the image and the white space are a target too. */
-.blog-post-card__link {
-  color: inherit;
-  text-decoration: none;
-}
-
-.blog-post-card__link::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-}
-
-.blog-post-card:hover .blog-post-card__link,
-.blog-post-card__link:focus-visible {
-  text-decoration: underline;
-  text-underline-offset: 0.15em;
-}
-
-.blog-post-card:focus-within {
-  outline: 3px solid var(--color-accent);
-  outline-offset: 2px;
-}
-
-.blog-post-card__link:focus-visible {
-  outline: none;
-}
-
-/* The byline sits at the bottom so a row of cards ends on one line. */
-.blog-post-card__byline {
-  margin: auto 0 0;
-  font-size: var(--type-label);
-  color: var(--color-text-muted);
-}
-
-/* "All posts": the section's only button, 32px under the cards. */
-.home-story__all {
-  margin: var(--spacing-lg) 0 0;
 }
 
 /* The empty week (partials/hero.html, .hero--empty): the dark fold with

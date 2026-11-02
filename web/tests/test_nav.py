@@ -5,7 +5,7 @@ from web.constants import SITE_CONFIG
 
 def nav_html(html):
     """Just the <nav> element. Assertions must not stray into the rest of the
-    page — /blog/ also appears in the footer, and the trailer overlays use
+    page — the footer carries links too, and the trailer overlays use
     x-show legitimately."""
     start = html.index('<nav class="nav"')
     return html[start : html.index("</nav>", start)]

@@ -50,7 +50,7 @@ class DashboardAuthTests(TestCase):
     def test_non_staff_forbidden(self) -> None:
         # Non-staff are 403 on every dashboard page.
         self.client.login(username="plain@example.com", password="pw12345")
-        resp = self.client.get(reverse("dashboard:blog"))
+        resp = self.client.get(reverse("dashboard:engagements"))
         self.assertEqual(resp.status_code, 403)
 
     def test_staff_ok(self) -> None:
@@ -99,4 +99,3 @@ class DashboardPermissionTests(TestCase):
         self.assertTrue(user.has_perm("cinema.view_engagement"))
         self.assertTrue(user.has_perm("phone.delete_voicemail"))
         self.assertTrue(user.has_perm("boxoffice.view_salespull"))
-        self.assertTrue(user.has_perm("blog.view_blogauthor"))

@@ -33,19 +33,6 @@ SPEC_PERMISSIONS = frozenset(
         "audience.view_subscriber",
         # boxoffice
         "boxoffice.view_salespull",  # template/home gating only
-        # blog
-        "blog.view_blogpost",
-        "blog.view_blogauthor",  # template gating only
-        "blog.view_blogcategory",  # template gating only
-        "blog.add_blogpost",
-        "blog.change_blogpost",
-        "blog.delete_blogpost",
-        "blog.add_blogauthor",
-        "blog.change_blogauthor",
-        "blog.delete_blogauthor",
-        "blog.add_blogcategory",
-        "blog.change_blogcategory",
-        "blog.delete_blogcategory",
         # phone
         "phone.view_voicemail",
         "phone.change_voicemail",

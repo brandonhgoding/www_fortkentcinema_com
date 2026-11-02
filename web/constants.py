@@ -59,25 +59,19 @@ SITE_CONFIG = {
     # once linked are gone. The owner kept the heading; the footer renders it alone until
     # this has links again (same shape as footer_navigation).
     "footer_events": [],
-    # The footer's link column, on every page. Blog moved here from the
-    # nav's "More" menu on 2026-10-13, and "More" went with it. History
-    # was removed 2026-11-01.
+    # The footer's link column, on every page. History and the blog
+    # ("From the Booth") were removed 2026-11-01.
     # Rentals joined on 2026-10-14 (the owner's call). The film vote and the
     # member sign-in links went on 2026-10-31.
     "footer_navigation": [
         # Alphabetical by label (the owner's call). "note" renders as a
-        # second line inside the same link, saying what a name like "From
-        # the Booth" doesn't on its own. Rentals and
+        # second line inside the same link, saying what the name alone
+        # doesn't. Rentals and
         # advertising carry the same label as the nav and their page title.
         {
             "label": "Buy Ad Space",
             "note": "Your business on the big screen",
             "href": "/advertise/",
-        },
-        {
-            "label": "From the Booth",
-            "note": "The Fort Kent Cinema Blog",
-            "href": "/blog/",
         },
         {
             "label": "Rent the Cinema",

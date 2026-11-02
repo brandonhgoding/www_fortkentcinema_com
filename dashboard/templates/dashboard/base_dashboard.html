@@ -28,7 +28,7 @@
         <div class="container">
           {% include "dashboard/_toast.html" %}
           {% if messages %}
-          {# Django messages from a full-page redirect (the blog editor); dashboard.js replays them as toasts. #}
+          {# Django messages from a full-page redirect (the voicemail page); dashboard.js replays them as toasts. #}
           <div id="flash-messages" hidden>{% for message in messages %}<span data-kind="{{ message.tags }}">{{ message }}</span>{% endfor %}</div>
           {% endif %}
           {% block content %}{% endblock %}

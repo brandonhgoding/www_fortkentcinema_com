@@ -13,7 +13,7 @@ and what it costs. Prices from TICKET_PRICES, like the ticket line.{% endcomment
 
 {% block content %}
   {% comment %}
-    The hero, then up to two sections in order of weight, asserted by
+    The hero, then Coming Soon, asserted by
     web/tests/test_pages.py::test_full_home_composition_order and
     web/tests/test_home_sections.py. The hero is the listing (the film
     hero carries the week's showtimes and the #now-showing anchor); in a
@@ -21,13 +21,8 @@ and what it costs. Prices from TICKET_PRICES, like the ticket line.{% endcomment
     that anchor (test_home_listing.py):
 
       coming-soon   tier 2   what is playing later
-      from-the-booth tier 3  the latest blog posts, with their images
-
-    Each section is one flat ground (static/css/HomeSections.css), and no two
-    neighbours share one, which is what separates them; there are no dividers.
   {% endcomment %}
 
   {% include "partials/hero.html" %}
   {% include "partials/coming_soon.html" %}
-  {% include "partials/home_from_the_booth.html" %}
 {% endblock %}

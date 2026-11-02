@@ -19,8 +19,7 @@
     <meta property="og:image" content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/og-image.jpg' %}{% endblock %}" />
     {% comment %}
     The size is the default card's, and history's, which are
-    all 1200x630. A page that shares an image of another size (a poster, a
-    blog photo) overrides og_image_details so the wrong size never rides along.
+    all 1200x630. A page that shares an image of another size (a poster) overrides og_image_details so the wrong size never rides along.
     {% endcomment %}
     {% block og_image_details %}
     <meta property="og:image:width" content="1200" />

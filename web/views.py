@@ -8,7 +8,6 @@ from django.utils import timezone
 from django.views.generic import TemplateView
 
 from accounts.client_ip import request_ip
-from blog.models import BlogPost
 from web.constants import (
     AD_ARTWORK_DEADLINE_DAY,
     AD_SLIDE_PRICE,
@@ -45,14 +44,6 @@ class HomeView(TemplateView):
         initial_year, initial_month = _initial_calendar_month(coming_soon)
         ctx["initial_year"] = initial_year
         ctx["initial_month"] = initial_month
-
-        # From the booth: the latest 3 posts, deterministically ordered, one
-        # row of three image cards.
-        ctx["recent_posts"] = (
-            BlogPost.objects.published()
-            .select_related("author", "category")
-            .order_by("-post_date", "-id")[:3]
-        )
 
         today = today_eastern()
 

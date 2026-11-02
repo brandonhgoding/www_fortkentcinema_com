@@ -1,6 +1,5 @@
 import datetime
 
-from blog.models import BlogPost
 from cinema.models import Engagement
 from django.contrib.sitemaps import Sitemap
 from django.db.models import Max
@@ -22,7 +21,6 @@ STATIC_PAGE_LASTMOD = {
     "home": datetime.date(2026, 8, 25),
     "rentals": datetime.date(2026, 7, 13),
     "advertise": datetime.date(2026, 10, 14),
-    "blog_list": datetime.date(2026, 7, 13),
 }
 
 
@@ -35,7 +33,6 @@ class StaticViewSitemap(Sitemap):
             "home",
             "rentals",
             "advertise",
-            "blog_list",
         ]
 
     def location(self, name):
@@ -44,10 +41,9 @@ class StaticViewSitemap(Sitemap):
     def lastmod(self, name):
         """The later of when the page was edited and when its content moved.
 
-        Two of these are windows onto rows that change with nobody touching
-        the template — a new post moves /blog/, a new booking moves the
-        homepage — so a fixed date
-        goes stale the moment any of them happens. The rest are prose, and
+        The homepage is a window onto rows that change with nobody touching
+        the template — a new booking moves it — so a fixed date goes stale
+        the moment one lands. The rest are prose, and
         only move when someone edits them.
 
         Returns None rather than a guess for a page listed in neither place.
@@ -62,8 +58,6 @@ class StaticViewSitemap(Sitemap):
 
     def _content_lastmod(self, name):
         """The newest row behind a page, for the pages that have rows."""
-        if name == "blog_list":
-            return BlogPost.objects.published().aggregate(at=Max("post_date"))["at"]
         if name == "home":
             # A booking landing is what changes Now Showing and Coming Soon.
             # Engagement has no updated_at, so this misses a later edit to an
@@ -71,14 +65,3 @@ class StaticViewSitemap(Sitemap):
             at = Engagement.objects.aggregate(at=Max("created_at"))["at"]
             return timezone.localtime(at).date() if at else None
         return None
-
-
-class BlogPostSitemap(Sitemap):
-    changefreq = "monthly"
-    priority = 0.6
-
-    def items(self):
-        return BlogPost.objects.published()
-
-    def lastmod(self, obj):
-        return obj.post_date
