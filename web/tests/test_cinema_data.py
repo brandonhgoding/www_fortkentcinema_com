@@ -8,6 +8,7 @@ from web.services.cinema_data import (
     _format_runtime,
     get_calendar_month,
     get_coming_soon,
+    last_month_shows,
 )
 
 
@@ -171,3 +172,52 @@ class CalendarMonthDayTests(TestCase):
         self.assertEqual(
             [m["title"] for m in get_calendar_month(2026, 5)[4]], ["Dune"]
         )
+
+
+class LastMonthShowsTests(TestCase):
+    """The /advertise/ line "In October that came to N shows": how many
+    announced, non-cancelled showings the previous Eastern calendar month
+    had, which is how many times an ad in the loop played."""
+
+    def setUp(self) -> None:
+        self.screen = make_screen()
+        self.eng = make_engagement(
+            self.screen, [make_film()],
+            start=datetime.date(2026, 9, 25), end=datetime.date(2026, 11, 5),
+        )
+
+    def show(self, *args, eng=None, **kw):
+        return Showtime.objects.create(
+            engagement=eng or self.eng, starts_at=aware(*args), **kw
+        )
+
+    def test_counts_last_month_only(self) -> None:
+        self.show(2026, 9, 30, 19)
+        self.show(2026, 10, 1, 19)
+        self.show(2026, 10, 31, 23, 30)  # late, still October in Fort Kent
+        self.show(2026, 11, 1, 19)
+        month, count = last_month_shows(datetime.date(2026, 11, 2))
+        self.assertEqual(month, datetime.date(2026, 10, 1))
+        self.assertEqual(count, 2)
+
+    def test_skips_cancelled_and_unannounced(self) -> None:
+        self.show(2026, 10, 3, 19)
+        self.show(2026, 10, 4, 19, is_cancelled=True)
+        draft = make_engagement(
+            self.screen, [make_film("Draft")], status="DRAFT",
+            start=datetime.date(2026, 10, 10), end=datetime.date(2026, 10, 12),
+        )
+        self.show(2026, 10, 10, 15, eng=draft)
+        self.assertEqual(last_month_shows(datetime.date(2026, 11, 2))[1], 1)
+
+    def test_counts_runs_that_have_since_ended(self) -> None:
+        ended = make_engagement(
+            self.screen, [make_film("Ended")], status="ENDED",
+            start=datetime.date(2026, 10, 10), end=datetime.date(2026, 10, 12),
+        )
+        self.show(2026, 10, 10, 15, eng=ended)
+        self.assertEqual(last_month_shows(datetime.date(2026, 11, 2))[1], 1)
+
+    def test_january_looks_back_to_december(self) -> None:
+        month, _ = last_month_shows(datetime.date(2027, 1, 15))
+        self.assertEqual(month, datetime.date(2026, 12, 1))

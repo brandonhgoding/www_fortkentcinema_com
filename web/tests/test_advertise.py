@@ -1,3 +1,4 @@
+import datetime
 import json
 import re
 from unittest import mock
@@ -173,3 +174,34 @@ class AdvertisePlaceTests(TestCase):
 
     def test_intro_names_the_valley(self):
         self.assertIn("St. John Valley", self.html)
+
+
+class AdvertiseShowCountTests(TestCase):
+    """A fact an advertiser can weigh without a reach claim: how many shows
+    the loop played before last month. (No audience counts: we promise when
+    the ad plays, not how many people see it.)"""
+
+    def get(self, count):
+        with mock.patch(
+            "web.views.last_month_shows",
+            return_value=(datetime.date(2026, 10, 1), count),
+        ):
+            return self.client.get(reverse("advertise")).content.decode()
+
+    def test_says_last_months_count(self):
+        self.assertIn("In October that came to 42 shows.", self.get(42))
+
+    def test_one_show_is_singular(self):
+        self.assertIn("In October that came to 1 show.", self.get(1))
+
+    def test_a_dark_month_says_nothing(self):
+        self.assertNotIn("that came to", self.get(0))
+
+
+class AdvertiseSampleSlideTests(TestCase):
+    def test_sample_slide_is_on_the_page(self):
+        html = self.client.get(reverse("advertise")).content.decode()
+        img = re.search(r'<img[^>]*your-ad-here[^>]*>', html)
+        self.assertIsNotNone(img)
+        for attr in ('width="1200"', 'height="675"', 'loading="lazy"', 'alt="'):
+            self.assertIn(attr, img.group(0))

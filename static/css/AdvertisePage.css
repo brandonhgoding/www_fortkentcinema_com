@@ -65,6 +65,26 @@
   line-height: 1.6;
 }
 
+/* The sample slide in THE RATES: an illustration at the 16:9 a slide runs. */
+.advertise-sample {
+  max-width: 640px;
+  margin: 0 auto var(--spacing-lg);
+  text-align: center;
+}
+
+.advertise-sample img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+.advertise-sample figcaption {
+  margin-top: var(--spacing-sm);
+  font-size: 0.9rem;
+  color: var(--color-cream-muted);
+}
+
 /* Sections */
 .advertise-section {
   margin-bottom: var(--spacing-2xl);
