@@ -61,7 +61,6 @@
       {% else %}
       <div class="hero-film__poster-wrap">
       {% endif %}
-        {% if featured.is_free_for_members %}<span class="hero-film__ribbon">Free for Members</span>{% endif %}
         <img class="hero-film__poster" src="{{ featured.poster }}" alt="{{ featured.title }} poster" width="340" height="510" {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %} decoding="async">
         {% if featured.youtube_id %}
         <span class="hero-film__play" aria-hidden="true"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="23" fill="rgba(0,0,0,0.6)" stroke="white" stroke-width="2" /><polygon points="19,14 19,34 35,24" fill="white" /></svg></span>

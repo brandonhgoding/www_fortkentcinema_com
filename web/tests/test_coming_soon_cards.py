@@ -14,7 +14,7 @@ def card(**over):
     base = {
         "id": "7", "title": "Wicked", "release_date": "November 22",
         "genre": "", "poster": "w.jpg", "youtube_id": "", "films": [],
-        "is_free_for_members": False, "start_date": "2999-11-22",
+        "start_date": "2999-11-22",
     }
     base.update(over)
     return base
@@ -30,12 +30,6 @@ class ComingSoonCardTests(TestCase):
 
     def openers(self, section):
         return re.findall(r'<div\b[^>]*role="button"[^>]*>', section)
-
-    def test_free_run_carries_the_members_ribbon(self, _hero):
-        self.assertIn("Free for Members", self.section(card(is_free_for_members=True)))
-
-    def test_paid_run_has_no_ribbon(self, _hero):
-        self.assertNotIn("Free for Members", self.section(card()))
 
     def test_a_run_with_a_trailer_gets_a_keyboard_opener(self, _hero):
         (opener,) = self.openers(self.section(card(youtube_id="yt9")))

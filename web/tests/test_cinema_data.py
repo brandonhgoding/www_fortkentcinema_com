@@ -20,11 +20,10 @@ def make_film(title="Dune", **kw):
 
 
 def make_engagement(screen, films, *, start, end, status="CONFIRMED", kind="REGULAR",
-                    show=True, display_title="", free_for_members=False):
+                    show=True, display_title=""):
     eng = Engagement.objects.create(
         screen=screen, start_date=start, end_date=end, status=status, kind=kind,
         show_in_main_listings=show, display_title=display_title,
-        is_free_for_members=free_for_members,
     )
     for i, f in enumerate(films, start=1):
         EngagementFilm.objects.create(engagement=eng, film=f, position=i)

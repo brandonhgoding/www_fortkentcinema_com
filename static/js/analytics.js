@@ -5,10 +5,10 @@
  * attributes; this file has no knowledge of specific tiers, phone numbers or
  * URLs, so adding a tracked element never means editing this file:
  *
- *   <a href="..." data-track="membership_join_click" data-track-tier="family">
+ *   <a href="tel:..." data-track="phone_click" data-track-location="footer">
  *
- * Any `data-track-*` attribute becomes an event parameter (data-track-tier ->
- * `tier`). Nothing here ever attaches a monetary `value`: these are clicks,
+ * Any `data-track-*` attribute becomes an event parameter (data-track-location ->
+ * `location`). Nothing here ever attaches a monetary `value`: these are clicks,
  * not purchases, and nothing is paid for on the site.
  *
  * gtag is absent in dev (GA4_MEASUREMENT_ID unset) — every call site tolerates

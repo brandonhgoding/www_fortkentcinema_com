@@ -24,7 +24,6 @@ class ShowtimesSpeechTests(TestCase):
             SUNDAY,
             SUNDAY,
             screen=Screen.objects.create(name="Screen 2", capacity=40),
-            is_free_for_members=True,
         )
         add_showtime(self.hamnet, at(2026, 10, 4, 16))
         add_showtime(self.hamnet, at(2026, 10, 4, 19, 15))
@@ -33,7 +32,7 @@ class ShowtimesSpeechTests(TestCase):
         self.assertEqual(
             showtimes_speech(now=at(2026, 10, 4, 12)),
             "Today's showtimes: Hamnet at 4:00 PM and 7:15 PM. "
-            "Weapons, free for members, at 7:15 PM.",
+            "Weapons at 7:15 PM.",
         )
 
     def test_three_or_more_showtimes_get_an_oxford_comma(self) -> None:
@@ -251,7 +250,6 @@ PRICES = {
     "senior": 7,
     "child": 6,
     "matinee": 5,
-    "member": 4,
     "matinee_until": datetime.time(16, 0),
 }
 
@@ -269,7 +267,6 @@ class HoursAndPricesSpeechTests(TestCase):
             "$6 for children",
             "4:00 PM",
             "are $5",
-            "$4 for any show",
         ):
             with self.subTest(fact=fact):
                 self.assertIn(fact, speech)

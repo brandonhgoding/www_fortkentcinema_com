@@ -87,18 +87,17 @@ SITE_CONFIG = {
 }
 
 # Regular admission, in whole dollars. Read by the phone line (phone/speech.py).
-# A matinee is a show starting at `matinee_until` or earlier. The member price
-# applies to every show, except runs marked `is_free_for_members`.
+# A matinee is a show starting at `matinee_until` or earlier. The Cinema Club
+# member price went with the program on 2026-11-02.
 #
 # Square ticket items carry only the adult, senior and child prices
-# (boxoffice/spec.py SQUARE_TIERS); matinee and member are register discounts
-# set up by hand in Square, so a change to either has to be made there too.
+# (boxoffice/spec.py SQUARE_TIERS); the matinee price is a register discount
+# set up by hand in Square, so a change to it has to be made there too.
 TICKET_PRICES = {
     "adult": 8,
     "senior": 7,
     "child": 6,
     "matinee": 6,
-    "member": 4,
     "matinee_until": datetime.time(16, 0),
 }
 
@@ -126,7 +125,7 @@ SITE_CONFIG["seo"] = {
     "seat_count": sum(s["seats"] for s in SITE_CONFIG["cinema"]["screens"]),
 }
 
-# The Google rating, as the hero shows it beside the member count
+# The Google rating, as the hero shows it under the showtimes
 # (partials/hero_members.html). Kept by hand, like the phone number: a live
 # Places lookup would need a key, billing and a cache for one line of copy.
 # Update rating and count when the listing moves; None drops the chip. The

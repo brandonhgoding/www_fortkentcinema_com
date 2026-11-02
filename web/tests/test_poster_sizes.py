@@ -60,7 +60,6 @@ def coming(**over):
         "films": [{"id": 2, "title": "Arrival", "poster": W500}],
         "description": "",
         "youtube_id": "",
-        "is_free_for_members": False,
     }
     base.update(over)
     return base

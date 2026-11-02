@@ -73,7 +73,6 @@ class HomeViewDataTests(TestCase):
     @mock.patch("web.views.get_hero_films")
     def test_hero_renders_the_film_and_every_date(self, ns, _cs):
         ns.return_value = [hero_film(
-            is_free_for_members=True,
             upcoming=[
                 {"key": "2999-01-15",
                  "times": [_time(1, "6:00 PM", "2999-01-15T18:00:00-05:00")]},
@@ -87,7 +86,6 @@ class HomeViewDataTests(TestCase):
         self.assertIn("Dune", html)                      # movie title
         self.assertIn("6:00 PM", html)                   # a showtime rendered into DOM
         self.assertIn("7:00 PM", html)                   # both dates server-rendered
-        self.assertIn("Free for Members", html)          # the ribbon
         self.assertIn('data-hero-idle', html)            # hero idle hook
 
 
@@ -98,7 +96,7 @@ class ComingSoonTests(TestCase):
         cs.return_value = [{
             "id": "5", "title": "Wicked", "release_date": "November 22",
             "genre": "", "poster": "w.jpg", "youtube_id": "", "films": [],
-            "is_free_for_members": False, "start_date": "2999-11-22",
+            "start_date": "2999-11-22",
         }]
         html = self.client.get(reverse("home")).content.decode()
         self.assertIn("coming-soon", html)

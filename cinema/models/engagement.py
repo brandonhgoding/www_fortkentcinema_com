@@ -75,11 +75,6 @@ class Engagement(models.Model):
     )
     display_title = models.CharField(max_length=200, blank=True)
     show_in_main_listings = models.BooleanField(default=True)
-    is_free_for_members = models.BooleanField(
-        default=False,
-        help_text="Show a 'Free for Members' badge on the public listings "
-        "and movie page for this run.",
-    )
     in_ticket_report = models.BooleanField(
         default=True,
         help_text="Include this run's ticket sales in the nightly ticket report "

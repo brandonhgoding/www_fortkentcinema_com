@@ -3,21 +3,34 @@
 like robots.txt. Every price, time and contact detail is rendered from the
 constants the pages read, so this can't quote a different number.
 Autoescape is off because this is plain text, not HTML.
+
+Brought up to date 2026-11-02: the Cinema Club membership program has
+ended, and event pages, the blog, polls and online tickets are gone from
+the site; showtimes live only in the Now Showing hero.
 {% endcomment %}# {{ site_config.cinema.name }}
 
 > {{ site_config.cinema.tagline }}: a community movie theater at
 > {{ site_config.cinema.address.street }}, {{ site_config.cinema.address.city }}, Maine, in the St. John Valley.
-> Current movies, special events, and Cinema Club membership.
 > {{ site_config.cinema.screens|length }} screens: {% for screen in site_config.cinema.screens %}{{ screen.name }} ({{ screen.seats }} seats){% if not forloop.last %} and {% endif %}{% endfor %}.
 
 ## Showtimes
 
 - This week's films and showtimes: {{ base }}/#now-showing
 - What's booked next: {{ base }}/#coming-soon
-- Each film card on the home page carries its showtimes, rating, runtime, synopsis and trailer. There are no separate film pages.
+
+Films are all on the home page; there are no separate film pages. Now
+Showing, at the top, lists each film playing this week with its showtimes,
+rating, runtime and trailer. Coming Soon shows no showtimes: it lists the
+films booked after this week, with trailers, as a grid or a month calendar.
 
 There is no online ticketing. Pay at the box office, which opens
 {{ site_config.box_office.opens_before_show_minutes }} minutes before every show.
+
+The phone line, {{ site_config.cinema.phone }}, reads out this week's showtimes and ticket
+prices, and takes messages.
+
+To hear about new showings by email, join the mailing list from the home
+page. It sends a confirmation link first.
 
 ## Ticket prices (USD)
 
@@ -25,19 +38,13 @@ There is no online ticketing. Pay at the box office, which opens
 - Seniors: ${{ ticket_prices.senior }}
 - Kids: ${{ ticket_prices.child }}
 - Matinees (showtimes at {{ ticket_prices.matinee_until|time:"g A" }} or earlier): ${{ ticket_prices.matinee }}
-- Cinema Club members: ${{ ticket_prices.member }}, every show
-
-## Membership (Cinema Club)
-
-A yearly membership: cheaper tickets at every show, up to $2 off every
-popcorn, a free small popcorn in your birthday month, and discounts on
-private rentals. Family tiers cover the whole household. Join or renew at
-the box office.
 
 ## Rentals, advertising
 
 - Rent the Cinema, private rentals of the whole theater: {{ base }}/rentals/
 - Advertise, advertising on the big screen before every show: {{ base }}/advertise/
+
+Both pages have an inquiry form.
 
 ## Contact
 

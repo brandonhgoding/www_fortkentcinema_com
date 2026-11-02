@@ -31,11 +31,6 @@ class DesiredItemTests(TestCase):
         )
         self.assertEqual(spec.variations[2].sku, f"fkc-eng-{self.eng.pk}-child")
 
-    def test_free_for_members_changes_nothing(self) -> None:
-        before = desired_item(self.eng).variations
-        self.eng.is_free_for_members = True
-        self.assertEqual(desired_item(self.eng).variations, before)
-
     def test_empty_title_raises(self) -> None:
         self.eng.engagement_films.all().delete()
         with self.assertRaisesMessage(ValueError, "no title"):

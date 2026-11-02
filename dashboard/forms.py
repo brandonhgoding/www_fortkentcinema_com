@@ -15,7 +15,7 @@ class EngagementForm(forms.ModelForm):
         model = Engagement
         fields = ["kind", "display_title", "screen", "start_date", "end_date",
                   "presentation_format", "language", "translation", "status", "show_in_main_listings",
-                  "is_free_for_members", "in_ticket_report", "notes"]
+                  "in_ticket_report", "notes"]
         widgets = {
             "display_title": forms.TextInput(attrs={
                 "class": "input", "placeholder": "e.g. Creature Double Feature"}),

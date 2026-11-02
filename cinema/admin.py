@@ -43,7 +43,6 @@ class EngagementAdmin(admin.ModelAdmin):
         "presentation_format",
         "language",
         "translation",
-        "is_free_for_members",
         "in_ticket_report",
     )
     search_fields = ("engagement_films__film__title",)

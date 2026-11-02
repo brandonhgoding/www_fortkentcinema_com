@@ -37,7 +37,7 @@ class HomeMarkupTests(TestCase):
         self.assertNotIn("COMING SOON", html)
 
     def test_meta_description_carries_quotable_facts(self, *_):
-        with mock.patch.dict(TICKET_PRICES, adult=9, member=3):
+        with mock.patch.dict(TICKET_PRICES, adult=9, matinee=3):
             html = self.home()
         description = re.search(r'<meta name="description" content="([^"]*)"', html)
         og = re.search(r'<meta property="og:description" content="([^"]*)"', html)

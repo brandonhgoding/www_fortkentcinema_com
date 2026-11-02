@@ -40,9 +40,9 @@ class LlmsTxtTests(TestCase):
 
     def test_prices_come_from_ticket_prices(self, *_):
         with mock.patch.dict(TICKET_PRICES, adult=91, senior=92, child=93,
-                             matinee=94, member=95):
+                             matinee=94):
             text = self.get().content.decode()
-        for price in ("$91", "$92", "$93", "$94", "$95"):
+        for price in ("$91", "$92", "$93", "$94"):
             self.assertIn(price, text)
         self.assertIn("4 PM or earlier", text)
 

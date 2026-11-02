@@ -68,8 +68,8 @@ def get_hero_films(now=None):
     template folds rows past the third behind a toggle), each time in the
     chip shape (HomeView._add_ticket_state completes it); and `date`/`time`,
     its next showing, for the strip that names the films not on the fold.
-    `youtube_id`, `language_label` and `is_free_for_members` are what the
-    listing card used to carry."""
+    `youtube_id` and `language_label` are what the listing card used to
+    carry."""
     if now is None:
         now = timezone.now()
     today = _local_date(now)
@@ -107,7 +107,6 @@ def get_hero_films(now=None):
                 "time": format_showtime(st.starts_at),
                 "youtube_id": (pf.youtube_id if pf else "") or "",
                 "language_label": engagement.language_label,
-                "is_free_for_members": bool(engagement.is_free_for_members),
             }
             by_date[st.engagement_id] = {}
         key = _local_date(st.starts_at).isoformat()
@@ -200,7 +199,6 @@ def get_coming_soon(now=None):
                 ],
                 "description": (pf.synopsis if pf else "") or "",
                 "youtube_id": (pf.youtube_id if pf else "") or "",
-                "is_free_for_members": bool(engagement.is_free_for_members),
             }
         )
 
