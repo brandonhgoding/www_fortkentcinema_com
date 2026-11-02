@@ -57,6 +57,14 @@
   font-style: italic;
 }
 
+/* Plain words under the italic line: what the theater is and where. */
+.advertise-intro {
+  max-width: 38rem;
+  margin: var(--spacing-md) auto 0;
+  color: var(--color-cream-muted);
+  line-height: 1.6;
+}
+
 /* Sections */
 .advertise-section {
   margin-bottom: var(--spacing-2xl);

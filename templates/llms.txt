@@ -43,6 +43,7 @@ page. It sends a confirmation link first.
 
 - Rent the Cinema, private rentals of the whole theater: {{ base }}/rentals/
 - Advertise, advertising on the big screen before every show: {{ base }}/advertise/
+  - Pre-show slide: ${{ ad_slide_price }} a month. Video spot (up to {{ ad_video_max_seconds }} seconds): ${{ ad_video_price }} a month. Prices in US dollars, month to month, no contract.
 
 Both pages have an inquiry form.
 

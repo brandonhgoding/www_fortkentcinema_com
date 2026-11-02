@@ -20,7 +20,7 @@ from django.utils import timezone
 STATIC_PAGE_LASTMOD = {
     "home": datetime.date(2026, 8, 25),
     "rentals": datetime.date(2026, 7, 13),
-    "advertise": datetime.date(2026, 10, 14),
+    "advertise": datetime.date(2026, 11, 2),
 }
 
 
