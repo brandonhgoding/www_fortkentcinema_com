@@ -25,7 +25,7 @@
     <table class="table">
       <thead>
         <tr>
-          <th>Business</th><th>Contact</th><th>Ad type</th>
+          <th>Business</th><th>Contact</th><th>Ad type</th><th>Heard from</th>
           <th>Received</th><th>Status</th>
         </tr>
       </thead>
@@ -39,6 +39,7 @@
               {% if inquiry.phone %}<br />{{ inquiry.phone }}{% endif %}
             </td>
             <td>{{ inquiry.get_ad_type_display }}</td>
+            <td>{{ inquiry.get_heard_from_display|default:"—" }}</td>
             <td>{{ inquiry.created_at|date:"M j, Y" }}</td>
             <td>
               {% if perms.cinema.change_adinquiry %}
@@ -56,7 +57,7 @@
             </td>
           </tr>
           {% if inquiry.message %}
-            <tr><td colspan="5" class="text-muted">{{ inquiry.message }}</td></tr>
+            <tr><td colspan="6" class="text-muted">{{ inquiry.message }}</td></tr>
           {% endif %}
         {% endfor %}
       </tbody>

@@ -7,6 +7,11 @@
  *
  *   <a href="tel:..." data-track="phone_click" data-track-location="footer">
  *
+ * A confirmation that renders on page load (an inquiry thank-you) declares
+ * its event with data-track-view instead, and fires once on load:
+ *
+ *   <div data-track-view="generate_lead" data-track-form="advertise">
+ *
  * Any `data-track-*` attribute becomes an event parameter (data-track-location ->
  * `location`). Nothing here ever attaches a monetary `value`: these are clicks,
  * not purchases, and nothing is paid for on the site.
@@ -17,12 +22,13 @@
 
 const TRACK_ATTR = "data-track";
 const PARAM_PREFIX = "data-track-";
+const VIEW_ATTR = "data-track-view";
 
 /** Turn data-track-* attributes into GA4 event params. */
 export function paramsFor(el) {
   const params = {};
   for (const attr of el.attributes) {
-    if (attr.name.startsWith(PARAM_PREFIX) && attr.name !== TRACK_ATTR) {
+    if (attr.name.startsWith(PARAM_PREFIX) && attr.name !== VIEW_ATTR) {
       const key = attr.name.slice(PARAM_PREFIX.length).replace(/-/g, "_");
       params[key] = attr.value;
     }
@@ -48,8 +54,17 @@ export function handleClick(event, gtag) {
   send(name, paramsFor(el), gtag);
 }
 
+/** Fire the event each data-track-view element declares. */
+export function handleViews(doc, gtag) {
+  for (const el of doc.querySelectorAll(`[${VIEW_ATTR}]`)) {
+    const name = el.getAttribute(VIEW_ATTR);
+    if (name) send(name, paramsFor(el), gtag);
+  }
+}
+
 export function installAnalytics(doc, gtag) {
   doc.addEventListener("click", (event) => handleClick(event, gtag));
+  handleViews(doc, gtag);
 }
 
 if (typeof document !== "undefined") {

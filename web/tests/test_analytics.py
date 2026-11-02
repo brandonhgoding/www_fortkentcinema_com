@@ -45,6 +45,17 @@ class ClickEventMarkupTests(TestCase):
         self.assertEqual(len(tracked(html, "rental_inquiry_submit")), 1)
 
 
+class LeadViewEventTests(TestCase):
+    """Both inquiry thank-yous fire generate_lead on load: the confirmed
+    lead, where the Send click is only intent."""
+
+    def test_rentals_thank_you_fires_the_lead_event(self):
+        html = self.client.get(reverse("rentals"), {"sent": "1"}).content.decode()
+        self.assertRegex(
+            html, r'data-track-view="generate_lead"[^>]*data-track-form="rentals"'
+        )
+
+
 class RobotsTests(TestCase):
     def test_other_pages_remain_indexable(self):
         html = self.client.get("/").content.decode()

@@ -1,4 +1,4 @@
-from cinema.models import AdInquiry, AdType, RentalInquiry
+from cinema.models import AdInquiry, AdType, HeardFrom, RentalInquiry
 from django import forms
 
 from web.constants import AD_SLIDE_PRICE, AD_VIDEO_PRICE
@@ -79,12 +79,13 @@ class AdInquiryForm(forms.ModelForm):
         model = AdInquiry
         fields = [
             "business_name", "contact_name", "email", "phone",
-            "ad_type", "message",
+            "ad_type", "message", "heard_from",
         ]
         labels = {
             "business_name": "Business name",
             "contact_name": "Your name",
             "phone": "Phone (optional)",
+            "heard_from": "How did you hear about us? (optional)",
         }
         # `ad_type` and `message` are rebuilt in __init__ below, so their
         # labels/widgets live there.
@@ -116,6 +117,11 @@ class AdInquiryForm(forms.ModelForm):
                 "max_length": "Please keep this under 2,000 characters.",
             },
         )
+
+        # Django's default blank reads "---------".
+        self.fields["heard_from"].choices = [
+            ("", "Choose one"), *HeardFrom.choices,
+        ]
 
     def clean_ad_type(self) -> str:
         return self.cleaned_data.get("ad_type") or AdType.UNSURE
